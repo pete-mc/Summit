@@ -1,0 +1,36 @@
+{
+    "manifest_version": 3,
+    "name": "Terrain | Summit",
+    "version": "2.0.0",
+    "description": "Where Every Achievement is a Summit Conquered",
+    "icons": {
+        "16": "/images/Icon16.png",
+        "48": "/images/Icon48.png",
+        "128": "/images/Icon128.png"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://terrain.scouts.com.au/*"
+            ],
+            "js": [
+                "/scripts/dependencies/jquery-3.6.0.min.js",
+                "/scripts/dependencies/jquery.datatables.min.js",
+                "/scripts/dependencies/chart.min.js",
+                "/scripts/helperFunctions.js",
+                "/scripts/summitStart.js",
+                "/scripts/copyLogbook.js",
+                "/scripts/exportiCal.js",
+                "/scripts/reportsMenu.js",
+                "/scripts/reports/testReport.js",
+                "/scripts/reports/milestonePlanningReport.js",
+                "/scripts/reports/progressReport.js",
+                "/scripts/reports/oasReport.js"
+            ]
+        }
+    ],
+    "permissions": [],
+    "content_security_policy": {
+        "extension_pages": "default-src 'self'"
+      }
+}
