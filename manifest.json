@@ -14,18 +14,25 @@
                 "https://terrain.scouts.com.au/*"
             ],
             "js": [
-                "/scripts/dependencies/jquery-3.6.0.min.js",
-                "/scripts/dependencies/jquery.datatables.min.js",
+                "/scripts/dependencies/moment.js",
+                "/scripts/dependencies/datatables.min.js",
                 "/scripts/dependencies/chart.min.js",
+                "/scripts/dependencies/chartjs-plugin-datalabels.min.js",
                 "/scripts/helperFunctions.js",
                 "/scripts/summitStart.js",
                 "/scripts/copyLogbook.js",
                 "/scripts/exportiCal.js",
-                "/scripts/reportsMenu.js",
+                "/scripts/summitMenu.js",
+                "/scripts/terrainCalls.js",
                 "/scripts/reports/testReport.js",
                 "/scripts/reports/milestonePlanningReport.js",
                 "/scripts/reports/progressReport.js",
-                "/scripts/reports/oasReport.js"
+                "/scripts/reports/oasReport.js",
+                "/scripts/inputs/bulkCalendar.js"
+            ],
+            "css": [
+                "/styles/dependencies/datatables.min.css",
+                "/styles/summit.css"
             ]
         }
     ],

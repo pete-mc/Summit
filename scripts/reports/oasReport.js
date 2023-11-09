@@ -36,10 +36,10 @@ async function oasReport(retry){
   $("#oasReportTable").hide();
   $.ajax({
     method: "GET",
-    url: "https://metrics.terrain.scouts.com.au/units/3603056b-3928-4f66-b12e-421ca4434dcb/members?limit=999",
+    url: "https://metrics.terrain.scouts.com.au/units/"+currentProfile.profiles[0].unit.id+"/members?limit=999",
     headers: {
       "accept": "application/json, text/plain, */*",
-      "authorization" : auth
+      "authorization" : localStorage.getItem("CognitoIdentityServiceProvider.6v98tbc09aqfvh52fml3usas3c."+LastAuthUser+".idToken")
     },
     xhrFields: {
       mode: 'cors'
@@ -67,7 +67,11 @@ async function oasReport(retry){
     $('#oasReportTable').DataTable( {
       data: tableData,
       pageLength: 25,
-      "order":[[1,"desc"]]
+      "order":[[1,"desc"]],
+      dom: 'Bfrtip',
+      buttons: [
+        'excel', 'pdf'
+      ]
     });
    }).fail(function(data) {
     if (retry < 3) {

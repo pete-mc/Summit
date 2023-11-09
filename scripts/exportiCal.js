@@ -1,18 +1,18 @@
 async function exportiCal() {
-  const activityIdElement = document.querySelector('p.ActivityPlan__activity-id');
-  if (!activityIdElement) {
+  const activityIdElement = $('p.ActivityPlan__activity-id');
+  if (activityIdElement.length === 0) {
       console.error("Activity ID element not found.");
       return;
   }
-  const activityId = activityIdElement.innerText.split(': ')[1];
+  const activityId = activityIdElement.text().split(': ')[1];
 
-  const response = await fetch("https://events.terrain.scouts.com.au/events/"+ activityId, {
+  const response = await fetch(`https://events.terrain.scouts.com.au/events/${activityId}`, {
     method: 'GET', mode: 'cors', cache: 'no-cache', credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': localStorage.getItem("CognitoIdentityServiceProvider.6v98tbc09aqfvh52fml3usas3c."+LastAuthUser+".idToken")
+      'Authorization': localStorage.getItem(`CognitoIdentityServiceProvider.6v98tbc09aqfvh52fml3usas3c.${LastAuthUser}.idToken`)
     },
-    redirect: 'error', referrerPolicy: 'strict-origin-when-cross-origin', 
+    redirect: 'error', referrerPolicy: 'strict-origin-when-cross-origin',
   });
 
   if (!response.ok) {
@@ -24,7 +24,7 @@ async function exportiCal() {
 
   const startDateTime = new Date(eventData.start_datetime);
   const endDateTime = new Date(eventData.end_datetime);
-
+  
   const icsMSG = 
 `BEGIN:VCALENDAR
 BEGIN:VEVENT
@@ -39,24 +39,26 @@ END:VCALENDAR`;
 
   console.log(icsMSG);
   
-  var element = document.createElement('a');
-  element.setAttribute('href', 'data:text/calendar;charset=utf8,' + escape(icsMSG));
-  element.setAttribute('download', eventData.title + ".ics");
-  element.style.display = 'none';
-  document.body.appendChild(element);
-  element.click();
-  document.body.removeChild(element);
+  const element = $('<a>', {
+    href: 'data:text/calendar;charset=utf8,' + encodeURIComponent(icsMSG),
+    download: eventData.title + '.ics',
+    css: {
+      display: 'none'
+    }
+  }).appendTo('body');
+  
+  element[0].click();
+  element.remove();
 }
 
 function initProgrammingExportBtn() {
-  const btn = document.evaluate(`//button[@data-cy='PRINT']`, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-  const newButton = document.createElement("button");
-  //css(newButton, styles.generateBtn);
-  newButton.classList = "mb-2 mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--small summit-btn";
-  newButton.onclick = exportiCal;
-  newButton.innerHTML = "Save to Calendar (iCal)";
-  newButton.id = "exportiCalBtn";
-  //Add the generate button to the page
-  btn.parentElement.appendChild(newButton);
-  document.evaluate(`//button[contains(@data-cy, 'PRINT')]`, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue.classList.add("mr-4");
+  const btn = $(document).xpath(`//button[@data-cy='PRINT']`)[0];
+  const newButton = $('<button>', {
+    class: "mb-2 mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--small summit-btn",
+    click: exportiCal,
+    text: "Save to Calendar (iCal)",
+    id: "exportiCalBtn"
+  });
+  
+  $(btn).addClass("mr-4").parent().append(newButton);
 }

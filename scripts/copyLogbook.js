@@ -1,44 +1,34 @@
+// Initialization for writing logbook
 function initLogbookWrite() {
-  const btn = document.evaluate(`//button[contains(@data-cy, 'ADD_NEW_RECORD')]`, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-  const pasteBtn = document.createElement("button");
-  //css(newButton, styles.generateBtn);
-  pasteBtn.classList = "mr-4 float-right v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn";
-  pasteBtn.setAttribute("onclick", 'lbChannel = new BroadcastChannel("TerrainSummit");lbChannel.postMessage({type: "writeLogbook", upload: false});lbChannel.close();');
-  pasteBtn.id = "writeClipboardBtn";
-  pasteBtn.innerHTML = "Paste from Clipboard";
-  btn.parentElement.parentElement.appendChild(pasteBtn);
-
-  const importBtn = document.createElement("button");
-  //css(newButton, styles.generateBtn);
-  importBtn.classList = "mr-4 float-right v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn";
-  importBtn.setAttribute("onclick", 'lbChannel = new BroadcastChannel("TerrainSummit");lbChannel.postMessage({type: "writeLogbook", upload: true});lbChannel.close();');
-  importBtn.id = "writeUploadBtn";
-  importBtn.innerHTML = "Import";
-  btn.parentElement.parentElement.appendChild(importBtn);
-
+  const btn = $(document).xpath(`//button[contains(@data-cy, 'ADD_NEW_RECORD')]`)[0];
+  
+  const pasteBtn = $("<button>")
+      .addClass("mr-4 float-right v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn")
+      .attr("id", "writeClipboardBtn")
+      .attr("onclick", 'lbChannel = new BroadcastChannel("TerrainSummit");lbChannel.postMessage({type: "writeLogbook", upload: false});lbChannel.close();')
+      .text("Paste from Clipboard")
+      .appendTo($(btn).parent().parent());
 }
 
+// Initialization for reading logbook
 function initLogbookRead() {
-    const btn = document.evaluate(`//button[ancestor::section[contains(@class, 'ViewRecord__no-print')] and contains(@data-cy, 'PRINT')]`, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-    btn.classList.add("mr-4");
-    const clipBtn = document.createElement("button");
-    //css(newButton, styles.generateBtn);
-    clipBtn.classList = "mr-4 float-right v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn";
-    clipBtn.setAttribute("onclick", 'lbChannel = new BroadcastChannel("TerrainSummit");lbChannel.postMessage({type: "loadLogbookData", record: window.$nuxt.$store._vm["logbook/getRecordId"], download: false});lbChannel.close();');
-    
-    clipBtn.innerHTML = "Copy to Clipboard";
-    clipBtn.id = "copyClipboardBtn";
-    //Add the generate button to the page
-    btn.parentElement.appendChild(clipBtn);
+  const btn = $(document).xpath(`//button[ancestor::section[contains(@class, \'ViewRecord__no-print\')] and contains(@data-cy, \'PRINT\')]`)[0];
+  
+  $(btn).addClass("mr-4");
 
-    const exportBtn = document.createElement("button");
-    //css(exportBtn, styles.generateBtn);
-    exportBtn.classList = "mr-4 float-right v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn";
-    exportBtn.setAttribute("onclick", 'lbChannel = new BroadcastChannel("TerrainSummit");lbChannel.postMessage({type: "loadLogbookData", record: window.$nuxt.$store._vm["logbook/getRecordId"], download: true});lbChannel.close();');
-    exportBtn.innerHTML = "Export";
-    exportBtn.id = "copyClipboardBtn";
-    //Add the generate button to the page
-    btn.parentElement.appendChild(exportBtn);
+  const clipBtn = $("<button>")
+      .addClass("mr-4 float-right v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn")
+      .attr("id", "copyClipboardBtn")
+      .attr("onclick", 'lbChannel = new BroadcastChannel("TerrainSummit");lbChannel.postMessage({type: "loadLogbookData", record: window.$nuxt.$store._vm["logbook/getRecordId"], download: false});lbChannel.close();')
+      .text("Copy to Clipboard")
+      .appendTo($(btn).parent());
+
+  const exportBtn = $("<button>")
+      .addClass("mr-4 float-right v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn")
+      .attr("id", "copyExportBtn")
+      .attr("onclick", 'lbChannel = new BroadcastChannel("TerrainSummit");lbChannel.postMessage({type: "loadLogbookData", record: window.$nuxt.$store._vm["logbook/getRecordId"], download: true});lbChannel.close();')
+      .text("Export")
+      .appendTo($(btn).parent());
 }
 
 async function saveLogbookData(text){
@@ -143,6 +133,5 @@ async function writeLogbook(message){
 }
 
 //Add channel listeners
-
 summitMessageHandlers.push({type: "loadLogbookData", handler: (e) => loadLogbookData(e)});
 summitMessageHandlers.push({type: "writeLogbook", handler: (e) => writeLogbook(e)});
