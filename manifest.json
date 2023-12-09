@@ -19,19 +19,21 @@
                 "/scripts/dependencies/chart.min.js",
                 "/scripts/dependencies/chartjs-plugin-datalabels.min.js",
                 "/scripts/helperFunctions.js",
+                "/scripts/terrainCalls.js",
                 "/scripts/summitStart.js",
                 "/scripts/copyLogbook.js",
                 "/scripts/exportiCal.js",
                 "/scripts/summitMenu.js",
-                "/scripts/terrainCalls.js",
                 "/scripts/reports/testReport.js",
                 "/scripts/reports/milestonePlanningReport.js",
                 "/scripts/reports/progressReport.js",
                 "/scripts/reports/oasReport.js",
-                "/scripts/inputs/bulkCalendar.js"
+                "/scripts/inputs/bulkCalendar.js",
+                "/scripts/dependencies/flatpickr.js"
             ],
             "css": [
                 "/styles/dependencies/datatables.min.css",
+                "/styles/dependencies/flatpickr.min.css",
                 "/styles/summit.css"
             ]
         }

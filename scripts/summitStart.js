@@ -5,7 +5,8 @@ let summitMessageHandlers = [];
 let bcChannel = new BroadcastChannel('TerrainSummit');
 const LastAuthUser = localStorage.getItem('CognitoIdentityServiceProvider.6v98tbc09aqfvh52fml3usas3c.LastAuthUser');
 let currentProfile = {};
-
+initCache();
+fetchUnitMembers();
 // Broadcast channel event
 $(bcChannel).on("message", (event) => {
   summitMessageHandlers.forEach(entry => {

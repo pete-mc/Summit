@@ -6,6 +6,7 @@ function summitMenu() {
   createSummitReportMenuItem(false, () => progressReport(0), "Peak Award Progress Report", "progressReport");
   createSummitReportMenuItem(false, () => oasReport(0), "OAS Report", "oasReport");
   createSummitReportMenuItem(false, () => bulkCalendar(), "Bulk Calendar Entry", "bulkEntry");
+  createSummitReportMenuItem(false, () => clearCache(), "Clear Cached Data", "clearCache");
   //createSummitReportMenuItem(false, () => testReport(), "TEST", "tester");
   createSummitReportMenuItem(false, () => location.href = "https://terrain.scouts.com.au/", "Back to SCOUTS | TERRAIN", "back");
 

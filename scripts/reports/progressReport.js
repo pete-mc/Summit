@@ -15,19 +15,21 @@ async function progressReport(retry){
   `)
   ;
 
-  var dataSet = [];
-  fetch("https://metrics.terrain.scouts.com.au/units/"+currentProfile.profiles[0].unit.id+"/members?limit=999", { //?limit=999
-  method: 'GET', mode: 'cors', cache: 'no-cache', credentials: 'same-origin', 
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': localStorage.getItem("CognitoIdentityServiceProvider.6v98tbc09aqfvh52fml3usas3c."+LastAuthUser+".idToken")
-    },
-    redirect: 'error', referrerPolicy: 'strict-origin-when-cross-origin', 
-  }).then(response => response.json())
-  .then(data => {
+  let unitMembers = [];
+  try{
+    unitMembers = await fetchUnitMembers();
+  }catch(error){
+    retry = retry ?? 1;
+    if (retry > 3) {
+      console.debug("Data load failed retry attempt: " + retry)
+      progressReport(retry++);
+      return;
+    }
+    else $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
+  }
+
     $("#loadingP").remove();
-    console.debug(data.results);
-    const tableData = data.results.map(r=>{
+    const tableData = unitMembers.map(r=>{
       maxP = r.milestone.milestone == 1 ? 6 : r.milestone.milestone == 2 ? 5 : 4;
       maxL = r.milestone.milestone == 1 ? 2 : r.milestone.milestone == 2 ? 3 : 4;
       maxA = r.milestone.milestone == 1 ? 1 : r.milestone.milestone == 2 ? 2 : 4;
@@ -85,28 +87,17 @@ async function progressReport(retry){
       "order":[[1,"desc"]]
     });
 
-    //add styles
     $("head").append(`
-    <style type="text/css">
-      th:nth-of-type(n+2) {
-      writing-mode: vertical-rl;
+    <style type="text/css" id="myStyle">
+      #progressReportTable th:nth-of-type(n+2) {
+        writing-mode: vertical-rl;
       }
-      .sorting
-      {
+      #progressReportTable .sorting {
         background-image:none !important;
       }
-      table.dataTable thead th, table.dataTable thead td {
+      #progressReportTable.dataTable thead th, #progressReportTable.dataTable thead td {
         padding: 0px 0px !important;
       }
     </style>
-  }`);
-  })
-  .catch((error) => {
-    if (retry < 3) {
-      console.debug("Data load failed retry attempt: " + retry)
-      unitReport(retry++);
-    }
-    else $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
-  });
-
+    `);
 }

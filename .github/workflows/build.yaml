@@ -1,0 +1,23 @@
+name: Build and Zip Chrome Extension
+
+on:
+  push:
+    branches:
+      - main  # or any other branch you want to trigger the action
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Zip extension
+      run: |
+        zip -r extension.zip . -x '*.git*' -x 'node_modules/**/*' -x '.github/**/*' -x '*.md' -x 'LICENSE'
+        # Exclude files not needed in the extension package
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: extension
+        path: extension.zip
