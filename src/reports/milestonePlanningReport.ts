@@ -1,15 +1,23 @@
+import { BarController, BarElement, CategoryScale, Chart, LinearScale } from "chart.js";
+import { TerrainUnitMember } from "../../typings/terrainTypes";
+import { getRandomColor } from "../helpers";
+import { SummitContext } from "../summitContext";
+import { summitLoadPage } from "../summitMenu";
+import { fetchUnitMembers } from "../terrainCalls";
+import $ from 'jquery';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 
-async function unitReport(retry){
+export async function unitReport(retry = 1, context: SummitContext){
   //load the inital html content into the container
-  if(currentProfile.Error){
-    summitLoadPage("ERROR","This is a summit error. Please do not contact Terrain support for this issue. <br><br>Details:<br>" + JSON.stringify(currentProfile.Error));
+  if(context.currentProfile.Error){
+    summitLoadPage("ERROR","This is a summit error. Please do not contact Terrain support for this issue. <br><br>Details:<br>" + JSON.stringify(context.currentProfile.Error));
     return;
   }
   summitLoadPage(
     "SUMMIT REPORTS - MILESTONE PLANNING REPORT", //Breadcrumb header
   //html content is contained within the two backticks ` below
   `
-    <h2>${currentProfile.profiles[0].unit.name}</h2>
+    <h2>${context.currentProfile.profiles[0].unit.name}</h2>
     The milestones planning report is useful to see how many participates, leads and assists each member requires to complete their current milestone. Note that the numbers displayed are the <b>remaining requrement</b> not the current total.<br>
     <p id="loadingP">Loading Please Wait...</p>
     <table id="unitReportTable" class="display" width="100%"></table>
@@ -17,14 +25,14 @@ async function unitReport(retry){
   `)
   ;
 
-  let unitMembers = [];
+  let unitMembers: TerrainUnitMember[] = [];
   try{
-    unitMembers = await fetchUnitMembers();
+    unitMembers = await fetchUnitMembers(context);
   }catch(error){
     retry = retry ?? 1;
     if (retry > 3) {
       console.debug("Data load failed retry attempt: " + retry)
-      unitReport(retry++);
+      unitReport(retry++, context);
       return;
     }
     else $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
@@ -71,40 +79,57 @@ async function unitReport(retry){
   
   // Prepare data for the stacked bar chart
   const chartLabels = ["Outdoors", "Creative", "Personal Growth", "Community"];
+
   const chartData = {
     labels: chartLabels,
     datasets: tableData.map((p, index) => {
       const bgColor = getRandomColor();
       return {
-        label: p[0],
-        data: [p[4], p[5], p[6], p[7]],
+        label: p[0].toString(),
+        data: [p[4], p[5], p[6], p[7]] as number[],
         backgroundColor: bgColor
       };
     })
   };
 
-  const myChart = new Chart(document.getElementById('myChart'), {
-    type: 'bar',
-    data: chartData,
-    options: {
-      responsive: true,
-      plugins: {
-        title: {
-          display: true,
-          text: 'Milestone areas to complete for the unit by member'
-        }
-      },
-      scales: {
-        x: {
-          stacked: true,
-        },
-        y: {
-          beginAtZero: true,
-          stacked: true
-        }
-      }
-    }
-  });
+  // const chartCanvas = document.getElementById('myChart') as HTMLCanvasElement;
+  // Chart.register(ChartDataLabels, BarController, CategoryScale, LinearScale, BarElement);
+  // const myChart = new Chart(chartCanvas, {
+  //   type: 'bar',
+  //   data: chartData,
+  //   options: {
+  //     responsive: true,
+  //     plugins: {
+  //       title: {
+  //         display: true,
+  //         text: 'Milestone areas to complete for the unit by member'
+  //       },
+  //       legend: {
+  //         display: true,
+  //       },
+  //       datalabels: {
+  //         color: '#000000',
+  //         // display: function(context) {
+  //         //   return context.datasetIndex === 0; // display labels only for the first dataset
+  //         // },
+  //         formatter: function(value, context) {
+  //           return context.dataset.label;
+  //         }
+  //       }
+  //     },
+  //     scales: {
+  //       x: {
+  //         beginAtZero: true,
+  //         stacked: true,
+  //       },
+  //       y: {
+  //         beginAtZero: true,
+  //         stacked: true
+  //       }
+  //     }
+  //   }
+  // });
+  
 
   $("#loadingP").text("");
 }

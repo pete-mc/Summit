@@ -1,28 +1,34 @@
-async function progressReport(retry){
+import { TerrainUnitMember } from "../../typings/terrainTypes";
+import { SummitContext } from "../summitContext";
+import { summitLoadPage } from "../summitMenu";
+import { fetchUnitMembers } from "../terrainCalls";
+import $ from 'jquery';
+
+export async function progressReport(retry: number, context: SummitContext){
   //load the inital html content into the container
-  if(currentProfile.Error){
-    summitLoadPage("ERROR","This is a summit error. Please do not contact Terrain support for this issue. <br><br>Details:<br>" + JSON.stringify(currentProfile.Error));
+  if(context.currentProfile.Error){
+    summitLoadPage("ERROR","This is a summit error. Please do not contact Terrain support for this issue. <br><br>Details:<br>" + JSON.stringify(context.currentProfile.Error));
     return;
   }
   summitLoadPage(
     "SUMMIT REPORTS - PEAK AWARD PROGRESS REPORT", //Breadcrumb header
   //html content is contained within the two backticks ` below
   `
-    <h2>${currentProfile.profiles[0].unit.name}</h2>
+    <h2>${context.currentProfile.profiles[0].unit.name}</h2>
     This report will show the current progress towards the peak award for each member for the section.<br><br>
     <p id="loadingP">Loading Please Wait...</p>
     <table id="progressReportTable" class="display" width="100%"></table>
   `)
   ;
 
-  let unitMembers = [];
+  let unitMembers = [] as TerrainUnitMember[];
   try{
-    unitMembers = await fetchUnitMembers();
+    unitMembers = await fetchUnitMembers(context);
   }catch(error){
     retry = retry ?? 1;
     if (retry > 3) {
       console.debug("Data load failed retry attempt: " + retry)
-      progressReport(retry++);
+      progressReport(retry++, context);
       return;
     }
     else $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
@@ -30,19 +36,19 @@ async function progressReport(retry){
 
     $("#loadingP").remove();
     const tableData = unitMembers.map(r=>{
-      maxP = r.milestone.milestone == 1 ? 6 : r.milestone.milestone == 2 ? 5 : 4;
-      maxL = r.milestone.milestone == 1 ? 2 : r.milestone.milestone == 2 ? 3 : 4;
-      maxA = r.milestone.milestone == 1 ? 1 : r.milestone.milestone == 2 ? 2 : 4;
+      const maxP = r.milestone.milestone == 1 ? 6 : r.milestone.milestone == 2 ? 5 : 4;
+      const maxL = r.milestone.milestone == 1 ? 2 : r.milestone.milestone == 2 ? 3 : 4;
+      const maxA = r.milestone.milestone == 1 ? 1 : r.milestone.milestone == 2 ? 2 : 4;
       return [
       r.name,
       r.peak_award.total + "%",
       r.milestone.milestone == 3 && r.milestone.awarded ? "✓": r.milestone.milestone == 3 ? "...": "-", 
       r.milestone.milestone == 3 ? maxL - r.milestone.total_leads : "-", 
       r.milestone.milestone == 3 ? maxA - r.milestone.total_assists: "-",
-      r.milestone.milestone == 3 ? maxP - r.milestone.participates.find(p=>p.challenge_area == 'outdoors').total : "-",
-      r.milestone.milestone == 3 ? maxP - r.milestone.participates.find(p=>p.challenge_area == 'creative').total : "-",
-      r.milestone.milestone == 3 ? maxP - r.milestone.participates.find(p=>p.challenge_area == 'personal_growth').total : "-",
-      r.milestone.milestone == 3 ? maxP - r.milestone.participates.find(p=>p.challenge_area == 'community').total : "-",
+      r.milestone.milestone == 3 ? maxP - (r.milestone.participates.find(p=>p.challenge_area == 'outdoors')?.total ?? 0) : "-",
+      r.milestone.milestone == 3 ? maxP - (r.milestone.participates.find(p=>p.challenge_area == 'creative')?.total ?? 0) : "-",
+      r.milestone.milestone == 3 ? maxP - (r.milestone.participates.find(p=>p.challenge_area == 'personal_growth')?.total ?? 0) : "-",
+      r.milestone.milestone == 3 ? maxP - (r.milestone.participates.find(p=>p.challenge_area == 'community')?.total ?? 0) : "-",
       r.sia.in_progress,
       r.sia.completed_projects,
       r.oas.total_progressions,
@@ -55,7 +61,6 @@ async function progressReport(retry){
       r.personal_reflection ? "✓" : "-",
       r.adventurous_journey ? "✓" : "-",
     ]});
-    console.debug(tableData);
     $('#progressReportTable').DataTable( {
       data: tableData,
       pageLength: 25,

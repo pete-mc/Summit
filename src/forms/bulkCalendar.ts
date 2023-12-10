@@ -1,4 +1,16 @@
-async function bulkCalendar(){
+import moment = require("moment");
+import { SummitContext } from "../summitContext";
+import { summitLoadPage } from "../summitMenu";
+import { createNewEvent, fetchUnitMembers } from "../terrainCalls";
+import flatpickr from "flatpickr";
+import Editor from "@datatables.net/editor-dt";
+import DataTable from "datatables.net-dt"
+import "datatables.net-select-dt";
+import "datatables.net-buttons-dt";
+import "@datatables.net/editor-dt";
+import $ from 'jquery';
+
+export async function bulkCalendar(context: SummitContext){
     let lastId = 0;  // Used to increment the ID for new records
     let challengeAreaOptions = [
         { label: 'Community', value: 'community' },
@@ -26,7 +38,7 @@ async function bulkCalendar(){
     // Fetch members for Organisers, Leaders, and Assists columns
     $("#submit").hide();
     $("#add").hide();
-    const members = await fetchUnitMembers();
+    const members = await fetchUnitMembers(context);
 
     //remove loading text and show button
     $("#loadingP").remove();
@@ -39,7 +51,7 @@ async function bulkCalendar(){
     }));
     
     // editor settings below:
-    let DTEditor = new $.fn.dataTable.Editor({
+    let DTEditor = new Editor({
         table: '#eventTable',
         idSrc:  "id",
         fields: [
@@ -67,7 +79,7 @@ async function bulkCalendar(){
     });
 
     //Table Settings below:
-    let DTtable = $('#eventTable').DataTable({
+    let DTtable = new DataTable('#eventTable' ,{
     dom: "Bfrtip",
     scrollX: true,
     data: [],
@@ -102,7 +114,7 @@ async function bulkCalendar(){
             title: 'Organisers',
             data: 'organisers',
             render: function (data, type, row) {
-                return data.split(',').map(id => {
+                return data.split(',').map((id: string) => {
                     let member = members.find(member => member.member_id === id.trim());
                     return member ? member.name : '';
                 }).join(', ');
@@ -112,7 +124,7 @@ async function bulkCalendar(){
             title: 'Leads',
             data: 'leads',
             render: function (data, type, row) {
-                return data.split(',').map(id => {
+                return data.split(',').map((id: string) => {
                     let member = members.find(member => member.member_id === id.trim());
                     return member ? member.name : '';
                 }).join(', ');
@@ -122,7 +134,7 @@ async function bulkCalendar(){
             title: 'Assists',
             data: 'assists',
             render: function (data, type, row) {
-                return data.split(',').map(id => {
+                return data.split(',').map((id: string) => {
                     let member = members.find(member => member.member_id === id.trim());
                     return member ? member.name : '';
                 }).join(', ');
@@ -135,9 +147,9 @@ async function bulkCalendar(){
         }
     ],
     select: false,
-    buttons: [
-        { editor: DTEditor },
-    ],
+    // buttons: [
+    //     { editor: DTEditor },
+    // ],
     createdRow: function (row, data, dataIndex) {
         // Add 'date' class to the start date cell
         $(row).find('td:eq(3)').addClass('date');
@@ -147,7 +159,7 @@ async function bulkCalendar(){
     },
     });
     // Listen for the blur event on inputs in your table
-    DTtable.on('focusout', 'tr', function (e) {
+    DTtable.on('focusout', 'tr', function (e: any) {
         if (!$(e.relatedTarget).closest('tr').is(this) && 
             !$(e.relatedTarget).closest('.flatpickr-calendar').length) {
             DTEditor.submit();
@@ -180,7 +192,7 @@ async function bulkCalendar(){
         }).open();
     });
 
-    $('#add').click(function () {
+    $('#add').on("click",function () {
         lastId++;  // Increment the ID counter
 
         // Get the current date and round it to the nearest 30 minutes
@@ -227,7 +239,7 @@ async function bulkCalendar(){
         }).draw();
     });
 
-    $('#submit').click(function () {
+    $('#submit').on("click", function () {
         const table = $('#eventTable').DataTable();
         const data = table.rows().data().toArray();
 
@@ -235,7 +247,7 @@ async function bulkCalendar(){
         let fieldsToValidate = ['title', 'location', 'challenge_area', 'startDate', 'endDate', 'scout_method', 'organisers', 'leads', 'assists'];
 
         // Validate each field of each row
-        data.forEach(function (row, rowIndex) {
+        data.forEach(function (row, rowIndex: any) {
             fieldsToValidate.forEach(function (field, colIndex) {
                 if (row[field] == "") {
                     // Invalidate the cell
@@ -275,7 +287,7 @@ async function bulkCalendar(){
         //loop through the data and create the objects for each entry and call createNewEvent(bodyJson);
         //json object should have {"title":"test title","description":"","justification":"","organisers":["83eb42ec-b2d6-31fc-b872-21ae4aa9f2e7"],"challenge_area":"community","start_datetime":"2023-12-29T14:00:00.000+00:00","end_datetime":"2023-12-29T15:01:00.000+00:00","event_type":{"type":"unit","id":"3603056b-3928-4f66-b12e-421ca4434dcb"},"attendance":{"leader_member_ids":["835738d1-fc06-3a9e-8fbe-02367dbfc93c"],"assistant_member_ids":["e0f233d7-090a-39cc-a446-8e7ef147588b"],"attendee_member_ids":[],"participant_member_ids":[]},"schedule_items":[{"start_datetime":"","end_datetime":"","description":"","leader_notes":"","assistant_notes":""}],"achievement_pathway_oas_data":{"award_rule":"individual","verifier":{"name":"Brodie Royle","contact":"","type":"member"},"groups":[]},"achievement_pathway_logbook_data":{"distance_travelled":0,"distance_walkabout":0,"achievement_meta":{"stream":"","branch":""},"categories":[],"details":{"activity_time_length":"","activity_grade":""},"verifier":{"name":"Brodie Royle","contact":"","type":"member"}},"review":{"general_tags":[],"scout_method_elements":["community_involvement"],"scout_spices_elements":[]},"uploads":[],"equipment_notes":"","additional_notes":"","location":"test location","iana_timezone":"Australia/Brisbane","status":"planned"}
 
-        data.forEach(async function (row, rowIndex) {
+        data.forEach(async function (row, rowIndex: any) {
             // Create the object for the event
             let event = {
                 title: row.title,
@@ -287,7 +299,7 @@ async function bulkCalendar(){
                 end_datetime: moment(row.endDate, "DD/MM/YYYY HH:mm").format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
                 event_type: {
                     type: 'unit',
-                    id: currentProfile.profiles[0].unit.id
+                    id: context.currentProfile.profiles[0].unit.id
                 },
                 attendance: {
                     leader_member_ids: row.leads.split(','),
@@ -305,7 +317,7 @@ async function bulkCalendar(){
                 achievement_pathway_oas_data: {
                     award_rule: 'individual',
                     verifier: {
-                        name: members.find(member => member.member_id === row.leads.split(',')[0]).name,
+                        name: members.find(member => member.member_id === row.leads.split(',')[0])?.name,
                         contact: '',
                         type: 'member'
                     },
@@ -324,7 +336,7 @@ async function bulkCalendar(){
                         activity_grade: ''
                     },
                     verifier: {
-                        name: members.find(member => member.member_id === row.leads.split(',')[0]).name,
+                        name: members.find(member => member.member_id === row.leads.split(',')[0])?.name,
                         contact: '',
                         type: 'member'
                     }
@@ -344,11 +356,11 @@ async function bulkCalendar(){
 
             // Create the event with try/catch to handle errors and pass event as string for body
             try {
-                await createNewEvent(JSON.stringify(event));
+                await createNewEvent(JSON.stringify(event), context);
             } catch (error) {
                 console.log(error);
                 //mark the row as red
-                table.row(rowIndex).nodes().to$().addClass('error');
+                table.row(rowIndex).invalidate();
                 //add a message to the row as a new column if it does not exist
                 if (table.column(10).header().innerHTML !== "Error"){
                     table.column(10).header().innerHTML = "Error";
@@ -357,7 +369,7 @@ async function bulkCalendar(){
             } 
         });
         //call this function again to reset the page
-        bulkCalendar();
+        bulkCalendar(context);
     });
 }
   

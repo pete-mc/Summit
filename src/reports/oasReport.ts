@@ -1,14 +1,20 @@
-async function oasReport(retry){
+import { TerrainUnitMember } from "../../typings/terrainTypes";
+import { SummitContext } from "../summitContext";
+import { summitLoadPage } from "../summitMenu";
+import { fetchUnitMembers } from "../terrainCalls";
+import $ from 'jquery';
+
+export async function oasReport(retry: number = 1, context: SummitContext){
   //load the inital html content into the container
-  if(currentProfile.Error){
-    summitLoadPage("ERROR","This is a summit error. Please do not contact Terrain support for this issue. <br><br>Details:<br>" + JSON.stringify(currentProfile.Error));
+  if(context.currentProfile.Error){
+    summitLoadPage("ERROR","This is a summit error. Please do not contact Terrain support for this issue. <br><br>Details:<br>" + JSON.stringify(context.currentProfile.Error));
     return;
   }
   summitLoadPage(
     "SUMMIT REPORTS - OAS REPORT", //Breadcrumb header
   //html content is contained within the two backticks ` below
   `
-    <h2>${currentProfile.profiles[0].unit.name}</h2>
+    <h2>${context.currentProfile.profiles[0].unit.name}</h2>
     This report will show all of the currently held OAS levels for each member of the section.<br><br>
     <p id="loadingP">Loading Please Wait...</p>
     <table id="oasReportTable" class="display" width="100%">
@@ -34,14 +40,14 @@ async function oasReport(retry){
     </table>
   `);
   $("#oasReportTable").hide();
-  let unitMembers = [];
+  let unitMembers = [] as TerrainUnitMember[];
   try{
-    unitMembers = await fetchUnitMembers();
+    unitMembers = await fetchUnitMembers(context);
   }catch(error){
     retry = retry ?? 1;
     if (retry > 3) {
       console.debug("Data load failed retry attempt: " + retry)
-      unitReport(retry++);
+      oasReport(retry++, context);
       return;
     }
     else $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");

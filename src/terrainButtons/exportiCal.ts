@@ -1,4 +1,8 @@
-async function exportiCal() {
+import { SummitContext } from "../summitContext";
+import { fetchActivity } from "../terrainCalls";
+import $ from 'jquery';
+
+export async function exportiCal(context: SummitContext) {
   const activityIdElement = $('p.ActivityPlan__activity-id');
   if (activityIdElement.length === 0) {
       console.error("Activity ID element not found.");
@@ -6,21 +10,7 @@ async function exportiCal() {
   }
   const activityId = activityIdElement.text().split(': ')[1];
 
-  const response = await fetch(`https://events.terrain.scouts.com.au/events/${activityId}`, {
-    method: 'GET', mode: 'cors', cache: 'no-cache', credentials: 'same-origin',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': localStorage.getItem(`CognitoIdentityServiceProvider.6v98tbc09aqfvh52fml3usas3c.${LastAuthUser}.idToken`)
-    },
-    redirect: 'error', referrerPolicy: 'strict-origin-when-cross-origin',
-  });
-
-  if (!response.ok) {
-      console.error("Failed to fetch event data.");
-      return;
-  }
-
-  const eventData = await response.json();
+  const eventData = await fetchActivity(context, activityId);
 
   const startDateTime = new Date(eventData.start_datetime);
   const endDateTime = new Date(eventData.end_datetime);
@@ -36,8 +26,6 @@ DESCRIPTION:
 LOCATION:${eventData.location}
 END:VEVENT
 END:VCALENDAR`;
-
-  console.log(icsMSG);
   
   const element = $('<a>', {
     href: 'data:text/calendar;charset=utf8,' + encodeURIComponent(icsMSG),
@@ -51,7 +39,7 @@ END:VCALENDAR`;
   element.remove();
 }
 
-function initProgrammingExportBtn() {
+export function initProgrammingExportBtn() {
   const btn = $(document).xpath(`//button[@data-cy='PRINT']`)[0];
   const newButton = $('<button>', {
     class: "mb-2 mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--small summit-btn",
