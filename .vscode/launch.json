@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Chrome",
+      "request": "launch",
+      "type": "chrome",
+      "url": "https://terrain.scouts.com.au/",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack:///./*": "${webRoot}/*"
+      },
+      "preLaunchTask": "Build",
+      "runtimeArgs": [
+        "--load-extension=${workspaceFolder}"
+      ],
+      "userDataDir": false
+    }
+  ]
+}
+  

@@ -1,3 +1,11 @@
+import { summitLoadPage } from "../summitMenu";
+import Editor from "@datatables.net/editor-dt";
+import DataTable from "datatables.net-dt"
+import "datatables.net-select-dt";
+import "datatables.net-buttons-dt";
+import "@datatables.net/editor-dt"
+import { Chart, ChartConfiguration, ChartTypeRegistry } from "chart.js";
+import $ from 'jquery';
 
 async function testReport(){
   //load the inital html content into the container
@@ -27,7 +35,7 @@ async function testReport(){
  
 //call datatables to populate the table NB: You need to ensure the data is fully loaded before calling this.
 
-const editor = new DataTable.Editor({
+const editor = new Editor({
   fields: [
       {
         label: 'Name',
@@ -60,7 +68,7 @@ const editor = new DataTable.Editor({
 $('#myTable').DataTable( {
     data: dataSet,
     buttons: [
-      { extend: 'create', editor },
+      { extend: 'create', editor } as any,
       { extend: 'edit', editor },
       { extend: 'remove', editor }
   ],
@@ -83,10 +91,10 @@ $('#myTable').DataTable( {
 const chartData = {
   labels: ['January', 'February', 'March', 'April','May','June'],
   datasets: [{
-    label: 'My First dataset',
+    label: 'My First dataset' as string,
     backgroundColor: 'rgb(255, 99, 132)',
     borderColor: 'rgb(255, 99, 132)',
-    data: [0, 10, 5, 2, 20, 30, 45], //add data array
+    data: [0, 10, 5, 2, 20, 30, 45] as number[], //add data array
   }]
 };
 
@@ -95,11 +103,11 @@ const chartConfig = {
   type: 'line',
   data: chartData,
   options: {}
-};
+} as ChartConfiguration<keyof ChartTypeRegistry, number[], string>;
 
 //create chart
 const myChart = new Chart(
-  document.getElementById('myChart'),
+  document.getElementById('myChart') as HTMLCanvasElement,
   chartConfig
 );
 

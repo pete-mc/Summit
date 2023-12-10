@@ -1,11 +1,19 @@
-function summitMenu() {
+import { bulkCalendar } from "./forms/bulkCalendar";
+import { clearCache } from "./helpers";
+import { unitReport } from "./reports/milestonePlanningReport";
+import { oasReport } from "./reports/oasReport";
+import { progressReport } from "./reports/progressReport";
+import { SummitContext } from "./summitContext";
+import $ from 'jquery';
+
+export function summitMenu(context: SummitContext) {
   $(".v-navigation-drawer__content").css("background-color", "#004C00");
 
   createSummitReportMenuItem(true, summitHomePage, "Home", "home");
-  createSummitReportMenuItem(false, unitReport, "Milestone Planning Report", "msReport");
-  createSummitReportMenuItem(false, () => progressReport(0), "Peak Award Progress Report", "progressReport");
-  createSummitReportMenuItem(false, () => oasReport(0), "OAS Report", "oasReport");
-  createSummitReportMenuItem(false, () => bulkCalendar(), "Bulk Calendar Entry", "bulkEntry");
+  createSummitReportMenuItem(false, () => unitReport(0,context), "Milestone Planning Report", "msReport");
+  createSummitReportMenuItem(false, () => progressReport(0,context), "Peak Award Progress Report", "progressReport");
+  createSummitReportMenuItem(false, () => oasReport(0,context), "OAS Report", "oasReport");
+  createSummitReportMenuItem(false, () => bulkCalendar(context), "Bulk Calendar Entry", "bulkEntry");
   createSummitReportMenuItem(false, () => clearCache(), "Clear Cached Data", "clearCache");
   //createSummitReportMenuItem(false, () => testReport(), "TEST", "tester");
   createSummitReportMenuItem(false, () => location.href = "https://terrain.scouts.com.au/", "Back to SCOUTS | TERRAIN", "back");
@@ -13,15 +21,14 @@ function summitMenu() {
   $(".NavMenu__logo").click(() => location.href = "https://terrain.scouts.com.au/");
 }
 
-function createSummitReportMenuItem(replaceMenu, func, menuText, menuId) {
+export function createSummitReportMenuItem(replaceMenu: boolean, func: ()=>any, menuText: string, menuId: string) {
   const mainMenu = $("div.NavMenu__menu-container").first()[0];
   const navMenuGroup = $("<div>").addClass("NavMenu__menu-group summit-menu");
   const menuListGroup = $("<div>").addClass("v-list-group NavMenu__list-group v-list-group--no-action summit-menu");
   const menuGroupHeader = $("<div>").addClass("v-list-group__header v-list-item v-list-item--link theme--light summit-menu").attr("role", "button");
   const menuLink = $("<a>").addClass("NavMenu__item v-list-item v-list-item--link theme--light");
   const menuItemContent = $("<div>").addClass("v-list-item__content");
-  const menuItemTitle = $("<div>").addClass("v-list-item__title").attr("id", `summitReportsMenu-${menuId}`).text(menuText).click(func);
-
+  const menuItemTitle = $("<div>").addClass("v-list-item__title").attr("id", `summitReportsMenu-${menuId}`).text(menuText).on("click", func);
   menuListGroup.append(menuGroupHeader.append(menuLink.append(menuItemContent.append(menuItemTitle))));
   navMenuGroup.append(menuListGroup);
 
@@ -48,7 +55,7 @@ function summitHomePage() {
 `);
 }
 
-function summitLoadPage(breadcrumbText, content) {
+export function summitLoadPage(breadcrumbText: string, content: string | Element | Comment | Document | DocumentFragment | JQuery<JQuery.Node> | (JQuery.Node | JQuery<JQuery.Node>)[]) {
   $(".v-list-item--active").removeClass("v-list-item--active");
 
   const breadcrumb = $("<li>").append(

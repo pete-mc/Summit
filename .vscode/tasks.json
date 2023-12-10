@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+	  {
+		"label": "Build",
+		"type": "shell",
+		"command": "webpack --config webpack.dev.js",
+		"group": {
+		  "kind": "build",
+		  "isDefault": true
+		},
+		"presentation": {
+		  "reveal": "always",
+		  "panel": "shared"
+		},
+		"problemMatcher": []
+	  }
+	]
+  }
