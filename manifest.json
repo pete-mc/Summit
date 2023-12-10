@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Terrain | Summit",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "Where Every Achievement is a Summit Conquered",
     "icons": {
         "16": "/images/Icon16.png",
