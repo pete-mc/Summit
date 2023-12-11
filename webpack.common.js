@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const Webpack = require("webpack");
 const Path = require("path");
+const CopyPlugin = require("copy-webpack-plugin");
 
 module.exports = {
   entry: "./src/summitStart.ts",
@@ -24,5 +25,13 @@ module.exports = {
   output: {
     filename: "summit.js",
     path: Path.resolve(__dirname, "bin"),
-  }
+  },
+  plugins: [
+    new CopyPlugin({
+      patterns: [
+        { from: Path.resolve(__dirname, "bin"), to: Path.resolve(__dirname, "cordova-app/www/bin") },
+        { from: Path.resolve(__dirname, "styles"), to: Path.resolve(__dirname, "cordova-app/www/styles") },
+      ],
+    }),
+  ],
 };
