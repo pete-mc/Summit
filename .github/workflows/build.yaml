@@ -70,14 +70,14 @@ jobs:
         asset_name: summit.zip
         asset_content_type: application/zip
 
-- name: Upload to Chrome Web Store
-  uses: Kibibit/chrome-extension-deploy@master
-  with:
-    clientId: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
-    clientEmail: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_EMAIL }}
-    privateKey: ${{ secrets.GOOGLE_ACCOUNT_PRIVATE_KEY }}
-    extensionId: ${{ secrets.CHORME_EXTENSION_ID }}
-    zipPath: './summit.zip'
+    - name: Upload to Chrome Web Store
+      uses: Kibibit/chrome-extension-deploy@master
+      with:
+        clientId: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
+        clientEmail: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_EMAIL }}
+        privateKey: ${{ secrets.GOOGLE_ACCOUNT_PRIVATE_KEY }}
+        extensionId: ${{ secrets.CHORME_EXTENSION_ID }}
+        zipPath: './summit.zip'
 
 #     - name: Build Cordova app
 #       run: |
