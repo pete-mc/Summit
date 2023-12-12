@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const Webpack = require("webpack");
 const Path = require("path");
+const WebpackShellPluginNext = require('webpack-shell-plugin-next');
+
 
 module.exports = {
   entry: "./src/summitStart.ts",
@@ -24,5 +26,17 @@ module.exports = {
   output: {
     filename: "summit.js",
     path: Path.resolve(__dirname, "bin"),
-  }
+  },
+  plugins: [
+    new WebpackShellPluginNext({
+      onBuildEnd:{
+        scripts: [
+          'cp -r ./bin ./cordova-app/www/bin',
+          'cp -r ./styles ./cordova-app/www/styles'
+        ],
+        blocking: true,
+        parallel: false
+      }
+    }),
+  ],
 };
