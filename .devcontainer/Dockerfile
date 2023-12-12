@@ -15,12 +15,7 @@ RUN yes | sdkmanager --licenses && sdkmanager --update
 RUN npm install -g webpack @types/jest @vscode/vsce cordova jest typescript webpack-cli webpack
 WORKDIR /workspace
 COPY . .
-RUN npm install && \
-  npx webpack --config webpack.prod.js && \
-  cp -r dist/* cordova-app/www/ && \
-  cd cordova-app && \
-  cordova platform add android && \
-  git config --global user.email "peter@mcdonald.xyz" && \
+RUN git config --global user.email "peter@mcdonald.xyz" && \
   git config --global user.name "Peter McDonald" && \
   git config --global commit.gpgsign false && \
   git config --local commit.gpgsign false
