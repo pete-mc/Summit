@@ -1,10 +1,9 @@
-name: Build and Zip Chrome Extension
+name: Build and Release Chrome Extension
 
 on:
   push:
     branches:
-      - main  # or any other branch you want to trigger the action
-      - dev
+      - main
 
 jobs:
   build:
@@ -15,7 +14,23 @@ jobs:
 
     - name: Setup Node.js environment
       uses: actions/setup-node@v2
-    
+
+    - name: Install jq
+      run: sudo apt-get install jq
+
+    - name: Extract version
+      id: get_version
+      run: echo "::set-output name=VERSION::$(jq -r .version manifest.json)"
+
+    - name: Check if release already exists
+      id: check_release
+      run: |
+        RELEASE=$(curl --silent "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/${{ steps.get_version.outputs.VERSION }}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" || echo "Not Found")
+        if [[ $RELEASE != "Not Found" ]]; then
+          echo "Release with version ${{ steps.get_version.outputs.VERSION }} already exists."
+          exit 1
+        fi
+
     - name: Create bin directory
       run: mkdir -p ./bin
       working-directory: ${{ github.workspace }}
@@ -30,59 +45,41 @@ jobs:
       run: npx webpack --config webpack.prod.js
       working-directory: ${{ github.workspace }}
 
-    - name: Zip extension
-      run: |
-        zip -r extension.zip manifest.json bin/summit.js styles/* images/*
-        # Exclude files not needed in the extension package
+    - name: Zip summit
+      run: zip -r summit.zip manifest.json bin/summit.js styles/* images/*
 
-    - uses: actions/upload-artifact@v2
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: extension
-        path: extension.zip
+        tag_name: ${{ steps.get_version.outputs.VERSION }}
+        release_name: Release ${{ steps.get_version.outputs.VERSION }}
+        draft: false
+        prerelease: false
 
-#name: Build and Zip Chrome Extension
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./summit.zip
+        asset_name: summit.zip
+        asset_content_type: application/zip
 
-# on:
-#   push:
-#     branches:
-#       - main  # or any other branch you want to trigger the action
-
-# jobs:
-#   build:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#     - uses: actions/checkout@v2
-
-#     - name: Setup Node.js environment
-#       uses: actions/setup-node@v2
-#       with:
-#         node-version: '14'  # or any other version you prefer
-
-#     - name: Install global dependencies
-#       run: npm install -g webpack @types/jest @vscode/vsce cordova jest typescript webpack-cli webpack
-
-#     - name: Install project dependencies
-#       run: npm ci
-
-#     - name: Build project
-#       run: npx webpack --config webpack.prod.js
-
-#     - name: Copy build to Cordova app
-#       run: cp -r dist/* cordova-app/www/
+- name: Upload to Chrome Web Store
+  uses: Kibibit/chrome-extension-deploy@master
+  with:
+    clientId: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
+    clientEmail: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_EMAIL }}
+    privateKey: ${{ secrets.GOOGLE_ACCOUNT_PRIVATE_KEY }}
+    extensionId: ${{ secrets.CHORME_EXTENSION_ID }}
+    zipPath: './summit.zip'
 
 #     - name: Build Cordova app
 #       run: |
 #         cd cordova-app
 #         cordova build android
-
-#     - name: Zip extension
-#       run: |
-#         zip -r extension.zip manifest.json dist/* cordova-app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
-#         # Include only the necessary files for the Chrome extension and the Cordova app
-
-#     - uses: actions/upload-artifact@v2
-#       with:
-#         name: extension
-#         path: extension.zip
-#         if-no-files-found: error
