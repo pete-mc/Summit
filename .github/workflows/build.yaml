@@ -18,6 +18,7 @@ jobs:
     
     - name: Create bin directory
       run: mkdir -p ./bin
+      working-directory: ${{ github.workspace }}
 
     - name: Install global dependencies
       run: npm install -g webpack @types/jest @vscode/vsce cordova jest typescript webpack-cli webpack
@@ -27,6 +28,7 @@ jobs:
 
     - name: Build project
       run: npx webpack --config webpack.prod.js
+      working-directory: ${{ github.workspace }}
 
     - name: Zip extension
       run: |
