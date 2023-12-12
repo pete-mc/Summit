@@ -25,8 +25,11 @@ jobs:
     - name: Check if release already exists
       id: check_release
       run: |
-        RELEASE=$(curl --silent "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/${{ steps.get_version.outputs.VERSION }}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" || echo "Not Found")
-        if [[ $RELEASE != "Not Found" ]]; then
+        RELEASE=$(curl --silent "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/${{ steps.get_version.outputs.VERSION }}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" || echo '{"message": "Not Found"}')
+        MESSAGE=$(echo $RELEASE | jq -r .message)
+        if [[ $MESSAGE == "Not Found" ]]; then
+          echo "Release with version ${{ steps.get_version.outputs.VERSION }} does not exist."
+        else
           echo "Release with version ${{ steps.get_version.outputs.VERSION }} already exists."
           exit 1
         fi
