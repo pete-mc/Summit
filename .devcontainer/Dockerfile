@@ -17,5 +17,4 @@ WORKDIR /workspace
 COPY . .
 RUN git config --global user.email "peter@mcdonald.xyz" && \
   git config --global user.name "Peter McDonald" && \
-  git config --global commit.gpgsign false && \
-  git config --local commit.gpgsign false
+  git config --global commit.gpgsign false

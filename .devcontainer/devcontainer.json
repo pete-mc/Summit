@@ -5,7 +5,7 @@
   },
   "runArgs": ["--privileged"],
   "mounts": ["source=/dev/bus/usb,target=/dev/bus/usb,type=bind"],
-  "postCreateCommand": "npm install",
+  "postCreateCommand": "npm install && git config --local commit.gpgsign false",
   "customizations": {
     "vscode": {
       "settings": {
