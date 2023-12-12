@@ -16,7 +16,7 @@ jobs:
     - name: Setup Node.js environment
       uses: actions/setup-node@v2
       with:
-        node-version: '14'  # or any other version you prefer
+        node-version: 'node'
 
     - name: Install global dependencies
       run: npm install -g webpack @types/jest @vscode/vsce cordova jest typescript webpack-cli webpack
@@ -36,3 +36,50 @@ jobs:
       with:
         name: extension
         path: extension.zip
+
+        name: Build and Zip Chrome Extension
+
+# on:
+#   push:
+#     branches:
+#       - main  # or any other branch you want to trigger the action
+
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - uses: actions/checkout@v2
+
+#     - name: Setup Node.js environment
+#       uses: actions/setup-node@v2
+#       with:
+#         node-version: '14'  # or any other version you prefer
+
+#     - name: Install global dependencies
+#       run: npm install -g webpack @types/jest @vscode/vsce cordova jest typescript webpack-cli webpack
+
+#     - name: Install project dependencies
+#       run: npm ci
+
+#     - name: Build project
+#       run: npx webpack --config webpack.prod.js
+
+#     - name: Copy build to Cordova app
+#       run: cp -r dist/* cordova-app/www/
+
+#     - name: Build Cordova app
+#       run: |
+#         cd cordova-app
+#         cordova build android
+
+#     - name: Zip extension
+#       run: |
+#         zip -r extension.zip manifest.json dist/* cordova-app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+#         # Include only the necessary files for the Chrome extension and the Cordova app
+
+#     - uses: actions/upload-artifact@v2
+#       with:
+#         name: extension
+#         path: extension.zip
+#         if-no-files-found: error
