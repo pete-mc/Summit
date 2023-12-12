@@ -12,9 +12,23 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'  # or any other version you prefer
+
+    - name: Install global dependencies
+      run: npm install -g webpack @types/jest @vscode/vsce cordova jest typescript webpack-cli webpack
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build project
+      run: npx webpack --config webpack.prod.js
+
     - name: Zip extension
       run: |
-        zip -r extension.zip . -x '*.git*' -x 'node_modules/**/*' -x '.github/**/*' -x '*.md' -x 'LICENSE'
+        zip -r extension.zip manifest.json bin/summit.js styles/* images/*
         # Exclude files not needed in the extension package
 
     - uses: actions/upload-artifact@v2
