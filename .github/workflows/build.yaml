@@ -79,6 +79,7 @@ jobs:
         extensionId: ${{ secrets.CHORME_EXTENSION_ID }}
         zipPath: './summit.zip'
 
+
 #     - name: Build Cordova app
 #       run: |
 #         cd cordova-app
