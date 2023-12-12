@@ -37,7 +37,7 @@ jobs:
         name: extension
         path: extension.zip
 
-        name: Build and Zip Chrome Extension
+#name: Build and Zip Chrome Extension
 
 # on:
 #   push:
