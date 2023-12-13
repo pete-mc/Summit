@@ -28,6 +28,7 @@ jobs:
       run: echo "::set-output name=VERSION::$(jq -r .version manifest.json)"
 
     - name: Check if release already exists
+      if: github.ref == 'refs/heads/main'
       id: check_release
       run: |
         RELEASE=$(curl --silent "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/${{ steps.get_version.outputs.VERSION }}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" || echo '{"message": "Not Found"}')
