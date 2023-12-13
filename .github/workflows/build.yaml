@@ -50,6 +50,12 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Remove and re-add Android platform
+      run: |
+        cd cordova-app
+        cordova platform rm android
+        cordova platform add android
+
     - name: Build project
       run: npx webpack --config webpack.prod.js
       working-directory: ${{ github.workspace }}
