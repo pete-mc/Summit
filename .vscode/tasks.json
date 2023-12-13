@@ -1,22 +1,36 @@
 {
-		"version": "2.0.0",
-		"tasks": [
-			{
-				"label": "Build",
-				"type": "shell",
-				"command": "webpack --config webpack.dev.js",
-				"group": {
-					"kind": "build",
-					"isDefault": true
-				},
-				"presentation": {
-					"reveal": "always",
-					"panel": "shared"
-				},
-				"problemMatcher": [],
-				"options": {
-					"cwd": "/workspaces/Summit"
-				}
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Extension",
+			"type": "shell",
+			"command": "webpack --config webpack.dev.js",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			},
+			"problemMatcher": [],
+			"options": {
+				"cwd": "/workspaces/Summit"
 			}
-		]
+		},
+		{
+			"label": "Build Cordova App",
+			"type": "shell",
+			"command": "cordova build",
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			},
+			"problemMatcher": [],
+			"options": {
+				"cwd": "/workspaces/Summit/cordova-app"
+			}
+		}
+	]
 }

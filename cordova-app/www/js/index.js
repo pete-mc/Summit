@@ -23,15 +23,14 @@ document.addEventListener('deviceready', onDeviceReady, false);
 
 function onDeviceReady() {
     // Cordova is now initialized. Have fun!
-
     console.log('Running cordova-' + cordova.platformId + '@' + cordova.version);
     document.getElementById('deviceready').classList.add('ready');
     var targetUrl = 'https://terrain.scouts.com.au/';
     var ref = cordova.InAppBrowser.open(targetUrl, '_blank', 'location=no');
     ref.addEventListener('loadstop', function() {
-        ref.executeScript({ file: 'bin/summit.js' });
         ref.insertCSS({ file: 'styles/dependencies/datatables.min.css' });
         ref.insertCSS({ file: 'styles/dependencies/flatpickr.min.css' });
         ref.insertCSS({ file: 'styles/summit.css' });
+        ref.executeScript({ file: 'bin/summit.js' });
       });
 }
