@@ -4,37 +4,55 @@
         document.addEventListener('deviceready', function() {
             var ref = cordova.InAppBrowser.open('https://terrain.scouts.com.au', '_blank', 'location=yes');
 
-            ref.addEventListener('loadstop', function() {
-                // JavaScript files to inject
-                var jsFiles = [
-                    "/bin/summit.js"
-                ];
+            ref.addEventListener('loadstop', function(event) {
+                if (event.url.startsWith('https://terrain.scouts.com.au')) {
+                    ref.executeScript({
+                        code: `
+                            console.log = function(message) {
+                                window.postMessage(message, '*');
+                            };
+                        `
+                    });
 
-                // CSS files to inject
-                var cssFiles = [
-                    "/styles/dependencies/datatables.min.css",
-                    "/styles/dependencies/flatpickr.min.css",
-                    "/styles/summit.css"
-                ];
+                    // JavaScript files to inject
+                    var jsFiles = [
+                        "/bin/summit.js"
+                    ];
 
-                // Fetch and inject JavaScript files
-                jsFiles.forEach(function(jsFile) {
-                    fetch(jsFile)
-                        .then(response => response.text())
-                        .then(js => {
-                            ref.executeScript({ code: js });
-                        });
-                });
+                    // CSS files to inject
+                    var cssFiles = [
+                        "/styles/dependencies/datatables.min.css",
+                        "/styles/dependencies/flatpickr.min.css",
+                        "/styles/summit.css"
+                    ];
 
-                // Fetch and inject CSS files
-                cssFiles.forEach(function(cssFile) {
-                    fetch(cssFile)
-                        .then(response => response.text())
-                        .then(css => {
-                            ref.insertCSS({ code: css });
-                        });
-                });
+                    jsFiles.forEach(function(jsFile) {
+                        fetch(jsFile)
+                            .then(response => response.text())
+                            .then(js => {
+                                ref.executeScript({ code: js });
+                            })
+                            .catch(error => console.error('Error injecting JS file:', error));
+                    });
+
+                    cssFiles.forEach(function(cssFile) {
+                        fetch(cssFile)
+                            .then(response => response.text())
+                            .then(css => {
+                                ref.insertCSS({ code: css });
+                            })
+                            .catch(error => console.error('Error injecting CSS file:', error));
+                    });
+                }
             });
+
+            ref.addEventListener('loaderror', function(event) {
+                console.error('Load error: ' + event.message);
+            });
+        });
+
+        window.addEventListener('message', function(event) {
+            console.log('Received message: ' + event.data);
         });
     </script>
 </body>
