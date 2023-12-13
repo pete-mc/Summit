@@ -32,5 +32,6 @@ function onDeviceReady() {
         ref.insertCSS({ file: 'styles/dependencies/flatpickr.min.css' });
         ref.insertCSS({ file: 'styles/summit.css' });
         ref.executeScript({ file: 'bin/summit.js' });
+        navigator.splashscreen.hide();
       });
 }

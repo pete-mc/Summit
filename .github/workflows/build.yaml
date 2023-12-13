@@ -71,6 +71,7 @@ jobs:
     - name: Build Cordova app
       run: |
         cd cordova-app
+        cordova prepare
         cordova build android
 
     - name: Zip summit

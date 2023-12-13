@@ -21,7 +21,7 @@
 		{
 			"label": "Build Cordova App",
 			"type": "shell",
-			"command": "cordova build",
+			"command": "cordova prepare && cordova build",
 			"group": "build",
 			"presentation": {
 				"reveal": "always",
