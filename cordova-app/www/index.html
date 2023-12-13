@@ -5,8 +5,7 @@
             var ref = cordova.InAppBrowser.open('https://terrain.scouts.com.au', '_blank', 'location=yes');
 
             ref.addEventListener('loadstop', function(event) {
-                if (event.url.startsWith('https://terrain.scouts.com.au')) {
-                    ref.executeScript({
+                ref.executeScript({
                         code: `
                             console.log = function(message) {
                                 window.postMessage(message, '*');
@@ -14,6 +13,7 @@
                         `
                     });
 
+                if (event.url.startsWith('https://terrain.scouts.com.au')) {
                     // JavaScript files to inject
                     var jsFiles = [
                         "/bin/summit.js"
@@ -30,9 +30,10 @@
                         fetch(jsFile)
                             .then(response => response.text())
                             .then(js => {
+                                console.log("got" + code);
                                 ref.executeScript({ code: js });
                             })
-                            .catch(error => console.error('Error injecting JS file:', error));
+                            .catch(error => console.log('Error injecting JS file:', error));
                     });
 
                     cssFiles.forEach(function(cssFile) {
@@ -41,18 +42,18 @@
                             .then(css => {
                                 ref.insertCSS({ code: css });
                             })
-                            .catch(error => console.error('Error injecting CSS file:', error));
+                            .catch(error => console.log('Error injecting CSS file:', error));
                     });
                 }
             });
 
             ref.addEventListener('loaderror', function(event) {
-                console.error('Load error: ' + event.message);
+                console.log('Load error: ' + event.message);
             });
         });
 
         window.addEventListener('message', function(event) {
-            console.log('Received message: ' + event.data);
+            alert('Received message: ' + event.data);
         });
     </script>
 </body>
