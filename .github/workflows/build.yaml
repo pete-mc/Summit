@@ -108,18 +108,21 @@ jobs:
 
     - name: Publish to Chrome Web Store
       if: github.ref == 'refs/heads/main'
-      uses: K-Phoen/action-chrome-extension-publish@v1.0.0
+      uses: furkanipek/chrome-extension-action@v1.0.1
       with:
-        extensionId: ${{ secrets.CHROME_EXTENSION_ID }}
-        clientId: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
-        clientSecret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
-        refreshToken: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
+        extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+        client-id: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
+        client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
+        refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
+        extension-file: ./summit.zip
+        publish: true
+        tester: false
         
     - uses: wdzeng/edge-addon@v1
       if: github.ref == 'refs/heads/main'
       with:
         product-id: ${{ secrets.EDGE_EXTENSION_ID }}
-        zip-path: summit.zip
+        zip-path: ./summit.zip
         client-id: ${{ secrets.EDGE_CLIENT_ID }}
         client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
         access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}
