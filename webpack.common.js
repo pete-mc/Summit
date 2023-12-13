@@ -31,10 +31,10 @@ module.exports = {
     new WebpackShellPluginNext({
       onBuildEnd:{
         scripts: [
-          'mkdir -p ./cordova-app/platforms/android/platform_www/bin',
-          'mkdir -p ./cordova-app/platforms/android/platform_www/styles',
-          'cp -r ./bin ./cordova-app/platforms/android/platform_www/bin',
-          'cp -r ./styles ./cordova-app/platforms/android/platform_www/styles'
+          'mkdir -p ./cordova-app/www/bin',
+          'mkdir -p ./cordova-app/www/styles',
+          'cp -r ./bin ./cordova-app/www/bin',
+          'cp -r ./styles ./cordova-app/www/styles'
         ],
         blocking: true,
         parallel: false

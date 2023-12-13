@@ -5,7 +5,7 @@
     <author email="peter@mcdonald.xyz" href="https://github.com/pete-mc/Summit">
         Peter McDonald
     </author>
-    <content src="https://terrain.scouts.com.au" />
+    <content src="index.html" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
     <plugin name="cordova-plugin-inappbrowser" spec="^4.1.0" />
