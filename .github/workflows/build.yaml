@@ -124,7 +124,7 @@ jobs:
         client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
         access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}
       
-   - name: Upload web extension as artifact
+    - name: Upload web extension as artifact
       if: github.ref == 'refs/heads/dev'
       uses: actions/upload-artifact@v2
       with:
