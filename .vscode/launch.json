@@ -11,7 +11,7 @@
       "sourceMapPathOverrides": {
         "webpack:///./*": "${webRoot}/*"
       },
-      "preLaunchTask": "Build",
+      "preLaunchTask": "Build Extension",
       "runtimeArgs": [
         "--load-extension=${workspaceFolder}"
       ],

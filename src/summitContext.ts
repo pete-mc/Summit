@@ -23,8 +23,9 @@ export class SummitContext {
           this.terrainRoute = e.data.newRoute; 
           this.terrainRouteChangeHandlers.forEach(handler => handler(e.data.newRoute));
         }});
-        let injectScript = document.createElement('script');
-        injectScript.textContent = `
+        let injectButton = document.createElement('button');
+        injectButton.style.display = 'none'; // Hide the button
+        injectButton.setAttribute('onclick', `
           if (window.$nuxt) {
             let bcChannel = new BroadcastChannel('TerrainSummit');
             bcChannel.postMessage({
@@ -38,9 +39,10 @@ export class SummitContext {
               });
             });
           }
-        `;
-        (document.head || document.documentElement).appendChild(injectScript);
-        injectScript.remove();
+        `);
+        document.body.appendChild(injectButton);
+        injectButton.click(); // Trigger the onclick event
+        document.body.removeChild(injectButton);
     }
     get token(): string {
         const token = localStorage.getItem("CognitoIdentityServiceProvider.6v98tbc09aqfvh52fml3usas3c."+this.LastAuthUser+".idToken");

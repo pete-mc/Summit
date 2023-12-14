@@ -10,13 +10,14 @@ async function initSummit(){
     console.log("Summit Start");
     const summitContext = new SummitContext();
     initCache();
-    summitContext.addTerrainRouteChangeHandler((newRoute: string) => {
+    summitContext.addTerrainRouteChangeHandler(async (newRoute: string) =>{
         if (newRoute === "/"){
             summitContext.loggedin = false;
+            return;
         }
         else if (!summitContext.loggedin) {
             summitContext.loggedin = true;
-            summitContext.getData();
+            await summitContext.getData();
             fetchUnitMembers(summitContext);
         }
         startSummitChecks(newRoute);
@@ -56,4 +57,6 @@ async function initSummit(){
     }
 }
 
-initSummit();
+window.onload = function() {
+    initSummit();
+};
