@@ -9,61 +9,50 @@ import $ from 'jquery';
 async function initSummit(){
     console.log("Summit Start");
     const summitContext = new SummitContext();
-    await summitContext.getData();
-    let loc: string = "";
-
-    // Initialise the cache
     initCache();
-    // Start loading unit members into cache
-    fetchUnitMembers(summitContext);
-
-    // Throttled version of checkLocation
-    const throttledCheckLocation = throttle(checkLocation, 100);
-
-    // Window event Listeners
-    window.addEventListener("click", throttledCheckLocation);
-    window.addEventListener("hashchange", throttledCheckLocation);
-    window.addEventListener("popstate", throttledCheckLocation);
-    window.addEventListener("load", throttledCheckLocation);
-    setInterval(throttledCheckLocation, 100);
+    summitContext.addTerrainRouteChangeHandler((newRoute: string) => {
+        if (newRoute === "/"){
+            summitContext.loggedin = false;
+        }
+        else if (!summitContext.loggedin) {
+            summitContext.loggedin = true;
+            summitContext.getData();
+            fetchUnitMembers(summitContext);
+        }
+        startSummitChecks(newRoute);
+    });
 
     // Initial call
-    startSummitChecks();
+    //startSummitChecks("notusre");
 
-    // Function Definitions
-    function checkLocation() {
-    if (location.href !== loc) {
-        loc = location.href;
-        startSummitChecks();
-    }
-    }
 
-    function startSummitChecks() {
-    const pathname = location.pathname;
-    switch (pathname) {
-        case "/logbook/view-record":
-        if (checkPage(`//button[ancestor::section[contains(@class, 'ViewRecord__no-print')] and contains(@data-cy, 'PRINT')]`, "copyClipboardBtn", 100))
-            initLogbookRead();
-        break;
-        case "/logbook":
-        if (checkPage(`//button[contains(@data-cy, 'ADD_NEW_RECORD')]`, "writeClipboardBtn", 20))
-            initLogbookWrite();
-        break;
-        case "/programming/view-activity":
-        if (checkPage(`//button[@data-cy='PRINT']`, "exportiCalBtn", 20))
-            initProgrammingExportBtn();
-        break;
-    }
-    if (checkPage(`//div[ancestor::nav[contains(@class, 'NavMenu')] and contains(@class, 'NavMenu__menu-container')]`, "summitReportsMenu-summitMenu", 20)) {
-        createSummitReportMenuItem(false, () => summitMenu(summitContext), "Terrain | Summit", "summitMenu");
-    }
+    function startSummitChecks(route: string) {
+
+    /// REMOVE DELAYS IF TEST WORKS!!!
+
+        switch (route) {
+            case "/logbook/view-record":
+            if (checkPage(`//button[ancestor::section[contains(@class, 'ViewRecord__no-print')] and contains(@data-cy, 'PRINT')]`, "copyClipboardBtn"))
+                initLogbookRead();
+            break;
+            case "/logbook":
+            if (checkPage(`//button[contains(@data-cy, 'ADD_NEW_RECORD')]`, "writeClipboardBtn"))
+                initLogbookWrite();
+            break;
+            case "/programming/view-activity":
+            if (checkPage(`//button[@data-cy='PRINT']`, "exportiCalBtn"))
+                initProgrammingExportBtn();
+            break;
+        }
+        if (checkPage(`//div[ancestor::nav[contains(@class, 'NavMenu')] and contains(@class, 'NavMenu__menu-container')]`, "summitReportsMenu-summitMenu")) {
+            createSummitReportMenuItem(false, () => summitMenu(summitContext), "Terrain | Summit", "summitMenu");
+        }
     }
 
-    function checkPage(query: string, id: string, delay: number): boolean {
-    if (document.evaluate(query, document, null, XPathResult.ANY_TYPE, null).iterateNext())
-        return !document.getElementById(id);
-    setTimeout(() => { startSummitChecks(); }, delay);
-    return false;
+    function checkPage(query: string, id: string): boolean {
+        if (document.evaluate(query, document, null, XPathResult.ANY_TYPE, null).iterateNext())
+            return !document.getElementById(id);
+        return false;
     }
 }
 

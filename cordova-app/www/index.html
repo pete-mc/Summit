@@ -4,39 +4,41 @@
         document.addEventListener('deviceready', function() {
             var ref = cordova.InAppBrowser.open('https://terrain.scouts.com.au', '_blank', 'location=yes');
             console.log("deviceready");
-            ref.addEventListener('loadstop', function(event) {
+            ref.addEventListener('loadstop', async function(event) {
                 console.log("loadstop");
                 var url = new URL(event.url);
+                console.log(url.origin + url.pathname);
                 if (url.origin === 'https://terrain.scouts.com.au' && url.pathname !== '/') {
+                    console.log("Loading Summit");
                     // JavaScript files to inject
                     var jsFiles = [
-                        "/bin/summit.js"
+                        "bin/summit.js"
                     ];
 
                     // CSS files to inject
                     var cssFiles = [
-                        "/styles/dependencies/datatables.min.css",
-                        "/styles/dependencies/flatpickr.min.css",
-                        "/styles/summit.css"
+                        "styles/dependencies/datatables.min.css",
+                        "styles/dependencies/flatpickr.min.css",
+                        "styles/summit.css"
                     ];
-
-                    jsFiles.forEach(function(jsFile) {
-                        fetch(jsFile)
+                    console.log("Loading JS Files");
+                    for (let jsFile of jsFiles) {
+                        await fetch(jsFile)
                             .then(response => response.text())
                             .then(js => {
-                                ref.executeScript({ code: js });
+                                js += `\n//# sourceURL=${jsFile}`;
+                                return ref.executeScript({ code: js });
                             })
                             .catch(error => console.log('Error injecting JS file:', error));
-                    });
-
-                    cssFiles.forEach(function(cssFile) {
-                        fetch(cssFile)
+                    }
+                    console.log("Loading CSS Files");
+                    for (let cssFile of cssFiles) {
+                        await fetch(cssFile)
                             .then(response => response.text())
-                            .then(css => {
-                                ref.insertCSS({ code: css });
-                            })
+                            .then(css => ref.insertCSS({ code: css }))
                             .catch(error => console.log('Error injecting CSS file:', error));
-                    });
+                    }
+                    console.log("Loaded Summit, Launching now");
                 }
             });
 
