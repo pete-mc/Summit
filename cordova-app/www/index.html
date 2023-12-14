@@ -6,7 +6,8 @@
             console.log("deviceready");
             ref.addEventListener('loadstop', function(event) {
                 console.log("loadstop");
-                if (event.url.startsWith('https://terrain.scouts.com.au')) {
+                var url = new URL(event.url);
+                if (url.origin === 'https://terrain.scouts.com.au' && url.pathname !== '/') {
                     // JavaScript files to inject
                     var jsFiles = [
                         "/bin/summit.js"
@@ -23,7 +24,6 @@
                         fetch(jsFile)
                             .then(response => response.text())
                             .then(js => {
-                                console.log("got" + js);
                                 ref.executeScript({ code: js });
                             })
                             .catch(error => console.log('Error injecting JS file:', error));

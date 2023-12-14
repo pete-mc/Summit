@@ -7,6 +7,7 @@ import { fetchUnitMembers } from "./terrainCalls";
 import $ from 'jquery';
 
 async function initSummit(){
+    console.log("Summit Start");
     const summitContext = new SummitContext();
     await summitContext.getData();
     let loc: string = "";
