@@ -3,16 +3,9 @@
     <script type="text/javascript">
         document.addEventListener('deviceready', function() {
             var ref = cordova.InAppBrowser.open('https://terrain.scouts.com.au', '_blank', 'location=yes');
-
+            console.log("deviceready");
             ref.addEventListener('loadstop', function(event) {
-                ref.executeScript({
-                        code: `
-                            console.log = function(message) {
-                                window.postMessage(message, '*');
-                            };
-                        `
-                    });
-
+                console.log("loadstop");
                 if (event.url.startsWith('https://terrain.scouts.com.au')) {
                     // JavaScript files to inject
                     var jsFiles = [
@@ -30,7 +23,7 @@
                         fetch(jsFile)
                             .then(response => response.text())
                             .then(js => {
-                                console.log("got" + code);
+                                console.log("got" + js);
                                 ref.executeScript({ code: js });
                             })
                             .catch(error => console.log('Error injecting JS file:', error));
@@ -50,10 +43,6 @@
             ref.addEventListener('loaderror', function(event) {
                 console.log('Load error: ' + event.message);
             });
-        });
-
-        window.addEventListener('message', function(event) {
-            alert('Received message: ' + event.data);
         });
     </script>
 </body>
