@@ -25,7 +25,7 @@ jobs:
 
     - name: Extract version
       id: get_version
-      run: echo "::set-output name=VERSION::$(jq -r .version manifest.json)"
+      run: echo "VERSION=$(jq -r .version manifest.json)" >> $GITHUB_ENV
 
     - name: Check if release already exists
       if: github.ref == 'refs/heads/main'

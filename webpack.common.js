@@ -33,8 +33,8 @@ module.exports = {
         scripts: [
           'mkdir -p ./cordova-app/www/bin',
           'mkdir -p ./cordova-app/www/styles',
-          'cp -r ./bin ./cordova-app/www/bin',
-          'cp -r ./styles ./cordova-app/www/styles'
+          'cp -r ./bin ./cordova-app/www',
+          'cp -r ./styles ./cordova-app/www'
         ],
         blocking: true,
         parallel: false
