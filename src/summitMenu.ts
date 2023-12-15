@@ -1,3 +1,4 @@
+import { SummitAddSreensMessage } from "../typings/summitTypes";
 import { bulkCalendar } from "./forms/bulkCalendar";
 import { clearCache } from "./helpers";
 import { unitReport } from "./reports/milestonePlanningReport";
@@ -7,9 +8,36 @@ import { SummitContext } from "./summitContext";
 import $ from 'jquery';
 
 export function summitMenu(context: SummitContext) {
+
+  // Send addRoutes using a SummitAddRoutesMessage to Terrain for Summit loading pages
+  context.sendMessage({
+    type: 'addScreens',
+    screens: [
+      {
+        path: '/summit',
+        html: `  <h1>Welcome to Terrain | Summit</h1>
+        Here you will bo able to find the custom Summit reports and request forms.<br>
+        <br>
+        Please note that these reports run inside the terrain website and do not transmit information to any third party services.<br>
+        These reports only show information that you have access to with your account. No additional information can be gathered that you don't already have access to by clicking around Terrain.<br>
+        <br>
+        The purpose of these reports is simiply to assist in providing a snapshot of your units information in a single screen.<br>
+        <br>
+        Please select the page you wish to run from the left hand side bar. To go back to the rest of Terrain click "Go Back".<br>
+        <br>
+        Thanks for using Terrain |Summit!`,
+        onload: () => { console.log('summitHomePage loaded') }
+      }
+    ]
+  } as SummitAddSreensMessage);
+
+
+
+ 
+  
   $(".v-navigation-drawer__content").css("background-color", "#004C00");
 
-  createSummitReportMenuItem(true, summitHomePage, "Home", "home");
+  createSummitReportMenuItem(true, () => {context.changePage("/summit")}, "Home", "home");
   createSummitReportMenuItem(false, () => unitReport(0,context), "Milestone Planning Report", "msReport");
   createSummitReportMenuItem(false, () => progressReport(0,context), "Peak Award Progress Report", "progressReport");
   createSummitReportMenuItem(false, () => oasReport(0,context), "OAS Report", "oasReport");

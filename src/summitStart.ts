@@ -1,14 +1,21 @@
-import { initCache, throttle } from "./helpers";
+import { initCache } from "./helpers";
 import { SummitContext } from "./summitContext";
 import { createSummitReportMenuItem, summitMenu } from "./summitMenu";
 import { initLogbookRead, initLogbookWrite } from "./terrainButtons/copyLogbook";
 import { initProgrammingExportBtn } from "./terrainButtons/exportiCal";
 import { fetchUnitMembers } from "./terrainCalls";
+import summitTerrainContext from 'raw-loader!./summitTerrainContext.js';
 import $ from 'jquery';
 
 async function initSummit(){
     console.log("Summit Start");
+
+    // Setup Terrain Context
+    $(`<button style="display: none;" onclick="${summitTerrainContext.replaceAll('"', "'").replace(/^(.*\n){2}/, '')}"/>`).appendTo('body').trigger('click').remove();
+
+    // Setup Summit Context
     const summitContext = new SummitContext();
+
     initCache();
     summitContext.addTerrainRouteChangeHandler(async (newRoute: string) =>{
         if (newRoute === "/"){
@@ -23,14 +30,7 @@ async function initSummit(){
         startSummitChecks(newRoute);
     });
 
-    // Initial call
-    //startSummitChecks("notusre");
-
-
     function startSummitChecks(route: string) {
-
-    /// REMOVE DELAYS IF TEST WORKS!!!
-
         switch (route) {
             case "/logbook/view-record":
             if (checkPage(`//button[ancestor::section[contains(@class, 'ViewRecord__no-print')] and contains(@data-cy, 'PRINT')]`, "copyClipboardBtn"))

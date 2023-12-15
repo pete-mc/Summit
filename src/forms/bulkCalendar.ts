@@ -1,4 +1,4 @@
-import moment = require("moment");
+import moment from 'moment'
 import { SummitContext } from "../summitContext";
 import { summitLoadPage } from "../summitMenu";
 import { createNewEvent, fetchUnitMembers } from "../terrainCalls";

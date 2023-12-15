@@ -6,6 +6,10 @@
   "runArgs": ["--privileged"],
   "mounts": ["source=/dev/bus/usb,target=/dev/bus/usb,type=bind"],
   "postCreateCommand": "npm install && git config --local commit.gpgsign false && cd cordova-app/ && cordova cordova platform add android",
+  "containerEnv": {
+    "WORKSPACE_PATH": "/workspaces/Summit",
+    "CORDOVA_WORKSPACE_PATH": "/workspaces/Summit/cordova-app"
+  },
   "customizations": {
     "vscode": {
       "settings": {

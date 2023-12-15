@@ -1,3 +1,4 @@
+import { SummitMessage } from "../typings/summitTypes";
 import { loadLogbookData, writeLogbook } from "./terrainButtons/copyLogbook";
 import { getCurrentProfile } from "./terrainCalls";
 
@@ -23,26 +24,6 @@ export class SummitContext {
           this.terrainRoute = e.data.newRoute; 
           this.terrainRouteChangeHandlers.forEach(handler => handler(e.data.newRoute));
         }});
-        let injectButton = document.createElement('button');
-        injectButton.style.display = 'none'; // Hide the button
-        injectButton.setAttribute('onclick', `
-          if (window.$nuxt) {
-            let bcChannel = new BroadcastChannel('TerrainSummit');
-            bcChannel.postMessage({
-              type: 'routeChange',
-              data: { newRoute: window.$nuxt.$router.currentRoute.fullPath }
-            });
-            window.$nuxt.$router.afterEach((to, from) => {
-              bcChannel.postMessage({
-                type: 'routeChange',
-                data: { newRoute: to.fullPath }
-              });
-            });
-          }
-        `);
-        document.body.appendChild(injectButton);
-        injectButton.click(); // Trigger the onclick event
-        document.body.removeChild(injectButton);
     }
     get token(): string {
         const token = localStorage.getItem("CognitoIdentityServiceProvider.6v98tbc09aqfvh52fml3usas3c."+this.LastAuthUser+".idToken");
@@ -55,6 +36,18 @@ export class SummitContext {
     get LastAuthUser (): string | null {
       return !this.loggedin ? null : localStorage.getItem('CognitoIdentityServiceProvider.6v98tbc09aqfvh52fml3usas3c.LastAuthUser');
     } 
+
+    changePage(page: string) {
+      this.bcChannel.postMessage({
+        type: 'changeRoute',
+        newRoute: page
+      });
+    }
+
+    //send message to bcChannel
+    sendMessage(message: SummitMessage) {
+      this.bcChannel.postMessage(message);
+    }
 
     addTerrainRouteChangeHandler(handler: (newRoute: string) => void) {
       this.terrainRouteChangeHandlers.push(handler);

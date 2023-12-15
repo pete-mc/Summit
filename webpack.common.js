@@ -11,13 +11,8 @@ module.exports = {
       {
         test: /\.tsx?$/,
         use: "ts-loader",
-        exclude: /node_modules/,
-      },
-      {
-        test: /\.jsx?$/,
-        use: "babel-loader",
-        exclude: /node_modules/,
-      },
+        exclude: [/node_modules/, /summitTerrainContext.ts/],
+      }
     ],
   },
   resolve: {
@@ -29,6 +24,11 @@ module.exports = {
   },
   plugins: [
     new WebpackShellPluginNext({
+      onBuildStart:{
+        scripts: [
+          'npx tsc src/summitTerrainContext.ts --outDir src',
+        ]
+      },      
       onBuildEnd:{
         scripts: [
           'mkdir -p ./cordova-app/www/bin',

@@ -26,7 +26,7 @@
                         await fetch(jsFile)
                             .then(response => response.text())
                             .then(js => {
-                                js += `\n//# sourceURL=${jsFile}`;
+                                js += `\n//# sourceURL=TerrainSummit/${jsFile}`;
                                 return ref.executeScript({ code: js });
                             })
                             .catch(error => console.log('Error injecting JS file:', error));

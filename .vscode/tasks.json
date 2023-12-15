@@ -15,7 +15,7 @@
 			},
 			"problemMatcher": [],
 			"options": {
-				"cwd": "/workspaces/Summit"
+				"cwd": "${env:WORKSPACE_PATH}"
 			}
 		},
 		{
@@ -29,7 +29,7 @@
 			},
 			"problemMatcher": [],
 			"options": {
-				"cwd": "/workspaces/Summit/cordova-app"
+				"cwd": "${env:CORDOVA_WORKSPACE_PATH}"
 			}
 		}
 	]
