@@ -56,9 +56,13 @@ jobs:
         cordova platform rm android
         cordova platform add android
 
+    - name: Build Contents
+      run: npx tsc src/terrainsrc/summitTerrainContext.ts --outDir src/content
+      working-directory: ${{ github.workspace }}
+
     - name: Build project
       run: npx webpack --config webpack.prod.js
-      working-directory: ${{ github.workspace }}
+      working-directory: ${{ github.workspace }} 
     
     - name: Install xmlstarlet
       run: sudo apt-get install -y xmlstarlet

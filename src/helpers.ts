@@ -2,7 +2,7 @@ import { TerrainCache } from "../typings/summitTypes";
 import $ from 'jquery';
 
 //function to initiate a local store for caching data with an array of items containing Type, Data & TTL
-export function initCache() {
+export function initCache(): void {
     if (localStorage.getItem('SummitTerrainCache') === null) {
         localStorage.setItem('SummitTerrainCache', JSON.stringify([]));
     }
@@ -17,16 +17,17 @@ export function initCache() {
 }
 
 //function to add an item to the cache
-export function addToCache(type: string, data: any, ttl:number) {
+export function addToCache(type: string, data: any, ttl:number): any {
     let cache = JSON.parse(localStorage.getItem('SummitTerrainCache') || '[]');
     cache.push({type: type, data: data, ttl: ttl});
     localStorage.setItem('SummitTerrainCache', JSON.stringify(cache));
     //trigger to clear this item from cache when ttl expires
     setTimeout(() => { clearCacheItem(type); }, ttl * 1000);
+    return data;
 }
 
 //function to clear an item from the cache
-export function clearCacheItem(type: string) {
+export function clearCacheItem(type: string): void {
     let cache: TerrainCache = JSON.parse(localStorage.getItem('SummitTerrainCache') || '[]');
     cache = cache.filter(item => item.type !== type);
     localStorage.setItem('SummitTerrainCache', JSON.stringify(cache));
@@ -37,8 +38,19 @@ export function clearCache() {
     localStorage.removeItem('SummitTerrainCache');
 }
 
+//function to get a cache item
+export function getCacheItem(type: string): any {
+    initCache();
+    const cache: TerrainCache = JSON.parse(localStorage.getItem('SummitTerrainCache') || '[]');
+    const cacheItem = cache.find(item => item.type === type);
+    if (cacheItem) {
+        return cacheItem.data;
+    }
+    return undefined;
+}
+
 // Function to get a random color
-export function getRandomColor() {
+export function getRandomColor(): string {
     return `rgba(${Math.floor(Math.random() * 255)},${Math.floor(Math.random() * 255)},${Math.floor(Math.random() * 255)},1)`;
 }
 

@@ -4,28 +4,31 @@ import { createSummitReportMenuItem, summitMenu } from "./summitMenu";
 import { initLogbookRead, initLogbookWrite } from "./terrainButtons/copyLogbook";
 import { initProgrammingExportBtn } from "./terrainButtons/exportiCal";
 import { fetchUnitMembers } from "./terrainCalls";
-import summitTerrainContext from 'raw-loader!./summitTerrainContext.js';
+import summitTerrainContext from 'raw-loader!./content/summitTerrainContext.js';
 import $ from 'jquery';
 
+if (SummitContext.getInstance().buildMode === "dev") debugger;
+
 async function initSummit(){
-    console.log("Summit Start");
+    let context = SummitContext.getInstance();
+    context.log("Start");
 
     // Setup Terrain Context
     $(`<button style="display: none;" onclick="${summitTerrainContext.replaceAll('"', "'").replace(/^(.*\n){2}/, '')}"/>`).appendTo('body').trigger('click').remove();
 
     // Setup Summit Context
-    const summitContext = new SummitContext();
+    
 
     initCache();
-    summitContext.addTerrainRouteChangeHandler(async (newRoute: string) =>{
+    context.addTerrainRouteChangeHandler(async (newRoute: string) =>{
         if (newRoute === "/"){
-            summitContext.loggedin = false;
+            context.loggedin = false;
             return;
         }
-        else if (!summitContext.loggedin) {
-            summitContext.loggedin = true;
-            await summitContext.getData();
-            fetchUnitMembers(summitContext);
+        else if (!context.loggedin) {
+            context.loggedin = true;
+            await context.getData();
+            fetchUnitMembers(context);
         }
         startSummitChecks(newRoute);
     });
@@ -46,7 +49,7 @@ async function initSummit(){
             break;
         }
         if (checkPage(`//div[ancestor::nav[contains(@class, 'NavMenu')] and contains(@class, 'NavMenu__menu-container')]`, "summitReportsMenu-summitMenu")) {
-            createSummitReportMenuItem(false, () => summitMenu(summitContext), "Terrain | Summit", "summitMenu");
+            createSummitReportMenuItem(false, () => summitMenu(context), "Terrain | Summit", "summitMenu");
         }
     }
 
@@ -55,8 +58,9 @@ async function initSummit(){
             return !document.getElementById(id);
         return false;
     }
+
 }
 
 window.onload = function() {
-    initSummit();
+   initSummit();
 };

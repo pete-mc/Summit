@@ -122,3 +122,35 @@ export interface TerrainUnitMember {
         }[];
     };
 }
+
+export interface TerrainProfile {
+    username: string;
+    profiles: Profile[];
+}
+
+interface ProfileUnit {
+    id: string;
+    name: string;
+    roles: string[];
+    section: string;
+}
+
+interface ProfileGroup {
+    id: string;
+    name: string;
+    roles: string[];
+}
+
+interface ProfileMember {
+    id: string;
+    name: string;
+    roles: string[];
+}
+
+interface Profile {
+    unit: ProfileUnit;
+    group: ProfileGroup;
+    member: ProfileMember;
+}
+
+

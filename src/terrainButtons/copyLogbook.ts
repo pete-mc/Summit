@@ -15,7 +15,7 @@ export function initLogbookWrite() {
 }
 
 // Initialization for reading logbook
-export function initLogbookRead() {
+export function initLogbookRead(): void {
   const btn = $(document).xpath(`//button[ancestor::section[contains(@class, \'ViewRecord__no-print\')] and contains(@data-cy, \'PRINT\')]`)[0] as unknown as HTMLButtonElement;
   
   $(btn).addClass("mr-4");
@@ -34,9 +34,13 @@ export function initLogbookRead() {
       .text("Export")
       .appendTo($(btn).parent());
 }
-export async function loadLogbookData(messageData: SummitDownloadLogbookMessage , context: SummitContext){
+export async function loadLogbookData(messageData: SummitDownloadLogbookMessage , context: SummitContext): Promise<void>{
   console.debug("Recieved loadLogbook message from Channel");
   const data = await getLogbookData(context, messageData.record)
+  if (!data) {
+      alert("Could not load logbook data");
+      return;
+  }
   delete data.id;
   if (messageData.download){
       var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
@@ -53,7 +57,7 @@ export async function loadLogbookData(messageData: SummitDownloadLogbookMessage 
     }
 }
 
-export async function writeLogbook(message: SummitUploadLogbookMessage, context: SummitContext){
+export async function writeLogbook(message: SummitUploadLogbookMessage, context: SummitContext): Promise<void>{
   console.debug("Recieved writeLogbook message on channel: " + JSON.stringify(message));
   if(message.upload){
     uploadLogbookFile();

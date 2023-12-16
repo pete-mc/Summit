@@ -1,42 +1,34 @@
-import { BarController, BarElement, CategoryScale, Chart, LinearScale } from "chart.js";
-import { TerrainUnitMember } from "../../typings/terrainTypes";
 import { getRandomColor } from "../helpers";
 import { SummitContext } from "../summitContext";
 import { summitLoadPage } from "../summitMenu";
 import { fetchUnitMembers } from "../terrainCalls";
 import $ from 'jquery';
-import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 export async function unitReport(retry = 1, context: SummitContext){
-  //load the inital html content into the container
-  if(context.currentProfile.Error){
-    summitLoadPage("ERROR","This is a summit error. Please do not contact Terrain support for this issue. <br><br>Details:<br>" + JSON.stringify(context.currentProfile.Error));
-    return;
-  }
   summitLoadPage(
     "SUMMIT REPORTS - MILESTONE PLANNING REPORT", //Breadcrumb header
   //html content is contained within the two backticks ` below
   `
-    <h2>${context.currentProfile.profiles[0].unit.name}</h2>
+    <h2 id="milestoneHeader"></h2>
     The milestones planning report is useful to see how many participates, leads and assists each member requires to complete their current milestone. Note that the numbers displayed are the <b>remaining requrement</b> not the current total.<br>
     <p id="loadingP">Loading Please Wait...</p>
     <table id="unitReportTable" class="display" width="100%"></table>
     <canvas id="myChart"></canvas>
-  `)
-  ;
-
-  let unitMembers: TerrainUnitMember[] = [];
-  try{
-    unitMembers = await fetchUnitMembers(context);
-  }catch(error){
-    retry = retry ?? 1;
-    if (retry > 3) {
-      console.debug("Data load failed retry attempt: " + retry)
-      unitReport(retry++, context);
-      return;
-    }
-    else $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
+  `);
+  if (!context.currentProfile || !context.token) {
+    $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
+    $("#milestoneHeader").text("Milestone Planning Report");
+    return;
   }
+  $("#milestoneHeader").text(context.currentProfile.profiles[0].unit.name);
+
+  let unitMembers = await fetchUnitMembers(context);
+  if (!unitMembers) {
+    $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
+    $("#milestoneHeader").text("Milestone Planning Report");
+    return;
+  }
+  $("#loadingP").text("");
 
   // Get the milestone for each member
   const tableData = unitMembers.map(r => {
@@ -130,6 +122,4 @@ export async function unitReport(retry = 1, context: SummitContext){
   //   }
   // });
   
-
-  $("#loadingP").text("");
 }

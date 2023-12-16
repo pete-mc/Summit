@@ -5,16 +5,10 @@ import { fetchUnitMembers } from "../terrainCalls";
 import $ from 'jquery';
 
 export async function oasReport(retry: number = 1, context: SummitContext){
-  //load the inital html content into the container
-  if(context.currentProfile.Error){
-    summitLoadPage("ERROR","This is a summit error. Please do not contact Terrain support for this issue. <br><br>Details:<br>" + JSON.stringify(context.currentProfile.Error));
-    return;
-  }
   summitLoadPage(
-    "SUMMIT REPORTS - OAS REPORT", //Breadcrumb header
-  //html content is contained within the two backticks ` below
+    "SUMMIT REPORTS - OAS REPORT", 
   `
-    <h2>${context.currentProfile.profiles[0].unit.name}</h2>
+    <h2 id="OASHeader"></h2>
     This report will show all of the currently held OAS levels for each member of the section.<br><br>
     <p id="loadingP">Loading Please Wait...</p>
     <table id="oasReportTable" class="display" width="100%">
@@ -40,17 +34,18 @@ export async function oasReport(retry: number = 1, context: SummitContext){
     </table>
   `);
   $("#oasReportTable").hide();
-  let unitMembers = [] as TerrainUnitMember[];
-  try{
-    unitMembers = await fetchUnitMembers(context);
-  }catch(error){
-    retry = retry ?? 1;
-    if (retry > 3) {
-      console.debug("Data load failed retry attempt: " + retry)
-      oasReport(retry++, context);
-      return;
-    }
-    else $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
+  if (!context.currentProfile || !context.token) {
+    $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
+    $("#OASHeader").text("Milestone Planning Report");
+    return;
+  }
+  $("#OASHeader").text(context.currentProfile.profiles[0].unit.name);
+
+  let unitMembers = await fetchUnitMembers(context);
+  if (!unitMembers) {
+    $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
+    $("#OASHeader").text("Milestone Planning Report");
+    return;
   }
   $("#loadingP").remove();
   $("#oasReportTable").show();

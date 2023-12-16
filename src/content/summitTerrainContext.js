@@ -38,7 +38,15 @@ function ReceiveFromSummit() {
                             path: screen.path,
                             component: {
                                 created: function () {
-                                    screen.onload();
+                                    if (screen.onloadTerrain)
+                                        screen.onloadTerrain();
+                                    if (screen.onloadSummit) {
+                                        //Send message to Summit
+                                        bcChannel.postMessage({
+                                            type: 'onloadSummit',
+                                            data: { onloadSummit: screen.onloadSummit }
+                                        });
+                                    }
                                 },
                                 render: function (h) {
                                     return h('div', { domProps: { innerHTML: screen.html } });

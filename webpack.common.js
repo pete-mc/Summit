@@ -2,7 +2,8 @@
 const Webpack = require("webpack");
 const Path = require("path");
 const WebpackShellPluginNext = require('webpack-shell-plugin-next');
-
+// const shell = require('shelljs');
+// const rimraf = require('rimraf');
 
 module.exports = {
   entry: "./src/summitStart.ts",
@@ -23,12 +24,10 @@ module.exports = {
     path: Path.resolve(__dirname, "bin"),
   },
   plugins: [
+    new Webpack.DefinePlugin({
+      "process.env.SUMMITVERSION": JSON.stringify(require("./manifest.json").version),
+    }),
     new WebpackShellPluginNext({
-      onBuildStart:{
-        scripts: [
-          'npx tsc src/summitTerrainContext.ts --outDir src',
-        ]
-      },      
       onBuildEnd:{
         scripts: [
           'mkdir -p ./cordova-app/www/bin',

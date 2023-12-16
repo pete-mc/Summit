@@ -10,7 +10,7 @@ import "datatables.net-buttons-dt";
 import "@datatables.net/editor-dt";
 import $ from 'jquery';
 
-export async function bulkCalendar(context: SummitContext){
+export async function bulkCalendar(context: SummitContext): Promise<void> {
     let lastId = 0;  // Used to increment the ID for new records
     let challengeAreaOptions = [
         { label: 'Community', value: 'community' },
@@ -39,6 +39,15 @@ export async function bulkCalendar(context: SummitContext){
     $("#submit").hide();
     $("#add").hide();
     const members = await fetchUnitMembers(context);
+    if (!members || !context.currentProfile) {
+        $("#loadingP").text("Error loading members. Please click the button to try again.");
+        $("#loadingP").after('<button id="retry" class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Retry</button>');
+        $("#retry").on("click", async function () {
+            !context.currentProfile ? await context.getData() : undefined;
+            bulkCalendar(context);
+        });
+        return;
+    }
 
     //remove loading text and show button
     $("#loadingP").remove();
@@ -299,7 +308,7 @@ export async function bulkCalendar(context: SummitContext){
                 end_datetime: moment(row.endDate, "DD/MM/YYYY HH:mm").format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
                 event_type: {
                     type: 'unit',
-                    id: context.currentProfile.profiles[0].unit.id
+                    id: context.currentProfile?.profiles[0].unit.id
                 },
                 attendance: {
                     leader_member_ids: row.leads.split(','),
@@ -358,7 +367,6 @@ export async function bulkCalendar(context: SummitContext){
             try {
                 await createNewEvent(JSON.stringify(event), context);
             } catch (error) {
-                console.log(error);
                 //mark the row as red
                 table.row(rowIndex).invalidate();
                 //add a message to the row as a new column if it does not exist

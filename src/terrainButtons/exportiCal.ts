@@ -2,7 +2,7 @@ import { SummitContext } from "../summitContext";
 import { fetchActivity } from "../terrainCalls";
 import $ from 'jquery';
 
-export async function exportiCal(context: SummitContext) {
+export async function exportiCal(context: SummitContext): Promise<void> {
   const activityIdElement = $('p.ActivityPlan__activity-id');
   if (activityIdElement.length === 0) {
       console.error("Activity ID element not found.");
@@ -11,6 +11,7 @@ export async function exportiCal(context: SummitContext) {
   const activityId = activityIdElement.text().split(': ')[1];
 
   const eventData = await fetchActivity(context, activityId);
+  if (!eventData) return;
 
   const startDateTime = new Date(eventData.start_datetime);
   const endDateTime = new Date(eventData.end_datetime);

@@ -26,7 +26,7 @@ export function summitMenu(context: SummitContext) {
         Please select the page you wish to run from the left hand side bar. To go back to the rest of Terrain click "Go Back".<br>
         <br>
         Thanks for using Terrain |Summit!`,
-        onload: () => { console.log('summitHomePage loaded') }
+        onloadSummit: "HomeOnLoad" 
       }
     ]
   } as SummitAddSreensMessage);
