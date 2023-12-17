@@ -13,6 +13,7 @@ declare global {
 
     interface Window {
         $nuxt: {
+            [x: string]: any;
             $router: {
                 afterEach: (callback: (to: Route, from: Route) => void) => void;
                 onReady: (callback: () => void) => void;

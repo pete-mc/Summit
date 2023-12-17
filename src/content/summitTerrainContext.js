@@ -1,37 +1,57 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 //# sourceURL=TerrainSummit/TerrainContext.js
-if (window.$nuxt) {
-    window.$nuxt.$router.onReady(function () {
-        window.terrainSummitContext = TerrainSummitContext;
-        var context = TerrainSummitContext.getInstance();
-        context.listen("changeRoute", function (event) {
-            window.$nuxt.$router.push({ path: event.data.newRoute });
-        });
-        context.listen("addScreens", function (event) {
-            event.data.screens.forEach(function (screen) {
-                window.$nuxt.$router.addRoutes([{
-                        path: screen.path,
-                        component: context.createComponent(screen)
-                    }]);
-            });
+function onloadTerrain() {
+    window.terrainSummitContext = TerrainSummitContext;
+    var context = TerrainSummitContext.getInstance();
+    context.listen("changeRoute", function (event) {
+        window.$nuxt.$router.push({ path: event.data.newRoute });
+    });
+    context.listen("addScreens", function (event) {
+        event.data.screens.forEach(function (screen) {
+            window.$nuxt.$router.addRoutes([{
+                    path: screen.path,
+                    component: context.createComponent(screen)
+                }]);
         });
     });
 }
-;
 var TerrainSummitContext = /** @class */ (function () {
     function TerrainSummitContext() {
         var _this = this;
         this.bcChannel = new BroadcastChannel('TerrainSummit');
         this.currentRoute = window.$nuxt.$router.currentRoute;
         window.$nuxt.$router.afterEach(function (to, from) {
-            _this.sendToSummit(to, from);
+            var mainElement = document.querySelector('main');
+            if (mainElement) {
+                _this.waitForNuxtTicks(function (mainElement) {
+                    mainElement = document.querySelector('main');
+                    new MutationObserver(function () {
+                        _this.sendToSummit(to, from);
+                    }).observe(mainElement, { attributes: true, childList: true, subtree: false });
+                }, 3);
+            }
+            else {
+                _this.waitForNuxtTicks(function () {
+                    _this.sendToSummit(to, from);
+                }, 3);
+            }
         });
         this.domWatcher("body");
         this.sendToSummit(this.currentRoute, this.currentRoute);
         this.sendToSummitDebounced = this.debounce(this.sendToSummit.bind(this), 250);
         return TerrainSummitContext.instance;
     }
+    // using window.$nuxt.$nextTick wait for x number of ticks  to complete the callback and pass it args
+    TerrainSummitContext.prototype.waitForNuxtTicks = function (callback, ticks, args) {
+        var _this = this;
+        if (args === void 0) { args = []; }
+        if (ticks <= 0) {
+            callback.apply(this, args);
+            return;
+        }
+        window.$nuxt.$nextTick(function () { return _this.waitForNuxtTicks(callback, --ticks, args); });
+    };
     TerrainSummitContext.getInstance = function () {
         if (!TerrainSummitContext.instance) {
             TerrainSummitContext.instance = new TerrainSummitContext();
@@ -110,6 +130,11 @@ var TerrainSummitContext = /** @class */ (function () {
     };
     return TerrainSummitContext;
 }());
+if (window.$nuxt) {
+    window.$nuxt.$router.onReady(function () {
+        onloadTerrain();
+    });
+}
 // let bcChannel = new BroadcastChannel('TerrainSummit');
 // function InitSender() {
 //     //Broadcast route changes to Summit  

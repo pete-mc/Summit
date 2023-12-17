@@ -1,4 +1,4 @@
-import { SummitAddSreensMessage, SummitMessageEvent, SummitRouteChangeMessage, SummitScreen } from "../../typings/summitTypes";
+import { SummitAddSreensMessage, SummitRouteChangeMessage, SummitScreen } from "../../typings/summitTypes";
 import {  } from "../../typings/terrainContext";
 //# sourceURL=TerrainSummit/TerrainContext.js
 function onloadTerrain() {
@@ -25,12 +25,34 @@ class TerrainSummitContext {
 
   constructor() {
     window.$nuxt.$router.afterEach((to, from) => {
-      this.sendToSummit(to, from);
+    let mainElement = document.querySelector('main');
+    if (mainElement) {
+      this.waitForNuxtTicks((mainElement)=>{
+        mainElement = document.querySelector('main');
+        new MutationObserver(() => {
+          this.sendToSummit(to, from);
+        }).observe(mainElement, { attributes: true, childList: true, subtree: false });
+      }, 3);
+    } else{
+      this.waitForNuxtTicks(()=>{
+          this.sendToSummit(to, from)
+      }, 3);
+    }
+  
     });
     this.domWatcher("body");
     this.sendToSummit(this.currentRoute, this.currentRoute);
     this.sendToSummitDebounced = this.debounce(this.sendToSummit.bind(this), 250);
     return TerrainSummitContext.instance;
+  }
+
+  // using window.$nuxt.$nextTick wait for x number of ticks  to complete the callback and pass it args
+  public waitForNuxtTicks(callback: (...args: any[]) => void, ticks: number, args: any[] = []) {
+    if (ticks <= 0) {
+      callback.apply(this, args);
+      return;
+    }
+    window.$nuxt.$nextTick(() => this.waitForNuxtTicks(callback, --ticks, args));
   }
 
   public static getInstance() {
