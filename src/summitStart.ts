@@ -1,4 +1,4 @@
-import { initCache } from "./helpers";
+import { clearCache, initCache } from "./helpers";
 import { SummitContext } from "./summitContext";
 import { createSummitReportMenuItem, summitMenu } from "./summitMenu";
 import { initLogbookRead, initLogbookWrite } from "./terrainButtons/copyLogbook";
@@ -6,8 +6,9 @@ import { initProgrammingExportBtn } from "./terrainButtons/exportiCal";
 import { fetchUnitMembers } from "./terrainCalls";
 import summitTerrainContext from 'raw-loader!./content/summitTerrainContext.js';
 import $ from 'jquery';
+import { SummitRouteChangeMessage } from "../typings/summitTypes";
 
-if (SummitContext.getInstance().buildMode === "dev") debugger;
+if (SummitContext.getInstance().buildMode === "dev") { SummitContext.getInstance().log("Dev Mode"); console.log(SummitContext.getInstance()); };
 
 async function initSummit(){
     let context = SummitContext.getInstance();
@@ -20,9 +21,12 @@ async function initSummit(){
     
 
     initCache();
-    context.addTerrainRouteChangeHandler(async (newRoute: string) =>{
+    context.addTerrainRouteChangeHandler(async (message: SummitRouteChangeMessage) =>{
+        const newRoute = message.newRoute;
         if (newRoute === "/"){
             context.loggedin = false;
+            context.currentProfile = undefined;
+            clearCache();
             return;
         }
         else if (!context.loggedin) {

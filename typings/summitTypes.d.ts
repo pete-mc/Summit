@@ -56,6 +56,7 @@ export interface SummitDownloadLogbookMessage extends BaseSummitMessage {
 export interface SummitRouteChangeMessage extends BaseSummitMessage {
   type: 'routeChange' | 'changeRoute';
   newRoute: string;
+  oldRoute: string;
 }
 
 export interface SummitAddSreensMessage extends BaseSummitMessage {

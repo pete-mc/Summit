@@ -35,7 +35,10 @@ export function clearCacheItem(type: string): void {
 
 //function to clear the cache
 export function clearCache() {
-    localStorage.removeItem('SummitTerrainCache');
+    if (localStorage.getItem('SummitTerrainCache') != null) {
+        localStorage.removeItem('SummitTerrainCache');
+    }
+    localStorage.setItem('SummitTerrainCache', JSON.stringify([]));   
 }
 
 //function to get a cache item

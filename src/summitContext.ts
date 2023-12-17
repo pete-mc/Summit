@@ -9,7 +9,7 @@ export class SummitContext {
   private bcChannel: BroadcastChannel = new BroadcastChannel('TerrainSummit');
   public currentProfile: TerrainProfile | undefined = undefined;
   public terrainRoute: string = "";
-  public terrainRouteChangeHandlers: ((newRoute: string) => void)[] = [];
+  public terrainRouteChangeHandlers: ((message: SummitRouteChangeMessage) => void)[] = [];
   public loggedin: boolean = false;
   public summitVersion: string = process.env.SUMMITVERSION || "0.0.0";
   public buildMode: string = process.env.SUMMITBUILD || "prod";
@@ -26,7 +26,7 @@ export class SummitContext {
       this.summitMessageHandlers.push({type: "writeLogbook", handler: (e: SummitMessageEvent<SummitUploadLogbookMessage>) => writeLogbook(e.data, this)});
       this.summitMessageHandlers.push({type: "routeChange", handler: (e: SummitMessageEvent<SummitRouteChangeMessage>) => { 
         this.terrainRoute = e.data.newRoute; 
-        this.terrainRouteChangeHandlers.forEach(handler => handler(e.data.newRoute));
+        this.terrainRouteChangeHandlers.forEach(handler => handler(e.data));
       }});
   }
 
@@ -62,7 +62,7 @@ export class SummitContext {
     this.bcChannel.postMessage(message);
   }
 
-  public addTerrainRouteChangeHandler(handler: (newRoute: string) => void) {
+  public addTerrainRouteChangeHandler(handler: (newRoute: SummitRouteChangeMessage) => void) {
     this.terrainRouteChangeHandlers.push(handler);
   } 
 
