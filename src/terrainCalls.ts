@@ -31,8 +31,8 @@ import { SummitContext } from "./summitContext";
 //function to retrieve unit members profiles from the Terrain API or cache
 export async function fetchUnitMembers(context: SummitContext): Promise<TerrainUnitMember[] | undefined> {
   try {
-    const cacheItem = getCacheItem("unitMembers") as { data: TerrainUnitMember[] };
-    if (cacheItem) return cacheItem.data;
+    const cacheItem = getCacheItem("unitMembers") as TerrainUnitMember[];
+    if (cacheItem) return cacheItem;
     if (!context.currentProfile || !context.token) return undefined;
     const response = await fetch("https://metrics.terrain.scouts.com.au/units/" + context.currentProfile.profiles[0].unit.id + "/members?limit=999", {
       method: "GET",
@@ -86,8 +86,8 @@ export async function createNewEvent(body: string, context: SummitContext): Prom
 // convert above to async function with fetch and return profile rather than setting
 export async function getCurrentProfile(context: SummitContext): Promise<TerrainProfile | undefined> {
   try {
-    const cacheItem = getCacheItem("currentProfile") as { data: TerrainProfile };
-    if (cacheItem) return cacheItem.data;
+    const cacheItem = getCacheItem("currentProfile") as TerrainProfile;
+    if (cacheItem) return cacheItem;
     if (!context.token) return undefined;
     const response = await fetch("https://members.terrain.scouts.com.au/profiles", {
       method: "GET",

@@ -5,11 +5,11 @@ function onloadTerrain() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     window.terrainSummitContext = TerrainSummitContext;
     var context = TerrainSummitContext.getInstance();
-    context.listen("changeRoute", function (event) {
-        window.$nuxt.$router.push({ path: event.data.newRoute });
+    context.listen("changeRoute", function (data) {
+        window.$nuxt.$router.push({ path: data.newRoute });
     });
-    context.listen("addScreens", function (event) {
-        event.data.screens.forEach(function (screen) {
+    context.listen("addScreens", function (data) {
+        data.screens.forEach(function (screen) {
             window.$nuxt.$router.addRoutes([
                 {
                     path: screen.path,
@@ -24,28 +24,71 @@ var TerrainSummitContext = /** @class */ (function () {
         var _this = this;
         this.bcChannel = new BroadcastChannel("TerrainSummit");
         this.currentRoute = window.$nuxt.$router.currentRoute;
-        window.$nuxt.$router.afterEach(function (to, from) {
-            var mainElement = document.querySelector("main");
-            if (mainElement) {
-                _this.waitForNuxtTicks(function (mainElement) {
-                    mainElement = document.querySelector("main");
-                    new MutationObserver(function () {
-                        _this.sendToSummit(to, from);
-                    }).observe(mainElement, { attributes: true, childList: true, subtree: false });
-                }, 3);
-            }
-            else {
-                _this.waitForNuxtTicks(function () {
-                    _this.sendToSummit(to, from);
-                }, 3);
+        this.observationTimer = null;
+        this.observationDuration = 3000; // Duration in milliseconds
+        this.sendInterval = 100; // Interval in milliseconds
+        this.isObserving = false;
+        this.bodyObserver = new MutationObserver(function () {
+            var nuxtDiv = document.getElementById("__nuxt");
+            if (nuxtDiv && !nuxtDiv.getAttribute("summit-observed")) {
+                _this.nuxtObserver.disconnect();
+                _this.nuxtObserver.observe(nuxtDiv, { childList: true });
+                nuxtDiv.setAttribute("summit-observed", "true");
             }
         });
-        this.domWatcher("body");
-        this.sendToSummit(this.currentRoute, this.currentRoute);
-        this.sendToSummitDebounced = this.debounce(this.sendToSummit.bind(this), 250);
+        this.nuxtObserver = new MutationObserver(function () {
+            _this.sendToSummitDebounced(window.$nuxt.$router.currentRoute);
+            if (!_this.isObserving)
+                return;
+            var layoutDiv = document.getElementById("__layout");
+            if (layoutDiv && layoutDiv.getAttribute("summit-observed")) {
+                _this.layoutObserver.disconnect();
+                _this.layoutObserver.observe(layoutDiv, { childList: true, subtree: true });
+                layoutDiv.setAttribute("summit-observed", "true");
+            }
+        });
+        this.layoutObserver = new MutationObserver(function () {
+            _this.sendToSummitDebounced(window.$nuxt.$router.currentRoute);
+        });
+        this.bodyObserver.observe(document.body, { childList: true });
+        var nuxtDiv = document.getElementById("__nuxt");
+        if (nuxtDiv && !nuxtDiv.getAttribute("summit-observed")) {
+            this.nuxtObserver.observe(document.body, { childList: true });
+            nuxtDiv.setAttribute("summit-observed", "true");
+        }
+        window.$nuxt.$router.afterEach(function (to, from) {
+            _this.currentRoute = to;
+            _this.sendToSummit(to, from); //immediately send route change to Summit
+            _this.resetObservationTimer(); //start observing for changes to update Summit if needed
+        });
+        this.sendToSummit(this.currentRoute);
+        this.sendToSummitDebounced = this.debounce(this.sendToSummit.bind(this), this.sendInterval);
         return TerrainSummitContext.instance;
     }
-    // using window.$nuxt.$nextTick wait for x number of ticks  to complete the callback and pass it args
+    TerrainSummitContext.prototype.resetObservationTimer = function () {
+        var _this = this;
+        if (this.observationTimer) {
+            clearTimeout(this.observationTimer);
+        }
+        this.isObserving = true;
+        this.observationTimer = setTimeout(function () {
+            _this.stopAndClearObservers();
+        }, this.observationDuration);
+        this.startObserving();
+    };
+    TerrainSummitContext.prototype.startObserving = function () {
+        console.debug("Starting route observation for " + this.currentRoute.path);
+        var layoutDiv = document.getElementById("__layout");
+        if (layoutDiv)
+            this.layoutObserver.observe(layoutDiv, { childList: true, subtree: true });
+        else
+            this.sendToSummitDebounced(window.$nuxt.$router.currentRoute);
+    };
+    TerrainSummitContext.prototype.stopAndClearObservers = function () {
+        this.layoutObserver.disconnect();
+        this.isObserving = false;
+        console.debug("Stopping route observation" + this.currentRoute.path);
+    };
     TerrainSummitContext.prototype.waitForNuxtTicks = function (callback, ticks, args) {
         var _this = this;
         if (args === void 0) { args = []; }
@@ -62,10 +105,16 @@ var TerrainSummitContext = /** @class */ (function () {
         return TerrainSummitContext.instance;
     };
     TerrainSummitContext.prototype.sendToSummit = function (to, from) {
-        this.bcChannel.postMessage({
-            type: "routeChange",
-            data: { newRoute: to.fullPath, oldRoute: from.fullPath },
-        });
+        try {
+            this.bcChannel.postMessage({
+                type: "routeChange",
+                newRoute: to.fullPath,
+                oldRoute: from ? from.fullPath : undefined,
+            });
+        }
+        catch (error) {
+            console.error("Error sending message to BroadcastChannel:", error);
+        }
     };
     TerrainSummitContext.prototype.debounce = function (func, wait) {
         var timeout;
@@ -95,7 +144,7 @@ var TerrainSummitContext = /** @class */ (function () {
                 if (screen.onloadSummit) {
                     self.bcChannel.postMessage({
                         type: "onloadSummit",
-                        data: { onloadSummit: screen.onloadSummit },
+                        onloadSummit: screen.onloadSummit,
                     });
                 }
             },
@@ -104,34 +153,6 @@ var TerrainSummitContext = /** @class */ (function () {
             },
         };
     };
-    TerrainSummitContext.prototype.domWatcher = function (element) {
-        var _this = this;
-        var el = element === "body" ? document.body : document.getElementById(element);
-        if (!el || el.getAttribute("summit-observed"))
-            return;
-        new MutationObserver(function (mutationsList) {
-            for (var _i = 0, mutationsList_1 = mutationsList; _i < mutationsList_1.length; _i++) {
-                var mutation = mutationsList_1[_i];
-                if (mutation.type === "childList") {
-                    if (element != "body")
-                        _this.sendToSummitDebounced(window.$nuxt.$router.currentRoute, window.$nuxt.$router.currentRoute);
-                    switch (element) {
-                        case "body":
-                            _this.domWatcher("__nuxt");
-                            break;
-                        case "__nuxt":
-                            _this.domWatcher("__layout");
-                            break;
-                        case "__layout":
-                            _this.domWatcher("nuxt");
-                            break;
-                    }
-                    break;
-                }
-            }
-        }).observe(el, { childList: true });
-        el.setAttribute("summit-observed", "true");
-    };
     return TerrainSummitContext;
 }());
 if (window.$nuxt) {
@@ -139,85 +160,6 @@ if (window.$nuxt) {
         onloadTerrain();
     });
 }
-// let bcChannel = new BroadcastChannel('TerrainSummit');
-// function InitSender() {
-//     //Broadcast route changes to Summit
-//     window.$nuxt.$router.afterEach((to, from) => {
-//       SendToSummit(to, from);
-//     });
-//     //Broadcast an extra route change on __layout change
-//     DOMWatcher("body");
-//     //run one on load in case the page was already loaded / cached
-//     SendToSummit(window.$nuxt.$router.currentRoute,window.$nuxt.$router.currentRoute);
-// }
-// function DOMWatcher(element: string){
-//   let el = element === "body" ? document.body : document.getElementById(element) as HTMLElement;
-//   if(!el || el.getAttribute('summit-observed')) return;
-//   new MutationObserver((mutationsList, observer) => {
-//     for (let mutation of mutationsList) {
-//       if (mutation.type === 'childList') {
-//         if (element != "body") SendToSummit(window.$nuxt.$router.currentRoute,window.$nuxt.$router.currentRoute);
-//         switch (element) {
-//           case "body":
-//             DOMWatcher("__nuxt");
-//             break;
-//           case "__nuxt":
-//             DOMWatcher("__layout");
-//             break;
-//           case "__layout":
-//             DOMWatcher("nuxt");
-//             break;
-//         }
-//         break;
-//       }
-//     }
-//   }).observe(document.getElementById(element) as HTMLElement, { childList: true });
-//   el.setAttribute('summit-observed', 'true');
-// }
-// function SendToSummit(to: Route, from: Route): void {
-//   bcChannel.postMessage({
-//     type: 'routeChange',
-//     data: { newRoute: to.fullPath, oldRoute: from.fullPath }
-//   } as SummitMessageEvent<SummitRouteChangeMessage>);
-// }
-// function InitReciever() {
-//     // Receive messages from Summit
-//     bcChannel.addEventListener("message", (event: MessageEvent<SummitAddSreensMessage | SummitRouteChangeMessage>) => {
-//         switch (event.data.type) {
-//             case "changeRoute":
-//                 window.$nuxt.$router.push({ path: event.data.newRoute });
-//                 break;
-//             case "addScreens":
-//                 event.data.screens.forEach(screen => {
-//                     window.$nuxt.$router.addRoutes([{
-//                         path: screen.path,
-//                         component: {
-//                             created() {
-//                                 if(screen.onloadTerrain) screen.onloadTerrain();
-//                                 if(screen.onloadSummit) {
-//                                   //Send message to Summit
-//                                   bcChannel.postMessage({
-//                                     type: 'onloadSummit',
-//                                     data: { onloadSummit: screen.onloadSummit }
-//                                   });
-//                                 }
-//                             },
-//                             render(h) {
-//                                 return h('div', { domProps: { innerHTML: screen.html } });
-//                             }
-//                         }
-//                     }]);
-//                 });
-//                 break;
-//         }
-//     });
-// }
-// if (window.$nuxt) {
-//     window.$nuxt.$router.onReady(() => {
-//         InitReciever();
-//         InitSender();
-//     });
-// }
 // $nuxt.$router: This is the Vue Router instance. You can use it to programmatically navigate to different routes, add new routes, or listen for route changes.
 // $nuxt.$store: If the application uses Vuex for state management, this is the Vuex store. You can use it to read state, commit mutations, or dispatch actions.
 // State: Access the state (data) of your application. For example, $nuxt.$store.state.myModule.myData would access the myData state in myModule.

@@ -73,10 +73,13 @@ export class SummitContext {
     this.currentProfile = await getCurrentProfile(this);
     // check that there is a valid profile and pause here until there is add a delay to prevent spamming the server
     while (!this.currentProfile) {
-      await setTimeout(async () => {
-        this.currentProfile = await getCurrentProfile(this);
-      }, 100);
+      await this.delay(200);
+      this.currentProfile = await getCurrentProfile(this);
     }
+  }
+
+  public delay(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   public log(message: string) {

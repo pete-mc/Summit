@@ -1,6 +1,7 @@
 import { TerrainCache } from "../typings/summitTypes";
 import $ from "jquery";
 import { TerrainCacheData } from "../typings/terrainTypes";
+import moment from "moment";
 
 //function to initiate a local store for caching data with an array of items containing Type, Data & TTL
 export function initCache(): void {
@@ -9,9 +10,9 @@ export function initCache(): void {
   }
   //clear cache items if it is older than 5 mins
   const cache: TerrainCache = JSON.parse(localStorage.getItem("SummitTerrainCache") || "[]");
-  const now = new Date();
+  const now = moment().unix();
   cache.forEach((item) => {
-    if (item.ttl < now.getTime()) {
+    if (item.ttl < now) {
       clearCacheItem(item.type);
     }
   });
@@ -20,7 +21,7 @@ export function initCache(): void {
 //function to add an item to the cache
 export function addToCache(type: string, data: TerrainCacheData, ttl: number): TerrainCacheData {
   const cache = JSON.parse(localStorage.getItem("SummitTerrainCache") || "[]");
-  cache.push({ type: type, data: data, ttl: ttl });
+  cache.push({ type: type, data: data, ttl: moment().unix() + ttl });
   localStorage.setItem("SummitTerrainCache", JSON.stringify(cache));
   //trigger to clear this item from cache when ttl expires
   setTimeout(() => {

@@ -26,7 +26,7 @@ export interface SummitMessageHandler {
 
 export interface BaseSummitMessage {
   type: string;
-  [key: string]: string | number | boolean | SummitScreen[];
+  [key: string]: string | number | boolean | SummitScreen[] | undefined;
 }
 
 export interface SummitMessageEvent<T extends SummitMessage = SummitMessage> extends MessageEvent {
@@ -47,7 +47,7 @@ export interface SummitDownloadLogbookMessage extends BaseSummitMessage {
 export interface SummitRouteChangeMessage extends BaseSummitMessage {
   type: "routeChange" | "changeRoute";
   newRoute: string;
-  oldRoute: string;
+  oldRoute?: string | undefined;
 }
 
 export interface SummitAddSreensMessage extends BaseSummitMessage {
