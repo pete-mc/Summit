@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - dev
 
 permissions:
   contents: write
@@ -24,9 +25,10 @@ jobs:
 
     - name: Extract version
       id: get_version
-      run: echo "::set-output name=VERSION::$(jq -r .version manifest.json)"
+      run: echo "VERSION=$(jq -r .version manifest.json)" >> $GITHUB_ENV
 
     - name: Check if release already exists
+      if: github.ref == 'refs/heads/main'
       id: check_release
       run: |
         RELEASE=$(curl --silent "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/${{ steps.get_version.outputs.VERSION }}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" || echo '{"message": "Not Found"}')
@@ -48,14 +50,39 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Remove and re-add Android platform
+      run: |
+        cd cordova-app
+        cordova platform rm android
+        cordova platform add android
+
+    - name: Build Contents
+      run: npx tsc src/terrainsrc/summitTerrainContext.ts --outDir src/content
+      working-directory: ${{ github.workspace }}
+
     - name: Build project
       run: npx webpack --config webpack.prod.js
-      working-directory: ${{ github.workspace }}
+      working-directory: ${{ github.workspace }} 
+    
+    - name: Install xmlstarlet
+      run: sudo apt-get install -y xmlstarlet
+
+    - name: Set Cordova app version
+      run: |
+        cd cordova-app
+        xmlstarlet ed --inplace -u "/widget/@version" -v "${{ steps.get_version.outputs.VERSION }}" config.xml
+
+    - name: Build Cordova app
+      run: |
+        cd cordova-app
+        cordova prepare
+        cordova build android
 
     - name: Zip summit
       run: zip -r summit.zip manifest.json bin/summit.js styles/* images/*
 
     - name: Create Release
+      if: github.ref == 'refs/heads/main'
       id: create_release
       uses: actions/create-release@v1
       env:
@@ -67,6 +94,7 @@ jobs:
         prerelease: false
 
     - name: Upload Release Asset
+      if: github.ref == 'refs/heads/main'
       id: upload-release-asset 
       uses: actions/upload-release-asset@v1
       env:
@@ -76,15 +104,50 @@ jobs:
         asset_path: ./summit.zip
         asset_name: summit.zip
         asset_content_type: application/zip
+    
+    - name: Upload APK Release Asset
+      if: github.ref == 'refs/heads/main'
+      id: upload-apk-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./cordova-app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+        asset_name: app-debug.apk
+        asset_content_type: application/vnd.android.package-archive
 
-    - name: Install chrome-webstore-upload-cli
-      run: npm install -g chrome-webstore-upload-cli
+    - name: Publish to Chrome Web Store
+      if: github.ref == 'refs/heads/main'
+      uses: furkanipek/chrome-extension-action@v1.0.1
+      with:
+        extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+        client-id: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
+        client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
+        refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
+        extension-file: ./summit.zip
+        publish: true
+        tester: false
+        
+    - uses: wdzeng/edge-addon@v1
+      if: github.ref == 'refs/heads/main'
+      with:
+        product-id: ${{ secrets.EDGE_EXTENSION_ID }}
+        zip-path: ./summit.zip
+        client-id: ${{ secrets.EDGE_CLIENT_ID }}
+        client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
+        access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}
+      
+    - name: Upload web extension as artifact
+      if: github.ref == 'refs/heads/dev'
+      uses: actions/upload-artifact@v2
+      with:
+        name: web-extension
+        path: ./summit.zip
 
-    - name: Upload to Chrome Web Store
-      run: webstore upload --source summit.zip --extension-id ${{ secrets.CHROME_EXTENSION_ID }} --client-id ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }} --client-secret ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }} --refresh-token ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
-
-
-#     - name: Build Cordova app
-#       run: |
-#         cd cordova-app
-#         cordova build android
+    - name: Upload APK as artifact
+      if: github.ref == 'refs/heads/dev'
+      uses: actions/upload-artifact@v2
+      with:
+        name: android-app
+        path: ./cordova-app/platforms/android/app/build/outputs/apk/debug/app-debug.apk

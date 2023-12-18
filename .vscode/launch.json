@@ -11,9 +11,10 @@
       "sourceMapPathOverrides": {
         "webpack:///./*": "${webRoot}/*"
       },
-      "preLaunchTask": "Build",
+      "preLaunchTask": "Build Extension",
       "runtimeArgs": [
-        "--load-extension=${workspaceFolder}"
+        "--load-extension=${workspaceFolder}",
+        "--auto-open-devtools-for-tabs"
       ],
       "userDataDir": false
     }

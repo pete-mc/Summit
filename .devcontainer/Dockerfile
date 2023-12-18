@@ -12,7 +12,7 @@ RUN apt-get update && \
 ENV PATH="/usr/lib/android-sdk/cmdline-tools/latest/bin:/usr/lib/android-sdk/platform-tools:${PATH}"
 RUN yes | sdkmanager --licenses && sdkmanager --update
 
-RUN npm install -g webpack @types/jest @vscode/vsce cordova jest typescript webpack-cli webpack
+RUN npm install -g webpack @types/jest @vscode/vsce cordova jest typescript webpack-cli webpack npm-run-all
 WORKDIR /workspace
 COPY . .
 RUN git config --global user.email "peter@mcdonald.xyz" && \
