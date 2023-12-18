@@ -9,12 +9,11 @@ function onloadTerrain() {
   context.listen("changeRoute", (data) => {
     window.$nuxt.$router.push({ path: (data as SummitRouteChangeMessage).newRoute });
   });
-  context.listen("addScreens", (data) => {
-    (data as SummitAddSreensMessage).ids.forEach((id) => {
-      context.getPageFromDB(id).then((page) => {
-        window.$nuxt.$router.addRoutes(context.getRoutes([page]));
-      });  
-    });
+  context.listen("addScreens", async (data) => {
+    for (const id of (data as SummitAddSreensMessage).ids) {
+      const page = await context.getPageFromDB(id);
+      window.$nuxt.$router.addRoutes(context.getRoutes([page]));
+    }
   });
 }
 

@@ -123,36 +123,22 @@ jobs:
         asset_name: app-debug.apk
         asset_content_type: application/vnd.android.package-archive
 
-    - name: Upload & release
-      if: github.ref == 'refs/heads/main'
-      uses: mnao305/chrome-extension-upload@v4.0.1
-      with:
-        file-path: ./summit.zip
-        extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
-        client-id: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
-        client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
-        refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
-        publish: false
+    # - name: Upload & release
+    #   if: github.ref == 'refs/heads/main'
+    #   uses: mnao305/chrome-extension-upload@v4.0.1
+    #   with:
+    #     file-path: ./summit.zip
+    #     extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+    #     client-id: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
+    #     client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
+    #     refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
+    #     publish: false
       
-    - uses: wdzeng/edge-addon@v1
-      if: github.ref == 'refs/heads/main'
-      with:
-        product-id: ${{ secrets.EDGE_EXTENSION_ID }}
-        zip-path: ./summit.zip
-        client-id: ${{ secrets.EDGE_CLIENT_ID }}
-        client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
-        access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}
-      
-    - name: Upload web extension as artifact
-      if: github.ref == 'refs/heads/dev'
-      uses: actions/upload-artifact@v2
-      with:
-        name: web-extension
-        path: ./summit.zip
-
-    - name: Upload APK as artifact
-      if: github.ref == 'refs/heads/dev'
-      uses: actions/upload-artifact@v2
-      with:
-        name: android-app
-        path: ./cordova-app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+    # - uses: wdzeng/edge-addon@v1
+    #   if: github.ref == 'refs/heads/main'
+    #   with:
+    #     product-id: ${{ secrets.EDGE_EXTENSION_ID }}
+    #     zip-path: ./summit.zip
+    #     client-id: ${{ secrets.EDGE_CLIENT_ID }}
+    #     client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
+    #     access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}

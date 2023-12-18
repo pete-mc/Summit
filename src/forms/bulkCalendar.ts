@@ -39,7 +39,7 @@ export async function bulkCalendar(): Promise<void> {
   // Fetch members for Organisers, Leaders, and Assists columns
   $("#submit").hide();
   $("#add").hide();
-  const members = await fetchUnitMembers(context);
+  const members = await fetchUnitMembers();
   if (!members || !context.currentProfile) {
     $("#loadingP").text("Error loading members. Please click the button to try again.");
     $("#loadingP").after('<button id="retry" class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Retry</button>');

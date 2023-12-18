@@ -23,7 +23,7 @@ export async function unitReport() {
   }
   $("#milestoneHeader").text(context.currentProfile.profiles[0].unit.name);
 
-  const unitMembers = await fetchUnitMembers(context);
+  const unitMembers = await fetchUnitMembers();
   if (!unitMembers) {
     $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
     $("#milestoneHeader").text("Milestone Planning Report");

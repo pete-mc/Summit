@@ -1,4 +1,3 @@
-import { SummitAddSreensMessage, SummitScreen } from "../typings/summitTypes";
 import { bulkCalendar } from "./forms/bulkCalendar";
 import { clearCache } from "./helpers";
 import { unitReport } from "./reports/milestonePlanningReport";
@@ -6,47 +5,9 @@ import { oasReport } from "./reports/oasReport";
 import { progressReport } from "./reports/progressReport";
 import { SummitContext } from "./summitContext";
 import $ from "jquery";
-import homeHtml from "raw-loader!./pages/home/home.html";
-
-export class SummitPage {
-  public pageid: string;
-  public title: string;
-  public breadcrumb: string;
-  public path: string;
-  public html: string;
-  public onload: { name: string, func: () => void};
-  constructor(pageid: string, title: string, breadcrumb: string, path: string, html: string, onloadSummit: { name: string, func: () => void}) {
-    this.pageid = pageid;
-    this.title = title;
-    this.breadcrumb = breadcrumb;
-    this.path = path;
-    this.html = html;
-    this.onload = onloadSummit;
-  }
-  public executeOnLoad() {
-    if (this.onload) {
-      this.onload.func();
-    }
-  }
-  public get screen(): SummitScreen {
-    return {
-      id: this.pageid,
-      path: this.path,
-      html: this.html,
-    };
-  }
-}
 
 export function summitMenu() {
   const context = SummitContext.getInstance();
-  context.summitPages.push(
-    new SummitPage("fa52775b-b30c-4e56-83ce-918411303373", "Home", "Home", "/summit", homeHtml, { name: "HomeOnLoad", func: () => {} })
-  );
-  context.submitAllPages();
-  context.sendMessage({
-    type: "addScreens",
-    ids: context.summitPages.map((page) => page.pageid),
-  } as SummitAddSreensMessage);
 
   $(".v-navigation-drawer__content").css("background-color", "#004C00");
 

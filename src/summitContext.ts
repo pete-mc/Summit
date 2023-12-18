@@ -1,6 +1,5 @@
-import { BaseSummitMessage, SummitDownloadLogbookMessage, SummitMessageEvent, SummitMessageHandler, SummitRouteChangeMessage, SummitScreen, SummitUploadLogbookMessage } from "../typings/summitTypes";
+import { BaseSummitMessage, SummitDownloadLogbookMessage, SummitMessageEvent, SummitMessageHandler, SummitRouteChangeMessage, SummitUploadLogbookMessage } from "../typings/summitTypes";
 import { TerrainProfile } from "../typings/terrainTypes";
-import { SummitPage } from "./summitMenu";
 import { loadLogbookData, writeLogbook } from "./terrainButtons/copyLogbook";
 import { getCurrentProfile } from "./terrainCalls";
 
@@ -8,14 +7,13 @@ export class SummitContext {
   private static instance: SummitContext;
   public summitMessageHandlers: SummitMessageHandler[] = [];
   private bcChannel: BroadcastChannel = new BroadcastChannel("TerrainSummit");
-  private database: IDBOpenDBRequest = indexedDB.open("TerrainSummit", 1);
+  public database: IDBOpenDBRequest = indexedDB.open("TerrainSummit", 1);
   public currentProfile: TerrainProfile | undefined = undefined;
   public terrainRoute: string = "";
   public terrainRouteChangeHandlers: ((message: SummitRouteChangeMessage) => void)[] = [];
   public loggedin: boolean = false;
   public summitVersion: string = process.env.SUMMITVERSION || "0.0.0";
   public buildMode: string = process.env.SUMMITBUILD || "prod";
-  public summitPages: SummitPage[] = [];
 
   private constructor() {
     this.bcChannel.addEventListener("message", (event: SummitMessageEvent) => {
@@ -34,7 +32,7 @@ export class SummitContext {
         this.terrainRouteChangeHandlers.forEach((handler) => handler(data as SummitRouteChangeMessage));
       },
     });
-    this.database.onupgradeneeded = event => {
+    this.database.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
       const objectStore = db.createObjectStore("SummitPages", { keyPath: "id" });
       objectStore.createIndex("path", "path", { unique: false });
@@ -106,32 +104,6 @@ export class SummitContext {
     } else {
       console.debug(message, css, originatingLine);
     }
-  }
-
-  public submitAllPages() {
-    this.summitPages.forEach((page) => {
-      this.addPageToDB(page.screen, "SummitPages");
-    });
-  }
-
-  public addPageToDB(item: SummitScreen, store: string) {
-    const transaction = this.database.result.transaction([store], "readwrite");
-    const objectStore = transaction.objectStore(store);
-    objectStore.put(item);
-  }
-
-  public getPageFromDB(key: string): Promise<SummitScreen> {
-    return new Promise((resolve, reject) => {
-      const transaction = this.database.result.transaction(["SummitPages"], "readonly");
-      const objectStore = transaction.objectStore("SummitPages");
-      const request = objectStore.get(key);
-      request.onsuccess = () => {
-        resolve(request.result);
-      };
-      request.onerror = () => {
-        reject(request.error);
-      };
-    });
   }
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
