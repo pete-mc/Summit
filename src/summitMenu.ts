@@ -1,4 +1,4 @@
-import { SummitAddSreensMessage } from "../typings/summitTypes";
+import { SummitAddSreensMessage, SummitScreen } from "../typings/summitTypes";
 import { bulkCalendar } from "./forms/bulkCalendar";
 import { clearCache } from "./helpers";
 import { unitReport } from "./reports/milestonePlanningReport";
@@ -6,28 +6,46 @@ import { oasReport } from "./reports/oasReport";
 import { progressReport } from "./reports/progressReport";
 import { SummitContext } from "./summitContext";
 import $ from "jquery";
+import homeHtml from "raw-loader!./pages/home/home.html";
 
-export function summitMenu(context: SummitContext) {
-  // Send addRoutes using a SummitAddRoutesMessage to Terrain for Summit loading pages
+export class SummitPage {
+  public pageid: string;
+  public title: string;
+  public breadcrumb: string;
+  public path: string;
+  public html: string;
+  public onload: { name: string, func: () => void};
+  constructor(pageid: string, title: string, breadcrumb: string, path: string, html: string, onloadSummit: { name: string, func: () => void}) {
+    this.pageid = pageid;
+    this.title = title;
+    this.breadcrumb = breadcrumb;
+    this.path = path;
+    this.html = html;
+    this.onload = onloadSummit;
+  }
+  public executeOnLoad() {
+    if (this.onload) {
+      this.onload.func();
+    }
+  }
+  public get screen(): SummitScreen {
+    return {
+      id: this.pageid,
+      path: this.path,
+      html: this.html,
+    };
+  }
+}
+
+export function summitMenu() {
+  const context = SummitContext.getInstance();
+  context.summitPages.push(
+    new SummitPage("fa52775b-b30c-4e56-83ce-918411303373", "Home", "Home", "/summit", homeHtml, { name: "HomeOnLoad", func: () => {} })
+  );
+  context.submitAllPages();
   context.sendMessage({
     type: "addScreens",
-    screens: [
-      {
-        path: "/summit",
-        html: `  <h1>Welcome to Terrain | Summit</h1>
-        Here you will bo able to find the custom Summit reports and request forms.<br>
-        <br>
-        Please note that these reports run inside the terrain website and do not transmit information to any third party services.<br>
-        These reports only show information that you have access to with your account. No additional information can be gathered that you don't already have access to by clicking around Terrain.<br>
-        <br>
-        The purpose of these reports is simiply to assist in providing a snapshot of your units information in a single screen.<br>
-        <br>
-        Please select the page you wish to run from the left hand side bar. To go back to the rest of Terrain click "Go Back".<br>
-        <br>
-        Thanks for using Terrain |Summit!`,
-        onloadSummit: "HomeOnLoad",
-      },
-    ],
+    ids: context.summitPages.map((page) => page.pageid),
   } as SummitAddSreensMessage);
 
   $(".v-navigation-drawer__content").css("background-color", "#004C00");
@@ -46,7 +64,7 @@ export function summitMenu(context: SummitContext) {
   createSummitReportMenuItem(false, () => bulkCalendar(), "Bulk Calendar Entry", "bulkEntry");
   createSummitReportMenuItem(false, () => clearCache(), "Clear Cached Data", "clearCache");
   //createSummitReportMenuItem(false, () => testReport(), "TEST", "tester");
-  createSummitReportMenuItem(false, () => (location.href = "https://terrain.scouts.com.au/"), "Back to SCOUTS | TERRAIN", "back");
+  createSummitReportMenuItem(false, () => context.changePage("/basecamp"), "Back to SCOUTS | TERRAIN", "back");
 
   $(".NavMenu__logo").click(() => (location.href = "https://terrain.scouts.com.au/"));
 }
@@ -67,26 +85,6 @@ export function createSummitReportMenuItem(replaceMenu: boolean, func: () => unk
   } else {
     $(mainMenu).append(navMenuGroup);
   }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function summitHomePage() {
-  summitLoadPage(
-    "SUMMIT",
-    `
-  <h1>Welcome to Terrain | Summit</h1>
-  Here you will bo able to find the custom Summit reports and request forms.<br>
-  <br>
-  Please note that these reports run inside the terrain website and do not transmit information to any third party services.<br>
-  These reports only show information that you have access to with your account. No additional information can be gathered that you don't already have access to by clicking around Terrain.<br>
-  <br>
-  The purpose of these reports is simiply to assist in providing a snapshot of your units information in a single screen.<br>
-  <br>
-  Please select the page you wish to run from the left hand side bar. To go back to the rest of Terrain click "Go Back".<br>
-  <br>
-  Thanks for using Terrain |Summit!
-`,
-  );
 }
 
 export function summitLoadPage(breadcrumbText: string, content: string | Element | Comment | Document | DocumentFragment | JQuery<JQuery.Node> | (JQuery.Node | JQuery<JQuery.Node>)[]) {

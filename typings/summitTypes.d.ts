@@ -10,8 +10,7 @@ export interface TerrainCache extends Array<CacheType> {}
 export interface SummitScreen {
   path: string;
   html: string;
-  onloadSummit?: string;
-  onloadTerrain?: () => void;
+  id: string;
 }
 
 //boardcast event message types
@@ -26,7 +25,7 @@ export interface SummitMessageHandler {
 
 export interface BaseSummitMessage {
   type: string;
-  [key: string]: string | number | boolean | SummitScreen[] | undefined;
+  [key: string]: string | number | boolean | string[] | undefined;
 }
 
 export interface SummitMessageEvent<T extends SummitMessage = SummitMessage> extends MessageEvent {
@@ -52,10 +51,10 @@ export interface SummitRouteChangeMessage extends BaseSummitMessage {
 
 export interface SummitAddSreensMessage extends BaseSummitMessage {
   type: "addScreens";
-  screens: SummitScreen[];
+  ids: string[];
 }
 
 export interface SummitOnLoadMessage extends BaseSummitMessage {
   type: "onloadSummit";
-  onloadSummit: string;
+  id: string;
 }

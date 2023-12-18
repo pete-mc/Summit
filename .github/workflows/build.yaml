@@ -26,8 +26,9 @@ jobs:
     - name: Extract version
       id: get_version
       run: |
-        echo "VERSION=$(jq -r .version manifest.json)" >> $GITHUB_ENV
-        echo "::set-output name=VERSION::$(jq -r .version manifest.json)"
+        VERSION=$(jq -r .version manifest.json)
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
 
     - name: Print version
       run: echo "Version is ${{ env.VERSION }}"
@@ -122,18 +123,17 @@ jobs:
         asset_name: app-debug.apk
         asset_content_type: application/vnd.android.package-archive
 
-    - name: Publish to Chrome Web Store
+    - name: Upload & release
       if: github.ref == 'refs/heads/main'
-      uses: furkanipek/chrome-extension-action@v1.0.1
+      uses: mnao305/chrome-extension-upload@v4.0.1
       with:
+        file-path: ./summit.zip
         extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
         client-id: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
         client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
         refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
-        extension-file: ./summit.zip
-        publish: true
-        tester: false
-        
+        publish: false
+      
     - uses: wdzeng/edge-addon@v1
       if: github.ref == 'refs/heads/main'
       with:

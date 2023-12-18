@@ -1,5 +1,6 @@
-import { SummitAddSreensMessage, SummitMessage, SummitRouteChangeMessage, SummitScreen } from "../../typings/summitTypes";
+import { SummitAddSreensMessage, SummitMessage, SummitOnLoadMessage, SummitRouteChangeMessage, SummitScreen } from "../../typings/summitTypes";
 import {} from "../../typings/terrainContext";
+
 //# sourceURL=TerrainSummit/TerrainContext.js
 function onloadTerrain() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -9,13 +10,10 @@ function onloadTerrain() {
     window.$nuxt.$router.push({ path: (data as SummitRouteChangeMessage).newRoute });
   });
   context.listen("addScreens", (data) => {
-    (data as SummitAddSreensMessage).screens.forEach((screen) => {
-      window.$nuxt.$router.addRoutes([
-        {
-          path: screen.path,
-          component: context.createComponent(screen),
-        },
-      ]);
+    (data as SummitAddSreensMessage).ids.forEach((id) => {
+      context.getPageFromDB(id).then((page) => {
+        window.$nuxt.$router.addRoutes(context.getRoutes([page]));
+      });  
     });
   });
 }
@@ -23,6 +21,7 @@ function onloadTerrain() {
 class TerrainSummitContext {
   private static instance: TerrainSummitContext;
   private bcChannel: BroadcastChannel = new BroadcastChannel("TerrainSummit");
+  private database: IDBOpenDBRequest = indexedDB.open("TerrainSummit", 1);
   public currentRoute: Route = window.$nuxt.$router.currentRoute;
   public sendToSummitDebounced: (to: Route, from?: Route) => void;
   private observationTimer: NodeJS.Timeout | null = null;
@@ -89,7 +88,7 @@ class TerrainSummitContext {
   private stopAndClearObservers() {
     this.layoutObserver.disconnect();
     this.isObserving = false;
-    console.debug("Stopping route observation" + this.currentRoute.path);
+    console.debug("Stopping route observation for " + this.currentRoute.path);
   }
 
   public waitForNuxtTicks(callback: (...args: unknown[]) => void, ticks: number, args: unknown[] = []) {
@@ -135,23 +134,49 @@ class TerrainSummitContext {
     });
   }
 
-  public createComponent(screen: SummitScreen) {
+  public createComponent(screen: SummitScreen): Vue {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this; // Capture the context for use in callbacks in nuxt
     return {
       created() {
-        if (screen.onloadTerrain) screen.onloadTerrain();
-        if (screen.onloadSummit) {
-          self.bcChannel.postMessage({
-            type: "onloadSummit",
-            onloadSummit: screen.onloadSummit,
-          });
-        }
+        self.bcChannel.postMessage({
+          type: "onloadSummit",
+          id: screen.id,
+        } as SummitOnLoadMessage);
       },
       render(h: (el: string, {}) => void) {
         return h("div", { domProps: { innerHTML: screen.html } });
       },
     };
+  }
+
+  public getRoutes(pages: SummitScreen[]): addRoute[] {
+    return pages.map((page) => {
+      return {
+        path: page.path,
+        component: this.createComponent(page),
+      };
+    });
+  }
+
+  public addPageToDB(item: SummitScreen, store: string) {
+    const transaction = this.database.result.transaction([store], "readwrite");
+    const objectStore = transaction.objectStore(store);
+    objectStore.add(item);
+  }
+
+  public getPageFromDB(key: string): Promise<SummitScreen> {
+    return new Promise((resolve, reject) => {
+      const transaction = this.database.result.transaction(["SummitPages"], "readonly");
+      const objectStore = transaction.objectStore("SummitPages");
+      const request = objectStore.get(key);
+      request.onsuccess = () => {
+        resolve(request.result);
+      };
+      request.onerror = () => {
+        reject(request.error);
+      };
+    });
   }
 }
 

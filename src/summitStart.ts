@@ -39,6 +39,7 @@ async function initSummit() {
       fetchUnitMembers(context);
     }
     startSummitChecks(newRoute);
+
   });
 
   function startSummitChecks(route: string) {
@@ -54,7 +55,7 @@ async function initSummit() {
         break;
     }
     if (checkPage(`//div[ancestor::nav[contains(@class, 'NavMenu')] and contains(@class, 'NavMenu__menu-container')]`, "summitReportsMenu-summitMenu")) {
-      createSummitReportMenuItem(false, () => summitMenu(context), "Terrain | Summit", "summitMenu");
+      createSummitReportMenuItem(false, () => summitMenu(), "Terrain | Summit", "summitMenu");
     }
   }
 

@@ -9,13 +9,10 @@ function onloadTerrain() {
         window.$nuxt.$router.push({ path: data.newRoute });
     });
     context.listen("addScreens", function (data) {
-        data.screens.forEach(function (screen) {
-            window.$nuxt.$router.addRoutes([
-                {
-                    path: screen.path,
-                    component: context.createComponent(screen),
-                },
-            ]);
+        data.ids.forEach(function (id) {
+            context.getPageFromDB(id).then(function (page) {
+                window.$nuxt.$router.addRoutes(context.getRoutes([page]));
+            });
         });
     });
 }
@@ -23,6 +20,7 @@ var TerrainSummitContext = /** @class */ (function () {
     function TerrainSummitContext() {
         var _this = this;
         this.bcChannel = new BroadcastChannel("TerrainSummit");
+        this.database = indexedDB.open("TerrainSummit", 1);
         this.currentRoute = window.$nuxt.$router.currentRoute;
         this.observationTimer = null;
         this.observationDuration = 3000; // Duration in milliseconds
@@ -87,7 +85,7 @@ var TerrainSummitContext = /** @class */ (function () {
     TerrainSummitContext.prototype.stopAndClearObservers = function () {
         this.layoutObserver.disconnect();
         this.isObserving = false;
-        console.debug("Stopping route observation" + this.currentRoute.path);
+        console.debug("Stopping route observation for " + this.currentRoute.path);
     };
     TerrainSummitContext.prototype.waitForNuxtTicks = function (callback, ticks, args) {
         var _this = this;
@@ -139,19 +137,43 @@ var TerrainSummitContext = /** @class */ (function () {
         var self = this; // Capture the context for use in callbacks in nuxt
         return {
             created: function () {
-                if (screen.onloadTerrain)
-                    screen.onloadTerrain();
-                if (screen.onloadSummit) {
-                    self.bcChannel.postMessage({
-                        type: "onloadSummit",
-                        onloadSummit: screen.onloadSummit,
-                    });
-                }
+                self.bcChannel.postMessage({
+                    type: "onloadSummit",
+                    id: screen.id,
+                });
             },
             render: function (h) {
                 return h("div", { domProps: { innerHTML: screen.html } });
             },
         };
+    };
+    TerrainSummitContext.prototype.getRoutes = function (pages) {
+        var _this = this;
+        return pages.map(function (page) {
+            return {
+                path: page.path,
+                component: _this.createComponent(page),
+            };
+        });
+    };
+    TerrainSummitContext.prototype.addPageToDB = function (item, store) {
+        var transaction = this.database.result.transaction([store], "readwrite");
+        var objectStore = transaction.objectStore(store);
+        objectStore.add(item);
+    };
+    TerrainSummitContext.prototype.getPageFromDB = function (key) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var transaction = _this.database.result.transaction(["SummitPages"], "readonly");
+            var objectStore = transaction.objectStore("SummitPages");
+            var request = objectStore.get(key);
+            request.onsuccess = function () {
+                resolve(request.result);
+            };
+            request.onerror = function () {
+                reject(request.error);
+            };
+        });
     };
     return TerrainSummitContext;
 }());
