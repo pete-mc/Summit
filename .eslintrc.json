@@ -10,18 +10,11 @@
   "extends": [
       "plugin:@typescript-eslint/recommended",
       "plugin:prettier/recommended",
-      "plugin:react/recommended",
       "prettier"
   ],
   "parserOptions": {
       "project": "./tsconfig.json"
   },
-  "settings": {
-      "react": {
-        "pragma": "React",
-        "version": "detect"
-      }
-    },
   "plugins": [
       "@typescript-eslint",
       "prettier"
