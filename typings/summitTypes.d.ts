@@ -1,11 +1,12 @@
+import { TerrainCacheData } from "./terrainTypes";
 export interface CacheType {
-    type: string;
-    data: any;
-    ttl: number;
+  type: string;
+  data: TerrainCacheData;
+  ttl: number;
 }
 
 export interface TerrainCache extends Array<CacheType> {}
- 
+
 export interface SummitScreen {
   path: string;
   html: string;
@@ -14,58 +15,47 @@ export interface SummitScreen {
 }
 
 //boardcast event message types
-export type SummitMessage =
-  | SummitUploadLogbookMessage
-  | SummitDownloadLogbookMessage
-  | SummitRouteChangeMessage
-  | SummitAddSreensMessage
-  | SummitOnLoadMessage
-  | BaseSummitMessage;
+export type SummitMessage = SummitUploadLogbookMessage | SummitDownloadLogbookMessage | SummitRouteChangeMessage | SummitAddSreensMessage | SummitOnLoadMessage | BaseSummitMessage;
 
-type SummitMessageType = 
-  | SummitUploadLogbookMessage['type']
-  | SummitDownloadLogbookMessage['type']
-  | SummitRouteChangeMessage['type']
-  | SummitAddSreensMessage['type']
-  | SummitOnLoadMessage['type'];
+type SummitMessageType = SummitUploadLogbookMessage["type"] | SummitDownloadLogbookMessage["type"] | SummitRouteChangeMessage["type"] | SummitAddSreensMessage["type"] | SummitOnLoadMessage["type"];
 
 export interface SummitMessageHandler {
   type: SummitMessageType;
-  handler: (e:any) => void;
+  handler: (e: BaseSummitMessage) => void;
 }
 
 export interface BaseSummitMessage {
   type: string;
+  [key: string]: string | number | boolean | SummitScreen[];
 }
 
-export interface SummitMessageEvent<T extends SummitMessage = SummitMessage>  extends MessageEvent{
+export interface SummitMessageEvent<T extends SummitMessage = SummitMessage> extends MessageEvent {
   data: T;
 }
 
 export interface SummitUploadLogbookMessage extends BaseSummitMessage {
-  type: 'writeLogbook';
+  type: "writeLogbook";
   upload: boolean;
 }
 
 export interface SummitDownloadLogbookMessage extends BaseSummitMessage {
-  type: 'loadLogbookData';
+  type: "loadLogbookData";
   record: string;
   download: boolean;
 }
 
 export interface SummitRouteChangeMessage extends BaseSummitMessage {
-  type: 'routeChange' | 'changeRoute';
+  type: "routeChange" | "changeRoute";
   newRoute: string;
   oldRoute: string;
 }
 
 export interface SummitAddSreensMessage extends BaseSummitMessage {
-  type: 'addScreens';
+  type: "addScreens";
   screens: SummitScreen[];
 }
 
 export interface SummitOnLoadMessage extends BaseSummitMessage {
-  type: 'onloadSummit';
+  type: "onloadSummit";
   onloadSummit: string;
 }
-

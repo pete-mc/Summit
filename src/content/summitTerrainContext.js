@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 //# sourceURL=TerrainSummit/TerrainContext.js
 function onloadTerrain() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     window.terrainSummitContext = TerrainSummitContext;
     var context = TerrainSummitContext.getInstance();
     context.listen("changeRoute", function (event) {
@@ -9,23 +10,25 @@ function onloadTerrain() {
     });
     context.listen("addScreens", function (event) {
         event.data.screens.forEach(function (screen) {
-            window.$nuxt.$router.addRoutes([{
+            window.$nuxt.$router.addRoutes([
+                {
                     path: screen.path,
-                    component: context.createComponent(screen)
-                }]);
+                    component: context.createComponent(screen),
+                },
+            ]);
         });
     });
 }
 var TerrainSummitContext = /** @class */ (function () {
     function TerrainSummitContext() {
         var _this = this;
-        this.bcChannel = new BroadcastChannel('TerrainSummit');
+        this.bcChannel = new BroadcastChannel("TerrainSummit");
         this.currentRoute = window.$nuxt.$router.currentRoute;
         window.$nuxt.$router.afterEach(function (to, from) {
-            var mainElement = document.querySelector('main');
+            var mainElement = document.querySelector("main");
             if (mainElement) {
                 _this.waitForNuxtTicks(function (mainElement) {
-                    mainElement = document.querySelector('main');
+                    mainElement = document.querySelector("main");
                     new MutationObserver(function () {
                         _this.sendToSummit(to, from);
                     }).observe(mainElement, { attributes: true, childList: true, subtree: false });
@@ -60,8 +63,8 @@ var TerrainSummitContext = /** @class */ (function () {
     };
     TerrainSummitContext.prototype.sendToSummit = function (to, from) {
         this.bcChannel.postMessage({
-            type: 'routeChange',
-            data: { newRoute: to.fullPath, oldRoute: from.fullPath }
+            type: "routeChange",
+            data: { newRoute: to.fullPath, oldRoute: from.fullPath },
         });
     };
     TerrainSummitContext.prototype.debounce = function (func, wait) {
@@ -83,32 +86,33 @@ var TerrainSummitContext = /** @class */ (function () {
         });
     };
     TerrainSummitContext.prototype.createComponent = function (screen) {
-        var self = this; // Capture the context for use in callbacks
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        var self = this; // Capture the context for use in callbacks in nuxt
         return {
             created: function () {
                 if (screen.onloadTerrain)
                     screen.onloadTerrain();
                 if (screen.onloadSummit) {
                     self.bcChannel.postMessage({
-                        type: 'onloadSummit',
-                        data: { onloadSummit: screen.onloadSummit }
+                        type: "onloadSummit",
+                        data: { onloadSummit: screen.onloadSummit },
                     });
                 }
             },
             render: function (h) {
-                return h('div', { domProps: { innerHTML: screen.html } });
-            }
+                return h("div", { domProps: { innerHTML: screen.html } });
+            },
         };
     };
     TerrainSummitContext.prototype.domWatcher = function (element) {
         var _this = this;
         var el = element === "body" ? document.body : document.getElementById(element);
-        if (!el || el.getAttribute('summit-observed'))
+        if (!el || el.getAttribute("summit-observed"))
             return;
         new MutationObserver(function (mutationsList) {
             for (var _i = 0, mutationsList_1 = mutationsList; _i < mutationsList_1.length; _i++) {
                 var mutation = mutationsList_1[_i];
-                if (mutation.type === 'childList') {
+                if (mutation.type === "childList") {
                     if (element != "body")
                         _this.sendToSummitDebounced(window.$nuxt.$router.currentRoute, window.$nuxt.$router.currentRoute);
                     switch (element) {
@@ -126,7 +130,7 @@ var TerrainSummitContext = /** @class */ (function () {
                 }
             }
         }).observe(el, { childList: true });
-        el.setAttribute('summit-observed', 'true');
+        el.setAttribute("summit-observed", "true");
     };
     return TerrainSummitContext;
 }());
@@ -137,7 +141,7 @@ if (window.$nuxt) {
 }
 // let bcChannel = new BroadcastChannel('TerrainSummit');
 // function InitSender() {
-//     //Broadcast route changes to Summit  
+//     //Broadcast route changes to Summit
 //     window.$nuxt.$router.afterEach((to, from) => {
 //       SendToSummit(to, from);
 //     });
@@ -153,7 +157,7 @@ if (window.$nuxt) {
 //     for (let mutation of mutationsList) {
 //       if (mutation.type === 'childList') {
 //         if (element != "body") SendToSummit(window.$nuxt.$router.currentRoute,window.$nuxt.$router.currentRoute);
-//         switch (element) {  
+//         switch (element) {
 //           case "body":
 //             DOMWatcher("__nuxt");
 //             break;
@@ -162,7 +166,7 @@ if (window.$nuxt) {
 //             break;
 //           case "__layout":
 //             DOMWatcher("nuxt");
-//             break;      
+//             break;
 //         }
 //         break;
 //       }
@@ -183,7 +187,7 @@ if (window.$nuxt) {
 //             case "changeRoute":
 //                 window.$nuxt.$router.push({ path: event.data.newRoute });
 //                 break;
-//             case "addScreens": 
+//             case "addScreens":
 //                 event.data.screens.forEach(screen => {
 //                     window.$nuxt.$router.addRoutes([{
 //                         path: screen.path,
