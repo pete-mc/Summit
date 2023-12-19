@@ -1,4 +1,4 @@
-import { SummitAddSreensMessage, SummitMessage, SummitOnLoadMessage, SummitRouteChangeMessage, SummitScreen } from "../../typings/summitTypes";
+import { SummitMessage, SummitOnLoadMessage, SummitRouteChangeMessage, SummitScreen } from "../../typings/summitTypes";
 import {} from "../../typings/terrainContext";
 
 //# sourceURL=TerrainSummit/TerrainContext.js
@@ -9,17 +9,22 @@ function onloadTerrain() {
   context.listen("changeRoute", (data) => {
     window.$nuxt.$router.push({ path: (data as SummitRouteChangeMessage).newRoute });
   });
-  context.listen("addScreens", async (data) => {
-    for (const id of (data as SummitAddSreensMessage).ids) {
-      const page = await context.getPageFromDB(id);
-      window.$nuxt.$router.addRoutes(context.getRoutes([page]));
+  context.listen("addScreens", (data) => {
+    if (!Array.isArray(data.ids)) return;
+    for (let index = 0; index < data.ids.length; index++) {
+      context.getPageFromDB(data.ids[index]).then((page) => {
+        window.$nuxt.$router.addRoutes(context.getRoutes([page]));
+      });
     }
+  });
+  context.bcChannel.postMessage({
+    type: "terrainLoaded",
   });
 }
 
 class TerrainSummitContext {
   private static instance: TerrainSummitContext;
-  private bcChannel: BroadcastChannel = new BroadcastChannel("TerrainSummit");
+  public bcChannel: BroadcastChannel = new BroadcastChannel("TerrainSummit");
   private database: IDBOpenDBRequest = indexedDB.open("TerrainSummit", 1);
   public currentRoute: Route = window.$nuxt.$router.currentRoute;
   public sendToSummitDebounced: (to: Route, from?: Route) => void;

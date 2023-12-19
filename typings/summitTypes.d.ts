@@ -14,9 +14,9 @@ export interface SummitScreen {
 }
 
 //boardcast event message types
-export type SummitMessage = SummitUploadLogbookMessage | SummitDownloadLogbookMessage | SummitRouteChangeMessage | SummitAddSreensMessage | SummitOnLoadMessage | BaseSummitMessage;
+export type SummitMessage = SummitUploadLogbookMessage | SummitDownloadLogbookMessage | SummitRouteChangeMessage | SummitAddSreensMessage | SummitOnLoadMessage | BaseSummitMessage | SummitTerrainLoadedMessage;
 
-type SummitMessageType = SummitUploadLogbookMessage["type"] | SummitDownloadLogbookMessage["type"] | SummitRouteChangeMessage["type"] | SummitAddSreensMessage["type"] | SummitOnLoadMessage["type"];
+type SummitMessageType = SummitUploadLogbookMessage["type"] | SummitDownloadLogbookMessage["type"] | SummitRouteChangeMessage["type"] | SummitAddSreensMessage["type"] | SummitOnLoadMessage["type"] | SummitTerrainLoadedMessage["type"];
 
 export interface SummitMessageHandler {
   type: SummitMessageType;
@@ -57,4 +57,8 @@ export interface SummitAddSreensMessage extends BaseSummitMessage {
 export interface SummitOnLoadMessage extends BaseSummitMessage {
   type: "onloadSummit";
   id: string;
+}
+
+export interface SummitTerrainLoadedMessage extends BaseSummitMessage {
+  type: "terrainLoaded";
 }

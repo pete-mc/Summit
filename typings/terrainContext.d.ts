@@ -5,9 +5,9 @@ declare global {
     render: (h: (tag: string, data: any) => any) => any;
   }
 
-  interface addRoute{
-      path: string;
-      component: Vue;
+  interface addRoute {
+    path: string;
+    component: Vue;
   }
 
   interface Route {

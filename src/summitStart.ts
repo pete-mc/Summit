@@ -10,16 +10,14 @@ if (SummitContext.getInstance().buildMode === "dev") {
 }
 
 async function initSummit() {
-  const context = SummitContext.getInstance();
-  context.log("Start");
-  // Setup Terrain Context
-
   $(`<button style="display: none;" onclick="var exports = {};function loadSummit(){${summitTerrainContext.replaceAll('"', "'")}};window.loadSummit = loadSummit; window.loadSummit();"/>`) //.replaceAll('"', "'").replace(/^(.*\n){2}/, "")
     .appendTo("body")
     .trigger("click")
     .remove();
-  const pagesContext = SummitPageManager.getInstance();
-  pagesContext.submitAllPages();
+  const context = SummitContext.getInstance();
+  context.log("Start");
+  // Setup Terrain Context
+  SummitPageManager.getInstance();
   initCache(); // initiate cache
 }
 
