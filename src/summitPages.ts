@@ -101,6 +101,7 @@ export class SummitPageManager {
     $(TerrainClass.MainMenuClass).first().attr("id", "TerrainMainMenu").clone().attr("id", "SummitMainMenu").css("background-color", "#004C00").appendTo("nav").first();
     $("#SummitMainMenu").show();
     $("#TerrainMainMenu").hide();
+    $("#SummitMainMenu").find(TerrainClass.MenuItemHeader).first().html(`<div style="color:white"><b>Summit | Terrain</b></div>`);
     const menuItem = $("#SummitMainMenu").find(TerrainClass.MenuItemClass).first().attr("id", "SummitMenuItem").hide();
     menuItem.find("a").each((index, element) => {
       $(element).replaceWith($(element).children());
@@ -112,7 +113,7 @@ export class SummitPageManager {
       this.createMenuItem(menuItem, page.pageid, page.title, page.path, menuItem.parent());
     });
     this.createMenuItem(menuItem, "summitMenu", "Terrain | Summit", "/summit", $("#TerrainMainMenu").find(TerrainClass.MenuItemClass).first().parent());
-    this.createMenuItem(menuItem, "terrainMenu", "Back To Terrain", "/basecamp", menuItem.parent());
+    this.createMenuItem(menuItem.css("background-color", "#071e57").children().removeClass("summit-menu").children().removeClass("summit-menu").parent().parent(), "terrainMenu", "Back to Scouts | Terrain", "/basecamp", menuItem.parent());
   }
 
   private createMenuItem(menuItem: JQuery<HTMLElement>, id: string, title: string, path: string, parent: JQuery<HTMLElement>): void {
@@ -157,4 +158,5 @@ enum TerrainClass {
   MainMenuClass = ".v-navigation-drawer__content",
   MenuItemClass = ".NavMenu__menu-group",
   MenuItemTextClass = ".v-list-item__title",
+  MenuItemHeader = ".NavMenu__header",
 }
