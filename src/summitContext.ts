@@ -7,7 +7,6 @@ export class SummitContext {
   private static instance: SummitContext;
   public summitMessageHandlers: SummitMessageHandler[] = [];
   private bcChannel: BroadcastChannel = new BroadcastChannel("TerrainSummit");
-  public database: IDBOpenDBRequest = indexedDB.open("TerrainSummit", 1);
   public currentProfile: TerrainProfile | undefined = undefined;
   public terrainRoute: string = "";
   public terrainRouteChangeHandlers: ((message: SummitRouteChangeMessage) => void)[] = [];
@@ -32,11 +31,15 @@ export class SummitContext {
         this.terrainRouteChangeHandlers.forEach((handler) => handler(data as SummitRouteChangeMessage));
       },
     });
-    this.database.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      const objectStore = db.createObjectStore("SummitPages", { keyPath: "id" });
-      objectStore.createIndex("path", "path", { unique: false });
-      objectStore.createIndex("html", "html", { unique: false });
+    const database: IDBOpenDBRequest = indexedDB.open("TerrainSummit", 1);
+    database.onsuccess = () => {
+      database.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        const objectStore = db.createObjectStore("SummitPages", { keyPath: "id" });
+        objectStore.createIndex("path", "path", { unique: false });
+        objectStore.createIndex("html", "html", { unique: false });
+        database.result.close();
+      };
     };
   }
 

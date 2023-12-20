@@ -1,35 +1,33 @@
-import { SummitContext } from "../summitContext";
-import { summitLoadPage } from "../summitMenu";
-import { fetchUnitMembers } from "../terrainCalls";
+import DataTable from "datatables.net-dt";
+import { SummitContext } from "../../summitContext";
+import { fetchUnitMembers } from "../../terrainCalls";
 import $ from "jquery";
+import msPlanningReportHTML from "raw-loader!./milestonePlanning.html";
 
-export async function unitReport() {
+export const msPlanningReportHtml = msPlanningReportHTML;
+
+export async function MileStonePlanningReport() {
   const context = SummitContext.getInstance();
-  summitLoadPage(
-    "SUMMIT REPORTS - MILESTONE PLANNING REPORT", //Breadcrumb header
-    //html content is contained within the two backticks ` below
-    `
-    <h2 id="milestoneHeader"></h2>
-    The milestones planning report is useful to see how many participates, leads and assists each member requires to complete their current milestone. Note that the numbers displayed are the <b>remaining requrement</b> not the current total.<br>
-    <p id="loadingP">Loading Please Wait...</p>
-    <table id="unitReportTable" class="display" width="100%"></table>
-    <canvas id="myChart"></canvas>
-  `,
-  );
-  if (!context.currentProfile || !context.token) {
-    $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
-    $("#milestoneHeader").text("Milestone Planning Report");
+  const unitMembers = await fetchUnitMembers();
+  if (!unitMembers || !context.currentProfile) {
+    $("#loadingP").text(
+      "Error loading members. Please click the button to try again. This is a Summit error. Please do not contact Terrain support for this issue. If this error persists please add an issue to the Summit GitHub repository. ",
+    );
+    $("#loadingP").after('<button id="retry" class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Retry</button>');
+    // button to access github issues list
+    $("#loadingP").after(
+      '<a id="guthub" href="https://github.com/pete-mc/Summit/issues" target="_blank"><button class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Summit Issues Register</button></a>',
+    );
+    $("#retry").on("click", async function () {
+      !context.currentProfile ? await context.getData() : undefined;
+      MileStonePlanningReport();
+    });
     return;
   }
   $("#milestoneHeader").text(context.currentProfile.profiles[0].unit.name);
-
-  const unitMembers = await fetchUnitMembers();
-  if (!unitMembers) {
-    $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
-    $("#milestoneHeader").text("Milestone Planning Report");
-    return;
-  }
-  $("#loadingP").text("");
+  $("#loadingP").remove();
+  $("#retry").remove();
+  $("#guthub").remove();
 
   // Get the milestone for each member
   const tableData = unitMembers.map((r) => {
@@ -48,7 +46,8 @@ export async function unitReport() {
     ];
   });
 
-  $("#unitReportTable").DataTable({
+  new DataTable("#unitReportTable", {
+    destroy: true,
     data: tableData,
     pageLength: 25,
     columns: [{ title: "Name" }, { title: "Milestone" }, { title: "Leads" }, { title: "Assists" }, { title: "Outdoors" }, { title: "Creative" }, { title: "Personal Growth" }, { title: "Community" }],

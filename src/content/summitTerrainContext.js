@@ -11,21 +11,14 @@ function onloadTerrain() {
     context.listen("addScreens", function (data) {
         if (!Array.isArray(data.ids))
             return;
-        for (var index = 0; index < data.ids.length; index++) {
-            context.getPageFromDB(data.ids[index]).then(function (page) {
-                window.$nuxt.$router.addRoutes(context.getRoutes([page]));
-            });
-        }
+        context.loadPagesFromDB(data.ids);
     });
-    context.bcChannel.postMessage({
-        type: "terrainLoaded",
-    });
+    context.bcChannel.postMessage({ type: "terrainLoaded" });
 }
 var TerrainSummitContext = /** @class */ (function () {
     function TerrainSummitContext() {
         var _this = this;
         this.bcChannel = new BroadcastChannel("TerrainSummit");
-        this.database = indexedDB.open("TerrainSummit", 1);
         this.currentRoute = window.$nuxt.$router.currentRoute;
         this.observationTimer = null;
         this.observationDuration = 3000; // Duration in milliseconds
@@ -161,24 +154,29 @@ var TerrainSummitContext = /** @class */ (function () {
             };
         });
     };
-    TerrainSummitContext.prototype.addPageToDB = function (item, store) {
-        var transaction = this.database.result.transaction([store], "readwrite");
-        var objectStore = transaction.objectStore(store);
-        objectStore.add(item);
-    };
-    TerrainSummitContext.prototype.getPageFromDB = function (key) {
+    TerrainSummitContext.prototype.loadPagesFromDB = function (ids) {
         var _this = this;
-        return new Promise(function (resolve, reject) {
-            var transaction = _this.database.result.transaction(["SummitPages"], "readonly");
+        var openRequest = indexedDB.open("TerrainSummit", 1);
+        openRequest.onsuccess = function (event) {
+            if (!event.target)
+                return;
+            var db = event.target.result;
+            var transaction = db.transaction("SummitPages", "readonly");
             var objectStore = transaction.objectStore("SummitPages");
-            var request = objectStore.get(key);
-            request.onsuccess = function () {
-                resolve(request.result);
+            var getAllRequest = objectStore.getAll();
+            getAllRequest.onsuccess = function () {
+                var results = getAllRequest.result;
+                var filteredResults = results.filter(function (screen) { return ids.includes(screen.id); });
+                window.$nuxt.$router.addRoutes(_this.getRoutes(filteredResults));
+                db.close();
             };
-            request.onerror = function () {
-                reject(request.error);
+            getAllRequest.onerror = function (event) {
+                console.error("Error in getAllRequest:", JSON.stringify(event));
             };
-        });
+        };
+        openRequest.onerror = function (event) {
+            console.error("Error in openRequest:", JSON.stringify(event));
+        };
     };
     return TerrainSummitContext;
 }());

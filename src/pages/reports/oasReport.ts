@@ -1,54 +1,33 @@
-import { SummitContext } from "../summitContext";
-import { summitLoadPage } from "../summitMenu";
-import { fetchUnitMembers } from "../terrainCalls";
+import { SummitContext } from "../../summitContext";
+import { fetchUnitMembers } from "../../terrainCalls";
 import $ from "jquery";
+import oasReportHTML from "raw-loader!./oasReport.html";
+
+export const oasReportHtml = oasReportHTML;
 
 export async function oasReport() {
   const context = SummitContext.getInstance();
-  summitLoadPage(
-    "SUMMIT REPORTS - OAS REPORT",
-    `
-    <h2 id="OASHeader"></h2>
-    This report will show all of the currently held OAS levels for each member of the section.<br><br>
-    <p id="loadingP">Loading Please Wait...</p>
-    <table id="oasReportTable" class="display" width="100%">
-      <thead>
-            <tr>
-                <th rowspan="2">Name</th>
-                <th colspan="3">Core Skills</th>
-                <th colspan="3">Land Specialist</th>
-                <th colspan="3">Water Specialist</th>
-            </tr>
-            <tr>
-                <th>Bushwalking</th>
-                <th>Bushcraft</th>
-                <th>Camping</th>
-                <th>Alpine</th>
-                <th>Cycling</th>
-                <th>Vertical</th>
-                <th>Aquatics</th>
-                <th>Boating</th>
-                <th>Paddling</th>
-            </tr>
-        </thead>
-    </table>
-  `,
-  );
   $("#oasReportTable").hide();
-  if (!context.currentProfile || !context.token) {
-    $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
-    $("#OASHeader").text("Milestone Planning Report");
-    return;
-  }
-  $("#OASHeader").text(context.currentProfile.profiles[0].unit.name);
-
   const unitMembers = await fetchUnitMembers();
-  if (!unitMembers) {
-    $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
-    $("#OASHeader").text("Milestone Planning Report");
+  if (!unitMembers || !context.currentProfile) {
+    $("#loadingP").text(
+      "Error loading members. Please click the button to try again. This is a Summit error. Please do not contact Terrain support for this issue. If this error persists please add an issue to the Summit GitHub repository. ",
+    );
+    $("#loadingP").after('<button id="retry" class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Retry</button>');
+    // button to access github issues list
+    $("#loadingP").after(
+      '<a id="guthub" href="https://github.com/pete-mc/Summit/issues" target="_blank"><button class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Summit Issues Register</button></a>',
+    );
+    $("#retry").on("click", async function () {
+      !context.currentProfile ? await context.getData() : undefined;
+      oasReport();
+    });
     return;
   }
+  $("#peakHeader").text(context.currentProfile.profiles[0].unit.name);
   $("#loadingP").remove();
+  $("#retry").remove();
+  $("#guthub").remove();
   $("#oasReportTable").show();
   const tableData = unitMembers.map((r) => {
     return [
@@ -95,6 +74,7 @@ export async function oasReport() {
     ];
   });
   $("#oasReportTable").DataTable({
+    destroy: true,
     data: tableData,
     pageLength: 25,
     order: [[1, "desc"]],
