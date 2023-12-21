@@ -11,9 +11,6 @@ obj
 bin
 .history/
 lib
-Log*.txt
 .config
-typings/XRM
-connectionstring.txt
 coverage
 junit.xml
