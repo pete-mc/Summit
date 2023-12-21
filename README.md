@@ -1,6 +1,10 @@
 # Summit
 This tool is to help provide usability features to the Scouts | Terrain website. Feel free to let us know about any issues or request new features in the issues tab.
 
+To get started install the add on for your browser below:
+
+[![](/images/chrome.png)](https://chromewebstore.google.com/detail/terrain-summit/fkpdafjknodpembpmogbcblabonpmhoo?hl=en&pli=1) [![](/images/edge.png)](https://microsoftedge.microsoft.com/addons/detail/terrain-summit/eoemenakogcfmmhkoiejhefmdijgpgnb)
+
 ## Peak Award Progress Report
 User friendly single page report to see where each of the youth members are traveling on the peak award journey.
 ![](/images/peakaward.jpg)
