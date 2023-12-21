@@ -25,5 +25,9 @@
       "cordova-plugin-inappbrowser": {},
       "cordova-plugin-splashscreen": {}
     }
+  },
+  "scripts": {
+    "prepare": "cordova prepare",
+    "build": "cordova build"
   }
 }
