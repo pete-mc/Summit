@@ -51,23 +51,24 @@ export class SummitPageManager {
   }
 
   public submitAllPages() {
-    this.pages.forEach((page) => {
-      this.addPageToDB(page.screen, "SummitPages");
-    });
+    // this.pages.forEach((page) => {
+    //   this.addPageToDB(page.screen, "SummitPages");
+    // });
     this.context.sendMessage({
       type: "addScreens",
       ids: this.pages.map((page) => page.pageid),
+      pages: this.pages.map((page) => page.screen),
     } as SummitAddSreensMessage);
   }
 
-  public addPageToDB(item: SummitScreen, store: string) {
-    const database = indexedDB.open("TerrainSummit", 1);
-    database.onsuccess = () => {
-      database.result.transaction([store], "readwrite").objectStore(store).put(item).onsuccess = () => {
-        database.result.close();
-      };
-    };
-  }
+  // public addPageToDB(item: SummitScreen, store: string) {
+  //   const database = indexedDB.open("TerrainSummit", 1);
+  //   database.onsuccess = () => {
+  //     database.result.transaction([store], "readwrite").objectStore(store).put(item).onsuccess = () => {
+  //       database.result.close();
+  //     };
+  //   };
+  // }
 
   public onRouteChange(route: string) {
     switch (route) {

@@ -21,6 +21,4 @@ async function initSummit() {
   initCache(); // initiate cache
 }
 
-window.onload = function () {
-  initSummit();
-};
+initSummit();

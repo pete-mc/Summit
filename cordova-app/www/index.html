@@ -1,25 +1,28 @@
 <body>
+    <img src="img/logo.png" alt="Summit" />
+    <h1>Terrain | Summit</h1>
+    <p>Launching Summit Please Wait...</p>
     <script type="text/javascript" src="cordova.js"></script>
     <script type="text/javascript">
         document.addEventListener('deviceready', function() {
-            var ref = cordova.InAppBrowser.open('https://terrain.scouts.com.au', '_blank', 'location=yes');
+            var ref = cordova.InAppBrowser.open('https://terrain.scouts.com.au', '_blank', 'location=no,toolbar=no,zoom=no');
             console.log("deviceready");
             ref.addEventListener('loadstop', async function(event) {
                 console.log("loadstop");
                 var url = new URL(event.url);
                 console.log(url.origin + url.pathname);
-                if (url.origin === 'https://terrain.scouts.com.au' && url.pathname !== '/') {
+                if (url.origin === 'https://terrain.scouts.com.au') {
                     console.log("Loading Summit");
                     // JavaScript files to inject
                     var jsFiles = [
-                        "bin/summit.js"
+                       "./bin/summit.js"
                     ];
 
                     // CSS files to inject
                     var cssFiles = [
-                        "styles/dependencies/datatables.min.css",
-                        "styles/dependencies/flatpickr.min.css",
-                        "styles/summit.css"
+                       "./styles/dependencies/datatables.min.css",
+                       "./styles/dependencies/flatpickr.min.css",
+                       "./styles/summit.css"
                     ];
                     console.log("Loading JS Files");
                     for (let jsFile of jsFiles) {
@@ -39,6 +42,7 @@
                             .catch(error => console.log('Error injecting CSS file:', error));
                     }
                     console.log("Loaded Summit, Launching now");
+                    navigator.splashscreen.hide();
                 }
             });
 

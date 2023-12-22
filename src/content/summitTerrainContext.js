@@ -11,7 +11,8 @@ function onloadTerrain() {
     context.listen("addScreens", function (data) {
         if (!Array.isArray(data.ids))
             return;
-        context.loadPagesFromDB(data.ids);
+        // context.loadPagesFromDB(data.ids);
+        window.$nuxt.$router.addRoutes(context.getRoutes(data.pages));
     });
     context.bcChannel.postMessage({ type: "terrainLoaded" });
 }
@@ -153,30 +154,6 @@ var TerrainSummitContext = /** @class */ (function () {
                 component: _this.createComponent(page),
             };
         });
-    };
-    TerrainSummitContext.prototype.loadPagesFromDB = function (ids) {
-        var _this = this;
-        var openRequest = indexedDB.open("TerrainSummit", 1);
-        openRequest.onsuccess = function (event) {
-            if (!event.target)
-                return;
-            var db = event.target.result;
-            var transaction = db.transaction("SummitPages", "readonly");
-            var objectStore = transaction.objectStore("SummitPages");
-            var getAllRequest = objectStore.getAll();
-            getAllRequest.onsuccess = function () {
-                var results = getAllRequest.result;
-                var filteredResults = results.filter(function (screen) { return ids.includes(screen.id); });
-                window.$nuxt.$router.addRoutes(_this.getRoutes(filteredResults));
-                db.close();
-            };
-            getAllRequest.onerror = function (event) {
-                console.error("Error in getAllRequest:", JSON.stringify(event));
-            };
-        };
-        openRequest.onerror = function (event) {
-            console.error("Error in openRequest:", JSON.stringify(event));
-        };
     };
     return TerrainSummitContext;
 }());

@@ -2,7 +2,7 @@
 const Webpack = require("webpack");
 const Path = require("path");
 const WebpackShellPluginNext = require("webpack-shell-plugin-next");
-// const shell = require('shelljs');
+const shell = require('shelljs');
 // const rimraf = require('rimraf');
 
 module.exports = {
@@ -29,7 +29,12 @@ module.exports = {
     }),
     new WebpackShellPluginNext({
       onBuildEnd: {
-        scripts: ["mkdir -p ./cordova-app/www/bin", "mkdir -p ./cordova-app/www/styles", "cp -r ./bin ./cordova-app/www", "cp -r ./styles ./cordova-app/www"],
+        scripts: [
+          "node -e \"require('shelljs').mkdir('-p', './cordova-app/www/bin')\"",
+          "node -e \"require('shelljs').mkdir('-p', './cordova-app/www/styles')\"",
+          "node -e \"require('shelljs').cp('-R', './bin/*', './cordova-app/www/bin')\"",
+          "node -e \"require('shelljs').cp('-R', './styles/*', './cordova-app/www/styles')\"",
+        ],
         blocking: true,
         parallel: false,
       },

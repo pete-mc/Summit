@@ -11,7 +11,8 @@ function onloadTerrain() {
   });
   context.listen("addScreens", (data) => {
     if (!Array.isArray(data.ids)) return;
-    context.loadPagesFromDB(data.ids);
+    // context.loadPagesFromDB(data.ids);
+    window.$nuxt.$router.addRoutes(context.getRoutes(data.pages as SummitScreen[]));
   });
   context.bcChannel.postMessage({ type: "terrainLoaded" });
 }
@@ -156,28 +157,28 @@ class TerrainSummitContext {
     });
   }
 
-  public loadPagesFromDB(ids: string[]): void {
-    const openRequest = indexedDB.open("TerrainSummit", 1);
-    openRequest.onsuccess = (event: Event) => {
-      if (!event.target) return;
-      const db = (event.target as IDBRequest).result as IDBDatabase;
-      const transaction = db.transaction("SummitPages", "readonly");
-      const objectStore = transaction.objectStore("SummitPages");
-      const getAllRequest = objectStore.getAll();
-      getAllRequest.onsuccess = () => {
-        const results = getAllRequest.result as SummitScreen[];
-        const filteredResults = results.filter((screen: SummitScreen) => ids.includes(screen.id));
-        window.$nuxt.$router.addRoutes(this.getRoutes(filteredResults));
-        db.close();
-      };
-      getAllRequest.onerror = (event: Event) => {
-        console.error("Error in getAllRequest:", JSON.stringify(event));
-      };
-    };
-    openRequest.onerror = (event: Event) => {
-      console.error("Error in openRequest:", JSON.stringify(event));
-    };
-  }
+  // public loadPagesFromDB(ids: string[]): void {
+  //   const openRequest = indexedDB.open("TerrainSummit", 1);
+  //   openRequest.onsuccess = (event: Event) => {
+  //     if (!event.target) return;
+  //     const db = (event.target as IDBRequest).result as IDBDatabase;
+  //     const transaction = db.transaction("SummitPages", "readonly");
+  //     const objectStore = transaction.objectStore("SummitPages");
+  //     const getAllRequest = objectStore.getAll();
+  //     getAllRequest.onsuccess = () => {
+  //       const results = getAllRequest.result as SummitScreen[];
+  //       const filteredResults = results.filter((screen: SummitScreen) => ids.includes(screen.id));
+  //       window.$nuxt.$router.addRoutes(this.getRoutes(filteredResults));
+  //       db.close();
+  //     };
+  //     getAllRequest.onerror = (event: Event) => {
+  //       console.error("Error in getAllRequest:", JSON.stringify(event));
+  //     };
+  //   };
+  //   openRequest.onerror = (event: Event) => {
+  //     console.error("Error in openRequest:", JSON.stringify(event));
+  //   };
+  // }
 }
 
 if (window.$nuxt) {

@@ -1,4 +1,5 @@
 import { TerrainCacheData } from "./terrainTypes";
+
 export interface CacheType {
   type: string;
   data: TerrainCacheData;
@@ -25,7 +26,7 @@ export interface SummitMessageHandler {
 
 export interface BaseSummitMessage {
   type: string;
-  [key: string]: string | number | boolean | string[] | undefined;
+  [key: string]: string | number | boolean | string[] | undefined | SummitScreen[];
 }
 
 export interface SummitMessageEvent<T extends SummitMessage = SummitMessage> extends MessageEvent {
@@ -52,6 +53,7 @@ export interface SummitRouteChangeMessage extends BaseSummitMessage {
 export interface SummitAddSreensMessage extends BaseSummitMessage {
   type: "addScreens";
   ids: string[];
+  pages: SummitScreen[];
 }
 
 export interface SummitOnLoadMessage extends BaseSummitMessage {
