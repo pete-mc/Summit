@@ -12,12 +12,11 @@
     <platform name="android">
         <icon src="res/android/icon.png" />
         <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/drawable/splash.png" />
-        <preference name="SplashScreenDelay" value="3000" />
-        <preference name="FadeSplashScreenDuration" value="1000"/> 
+        <preference name="SplashScreenDelay" value="2000" />
+        <preference name="FadeSplashScreenDuration" value="500"/> 
         <!-- <preference name="SplashScreen" value="res/drawable/splash.png" />
         <preference name="SplashMaintainAspectRatio" value="true" />
         <preference name="SplashShowOnlyFirstTime" value="false" />
         <preference name="SplashScreen" value="screen" /> -->
-        <preference name="AutoHideSplashScreen" value="false" />
     </platform>
 </widget>
