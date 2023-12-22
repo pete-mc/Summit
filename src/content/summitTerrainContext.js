@@ -136,13 +136,21 @@ var TerrainSummitContext = /** @class */ (function () {
         var self = this; // Capture the context for use in callbacks in nuxt
         return {
             created: function () {
-                self.bcChannel.postMessage({
-                    type: "onloadSummit",
-                    id: screen.id,
-                });
+                if (!this.isLoaded) {
+                    this.isLoaded = true;
+                    self.bcChannel.postMessage({
+                        type: "onloadSummit",
+                        id: screen.id,
+                    });
+                }
             },
             render: function (h) {
                 return h("div", { domProps: { innerHTML: screen.html } });
+            },
+            data: function () {
+                return {
+                    isLoaded: false,
+                };
             },
         };
     };

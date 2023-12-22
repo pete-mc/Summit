@@ -3,6 +3,8 @@ declare global {
   interface Vue {
     created: () => void;
     render: (h: (tag: string, data: any) => any) => any;
+    data: () => { isLoaded: boolean };
+    isLoaded?: boolean;
   }
 
   interface addRoute {
