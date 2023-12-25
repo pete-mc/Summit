@@ -79,6 +79,8 @@ export async function oasReport() {
     pageLength: 25,
     order: [[1, "desc"]],
     dom: "Bfrtip",
-    buttons: ["excel", "pdf"],
+    // buttons: ["excel", "pdf"],
+    searching: false,
+    paging: false,
   });
 }

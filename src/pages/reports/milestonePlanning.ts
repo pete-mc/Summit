@@ -1,8 +1,16 @@
-import DataTable from "datatables.net-dt";
 import { SummitContext } from "../../summitContext";
 import { fetchUnitMembers } from "../../terrainCalls";
-import $ from "jquery";
 import msPlanningReportHTML from "raw-loader!./milestonePlanning.html";
+//jQuery 3 3.7.0, JSZip 3.10.1, pdfmake 0.2.7, DataTables 1.13.6, Editor 2.2.2, AutoFill 2.6.0, Buttons 2.4.2, Column visibility 2.4.2, HTML5 export 2.4.2, Print view 2.4.2, DateTime 1.5.1, Select 1.7.0
+import $ from "jquery";
+import "datatables.net";
+import "datatables.net-dt";
+import "datatables.net-buttons-dt";
+import "datatables.net-autofill-dt";
+import "datatables.net-datetime";
+import "datatables.net-select-dt";
+import "pdfmake";
+import "jszip";
 
 export const msPlanningReportHtml = msPlanningReportHTML;
 
@@ -25,6 +33,8 @@ export async function MileStonePlanningReport() {
     return;
   }
   $("#milestoneHeader").text(context.currentProfile.profiles[0].unit.name);
+  if ($("#milestoneHeader").data("loaded")) return;
+  $("#milestoneHeader").data("loaded", true);
   $("#loadingP").remove();
   $("#retry").remove();
   $("#guthub").remove();
@@ -46,14 +56,16 @@ export async function MileStonePlanningReport() {
     ];
   });
 
-  new DataTable("#unitReportTable", {
+  $("#unitReportTable").dataTable({
     destroy: true,
     data: tableData,
-    pageLength: 25,
+    pageLength: 250,
     columns: [{ title: "Name" }, { title: "Milestone" }, { title: "Leads" }, { title: "Assists" }, { title: "Outdoors" }, { title: "Creative" }, { title: "Personal Growth" }, { title: "Community" }],
     columnDefs: [{ targets: [1, 2, 3, 4, 5, 6, 7], className: "dt-body-center" }],
     dom: "Bfrtip",
-    buttons: ["excel", "pdf"],
+    //buttons: ["excel", "pdf"],
+    searching: false,
+    paging: false,
   });
 
   // Prepare data for the stacked bar chart

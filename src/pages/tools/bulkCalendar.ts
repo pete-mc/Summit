@@ -169,6 +169,8 @@ export async function bulkCalendar(): Promise<void> {
       },
     ],
     select: false,
+    searching: false,
+    paging: false,
     // buttons: [
     //     { editor: DTEditor },
     // ],

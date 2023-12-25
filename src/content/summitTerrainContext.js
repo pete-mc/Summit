@@ -135,7 +135,7 @@ var TerrainSummitContext = /** @class */ (function () {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         var self = this; // Capture the context for use in callbacks in nuxt
         return {
-            created: function () {
+            mounted: function () {
                 if (!this.isLoaded) {
                     this.isLoaded = true;
                     self.bcChannel.postMessage({

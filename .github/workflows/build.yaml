@@ -82,7 +82,7 @@ jobs:
       run: |
         cd cordova-app
         cordova prepare
-        cordova build android
+        cordova build android --release
 
     - name: Zip summit
       run: zip -r summit.zip manifest.json bin/summit.js styles/* images/*
@@ -95,11 +95,11 @@ jobs:
         path: ./summit.zip
 
     - name: Upload APK as artifact
-      if: github.ref == 'refs/heads/dev'
+      if: github.ref == 'refs/heads/main'
       uses: actions/upload-artifact@v2
       with:
         name: android-app
-        path: ./cordova-app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+        path: ./cordova-app/platforms/android/app/build/outputs/apk/release/app-release.apk
 
     - name: Create Release
       if: github.ref == 'refs/heads/main'
@@ -133,8 +133,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./cordova-app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
-        asset_name: app-debug.apk
+        asset_path: ./cordova-app/platforms/android/app/build/outputs/apk/release/app-release.apk
+        asset_name: app-release.apk
         asset_content_type: application/vnd.android.package-archive
 
     # - name: Upload & release

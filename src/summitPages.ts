@@ -38,6 +38,11 @@ export class SummitPageManager {
         fetchUnitMembers();
       }
       this.onRouteChange(newRoute);
+      if (message.oldRoute == "/") {
+        setTimeout(() => {
+          this.onRouteChange(newRoute);
+        }, 250);
+      }
     });
     this.context.summitMessageHandlers.push({ type: "terrainLoaded", handler: () => this.submitAllPages() });
     this.context.summitMessageHandlers.push({ type: "onloadSummit", handler: (data) => this.onPageLoad(data as SummitOnLoadMessage) });
@@ -82,9 +87,7 @@ export class SummitPageManager {
         if (this.checkElements(`//button[@data-cy='PRINT']`, "exportiCalBtn")) initProgrammingExportBtn();
         break;
     }
-
     if ($("#SummitMainMenu").length === 0 && $("nav").length > 0) this.setupMenu();
-
     if (route.startsWith("/summit")) {
       $("#SummitMainMenu").show();
       $("#TerrainMainMenu").hide();
@@ -107,6 +110,7 @@ export class SummitPageManager {
     $(TerrainClass.MainMenuClass).first().attr("id", "TerrainMainMenu").clone().attr("id", "SummitMainMenu").css("background-color", "#004C00").appendTo("nav").first();
     $("#SummitMainMenu").show();
     $("#TerrainMainMenu").hide();
+    $("#SummitMainMenu").find(".NavMenu__logout").remove();
     $("#SummitMainMenu")
       .find(TerrainClass.MenuItemHeader)
       .first()
@@ -246,6 +250,7 @@ class SummitPage {
   public path: string;
   public html: string;
   public onload: () => void;
+  public executeOnLoad: () => void;
   constructor(pageid: string, title: string, breadcrumb: string, path: string, html: string, onloadSummit: () => void) {
     this.pageid = pageid;
     this.title = title;
@@ -253,12 +258,22 @@ class SummitPage {
     this.path = path;
     this.html = html;
     this.onload = onloadSummit;
+    this.executeOnLoad = this.debounce(this.callOnload.bind(this), 250);
   }
-  public executeOnLoad() {
+  public callOnload() {
     if (this.onload) {
       this.onload();
     }
   }
+
+  private debounce(func: (...args: never[]) => void, wait: number) {
+    let timeout: string | number | NodeJS.Timeout | undefined;
+    return function (...args: never[]) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), wait);
+    };
+  }
+
   public get screen(): SummitScreen {
     return {
       id: this.pageid,
