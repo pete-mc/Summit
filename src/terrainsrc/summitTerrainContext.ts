@@ -1,5 +1,6 @@
-import { SummitAddSreensMessage, SummitMessage, SummitRouteChangeMessage, SummitScreen } from "../../typings/summitTypes";
+import { SummitMessage, SummitOnLoadMessage, SummitRouteChangeMessage, SummitScreen } from "../../typings/summitTypes";
 import {} from "../../typings/terrainContext";
+
 //# sourceURL=TerrainSummit/TerrainContext.js
 function onloadTerrain() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -9,20 +10,16 @@ function onloadTerrain() {
     window.$nuxt.$router.push({ path: (data as SummitRouteChangeMessage).newRoute });
   });
   context.listen("addScreens", (data) => {
-    (data as SummitAddSreensMessage).screens.forEach((screen) => {
-      window.$nuxt.$router.addRoutes([
-        {
-          path: screen.path,
-          component: context.createComponent(screen),
-        },
-      ]);
-    });
+    if (!Array.isArray(data.ids)) return;
+    // context.loadPagesFromDB(data.ids);
+    window.$nuxt.$router.addRoutes(context.getRoutes(data.pages as SummitScreen[]));
   });
+  context.bcChannel.postMessage({ type: "terrainLoaded" });
 }
 
 class TerrainSummitContext {
   private static instance: TerrainSummitContext;
-  private bcChannel: BroadcastChannel = new BroadcastChannel("TerrainSummit");
+  public bcChannel: BroadcastChannel = new BroadcastChannel("TerrainSummit");
   public currentRoute: Route = window.$nuxt.$router.currentRoute;
   public sendToSummitDebounced: (to: Route, from?: Route) => void;
   private observationTimer: NodeJS.Timeout | null = null;
@@ -89,7 +86,7 @@ class TerrainSummitContext {
   private stopAndClearObservers() {
     this.layoutObserver.disconnect();
     this.isObserving = false;
-    console.debug("Stopping route observation" + this.currentRoute.path);
+    console.debug("Stopping route observation for " + this.currentRoute.path);
   }
 
   public waitForNuxtTicks(callback: (...args: unknown[]) => void, ticks: number, args: unknown[] = []) {
@@ -135,24 +132,61 @@ class TerrainSummitContext {
     });
   }
 
-  public createComponent(screen: SummitScreen) {
+  public createComponent(screen: SummitScreen): Vue {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this; // Capture the context for use in callbacks in nuxt
     return {
-      created() {
-        if (screen.onloadTerrain) screen.onloadTerrain();
-        if (screen.onloadSummit) {
+      mounted() {
+        if (!this.isLoaded) {
+          this.isLoaded = true;
           self.bcChannel.postMessage({
             type: "onloadSummit",
-            onloadSummit: screen.onloadSummit,
-          });
+            id: screen.id,
+          } as SummitOnLoadMessage);
         }
       },
       render(h: (el: string, {}) => void) {
         return h("div", { domProps: { innerHTML: screen.html } });
       },
+      data() {
+        return {
+          isLoaded: false,
+        };
+      },
     };
   }
+
+  public getRoutes(pages: SummitScreen[]): addRoute[] {
+    return pages.map((page) => {
+      return {
+        path: page.path,
+        component: this.createComponent(page),
+      };
+    });
+  }
+
+  // public loadPagesFromDB(ids: string[]): void {
+  //   const openRequest = indexedDB.open("TerrainSummit", 1);
+  //   openRequest.onsuccess = (event: Event) => {
+  //     if (!event.target) return;
+  //     const db = (event.target as IDBRequest).result as IDBDatabase;
+  //     const transaction = db.transaction("SummitPages", "readonly");
+  //     const objectStore = transaction.objectStore("SummitPages");
+  //     const getAllRequest = objectStore.getAll();
+  //     getAllRequest.onsuccess = () => {
+  //       const results = getAllRequest.result as SummitScreen[];
+  //       const filteredResults = results.filter((screen: SummitScreen) => ids.includes(screen.id));
+  //       window.$nuxt.$router.addRoutes(this.getRoutes(filteredResults));
+  //       db.close();
+  //     };
+  //     getAllRequest.onerror = (event: Event) => {
+  //       console.error("Error in getAllRequest:", JSON.stringify(event));
+  //     };
+  //   };
+  //   openRequest.onerror = (event: Event) => {
+  //     console.error("Error in openRequest:", JSON.stringify(event));
+  //   };
+  // }
 }
 
 if (window.$nuxt) {

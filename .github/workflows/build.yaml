@@ -26,8 +26,9 @@ jobs:
     - name: Extract version
       id: get_version
       run: |
-        echo "VERSION=$(jq -r .version manifest.json)" >> $GITHUB_ENV
-        echo "::set-output name=VERSION::$(jq -r .version manifest.json)"
+        VERSION=$(jq -r .version manifest.json)
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
 
     - name: Print version
       run: echo "Version is ${{ env.VERSION }}"
@@ -81,10 +82,24 @@ jobs:
       run: |
         cd cordova-app
         cordova prepare
-        cordova build android
+        cordova build android --release
 
     - name: Zip summit
       run: zip -r summit.zip manifest.json bin/summit.js styles/* images/*
+
+    - name: Upload web extension as artifact
+      if: github.ref == 'refs/heads/dev'
+      uses: actions/upload-artifact@v2
+      with:
+        name: web-extension
+        path: ./summit.zip
+
+    - name: Upload APK as artifact
+      if: github.ref == 'refs/heads/main'
+      uses: actions/upload-artifact@v2
+      with:
+        name: android-app
+        path: ./cordova-app/platforms/android/app/build/outputs/apk/release/app-release.apk
 
     - name: Create Release
       if: github.ref == 'refs/heads/main'
@@ -118,41 +133,26 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./cordova-app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
-        asset_name: app-debug.apk
+        asset_path: ./cordova-app/platforms/android/app/build/outputs/apk/release/app-release.apk
+        asset_name: app-release.apk
         asset_content_type: application/vnd.android.package-archive
 
-    - name: Publish to Chrome Web Store
-      if: github.ref == 'refs/heads/main'
-      uses: furkanipek/chrome-extension-action@v1.0.1
-      with:
-        extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
-        client-id: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
-        client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
-        refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
-        extension-file: ./summit.zip
-        publish: true
-        tester: false
-        
-    - uses: wdzeng/edge-addon@v1
-      if: github.ref == 'refs/heads/main'
-      with:
-        product-id: ${{ secrets.EDGE_EXTENSION_ID }}
-        zip-path: ./summit.zip
-        client-id: ${{ secrets.EDGE_CLIENT_ID }}
-        client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
-        access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}
+    # - name: Upload & release
+    #   if: github.ref == 'refs/heads/main'
+    #   uses: mnao305/chrome-extension-upload@v4.0.1
+    #   with:
+    #     file-path: ./summit.zip
+    #     extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+    #     client-id: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
+    #     client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
+    #     refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
+    #     publish: false
       
-    - name: Upload web extension as artifact
-      if: github.ref == 'refs/heads/dev'
-      uses: actions/upload-artifact@v2
-      with:
-        name: web-extension
-        path: ./summit.zip
-
-    - name: Upload APK as artifact
-      if: github.ref == 'refs/heads/dev'
-      uses: actions/upload-artifact@v2
-      with:
-        name: android-app
-        path: ./cordova-app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+    # - uses: wdzeng/edge-addon@v1
+    #   if: github.ref == 'refs/heads/main'
+    #   with:
+    #     product-id: ${{ secrets.EDGE_EXTENSION_ID }}
+    #     zip-path: ./summit.zip
+    #     client-id: ${{ secrets.EDGE_CLIENT_ID }}
+    #     client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
+    #     access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}

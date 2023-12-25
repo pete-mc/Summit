@@ -1,8 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
   interface Vue {
-    created: () => void;
+    created?: () => void;
+    mounted?: () => void;
     render: (h: (tag: string, data: any) => any) => any;
+    data: () => { isLoaded: boolean };
+    isLoaded?: boolean;
+  }
+
+  interface addRoute {
+    path: string;
+    component: Vue;
   }
 
   interface Route {

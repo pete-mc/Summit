@@ -31,6 +31,17 @@ export class SummitContext {
         this.terrainRouteChangeHandlers.forEach((handler) => handler(data as SummitRouteChangeMessage));
       },
     });
+    // const database: IDBOpenDBRequest = indexedDB.open("TerrainSummit", 1);
+    // database.onsuccess = () => {
+    //   SummitPageManager.getInstance();
+    // };
+    // database.onupgradeneeded = (event) => {
+    //   const db = (event.target as IDBOpenDBRequest).result;
+    //   const objectStore = db.createObjectStore("SummitPages", { keyPath: "id" });
+    //   objectStore.createIndex("path", "path", { unique: false });
+    //   objectStore.createIndex("html", "html", { unique: false });
+    //   db.close();
+    // };
   }
 
   public static getInstance(): SummitContext {

@@ -1,35 +1,43 @@
-import { SummitContext } from "../summitContext";
-import { summitLoadPage } from "../summitMenu";
-import { fetchUnitMembers } from "../terrainCalls";
+import { SummitContext } from "../../summitContext";
+import { fetchUnitMembers } from "../../terrainCalls";
+import msPlanningReportHTML from "raw-loader!./milestonePlanning.html";
+//jQuery 3 3.7.0, JSZip 3.10.1, pdfmake 0.2.7, DataTables 1.13.6, Editor 2.2.2, AutoFill 2.6.0, Buttons 2.4.2, Column visibility 2.4.2, HTML5 export 2.4.2, Print view 2.4.2, DateTime 1.5.1, Select 1.7.0
 import $ from "jquery";
+import "datatables.net";
+import "datatables.net-dt";
+import "datatables.net-buttons-dt";
+import "datatables.net-autofill-dt";
+import "datatables.net-datetime";
+import "datatables.net-select-dt";
+import "pdfmake";
+import "jszip";
 
-export async function unitReport() {
+export const msPlanningReportHtml = msPlanningReportHTML;
+
+export async function MileStonePlanningReport() {
   const context = SummitContext.getInstance();
-  summitLoadPage(
-    "SUMMIT REPORTS - MILESTONE PLANNING REPORT", //Breadcrumb header
-    //html content is contained within the two backticks ` below
-    `
-    <h2 id="milestoneHeader"></h2>
-    The milestones planning report is useful to see how many participates, leads and assists each member requires to complete their current milestone. Note that the numbers displayed are the <b>remaining requrement</b> not the current total.<br>
-    <p id="loadingP">Loading Please Wait...</p>
-    <table id="unitReportTable" class="display" width="100%"></table>
-    <canvas id="myChart"></canvas>
-  `,
-  );
-  if (!context.currentProfile || !context.token) {
-    $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
-    $("#milestoneHeader").text("Milestone Planning Report");
+  const unitMembers = await fetchUnitMembers();
+  if (!unitMembers || !context.currentProfile) {
+    $("#loadingP").text(
+      "Error loading members. Please click the button to try again. This is a Summit error. Please do not contact Terrain support for this issue. If this error persists please add an issue to the Summit GitHub repository. ",
+    );
+    $("#loadingP").after('<button id="retry" class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Retry</button>');
+    // button to access github issues list
+    $("#loadingP").after(
+      '<a id="guthub" href="https://github.com/pete-mc/Summit/issues" target="_blank"><button class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Summit Issues Register</button></a>',
+    );
+    $("#retry").on("click", async function () {
+      !context.currentProfile ? await context.getData() : undefined;
+      MileStonePlanningReport();
+    });
     return;
   }
   $("#milestoneHeader").text(context.currentProfile.profiles[0].unit.name);
-
-  const unitMembers = await fetchUnitMembers(context);
-  if (!unitMembers) {
-    $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
-    $("#milestoneHeader").text("Milestone Planning Report");
-    return;
-  }
-  $("#loadingP").text("");
+  if ($("#milestoneHeader").data("loaded")) return;
+  $("#milestoneHeader").data("loaded", true);
+  $("#loadingP").remove();
+  $("#retry").remove();
+  $("#guthub").remove();
 
   // Get the milestone for each member
   const tableData = unitMembers.map((r) => {
@@ -48,13 +56,16 @@ export async function unitReport() {
     ];
   });
 
-  $("#unitReportTable").DataTable({
+  $("#unitReportTable").dataTable({
+    destroy: true,
     data: tableData,
-    pageLength: 25,
+    pageLength: 250,
     columns: [{ title: "Name" }, { title: "Milestone" }, { title: "Leads" }, { title: "Assists" }, { title: "Outdoors" }, { title: "Creative" }, { title: "Personal Growth" }, { title: "Community" }],
     columnDefs: [{ targets: [1, 2, 3, 4, 5, 6, 7], className: "dt-body-center" }],
     dom: "Bfrtip",
-    buttons: ["excel", "pdf"],
+    //buttons: ["excel", "pdf"],
+    searching: false,
+    paging: false,
   });
 
   // Prepare data for the stacked bar chart

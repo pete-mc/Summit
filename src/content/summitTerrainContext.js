@@ -9,15 +9,12 @@ function onloadTerrain() {
         window.$nuxt.$router.push({ path: data.newRoute });
     });
     context.listen("addScreens", function (data) {
-        data.screens.forEach(function (screen) {
-            window.$nuxt.$router.addRoutes([
-                {
-                    path: screen.path,
-                    component: context.createComponent(screen),
-                },
-            ]);
-        });
+        if (!Array.isArray(data.ids))
+            return;
+        // context.loadPagesFromDB(data.ids);
+        window.$nuxt.$router.addRoutes(context.getRoutes(data.pages));
     });
+    context.bcChannel.postMessage({ type: "terrainLoaded" });
 }
 var TerrainSummitContext = /** @class */ (function () {
     function TerrainSummitContext() {
@@ -87,7 +84,7 @@ var TerrainSummitContext = /** @class */ (function () {
     TerrainSummitContext.prototype.stopAndClearObservers = function () {
         this.layoutObserver.disconnect();
         this.isObserving = false;
-        console.debug("Stopping route observation" + this.currentRoute.path);
+        console.debug("Stopping route observation for " + this.currentRoute.path);
     };
     TerrainSummitContext.prototype.waitForNuxtTicks = function (callback, ticks, args) {
         var _this = this;
@@ -138,20 +135,33 @@ var TerrainSummitContext = /** @class */ (function () {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         var self = this; // Capture the context for use in callbacks in nuxt
         return {
-            created: function () {
-                if (screen.onloadTerrain)
-                    screen.onloadTerrain();
-                if (screen.onloadSummit) {
+            mounted: function () {
+                if (!this.isLoaded) {
+                    this.isLoaded = true;
                     self.bcChannel.postMessage({
                         type: "onloadSummit",
-                        onloadSummit: screen.onloadSummit,
+                        id: screen.id,
                     });
                 }
             },
             render: function (h) {
                 return h("div", { domProps: { innerHTML: screen.html } });
             },
+            data: function () {
+                return {
+                    isLoaded: false,
+                };
+            },
         };
+    };
+    TerrainSummitContext.prototype.getRoutes = function (pages) {
+        var _this = this;
+        return pages.map(function (page) {
+            return {
+                path: page.path,
+                component: _this.createComponent(page),
+            };
+        });
     };
     return TerrainSummitContext;
 }());

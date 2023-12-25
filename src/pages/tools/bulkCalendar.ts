@@ -1,7 +1,6 @@
 import moment from "moment";
-import { SummitContext } from "../summitContext";
-import { summitLoadPage } from "../summitMenu";
-import { createNewEvent, fetchUnitMembers } from "../terrainCalls";
+import { SummitContext } from "../../summitContext";
+import { createNewEvent, fetchUnitMembers } from "../../terrainCalls";
 import flatpickr from "flatpickr";
 import Editor from "@datatables.net/editor-dt";
 import DataTable, { CellSelector } from "datatables.net-dt";
@@ -9,6 +8,9 @@ import "datatables.net-select-dt";
 import "datatables.net-buttons-dt";
 import "@datatables.net/editor-dt";
 import $ from "jquery";
+import bulkCalendarHTML from "raw-loader!./bulkCalendar.html";
+
+export const bulkCalendarHtml = bulkCalendarHTML;
 
 export async function bulkCalendar(): Promise<void> {
   const context = SummitContext.getInstance();
@@ -25,30 +27,30 @@ export async function bulkCalendar(): Promise<void> {
     { label: "Learn by Doing", value: "learn_by_doing" },
     { label: "Nature and Outdoors", value: "nature_and_outdoors" },
   ];
-  //load the initial html content into the container
-  summitLoadPage(
-    "SUMMIT REPORTS - BULK CALENDAR FORM",
-    `
-        <h2>Bulk Calender Form</h2>
-        <p id="loadingP">Loading Please Wait...</p>
-        <table id="eventTable" class="display" width="100%"></table>
-        <button id="add" class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Add Item</button> <button id="submit" class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Submit</button>
-        `,
-  );
 
   // Fetch members for Organisers, Leaders, and Assists columns
   $("#submit").hide();
   $("#add").hide();
-  const members = await fetchUnitMembers(context);
+  const members = await fetchUnitMembers();
   if (!members || !context.currentProfile) {
-    $("#loadingP").text("Error loading members. Please click the button to try again.");
+    $("#loadingP").text(
+      "Error loading members. Please click the button to try again. This is a Summit error. Please do not contact Terrain support for this issue. If this error persists please add an issue to the Summit GitHub repository. ",
+    );
     $("#loadingP").after('<button id="retry" class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Retry</button>');
+    // button to access github issues list
+    $("#loadingP").after(
+      '<a id="guthub" href="https://github.com/pete-mc/Summit/issues" target="_blank"><button class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Summit Issues Register</button></a>',
+    );
     $("#retry").on("click", async function () {
       !context.currentProfile ? await context.getData() : undefined;
       bulkCalendar();
     });
     return;
   }
+  $("#peakHeader").text(context.currentProfile.profiles[0].unit.name);
+  $("#loadingP").remove();
+  $("#retry").remove();
+  $("#guthub").remove();
 
   //remove loading text and show button
   $("#loadingP").remove();
@@ -90,6 +92,7 @@ export async function bulkCalendar(): Promise<void> {
 
   //Table Settings below:
   const DTtable = new DataTable("#eventTable", {
+    destroy: true,
     dom: "Bfrtip",
     scrollX: true,
     data: [],
@@ -166,6 +169,8 @@ export async function bulkCalendar(): Promise<void> {
       },
     ],
     select: false,
+    searching: false,
+    paging: false,
     // buttons: [
     //     { editor: DTEditor },
     // ],

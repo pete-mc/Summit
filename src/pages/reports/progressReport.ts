@@ -1,35 +1,31 @@
-import { SummitContext } from "../summitContext";
-import { summitLoadPage } from "../summitMenu";
-import { fetchUnitMembers } from "../terrainCalls";
+import { SummitContext } from "../../summitContext";
+import { fetchUnitMembers } from "../../terrainCalls";
 import $ from "jquery";
+import progressReportHTML from "raw-loader!./progressReport.html";
+export const progressReportHtml = progressReportHTML;
 
 export async function progressReport() {
   const context = SummitContext.getInstance();
-  summitLoadPage(
-    "SUMMIT REPORTS - PEAK AWARD PROGRESS REPORT", //Breadcrumb header
-    //html content is contained within the two backticks ` below
-    `
-    <h2 id="peakHeader"></h2>
-    This report will show the current progress towards the peak award for each member for the section.<br><br>
-    <p id="loadingP">Loading Please Wait...</p>
-    <table id="progressReportTable" class="display" width="100%"></table>
-  `,
-  );
-  if (!context.currentProfile || !context.token) {
-    $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
-    $("#peakHeader").text("Milestone Planning Report");
+  const unitMembers = await fetchUnitMembers();
+  if (!unitMembers || !context.currentProfile) {
+    $("#loadingP").text(
+      "Error loading members. Please click the button to try again. This is a Summit error. Please do not contact Terrain support for this issue. If this error persists please add an issue to the Summit GitHub repository. ",
+    );
+    $("#loadingP").after('<button id="retry" class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Retry</button>');
+    // button to access github issues list
+    $("#loadingP").after(
+      '<a id="guthub" href="https://github.com/pete-mc/Summit/issues" target="_blank"><button class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Summit Issues Register</button></a>',
+    );
+    $("#retry").on("click", async function () {
+      !context.currentProfile ? await context.getData() : undefined;
+      progressReport();
+    });
     return;
   }
   $("#peakHeader").text(context.currentProfile.profiles[0].unit.name);
-
-  const unitMembers = await fetchUnitMembers(context);
-  if (!unitMembers) {
-    $("#loadingP").text("An error has occured please try again later. This is a Summit error. Please do not contact Terrain support for this issue.");
-    $("#peakHeader").text("Milestone Planning Report");
-    return;
-  }
-
   $("#loadingP").remove();
+  $("#retry").remove();
+  $("#guthub").remove();
   const tableData = unitMembers.map((r) => {
     const maxP = r.milestone.milestone == 1 ? 6 : r.milestone.milestone == 2 ? 5 : 4;
     const maxL = r.milestone.milestone == 1 ? 2 : r.milestone.milestone == 2 ? 3 : 4;
@@ -84,6 +80,8 @@ export async function progressReport() {
     ],
     columnDefs: [{ targets: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], className: "dt-body-center" }],
     order: [[1, "desc"]],
+    searching: false,
+    paging: false,
   });
 
   $("head").append(`

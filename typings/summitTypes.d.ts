@@ -1,4 +1,5 @@
 import { TerrainCacheData } from "./terrainTypes";
+
 export interface CacheType {
   type: string;
   data: TerrainCacheData;
@@ -10,14 +11,13 @@ export interface TerrainCache extends Array<CacheType> {}
 export interface SummitScreen {
   path: string;
   html: string;
-  onloadSummit?: string;
-  onloadTerrain?: () => void;
+  id: string;
 }
 
 //boardcast event message types
-export type SummitMessage = SummitUploadLogbookMessage | SummitDownloadLogbookMessage | SummitRouteChangeMessage | SummitAddSreensMessage | SummitOnLoadMessage | BaseSummitMessage;
+export type SummitMessage = SummitUploadLogbookMessage | SummitDownloadLogbookMessage | SummitRouteChangeMessage | SummitAddSreensMessage | SummitOnLoadMessage | BaseSummitMessage | SummitTerrainLoadedMessage;
 
-type SummitMessageType = SummitUploadLogbookMessage["type"] | SummitDownloadLogbookMessage["type"] | SummitRouteChangeMessage["type"] | SummitAddSreensMessage["type"] | SummitOnLoadMessage["type"];
+type SummitMessageType = SummitUploadLogbookMessage["type"] | SummitDownloadLogbookMessage["type"] | SummitRouteChangeMessage["type"] | SummitAddSreensMessage["type"] | SummitOnLoadMessage["type"] | SummitTerrainLoadedMessage["type"];
 
 export interface SummitMessageHandler {
   type: SummitMessageType;
@@ -26,7 +26,7 @@ export interface SummitMessageHandler {
 
 export interface BaseSummitMessage {
   type: string;
-  [key: string]: string | number | boolean | SummitScreen[] | undefined;
+  [key: string]: string | number | boolean | string[] | undefined | SummitScreen[];
 }
 
 export interface SummitMessageEvent<T extends SummitMessage = SummitMessage> extends MessageEvent {
@@ -52,10 +52,15 @@ export interface SummitRouteChangeMessage extends BaseSummitMessage {
 
 export interface SummitAddSreensMessage extends BaseSummitMessage {
   type: "addScreens";
-  screens: SummitScreen[];
+  ids: string[];
+  pages: SummitScreen[];
 }
 
 export interface SummitOnLoadMessage extends BaseSummitMessage {
   type: "onloadSummit";
-  onloadSummit: string;
+  id: string;
+}
+
+export interface SummitTerrainLoadedMessage extends BaseSummitMessage {
+  type: "terrainLoaded";
 }

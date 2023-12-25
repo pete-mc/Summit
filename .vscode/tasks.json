@@ -21,7 +21,7 @@
 		{
 			"label": "Build Cordova App",
 			"type": "shell",
-			"command": "cordova prepare && cordova build",
+			"command": "npm-run-all -s prepare build",
 			"group": "build",
 			"presentation": {
 				"reveal": "always",

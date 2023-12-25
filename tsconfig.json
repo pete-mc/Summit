@@ -2,12 +2,11 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES6",
-     "module": "es2015",
+    "target": "ES2022",
+    "module": "ES2022",
     "moduleResolution": "node",
     "lib": [
-      "ES2021",
-      "ES6",
+      "ES2022",
       "dom"
     ],
     "outDir": "bin",

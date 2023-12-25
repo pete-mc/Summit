@@ -29,7 +29,8 @@ import { addToCache, getCacheItem } from "./helpers";
 import { SummitContext } from "./summitContext";
 
 //function to retrieve unit members profiles from the Terrain API or cache
-export async function fetchUnitMembers(context: SummitContext): Promise<TerrainUnitMember[] | undefined> {
+export async function fetchUnitMembers(): Promise<TerrainUnitMember[] | undefined> {
+  const context = SummitContext.getInstance();
   try {
     const cacheItem = getCacheItem("unitMembers") as TerrainUnitMember[];
     if (cacheItem) return cacheItem;
