@@ -90,7 +90,7 @@ jobs:
         echo ${{ secrets.PLAY_UPLOAD_KEYSTORE }} | base64 --decode > upload-key.keystore
         cd cordova-app
         cordova prepare
-        cordova build android --release
+        cordova build android --release -- --keystore=../upload-key.keystore --storePassword=${{ secrets.PLAY_UPLOAD_PASSWORD }} --alias=${{ secrets.PLAY_UPLOAD_ALIAS }} --password=${{ secrets.PLAY_UPLOAD_PASSWORD }}
 
     - name: Sign AAB
       run: |
