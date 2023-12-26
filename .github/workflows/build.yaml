@@ -95,7 +95,7 @@ jobs:
     - name: Sign AAB
       run: |
         jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore upload-key.keystore -storepass ${{ secrets.PLAY_UPLOAD_PASSWORD }} -keypass ${{ secrets.PLAY_UPLOAD_PASSWORD }} cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab ${{ secrets.PLAY_UPLOAD_ALIAS }}
-        
+
     - name: Zip summit
       run: |
         cd browser-extension
@@ -106,7 +106,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: web-extension
-        path: ./browser-context/summit.zip
+        path: ./browser-extension/summit.zip
 
     - name: Upload AAB as artifact
       if: github.ref == 'refs/heads/dev'
@@ -135,7 +135,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./browser-context/summit.zip
+        asset_path: ./browser-extension/summit.zip
         asset_name: summit.zip
         asset_content_type: application/zip
     
