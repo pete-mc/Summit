@@ -26,6 +26,7 @@ jobs:
     - name: Extract version
       id: get_version
       run: |
+        cd browser-extension
         VERSION=$(jq -r .version manifest.json)
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "version=$VERSION" >> $GITHUB_OUTPUT
