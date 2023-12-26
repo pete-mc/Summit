@@ -47,15 +47,21 @@ jobs:
         fi
 
     - name: Create bin directory
-      run: mkdir -p ./bin
+      run: |
+        mkdir -p ./browser-extension/bin
+        mkdir -p ./terrain-context/bin
       working-directory: ${{ github.workspace }}
 
     - name: Install global dependencies
       run: npm install -g webpack @types/jest @vscode/vsce cordova jest typescript webpack-cli webpack
 
     - name: Install dependencies
-      run: npm ci
-
+      run: |
+        cd browser-extension
+        npm ci
+        cd ../terrain-context
+        npm ci
+      
     - name: Remove and re-add Android platform
       run: |
         cd cordova-app
@@ -63,12 +69,12 @@ jobs:
         cordova platform add android
 
     - name: Build Contents
-      run: npx tsc src/terrainsrc/summitTerrainContext.ts --outDir src/content
-      working-directory: ${{ github.workspace }}
+      run: npx webpack --config webpack.prod.js
+      working-directory: ${{ github.workspace }}/terrain-context
 
     - name: Build project
       run: npx webpack --config webpack.prod.js
-      working-directory: ${{ github.workspace }} 
+      working-directory: ${{ github.workspace }}/browser-extension 
     
     - name: Install xmlstarlet
       run: sudo apt-get install -y xmlstarlet
@@ -83,20 +89,26 @@ jobs:
         echo ${{ secrets.PLAY_UPLOAD_KEYSTORE }} | base64 --decode > upload-key.keystore
         cd cordova-app
         cordova prepare
-        cordova build android --release -- --keystore=../upload-key.keystore --storePassword=${{ secrets.PLAY_UPLOAD_PASSWORD }} --alias=${{ secrets.PLAY_UPLOAD_ALIAS }} --password=${{ secrets.PLAY_UPLOAD_PASSWORD }}
+        cordova build android --release
+
+    - name: Sign APK
+      run: |
+        ${ANDROID_HOME}/build-tools/29.0.2/apksigner sign --ks upload-key.keystore --ks-key-alias ${{ secrets.PLAY_UPLOAD_ALIAS }} --ks-pass pass:${{ secrets.PLAY_UPLOAD_PASSWORD }} --key-pass pass:${{ secrets.PLAY_UPLOAD_PASSWORD }} cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab
 
     - name: Zip summit
-      run: zip -r summit.zip manifest.json bin/summit.js styles/* images/*
+      run: |
+        cd browser-extension
+        zip -r summit.zip manifest.json bin/summit.js styles/* images/*
 
     - name: Upload web extension as artifact
       if: github.ref == 'refs/heads/dev'
       uses: actions/upload-artifact@v2
       with:
         name: web-extension
-        path: ./summit.zip
+        path: ./browser-context/summit.zip
 
-    - name: Upload APK as artifact
-      if: github.ref == 'refs/heads/main'
+    - name: Upload AAB as artifact
+      if: github.ref == 'refs/heads/dev'
       uses: actions/upload-artifact@v2
       with:
         name: android-app
@@ -122,20 +134,20 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./summit.zip
+        asset_path: ./browser-context/summit.zip
         asset_name: summit.zip
         asset_content_type: application/zip
     
-    - name: Upload APK Release Asset
+    - name: Upload AAB Release Asset
       if: github.ref == 'refs/heads/main'
-      id: upload-apk-release-asset 
+      id: upload-aab-release-asset 
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab
-        asset_name: app-release.apk
+        asset_name: app-release.aab
         asset_content_type: application/vnd.android.package-archive
 
     # - name: Upload & release
