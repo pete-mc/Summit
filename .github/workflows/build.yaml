@@ -80,9 +80,10 @@ jobs:
 
     - name: Build Cordova app
       run: |
+        echo ${{ secrets.PLAY_UPLOAD_KEYSTORE }} | base64 --decode > upload-key.keystore
         cd cordova-app
         cordova prepare
-        cordova build android --release
+        cordova build android --release -- --keystore=../upload-key.keystore --storePassword=${{ secrets.PLAY_UPLOAD_PASSWORD }} --alias=${{ secrets.PLAY_UPLOAD_ALIAS }} --password=${{ secrets.PLAY_UPLOAD_PASSWORD }}
 
     - name: Zip summit
       run: zip -r summit.zip manifest.json bin/summit.js styles/* images/*
@@ -99,7 +100,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: android-app
-        path: ./cordova-app/platforms/android/app/build/outputs/apk/release/app-release.apk
+        path: ./cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab
 
     - name: Create Release
       if: github.ref == 'refs/heads/main'
@@ -133,7 +134,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./cordova-app/platforms/android/app/build/outputs/apk/release/app-release.apk
+        asset_path: ./cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab
         asset_name: app-release.apk
         asset_content_type: application/vnd.android.package-archive
 
