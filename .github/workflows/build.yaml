@@ -92,10 +92,10 @@ jobs:
         cordova prepare
         cordova build android --release
 
-    - name: Sign APK
+    - name: Sign AAB
       run: |
-        ${ANDROID_HOME}/build-tools/29.0.2/apksigner sign --ks upload-key.keystore --ks-key-alias ${{ secrets.PLAY_UPLOAD_ALIAS }} --ks-pass pass:${{ secrets.PLAY_UPLOAD_PASSWORD }} --key-pass pass:${{ secrets.PLAY_UPLOAD_PASSWORD }} cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab
-
+        jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore upload-key.keystore -storepass ${{ secrets.PLAY_UPLOAD_PASSWORD }} -keypass ${{ secrets.PLAY_UPLOAD_PASSWORD }} cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab ${{ secrets.PLAY_UPLOAD_ALIAS }}
+        
     - name: Zip summit
       run: |
         cd browser-extension
