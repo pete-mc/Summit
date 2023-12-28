@@ -4,7 +4,7 @@
 		{
 			"label": "Build Extension",
 			"type": "shell",
-			"command": "npm-run-all -s webpack",
+			"command": "npm-run-all -s build",
 			"group": {
 				"kind": "build",
 				"isDefault": true
@@ -15,7 +15,7 @@
 			},
 			"problemMatcher": [],
 			"options": {
-				"cwd": "${env:WORKSPACE_PATH}/browser-extension"
+				"cwd": "${env:WORKSPACE_PATH}/summit"
 			}
 		},
 		{
