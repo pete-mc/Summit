@@ -108,6 +108,7 @@ jobs:
         name: web-extension
         path: ./browser-extension/summit.zip
 
+
     - name: Upload AAB as artifact
       if: github.ref == 'refs/heads/dev'
       uses: actions/upload-artifact@v2
