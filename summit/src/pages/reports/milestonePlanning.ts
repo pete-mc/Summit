@@ -1,16 +1,20 @@
 import { SummitContext } from "../../summitContext";
 import { fetchUnitMembersMetrics } from "../../terrainCalls";
 import msPlanningReportHTML from "raw-loader!./milestonePlanning.html";
-//jQuery 3 3.7.0, JSZip 3.10.1, pdfmake 0.2.7, DataTables 1.13.6, Editor 2.2.2, AutoFill 2.6.0, Buttons 2.4.2, Column visibility 2.4.2, HTML5 export 2.4.2, Print view 2.4.2, DateTime 1.5.1, Select 1.7.0
 import $ from "jquery";
-import "datatables.net";
-import "datatables.net-dt";
-import "datatables.net-buttons-dt";
-import "datatables.net-autofill-dt";
-import "datatables.net-datetime";
-import "datatables.net-select-dt";
-import "pdfmake";
-import "jszip";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import jszip from "jszip";
+//import DataTable from "datatables.net-se";
+//import Editor from "@datatables.net/editor-se";
+import "datatables.net-se";
+import "datatables.net-buttons-se";
+import "datatables.net-buttons/js/buttons.html5.mjs";
+import "datatables.net-buttons/js/buttons.print.mjs";
+//import DateTime from "datatables.net-datetime";
+import "datatables.net-fixedheader-se";
+import "datatables.net-responsive-se";
+import "datatables.net-rowgroup-se";
+import "datatables.net-select-se";
 
 export const msPlanningReportHtml = msPlanningReportHTML;
 
@@ -56,17 +60,89 @@ export async function MileStonePlanningReport() {
     ];
   });
 
-  $("#unitReportTable").DataTable({
+  const table = $("#unitReportTable").DataTable({
     destroy: true,
     data: tableData,
     pageLength: 250,
     columns: [{ title: "Name" }, { title: "Milestone" }, { title: "Leads" }, { title: "Assists" }, { title: "Outdoors" }, { title: "Creative" }, { title: "Personal Growth" }, { title: "Community" }],
     columnDefs: [{ targets: [1, 2, 3, 4, 5, 6, 7], className: "dt-body-center" }],
-    dom: "Bfrtip",
-    //buttons: ["excel", "pdf"],
+    dom: "rt",
+    buttons: [
+      "csv",
+      {
+        extend: "print",
+        customize: function (win) {
+          const css = `
+          table {
+              border-collapse: collapse;
+              width: 100%;
+          }
+          th, td {
+              border: 1px solid #ddd;
+              padding: 8px;
+              text-align: left;
+          }
+          tr:nth-child(even) {
+              background-color: #f2f2f2;
+          }
+          th {
+              padding-top: 12px;
+              padding-bottom: 12px;
+              background-color: #4CAF50;
+              color: white;
+          }
+      `;
+
+          // Create a style element
+          const style = document.createElement("style");
+          style.type = "text/css";
+          style.appendChild(document.createTextNode(css));
+
+          // Append the style element to the head of the print window
+          $((win as Window).document.head).append(style);
+
+          $((win as Window).document.body)
+            .css("font-family", "Arial, sans-serif")
+            .css("font-size", "12pt");
+          $((win as Window).document.body)
+            .find("table")
+            .addClass("compact")
+            .css("font-size", "inherit");
+          $((win as Window).document.body)
+            .find("h1")
+            .css("text-align", "center");
+          $((win as Window).document.body)
+            .find("hr")
+            .css("border-top", "1px solid #bbb");
+        },
+      },
+    ],
     searching: false,
     paging: false,
   });
+
+  const $buttonsDiv = $("#Buttons");
+  const buttonClasses = "mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn";
+
+  // Create Print Button
+  $("<button/>", {
+    text: "Print",
+    id: "printButton",
+    class: buttonClasses,
+    click: function () {
+      table.button(".buttons-print").trigger();
+    },
+  }).appendTo($buttonsDiv);
+
+  // Create CSV Button
+  $("<button/>", {
+    text: "Export to CSV",
+    id: "csvButton",
+    class: buttonClasses,
+    click: function () {
+      table.button(".buttons-csv").trigger();
+    },
+  }).appendTo($buttonsDiv);
 
   // Prepare data for the stacked bar chart
   // const chartLabels = ["Outdoors", "Creative", "Personal Growth", "Community"];
