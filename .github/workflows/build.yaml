@@ -155,16 +155,16 @@ jobs:
         asset_content_type: application/vnd.android.package-archive
 
     - name: Upload JS Release Asset
-        if: github.ref == 'refs/heads/main'
-        id: upload-js-release-asset 
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./summit/bin/summit.js
-          asset_name: summit.js
-          asset_content_type: application/javascript
+      if: github.ref == 'refs/heads/main'
+      id: upload-js-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./summit/bin/summit.js
+        asset_name: summit.js
+        asset_content_type: application/javascript
 
     # - uses: wdzeng/edge-addon@v1
     #   if: github.ref == 'refs/heads/main'
