@@ -56,5 +56,6 @@
     "start": "node ./scripts/server.js",
     "watch": "webpack --watch --config webpack.dev.js",
     "devmode": "npm-run-all --parallel start watch"
-  }
+  },
+  "sideEffects": false
 }

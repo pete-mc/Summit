@@ -48,7 +48,7 @@ export async function presentAwards(): Promise<void> {
     });
     return;
   }
-  $("#presentAwards").text(context.currentProfile.unit.name);
+  $("#presentAwards").append(" - " + context.currentProfile.unit.name);
   $("#loadingP").remove();
   $("#retry").remove();
   $("#github").remove();

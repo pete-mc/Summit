@@ -10,4 +10,7 @@ module.exports = merge(common, {
       "process.env.SUMMITBUILD": JSON.stringify("prod"),
     }),
   ],
+  optimization: {
+    usedExports: true,
+  },
 });

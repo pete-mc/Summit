@@ -29,6 +29,7 @@ declare global {
         addRoutes: (routes: Array<{ path: string; component: Vue }>) => void;
         push: (route: { path: string; query?: any }) => void;
         currentRoute: Route;
+        back: () => void;
       };
     };
   }

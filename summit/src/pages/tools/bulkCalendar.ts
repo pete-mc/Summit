@@ -1,6 +1,6 @@
 import moment from "moment";
 import { SummitContext } from "../../summitContext";
-import { createNewEvent, fetchUnitMembersMetrics } from "../../terrainCalls";
+import { createNewEvent, fetchUnitMembers } from "../../terrainCalls";
 import flatpickr from "flatpickr";
 import Editor from "@datatables.net/editor-dt";
 import DataTable, { CellSelector } from "datatables.net-dt";
@@ -12,7 +12,7 @@ import bulkCalendarHTML from "raw-loader!./bulkCalendar.html";
 
 export const bulkCalendarHtml = bulkCalendarHTML;
 
-export async function bulkCalendar(): Promise<void> {
+export async function bulkCalendar(message?: string): Promise<void> {
   const context = SummitContext.getInstance();
   let lastId = 0; // Used to increment the ID for new records
   const challengeAreaOptions = [
@@ -23,15 +23,22 @@ export async function bulkCalendar(): Promise<void> {
   ];
 
   const scoutMethodOptions = [
+    { label: "Symbolic Framework", value: "symbolic_framework" },
     { label: "Community Involvement", value: "community_involvement" },
-    { label: "Learn by Doing", value: "learn_by_doing" },
+    { label: "Learning by Doing", value: "learn_by_doing" },
     { label: "Nature and Outdoors", value: "nature_and_outdoors" },
+    { label: "Patrol System", value: "patrol_system" },
+    { label: "Youth Lead Adult Support", value: "youth_leading_adult_supporting" },
+    { label: "Promise & Law", value: "promise_and_law" },
+    { label: "Personal Progression", value: "personal_progression" },
   ];
 
   // Fetch members for Organisers, Leaders, and Assists columns
+  $(".errorP").remove();
+  $(".loadingP").remove();
   $("#submit").hide();
   $("#add").hide();
-  const members = await fetchUnitMembersMetrics();
+  const members = (await fetchUnitMembers())?.map((member) => ({ member_id: member.id, name: member.first_name + " " + member.last_name }));
   if (!members || !context.currentProfile) {
     $("#loadingP").text(
       "Error loading members. Please click the button to try again. This is a Summit error. Please do not contact Terrain support for this issue. If this error persists please add an issue to the Summit GitHub repository. ",
@@ -56,6 +63,8 @@ export async function bulkCalendar(): Promise<void> {
   $("#loadingP").remove();
   $("#submit").show();
   $("#add").show();
+
+  if (message) $("#submit").after('<p class="loadingP" style="color:green;">' + message + "</p>");
 
   const memberOptions = members.map((member) => ({
     label: member.name,
@@ -83,6 +92,7 @@ export async function bulkCalendar(): Promise<void> {
         type: "select",
         options: scoutMethodOptions,
         separator: ",",
+        multiple: true,
       },
       { label: "Organisers", name: "organisers", type: "select", multiple: true, options: memberOptions, separator: "," },
       { label: "Leads", name: "leads", type: "select", multiple: true, options: memberOptions, separator: "," },
@@ -119,8 +129,13 @@ export async function bulkCalendar(): Promise<void> {
         title: "Scout Method",
         data: "scout_method",
         render: function (data) {
-          const option = scoutMethodOptions.find((option) => option.value === data);
-          return option ? option.label : "";
+          return data
+            .split(",")
+            .map((item: string) => {
+              const method = scoutMethodOptions.find((option) => option.value === item);
+              return method ? method.label : "";
+            })
+            .join(", ");
         },
       },
       {
@@ -219,7 +234,7 @@ export async function bulkCalendar(): Promise<void> {
     }).open();
   });
 
-  $("#add").on("click", function () {
+  $("#add").on("click", async function () {
     lastId++; // Increment the ID counter
 
     // Get the current date and round it to the nearest 30 minutes
@@ -268,9 +283,17 @@ export async function bulkCalendar(): Promise<void> {
       .draw();
   });
 
-  $("#submit").on("click", function () {
+  $("#submit").on("click", async function () {
+    $(".errorP").remove();
+    $(".loadingP").remove();
     const table = $("#eventTable").DataTable();
     const data = table.rows().data().toArray();
+
+    //show a message that we are going to start processing the records
+    $("#submit").after('<p class="loadingP" style="color:green;">Processing Records...</p>');
+    //disable buttons
+    $("#submit").prop("disabled", true);
+    $("#add").prop("disabled", true);
 
     // Define the fields that need to be validated
     const fieldsToValidate = ["title", "location", "challenge_area", "startDate", "endDate", "scout_method", "organisers", "leads", "assists"];
@@ -300,22 +323,18 @@ export async function bulkCalendar(): Promise<void> {
     if (table.cells(".dataTables_invalid").any()) {
       // Redraw the table if there is any invalid data
       table.draw();
-      $("#submit").after('<p id="errorP" style="color:red;">Please fix the errors above.</p>');
+      $("#submit").after('<p class="errorP" style="color:red;">Please fix the errors above.</p>');
       setTimeout(function () {
-        $("#errorP").remove();
+        $(".errorP").remove();
       }, 3000);
       return;
     }
-    //show a message that we are going to start processing the records
-    $("#submit").after('<p id="loadingP" style="color:green;">Processing Records...</p>');
-    //disable buttons
-    $("#submit").prop("disabled", true);
-    $("#add").prop("disabled", true);
 
     //loop through the data and create the objects for each entry and call createNewEvent(bodyJson);
     //json object should have {"title":"test title","description":"","justification":"","organisers":["83eb42ec-b2d6-31fc-b872-21ae4aa9f2e7"],"challenge_area":"community","start_datetime":"2023-12-29T14:00:00.000+00:00","end_datetime":"2023-12-29T15:01:00.000+00:00","event_type":{"type":"unit","id":"3603056b-3928-4f66-b12e-421ca4434dcb"},"attendance":{"leader_member_ids":["835738d1-fc06-3a9e-8fbe-02367dbfc93c"],"assistant_member_ids":["e0f233d7-090a-39cc-a446-8e7ef147588b"],"attendee_member_ids":[],"participant_member_ids":[]},"schedule_items":[{"start_datetime":"","end_datetime":"","description":"","leader_notes":"","assistant_notes":""}],"achievement_pathway_oas_data":{"award_rule":"individual","verifier":{"name":"Brodie Royle","contact":"","type":"member"},"groups":[]},"achievement_pathway_logbook_data":{"distance_travelled":0,"distance_walkabout":0,"achievement_meta":{"stream":"","branch":""},"categories":[],"details":{"activity_time_length":"","activity_grade":""},"verifier":{"name":"Brodie Royle","contact":"","type":"member"}},"review":{"general_tags":[],"scout_method_elements":["community_involvement"],"scout_spices_elements":[]},"uploads":[],"equipment_notes":"","additional_notes":"","location":"test location","iana_timezone":"Australia/Brisbane","status":"planned"}
-
-    data.forEach(async function (row, rowIndex) {
+    let isError = false;
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
       // Create the object for the event
       const event = {
         title: row.title,
@@ -386,18 +405,23 @@ export async function bulkCalendar(): Promise<void> {
 
       // Create the event with try/catch to handle errors and pass event as string for body
       try {
-        await createNewEvent(JSON.stringify(event), context);
-      } catch (error) {
-        //mark the row as red
-        table.row(rowIndex).invalidate();
-        //add a message to the row as a new column if it does not exist
-        if (table.column(10).header().innerHTML !== "Error") {
-          table.column(10).header().innerHTML = "Error";
+        const errorMsg = (await createNewEvent(JSON.stringify(event), context)) as { message: string } | undefined;
+        if (errorMsg) {
+          isError = true;
+          // add error message to dom
+          $("#submit").after('<p class="errorP" style="color:red;">Error: ' + errorMsg.message + "</p>");
+          continue;
         }
-        table.cell(rowIndex as unknown as CellSelector, 10).data(error);
+      } catch (error) {
+        isError = true;
+        // add error message to dom
+        $("#submit").after('<p class="errorP" style="color:red;">Error: ' + JSON.stringify(error) + "</p>");
       }
-    });
+    }
     //call this function again to reset the page
-    bulkCalendar();
+    $("#submit").prop("disabled", false);
+    $("#add").prop("disabled", false);
+    $(".loadingP").text("Records with errors have not been processed. Please fix the errors and try again. Missing records have been processed successfully and have been removed.");
+    if (!isError) bulkCalendar("All Records Processed Successfully!");
   });
 }

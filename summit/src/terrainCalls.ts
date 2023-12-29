@@ -60,7 +60,7 @@ export async function fetchUnitMembersMetrics(): Promise<TerrainUnitMemberMetric
 }
 
 //function to create an event
-export async function createNewEvent(body: string, context: SummitContext = SummitContext.getInstance()): Promise<void> {
+export async function createNewEvent(body: string, context: SummitContext = SummitContext.getInstance()): Promise<void | string> {
   try {
     if (!context.currentProfile || !context.token) return undefined;
     const response = await fetch("https://events.terrain.scouts.com.au/units/" + context.currentProfile.unit.id + "/events", {
@@ -77,7 +77,7 @@ export async function createNewEvent(body: string, context: SummitContext = Summ
       body: body,
     });
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      return JSON.parse(await response.text());
     }
   } catch (e) {
     context.log("Error creating event: " + e);

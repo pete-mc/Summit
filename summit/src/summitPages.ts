@@ -114,7 +114,8 @@ export class SummitPageManager {
       case "/personal-development":
       case "/oas":
       case "/sia":
-        if (!window.$nuxt.$route.query.Summit) window.$nuxt.$router.push({ path: window.$nuxt.$route.fullPath, query: { Summit: true } });
+        if (!window.$nuxt.$route.query.Summit && !window.$nuxt.$store.state.global.routePrev.includes("Summit=true")) window.$nuxt.$router.push({ path: window.$nuxt.$route.fullPath, query: { Summit: true } });
+        if (window.$nuxt.$route.query.Summit) window.$nuxt.$router.back();
         else if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0) {
           const type =
             [
