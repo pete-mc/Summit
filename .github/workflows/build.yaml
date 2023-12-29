@@ -26,7 +26,7 @@ jobs:
     - name: Extract version
       id: get_version
       run: |
-        cd browser-extension
+        cd bootstrapper
         VERSION=$(jq -r .version manifest.json)
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -49,18 +49,18 @@ jobs:
 
     - name: Create bin directory
       run: |
-        mkdir -p ./browser-extension/bin
-        mkdir -p ./terrain-context/bin
+        mkdir -p ./summit/bin
+        mkdir -p ./bootstrapper/bin
       working-directory: ${{ github.workspace }}
 
     - name: Install global dependencies
-      run: npm install -g webpack @types/jest @vscode/vsce cordova jest typescript webpack-cli webpack
+      run: npm install -g webpack @types/jest @vscode/vsce cordova jest typescript webpack-cli webpack npm-run-all
 
     - name: Install dependencies
       run: |
-        cd browser-extension
+        cd summit
         npm ci
-        cd ../terrain-context
+        cd ../bootstrapper
         npm ci
       
     - name: Remove and re-add Android platform
@@ -71,19 +71,14 @@ jobs:
 
     - name: Build Contents
       run: npx webpack --config webpack.prod.js
-      working-directory: ${{ github.workspace }}/terrain-context
+      working-directory: ${{ github.workspace }}/summit
 
     - name: Build project
       run: npx webpack --config webpack.prod.js
-      working-directory: ${{ github.workspace }}/browser-extension 
+      working-directory: ${{ github.workspace }}/bootstrapper
     
     - name: Install xmlstarlet
       run: sudo apt-get install -y xmlstarlet
-
-    - name: Set Cordova app version
-      run: |
-        cd cordova-app
-        xmlstarlet ed --inplace -u "/widget/@version" -v "${{ steps.get_version.outputs.VERSION }}" config.xml
 
     - name: Build Cordova app
       run: |
@@ -98,15 +93,15 @@ jobs:
 
     - name: Zip summit
       run: |
-        cd browser-extension
-        zip -r summit.zip manifest.json bin/summit.js styles/* images/*
+        cd bootstrapper
+        zip -r summit.zip manifest.json bin/summit-bootstrap.js styles/* images/*
 
     - name: Upload web extension as artifact
       if: github.ref == 'refs/heads/dev'
       uses: actions/upload-artifact@v2
       with:
         name: web-extension
-        path: ./browser-extension/summit.zip
+        path: ./bootstrapper/summit.zip
 
 
     - name: Upload AAB as artifact
@@ -115,6 +110,13 @@ jobs:
       with:
         name: android-app
         path: ./cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab
+
+    - name: Upload JS as artifact
+      if: github.ref == 'refs/heads/dev'
+      uses: actions/upload-artifact@v2
+      with:
+        name: summit-js
+        path: ./summit/bin/summit.js
 
     - name: Create Release
       if: github.ref == 'refs/heads/main'
@@ -136,7 +138,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./browser-extension/summit.zip
+        asset_path: ./bootstrapper/summit.zip
         asset_name: summit.zip
         asset_content_type: application/zip
     
@@ -152,6 +154,27 @@ jobs:
         asset_name: app-release.aab
         asset_content_type: application/vnd.android.package-archive
 
+    - name: Upload JS Release Asset
+        if: github.ref == 'refs/heads/main'
+        id: upload-js-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./summit/bin/summit.js
+          asset_name: summit.js
+          asset_content_type: application/javascript
+
+    # - uses: wdzeng/edge-addon@v1
+    #   if: github.ref == 'refs/heads/main'
+    #   with:
+    #     product-id: ${{ secrets.EDGE_EXTENSION_ID }}
+    #     zip-path: ./summit.zip
+    #     client-id: ${{ secrets.EDGE_CLIENT_ID }}
+    #     client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
+    #     access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}
+
     # - name: Upload & release
     #   if: github.ref == 'refs/heads/main'
     #   uses: mnao305/chrome-extension-upload@v4.0.1
@@ -162,12 +185,3 @@ jobs:
     #     client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
     #     refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
     #     publish: false
-      
-    # - uses: wdzeng/edge-addon@v1
-    #   if: github.ref == 'refs/heads/main'
-    #   with:
-    #     product-id: ${{ secrets.EDGE_EXTENSION_ID }}
-    #     zip-path: ./summit.zip
-    #     client-id: ${{ secrets.EDGE_CLIENT_ID }}
-    #     client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
-    #     access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}

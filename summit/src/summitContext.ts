@@ -1,20 +1,25 @@
 import { BaseSummitMessage, SummitDownloadLogbookMessage, SummitMessageEvent, SummitMessageHandler, SummitRouteChangeMessage, SummitUploadLogbookMessage } from "../typings/summitTypes";
-import { TerrainProfile } from "../typings/terrainTypes";
-import { compareVersions, openIndexedDB, saveToIndexedDB } from "./helpers";
+import { TerrainEvent, TerrainProfile } from "../typings/terrainTypes";
+import { clearCache, compareVersions, openIndexedDB, reconstructGuids, saveToIndexedDB } from "./helpers";
 import { loadLogbookData, writeLogbook } from "./terrainButtons/copyLogbook";
-import { getCurrentProfile } from "./terrainCalls";
+import { fetchActivity, fetchMemberEvents } from "./terrainCalls";
 
 export class SummitContext {
+  public isAssisting = false;
   public upgradeAvailable = false;
   private static instance: SummitContext;
   public summitMessageHandlers: SummitMessageHandler[] = [];
   private bcChannel: BroadcastChannel = new BroadcastChannel("TerrainSummit");
   public currentProfile: TerrainProfile | undefined = undefined;
+  public primaryProfile: TerrainProfile | undefined = undefined;
+  public currentProfilesList: TerrainProfile[] = [];
   public terrainRoute: string = "";
   public terrainRouteChangeHandlers: ((message: SummitRouteChangeMessage) => void)[] = [];
   public loggedin: boolean = false;
   public summitVersion: string = process.env.SUMMITVERSION || "0.0.0";
   public buildMode: string = process.env.SUMMITBUILD || "prod";
+  public presentedAwards = [] as string[];
+  public nuxtWatchers = [] as { item: string; unwatch: () => void }[];
 
   private constructor() {
     this.bcChannel.addEventListener("message", (event: SummitMessageEvent) => {
@@ -34,8 +39,25 @@ export class SummitContext {
       },
     });
     this.checkForUpdate();
+    this.setupNuxtWatchers();
   }
-  checkForUpdate() {
+
+  public setupNuxtWatchers() {
+    this.watchNuxt("user.profileIndex", () => this.getData());
+    this.watchNuxt("user.profileIndex", () => clearCache());
+  }
+
+  public watchNuxt(propertyPath: string, callback: () => void): void {
+    //get properties to watch from window.$nuxt.$store.state
+    this.nuxtWatchers.push(
+      window.$nuxt.$watch(() => {
+        const pathParts = propertyPath.split(".");
+        return pathParts.reduce((acc, part) => acc && acc[part], window.$nuxt.$store.state);
+      }, callback),
+    );
+  }
+
+  public checkForUpdate() {
     if (this.buildMode === "dev") {
       this.upgradeAvailable = true;
       return;
@@ -49,10 +71,20 @@ export class SummitContext {
         }
       });
   }
-  updateSummit() {
+  public updateSummit() {
     if (this.buildMode === "dev") {
-      localStorage.setItem("summit-version", "0.0.0");
-      window.location.reload();
+      // get latest js from http://localhost:3000/summit.js
+      fetch("http://localhost:3000/summit.js")
+        .then((response) => response.text())
+        .then(async (data) => {
+          const dbName = "TerrainSummit";
+          const storeName = "JSStore";
+          const id = "summitJS";
+          const db = await openIndexedDB(dbName, storeName);
+          await saveToIndexedDB(db, storeName, data, id);
+          localStorage.setItem("summit-version", "9.9.9");
+          setTimeout(() => window.location.reload(), 1000);
+        });
       return;
     }
     fetch("https://api.github.com/repos/pete-mc/Summit/releases/latest")
@@ -112,12 +144,21 @@ export class SummitContext {
   }
 
   public async getData() {
-    this.currentProfile = await getCurrentProfile(this);
-    // check that there is a valid profile and pause here until there is add a delay to prevent spamming the server
-    while (!this.currentProfile) {
-      await this.delay(200);
-      this.currentProfile = await getCurrentProfile(this);
+    this.currentProfilesList = JSON.parse(JSON.stringify(window.$nuxt.$store.state.user.profiles));
+    this.currentProfile = this.currentProfilesList[window.$nuxt.$store.state.user.profileIndex];
+    this.primaryProfile = this.currentProfilesList[0];
+    this.getAchievements();
+  }
+
+  public async getAchievements() {
+    const memberEvents = await fetchMemberEvents("2100-01-01T00:00:00", "2100-01-30T00:00:00");
+    let existingEvent = undefined as TerrainEvent | undefined;
+    const existingEventId = memberEvents?.find((event) => event.title === "Summit Award Storage - Please Ignore" && event.invitee_id === this.currentProfile?.unit.id)?.id;
+    if (existingEventId) {
+      existingEvent = await fetchActivity(existingEventId);
     }
+    const existingAwards = existingEvent && existingEvent.schedule_items ? existingEvent.schedule_items.flatMap((item) => item.description) : [];
+    if (existingAwards.length > 0) this.presentedAwards = reconstructGuids(existingAwards);
   }
 
   public delay(ms: number) {

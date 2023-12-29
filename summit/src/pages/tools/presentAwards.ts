@@ -48,13 +48,13 @@ export async function presentAwards(): Promise<void> {
     });
     return;
   }
-  $("#presentAwards").text(context.currentProfile.profiles[0].unit.name);
+  $("#presentAwards").text(context.currentProfile.unit.name);
   $("#loadingP").remove();
   $("#retry").remove();
   $("#github").remove();
 
   let existingEvent = undefined as TerrainEvent | undefined;
-  const existingEventId = memberEvents?.find((event) => event.title === "Summit Award Storage - Please Ignore" && event.invitee_id === context.currentProfile?.profiles[0].unit.id)?.id;
+  const existingEventId = memberEvents?.find((event) => event.title === "Summit Award Storage - Please Ignore" && event.invitee_id === context.currentProfile?.unit.id)?.id;
   if (existingEventId) {
     existingEvent = await fetchActivity(existingEventId);
   }
@@ -247,7 +247,7 @@ export async function presentAwards(): Promise<void> {
       description: "This is for keeping track of badges that have been presented, please do not modify this event or delete it.",
       end_datetime: "2100-01-10T03:00:00.000+00:00",
       equipment_notes: "",
-      event_type: { type: "unit", id: context.currentProfile?.profiles[0].unit.id },
+      event_type: { type: "unit", id: context.currentProfile?.unit.id },
       type: "unit",
       iana_timezone: "Australia/Brisbane",
       justification: "",
