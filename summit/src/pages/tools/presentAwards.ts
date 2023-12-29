@@ -1,12 +1,19 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { SummitContext } from "../../summitContext";
-import "datatables.net-select-dt";
-import "datatables.net-buttons-dt";
-import "@datatables.net/editor-dt";
-import "datatables.net-rowgroup";
-import "datatables.net-buttons";
-import "datatables.net-buttons-dt";
 import $ from "jquery";
+//import jszip from "jszip";
+//import pdfmake from "pdfmake";
+//import DataTable from "datatables.net-se";
+//import Editor from "datatables.net-editor-se";
+import "datatables.net-se";
+import "datatables.net-buttons-se";
+import "datatables.net-buttons/js/buttons.html5.mjs";
+import "datatables.net-buttons/js/buttons.print.mjs";
+//import DateTime from "datatables.net-datetime";
+import "datatables.net-fixedheader-se";
+import "datatables.net-responsive-se";
+import "datatables.net-rowgroup-se";
+import "datatables.net-select-se";
+import { SummitContext } from "../../summitContext";
 import presentAwardHTML from "raw-loader!./presentAwards.html";
 import { createNewEvent, fetchActivity, fetchMemberEvents, fetchUnitAchievements, fetchUnitMembers, updateEvent } from "../../terrainCalls";
 import moment from "moment";

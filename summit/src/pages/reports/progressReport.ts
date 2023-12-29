@@ -1,6 +1,19 @@
 import { SummitContext } from "../../summitContext";
 import { fetchUnitMembersMetrics } from "../../terrainCalls";
 import $ from "jquery";
+//import jszip from "jszip";
+//import pdfmake from "pdfmake";
+//import DataTable from "datatables.net-se";
+//import Editor from "@datatables.net/editor-se";
+import "datatables.net-se";
+import "datatables.net-buttons-se";
+import "datatables.net-buttons/js/buttons.html5.mjs";
+import "datatables.net-buttons/js/buttons.print.mjs";
+//import DateTime from "datatables.net-datetime";
+import "datatables.net-fixedheader-se";
+import "datatables.net-responsive-se";
+import "datatables.net-rowgroup-se";
+import "datatables.net-select-se";
 import progressReportHTML from "raw-loader!./progressReport.html";
 export const progressReportHtml = progressReportHTML;
 
@@ -53,7 +66,8 @@ export async function progressReport() {
       r.adventurous_journey ? "✓" : "-",
     ];
   });
-  $("#progressReportTable").DataTable({
+  const table = $("#progressReportTable").DataTable({
+    destroy: true,
     data: tableData,
     pageLength: 25,
     columns: [
@@ -64,25 +78,103 @@ export async function progressReport() {
       { title: "Assists" },
       { title: "Outdoors" },
       { title: "Creative" },
-      { title: "Personal<br>Growth" },
+      { title: "Personal <br>Growth" },
       { title: "Community" },
-      { title: "SIA<br>In Progress" },
-      { title: "SIA<br>Completed" },
+      { title: "SIA <br>In Progress" },
+      { title: "SIA <br>Completed" },
       { title: "Progressions" },
       { title: "Bushcraft" },
       { title: "Bushwalking" },
       { title: "Camping" },
       { title: "Scouts" },
       { title: "Section" },
-      { title: "Personal<br>Development" },
+      { title: "Personal <br>Development" },
       { title: "Reflection" },
       { title: "Journey" },
     ],
     columnDefs: [{ targets: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], className: "dt-body-center" }],
     order: [[1, "desc"]],
+    dom: "rt",
+    buttons: [
+      "csv",
+      {
+        extend: "print",
+        customize: function (win) {
+          const css = `
+          @page { size: A3 landscape; }
+          * { -webkit-print-color-adjust: exact !important; 
+          print-color-adjust: exact !important; 
+          color-adjust: exact !important; }
+          table {
+              border-collapse: collapse;
+              width: 100%;
+          }
+          th, td {
+              border: 1px solid #ddd;
+              padding: 8px;
+              text-align: left;
+          }
+          tr:nth-child(even) {
+              background-color: #f2f2f2;
+          }
+          th {
+              padding-top: 12px;
+              padding-bottom: 12px;
+              background-color: #4CAF50;
+              color: white;
+          }
+      `;
+
+          // Create a style element
+          const style = document.createElement("style");
+          style.type = "text/css";
+          style.appendChild(document.createTextNode(css));
+
+          // Append the style element to the head of the print window
+          $((win as Window).document.head).append(style);
+
+          $((win as Window).document.body)
+            .css("font-family", "Arial, sans-serif")
+            .css("font-size", "12pt");
+          $((win as Window).document.body)
+            .find("table")
+            .addClass("compact")
+            .css("font-size", "inherit");
+          $((win as Window).document.body)
+            .find("h1")
+            .css("text-align", "center");
+          $((win as Window).document.body)
+            .find("hr")
+            .css("border-top", "1px solid #bbb");
+        },
+      },
+    ],
     searching: false,
     paging: false,
   });
+
+  const $buttonsDiv = $("#Buttons");
+  const buttonClasses = "mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn";
+
+  // Create Print Button
+  $("<button/>", {
+    text: "Print",
+    id: "printButton",
+    class: buttonClasses,
+    click: function () {
+      table.button(".buttons-print").trigger();
+    },
+  }).appendTo($buttonsDiv);
+
+  // Create CSV Button
+  $("<button/>", {
+    text: "Export to CSV",
+    id: "csvButton",
+    class: buttonClasses,
+    click: function () {
+      table.button(".buttons-csv").trigger();
+    },
+  }).appendTo($buttonsDiv);
 
   $("head").append(`
     <style type="text/css" id="myStyle">

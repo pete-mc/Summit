@@ -1,13 +1,22 @@
+import $ from "jquery";
+//import jszip from "jszip";
+//import pdfmake from "pdfmake";
+//import DataTable from "datatables.net-se";
+import Editor from "@datatables.net/editor-se";
+import "datatables.net-se";
+import "datatables.net-buttons-se";
+import "datatables.net-buttons/js/buttons.html5.mjs";
+import "datatables.net-buttons/js/buttons.print.mjs";
+//import DateTime from "datatables.net-datetime";
+import "datatables.net-fixedheader-se";
+import "datatables.net-responsive-se";
+import "datatables.net-rowgroup-se";
+import "datatables.net-select-se";
 import moment from "moment";
 import { SummitContext } from "../../summitContext";
 import { createNewEvent, fetchUnitMembers } from "../../terrainCalls";
 import flatpickr from "flatpickr";
-import Editor from "@datatables.net/editor-dt";
-import DataTable, { CellSelector } from "datatables.net-dt";
-import "datatables.net-select-dt";
-import "datatables.net-buttons-dt";
-import "@datatables.net/editor-dt";
-import $ from "jquery";
+import DataTable, { CellSelector } from "datatables.net-se";
 import bulkCalendarHTML from "raw-loader!./bulkCalendar.html";
 
 export const bulkCalendarHtml = bulkCalendarHTML;
@@ -103,7 +112,7 @@ export async function bulkCalendar(message?: string): Promise<void> {
   //Table Settings below:
   const DTtable = new DataTable("#eventTable", {
     destroy: true,
-    dom: "Bfrtip",
+    dom: "rt",
     scrollX: true,
     data: [],
     columns: [
