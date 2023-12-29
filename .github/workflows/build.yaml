@@ -6,9 +6,9 @@ on:
       - main
       - dev
     paths:
-      - './bootstrapper/**'
-      - './cordova-app/**'
-      - './summit/**'
+      - 'bootstrapper/**'
+      - 'cordova-app/**'
+      - 'summit/**'
 
 permissions:
   contents: write
