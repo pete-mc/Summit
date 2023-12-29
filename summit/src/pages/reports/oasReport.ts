@@ -24,7 +24,7 @@ export async function oasReport() {
     });
     return;
   }
-  $("#peakHeader").text(context.currentProfile.profiles[0].unit.name);
+  $("#peakHeader").text(context.currentProfile.unit.name);
   $("#loadingP").remove();
   $("#retry").remove();
   $("#guthub").remove();

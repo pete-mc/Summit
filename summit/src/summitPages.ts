@@ -4,7 +4,6 @@ import { SummitContext } from "./summitContext";
 import summitMenuGroupHtml from "raw-loader!./content/navBarListGroup.html";
 import logo from "raw-loader!./content/logo.txt";
 import homeHtml from "raw-loader!./pages/home/home.html";
-import { fetchUnitMembersMetrics } from "./terrainCalls";
 import { initLogbookRead, initLogbookWrite } from "./terrainButtons/copyLogbook";
 import { initProgrammingExportBtn } from "./terrainButtons/exportiCal";
 import $ from "jquery";
@@ -15,17 +14,19 @@ import { oasReport, oasReportHtml } from "./pages/reports/oasReport";
 import { progressReport, progressReportHtml } from "./pages/reports/progressReport";
 import { presentAwardHtml, presentAwards } from "./pages/tools/presentAwards";
 import { topoHtml, topoLoaded } from "./pages/reports/topo";
+import { awardObserverRouter, checkAward } from "./terrainButtons/presentedAwards";
+import { fetchAchievements } from "./terrainCalls";
 
 export class SummitPageManager {
   private static instance: SummitPageManager;
   public pages: SummitPage[] = [
-    new SummitPage("fa52775b-b30c-4e56-83ce-918411303373", "Summit Home", "Summit Home", "/summit", homeHtml, homePageLoaded),
-    new SummitPage("7a806481-4360-4ecc-aa00-89095156696a", "Milestone Planning Report", "Milestone Planning", "/summit/reports/msplanreport", msPlanningReportHtml, MileStonePlanningReport),
-    new SummitPage("7c61d365-35f1-4913-96f2-a95df14f0ab6", "OAS Summary Report", "OAS Summary Report", "/summit/reports/oasreport", oasReportHtml, oasReport),
-    new SummitPage("421a1b85-bcf7-4cf0-a03a-1405b96ad5a9", "Peak Award Progress Report", "Peak Award Progress Report", "/summit/reports/oasreport", progressReportHtml, progressReport),
-    new SummitPage("6a822ea7-34db-40cd-a180-9b1aa276b786", "Advanced Reports (Topo)", "Topo Blazor App", "/summit/reports/topo", topoHtml, topoLoaded),
-    new SummitPage("717466bd-3c85-41c8-9212-dc1c295cf7c0", "Bulk Calendar", "Bulk Calendar", "/summit/tools/bulkcal", bulkCalendarHtml, bulkCalendar),
-    new SummitPage("1bfd34e1-59ed-4220-8d30-79a70dca2581", "Present Awards", "Present Awards", "/summit/tools/presentAward", presentAwardHtml, presentAwards),
+    new SummitPage("fa52775b-b30c-4e56-83ce-918411303373", "Summit Home", "Summit Home", "/summit", "", homeHtml, homePageLoaded),
+    new SummitPage("7a806481-4360-4ecc-aa00-89095156696a", "Milestone Planning Report", "Milestone Planning", "/summit/reports/msplanreport", "unit:unit-council", msPlanningReportHtml, MileStonePlanningReport),
+    new SummitPage("7c61d365-35f1-4913-96f2-a95df14f0ab6", "OAS Summary Report", "OAS Summary Report", "/summit/reports/oasreport", "unit:unit-council", oasReportHtml, oasReport),
+    new SummitPage("421a1b85-bcf7-4cf0-a03a-1405b96ad5a9", "Peak Award Progress Report", "Peak Award Progress Report", "/summit/reports/oasreport", "unit:unit-council", progressReportHtml, progressReport),
+    new SummitPage("6a822ea7-34db-40cd-a180-9b1aa276b786", "Advanced Reports (Topo)", "Topo Blazor App", "/summit/reports/topo", "", topoHtml, topoLoaded),
+    new SummitPage("717466bd-3c85-41c8-9212-dc1c295cf7c0", "Bulk Calendar", "Bulk Calendar", "/summit/tools/bulkcal", "unit:unit-council", bulkCalendarHtml, bulkCalendar),
+    new SummitPage("1bfd34e1-59ed-4220-8d30-79a70dca2581", "Present Awards", "Present Awards", "/summit/tools/presentAward", "unit:unit-council", presentAwardHtml, presentAwards),
   ];
   private context: SummitContext = SummitContext.getInstance();
   constructor() {
@@ -39,9 +40,19 @@ export class SummitPageManager {
       } else if (!this.context.loggedin) {
         this.context.loggedin = true;
         await this.context.getData();
-        fetchUnitMembersMetrics();
+        this.context.setupNuxtWatchers();
+        window.$nuxt.$router.push({ path: window.$nuxt.$route.fullPath, query: { Summit: true } });
+      }
+      if (this.context.loggedin && this.context.currentProfile?.member === undefined) {
+        await this.context.getData();
       }
       this.onRouteChange(newRoute);
+      //check if class .ProfileSwitcherManageUser exists and save as boolean
+      const isAssisting = $(".ProfileSwitcherManageUser").length === 0 ? false : true;
+      if (isAssisting != this.context.isAssisting) {
+        this.context.isAssisting = isAssisting;
+        await this.context.getData();
+      }
       if (message.oldRoute == "/") {
         setTimeout(() => {
           this.onRouteChange(newRoute);
@@ -60,9 +71,6 @@ export class SummitPageManager {
   }
 
   public submitAllPages() {
-    // this.pages.forEach((page) => {
-    //   this.addPageToDB(page.screen, "SummitPages");
-    // });
     this.context.sendMessage({
       type: "addScreens",
       ids: this.pages.map((page) => page.pageid),
@@ -70,16 +78,8 @@ export class SummitPageManager {
     } as SummitAddSreensMessage);
   }
 
-  // public addPageToDB(item: SummitScreen, store: string) {
-  //   const database = indexedDB.open("TerrainSummit", 1);
-  //   database.onsuccess = () => {
-  //     database.result.transaction([store], "readwrite").objectStore(store).put(item).onsuccess = () => {
-  //       database.result.close();
-  //     };
-  //   };
-  // }
-
   public onRouteChange(route: string) {
+    route = route.replace("?Summit=true", "");
     switch (route) {
       case "/logbook/view-record":
         if (this.checkElements(`//button[ancestor::section[contains(@class, 'ViewRecord__no-print')] and contains(@data-cy, 'PRINT')]`, "copyClipboardBtn")) initLogbookRead();
@@ -90,6 +90,53 @@ export class SummitPageManager {
       case "/programming/view-activity":
         if (this.checkElements(`//button[@data-cy='PRINT']`, "exportiCalBtn")) initProgrammingExportBtn();
         break;
+      case "/milestones":
+        if (!window.$nuxt.$route.query.Summit) window.$nuxt.$router.push({ path: window.$nuxt.$route.fullPath, query: { Summit: true } });
+        else {
+          if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0 && $("div.ListItem__title:contains(Milestone 1)").length > 0)
+            checkAward({ name: "milestone", path: "achievement_meta.stage", value: 1 }).then(() => {
+              awardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", route);
+            });
+          if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0 && $("div.ListItem__title:contains(Milestone 2)").length > 0)
+            checkAward({ name: "milestone", path: "achievement_meta.stage", value: 2 }).then(() => {
+              awardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", route);
+            });
+          if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0 && $("div.ListItem__title:contains(Milestone 3)").length > 0)
+            checkAward({ name: "milestone", path: "achievement_meta.stage", value: 3 }).then(() => {
+              awardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", route);
+            });
+        }
+        break;
+      case "/intro-scouting":
+      case "/intro-section":
+      case "/adventurous-journey":
+      case "/personal-reflection":
+      case "/personal-development":
+      case "/oas":
+      case "/sia":
+        if (!window.$nuxt.$route.query.Summit) window.$nuxt.$router.push({ path: window.$nuxt.$route.fullPath, query: { Summit: true } });
+        else if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0) {
+          const type =
+            [
+              { route: "/oas", type: "outdoor_adventure_skill" },
+              { route: "/sia", type: "special_interest_area" },
+              { route: "/personal-development", type: "course_reflection" },
+              { route: "/intro-scouting", type: "intro_scouting" },
+              { route: "/intro-section", type: "intro_section" },
+              { route: "/adventurous-journey", type: "adventurous_journey" },
+              { route: "/personal-reflection", type: "personal_reflection" },
+            ].find((type) => type.route === route)?.type ?? "outdoor_adventure_skill";
+          route === "/oas" ? "outdoor_adventure_skill" : "special_interest_area";
+          const header = route.startsWith("/intro-") ? $("hr.BaseList__divider").first() : $("div.AchievementOverview__awarded").first();
+          const list = header.next().children("div.List").first();
+          list.addClass("AwardedList");
+          list.children().each((_index, element) => {
+            fetchAchievements(type).then((awards) => {
+              checkAward({ name: type, parent: $(element), awardsPrefetched: awards });
+            });
+          });
+        }
+        break;
     }
     if ($("#SummitMainMenu").length === 0 && $("nav").length > 0) this.setupMenu();
     if (route.startsWith("/summit")) {
@@ -97,12 +144,37 @@ export class SummitPageManager {
       $("#TerrainMainMenu").hide();
       $("#SummitBreadcrumbs").show();
       $("#TerrainBreadcrumbs").hide();
+      this.summitPermissionCheck();
     } else {
       $("#SummitMainMenu").hide();
       $("#TerrainMainMenu").show();
       $("#SummitBreadcrumbs").hide();
       $("#TerrainBreadcrumbs").show();
     }
+  }
+  summitPermissionCheck() {
+    this.pages.forEach((page) => {
+      if (page.permission === "") return;
+      const level = page.permission.split(":")[0];
+      const role = page.permission.split(":")[1];
+      switch (level) {
+        case "group":
+          if (this.context.currentProfile?.group?.roles.includes(role)) {
+            // re-enable clicking and remove grey text
+            $(`#SummitMenuItem-${page.pageid}`).css("color", "").css("pointer-events", "auto").children().css("color", "").css("pointer-events", "auto");
+          } else {
+            $(`#SummitMenuItem-${page.pageid}`).css("color", "grey").css("pointer-events", "none").children().css("color", "grey").css("pointer-events", "none");
+          }
+          break;
+        case "unit":
+          if (this.context.currentProfile?.unit?.roles.includes(role)) {
+            $(`#SummitMenuItem-${page.pageid}`).css("color", "").css("pointer-events", "auto").children().css("color", "").css("pointer-events", "auto");
+          } else {
+            $(`#SummitMenuItem-${page.pageid}`).css("color", "grey").css("pointer-events", "none").children().css("color", "grey").css("pointer-events", "none");
+          }
+          break;
+      }
+    });
   }
 
   public checkElements(query: string, id: string): boolean {
@@ -119,14 +191,15 @@ export class SummitPageManager {
       .find(TerrainClass.MenuItemHeader)
       .first()
       .html(
-        `<div style="color:white; display: grid; place-items: center;">
+        `<div style="color:white; display: grid; place-items: center; height:100px !important">
           <img width="40px" src ="data:image/webp;base64,${logo}">
           <b>Summit &nbsp|&nbsp Terrain</b>
           <div id="summitVerson" style="font-size: small;">
-            V${this.context.summitVersion}${this.context.upgradeAvailable ? '<span style="color: red">&nbsp⇪</span>' : ""}
+            V${this.context.summitVersion}${this.context.upgradeAvailable ? '<span style="color: red">&nbsp⭮</span>' : ""}
           </div>
         </div>`,
-      );
+      )
+      .css("height", "100px");
     $("#summitVerson").on("click", () => {
       this.context.updateSummit();
     });
@@ -187,7 +260,7 @@ export class SummitPageManager {
         $("#SummitMenuGroupItems-" + key).toggle();
       });
       groupedPages[key].forEach((page) => {
-        const groupItem = $(menuGroupItems.replace("PAGEROUTE", page.path).replace("PAGETITLE", page.title)).attr("id", `SummitGroupItem-${page.pageid}`);
+        const groupItem = $(menuGroupItems.replace("PAGEROUTE", page.path).replace("PAGETITLE", page.title)).attr("id", `SummitMenuItem-${page.pageid}`);
         groupItem.on("click", () => this.context.changePage(page.path));
         $("#SummitMenuGroupItems-" + key).append(groupItem);
       });
@@ -273,14 +346,16 @@ class SummitPage {
   public breadcrumb: string;
   public path: string;
   public html: string;
+  public permission: string;
   public onload: () => void;
   public executeOnLoad: () => void;
-  constructor(pageid: string, title: string, breadcrumb: string, path: string, html: string, onloadSummit: () => void) {
+  constructor(pageid: string, title: string, breadcrumb: string, path: string, permission: string, html: string, onloadSummit: () => void) {
     this.pageid = pageid;
     this.title = title;
     this.breadcrumb = breadcrumb;
     this.path = path;
     this.html = html;
+    this.permission = permission;
     this.onload = onloadSummit;
     this.executeOnLoad = this.debounce(this.callOnload.bind(this), 250);
   }

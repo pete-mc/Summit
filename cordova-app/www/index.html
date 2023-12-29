@@ -5,8 +5,14 @@
     <script type="text/javascript" src="cordova.js"></script>
     <script type="text/javascript">
         document.addEventListener('deviceready', function() {
-            var ref = cordova.InAppBrowser.open('https://terrain.scouts.com.au', '_blank', 'location=no,toolbar=no,zoom=no');
+            var ref = cordova.InAppBrowser.open('https://terrain.scouts.com.au', '_blank', 'hideurlbar=yes,location=yes,toolbar=yes,zoom=no,footer=no,toolbarcolor=#008000,closebuttoncolor=#ffffff,navigationbuttoncolor=#ffffff,closebuttoncaption=Close Summit');
             console.log("deviceready");
+            
+            ref.addEventListener('exit', function(event) {
+                console.log("exit");
+                navigator.app.exitApp();
+            });
+
             ref.addEventListener('loadstop', async function(event) {
                 console.log("loadstop");
                 var url = new URL(event.url);

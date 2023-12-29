@@ -36,7 +36,7 @@ export async function fetchUnitMembersMetrics(): Promise<TerrainUnitMemberMetric
     const cacheItem = getCacheItem("unitMembers") as TerrainUnitMemberMetric[];
     if (cacheItem) return cacheItem;
     if (!context.currentProfile || !context.token) return undefined;
-    const response = await fetch("https://metrics.terrain.scouts.com.au/units/" + context.currentProfile.profiles[0].unit.id + "/members?limit=999", {
+    const response = await fetch("https://metrics.terrain.scouts.com.au/units/" + context.currentProfile.unit.id + "/members?limit=999", {
       method: "GET",
       mode: "cors",
       cache: "no-cache",
@@ -63,7 +63,7 @@ export async function fetchUnitMembersMetrics(): Promise<TerrainUnitMemberMetric
 export async function createNewEvent(body: string, context: SummitContext = SummitContext.getInstance()): Promise<void> {
   try {
     if (!context.currentProfile || !context.token) return undefined;
-    const response = await fetch("https://events.terrain.scouts.com.au/units/" + context.currentProfile.profiles[0].unit.id + "/events", {
+    const response = await fetch("https://events.terrain.scouts.com.au/units/" + context.currentProfile.unit.id + "/events", {
       method: "POST",
       mode: "cors",
       cache: "no-cache",
@@ -116,8 +116,8 @@ export async function updateEvent(eventId: string, body: string): Promise<void> 
 export async function fetchMemberEvents(fromDateString: string, toDateString: string): Promise<TerrainEventSummary[] | undefined> {
   const context = SummitContext.getInstance();
   try {
-    if (!context.currentProfile || !context.token) return undefined;
-    const response = await fetch("https://events.terrain.scouts.com.au/members/" + context.currentProfile.profiles[0].member.id + "/events?start_datetime=" + fromDateString + "&end_datetime=" + toDateString, {
+    if (!context.primaryProfile || !context.token) return undefined;
+    const response = await fetch("https://events.terrain.scouts.com.au/members/" + context.primaryProfile.member.id + "/events?start_datetime=" + fromDateString + "&end_datetime=" + toDateString, {
       method: "GET",
       mode: "cors",
       cache: "no-cache",
@@ -141,10 +141,8 @@ export async function fetchMemberEvents(fromDateString: string, toDateString: st
 }
 
 // convert above to async function with fetch and return profile rather than setting
-export async function getCurrentProfile(context: SummitContext): Promise<TerrainProfile | undefined> {
+export async function getCurrentProfile(context: SummitContext): Promise<TerrainProfile[] | undefined> {
   try {
-    const cacheItem = getCacheItem("currentProfile") as TerrainProfile;
-    if (cacheItem) return cacheItem;
     if (!context.token) return undefined;
     const response = await fetch("https://members.terrain.scouts.com.au/profiles", {
       method: "GET",
@@ -162,7 +160,7 @@ export async function getCurrentProfile(context: SummitContext): Promise<Terrain
     }
     const data = await response.json();
     // cache the data for 5 mins
-    return addToCache("currentProfile", data, 300) as TerrainProfile;
+    return data.profiles as TerrainProfile[];
   } catch (e) {
     context.log("Error fetching current profile: " + e);
     return undefined;
@@ -201,7 +199,7 @@ export async function saveLogbookData(text: string, context: SummitContext): Pro
   try {
     if (!context.currentProfile || !context.token) return undefined;
     console.debug("Sending logbook to terrain");
-    await fetch("https://achievements.terrain.scouts.com.au/members/" + context.currentProfile.profiles[0].member.id + "/logbook", {
+    await fetch("https://achievements.terrain.scouts.com.au/members/" + context.currentProfile.member.id + "/logbook", {
       headers: {
         accept: "application/json, text/plain, */*",
         "accept-language": "en-US,en;q=0.9",
@@ -229,7 +227,7 @@ export async function saveLogbookData(text: string, context: SummitContext): Pro
 export async function getLogbookData(context: SummitContext, logbookId: string): Promise<TerrainLogbook | undefined> {
   try {
     if (!context.currentProfile || !context.token) return undefined;
-    const response = await fetch("https://achievements.terrain.scouts.com.au/members/" + context.currentProfile.profiles[0].member.id + "/logbook/" + logbookId, {
+    const response = await fetch("https://achievements.terrain.scouts.com.au/members/" + context.currentProfile.member.id + "/logbook/" + logbookId, {
       method: "GET",
       mode: "cors",
       cache: "no-cache",
@@ -256,7 +254,34 @@ export async function fetchUnitAchievements(): Promise<TerrainAchievements[] | u
   const context = SummitContext.getInstance();
   try {
     if (!context.currentProfile || !context.token) return undefined;
-    const response = await fetch("https://achievements.terrain.scouts.com.au/units/" + context.currentProfile.profiles[0].unit.id + "/achievements", {
+    const response = await fetch("https://achievements.terrain.scouts.com.au/units/" + context.currentProfile.unit.id + "/achievements", {
+      method: "GET",
+      mode: "cors",
+      cache: "no-cache",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: context.token,
+      },
+      redirect: "error",
+      referrerPolicy: "strict-origin-when-cross-origin",
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const jsonData = await response.json();
+    return jsonData.results;
+  } catch (e) {
+    context.log("Error fetching unit achievements: " + e);
+    return undefined;
+  }
+}
+
+export async function fetchAchievements(type: string): Promise<TerrainAchievements[] | undefined> {
+  const context = SummitContext.getInstance();
+  try {
+    if (!context.currentProfile || !context.token) return undefined;
+    const response = await fetch("https://achievements.terrain.scouts.com.au/members/" + context.currentProfile.member.id + "/achievements?type=" + type, {
       method: "GET",
       mode: "cors",
       cache: "no-cache",
@@ -284,7 +309,7 @@ export async function fetchUnitMembers(): Promise<TerrainUnitMember[] | undefine
   const context = SummitContext.getInstance();
   try {
     if (!context.currentProfile || !context.token) return undefined;
-    const response = await fetch("https://members.terrain.scouts.com.au/units/" + context.currentProfile.profiles[0].unit.id + "/members", {
+    const response = await fetch("https://members.terrain.scouts.com.au/units/" + context.currentProfile.unit.id + "/members", {
       method: "GET",
       mode: "cors",
       cache: "no-cache",

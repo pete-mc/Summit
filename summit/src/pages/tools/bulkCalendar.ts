@@ -47,7 +47,7 @@ export async function bulkCalendar(): Promise<void> {
     });
     return;
   }
-  $("#bulkHeader").text(context.currentProfile.profiles[0].unit.name + " Bulk Calendar Events");
+  $("#bulkHeader").text(context.currentProfile.unit.name + " Bulk Calendar Events");
   $("#loadingP").remove();
   $("#retry").remove();
   $("#guthub").remove();
@@ -327,7 +327,7 @@ export async function bulkCalendar(): Promise<void> {
         end_datetime: moment(row.endDate, "DD/MM/YYYY HH:mm").format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
         event_type: {
           type: "unit",
-          id: context.currentProfile?.profiles[0].unit.id,
+          id: context.currentProfile?.unit.id,
         },
         attendance: {
           leader_member_ids: row.leads.split(","),

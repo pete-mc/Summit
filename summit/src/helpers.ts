@@ -212,3 +212,18 @@ export async function saveToIndexedDB(db: IDBDatabase, storeName: string, data: 
     };
   });
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function hasPropAtPath(obj: Record<string, any>, path: string, value: any): boolean {
+  const pathParts = path.split(".");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let current: any = obj;
+  for (const part of pathParts) {
+    if (current[part] === undefined) {
+      return false;
+    }
+    current = current[part];
+  }
+
+  return current === value;
+}

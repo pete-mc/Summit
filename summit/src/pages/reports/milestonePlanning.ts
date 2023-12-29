@@ -32,7 +32,7 @@ export async function MileStonePlanningReport() {
     });
     return;
   }
-  $("#milestoneHeader").text(context.currentProfile.profiles[0].unit.name);
+  $("#milestoneHeader").text(context.currentProfile.unit.name);
   if ($("#milestoneHeader").data("loaded")) return;
   $("#milestoneHeader").data("loaded", true);
   $("#loadingP").remove();

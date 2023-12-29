@@ -1,4 +1,4 @@
-export type TerrainCacheData = TerrainLogbook[] | TerrainEvent[] | TerrainProfile | TerrainUnitMemberMetric[];
+export type TerrainCacheData = TerrainLogbook[] | TerrainEvent[] | TerrainUnitMemberMetric[];
 export interface TerrainCache {
   type: string;
   data: TerrainCacheData;
@@ -133,11 +133,6 @@ export interface TerrainUnitMemberMetric {
   };
 }
 
-export interface TerrainProfile {
-  username: string;
-  profiles: Profile[];
-}
-
 interface ProfileUnit {
   id: string;
   name: string;
@@ -157,7 +152,7 @@ interface ProfileMember {
   roles: string[];
 }
 
-interface Profile {
+export interface TerrainProfile {
   unit: ProfileUnit;
   group: ProfileGroup;
   member: ProfileMember;

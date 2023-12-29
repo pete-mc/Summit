@@ -4,5 +4,6 @@
   },
   "omnisharp.dotNetCliPaths": [
     "/home/codespace/.azurelogicapps/dependencies/DotNetSDK"
-  ]
+  ],
+  "editor.tabSize": 2
 }

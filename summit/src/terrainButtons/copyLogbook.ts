@@ -3,36 +3,74 @@ import { SummitContext } from "../summitContext";
 import { getLogbookData, saveLogbookData } from "../terrainCalls";
 import $ from "jquery";
 
+function setClasses(classid: string, classes: string) {
+  const button = $("." + classid);
+  button.removeClass().addClass(classid);
+  //set all classes from target to button
+  button.addClass(classes);
+  button.addClass("summit-btn");
+}
+
+function observe(targetNode: Node, classid: string) {
+  const config = { attributes: true, childList: false, subtree: false };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const callback = function (mutationsList: any) {
+    for (const mutation of mutationsList) {
+      if (mutation.type === "attributes") {
+        if (mutation.attributeName === "class") {
+          setClasses(classid, $(targetNode).attr("class") ?? "");
+        }
+      }
+    }
+  };
+  const observer = new MutationObserver(callback);
+  if (targetNode) observer.observe(targetNode, config);
+}
+
 // Initialization for writing logbook
 export function initLogbookWrite() {
   const btn = $(document).xpath(`//button[contains(@data-cy, 'ADD_NEW_RECORD')]`)[0] as unknown as HTMLButtonElement;
+  // add 5 padding to btn
+  $(btn).attr("style", "margin: 5px;");
   $("<button>")
-    .addClass("mr-4 float-right v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn")
     .attr("id", "writeClipboardBtn")
+    .addClass("writeClipboardBtn summit-btn")
     .attr("onclick", 'lbChannel = new BroadcastChannel("TerrainSummit");lbChannel.postMessage({type: "writeLogbook", upload: false});lbChannel.close();')
-    .text("Paste from Clipboard")
+    .attr("data-v-bf1122da", "")
+    .attr("style", "margin: 5px;")
+    .html('<span class="v-btn__content">Paste from clipboard</span>')
     .appendTo($(btn).parent().parent());
+  setClasses("writeClipboardBtn", $(btn).attr("class") ?? "");
+  observe(btn, "writeClipboardBtn");
 }
 
 // Initialization for reading logbook
 export function initLogbookRead(): void {
   const btn = $(document).xpath(`//button[ancestor::section[contains(@class, \'ViewRecord__no-print\')] and contains(@data-cy, \'PRINT\')]`)[0] as unknown as HTMLButtonElement;
-
-  $(btn).addClass("mr-4");
-
+  $(btn).parent().attr("style", "display: flex;flex-wrap: wrap;align-items: center;justify-content: flex-end; gap: 10px;");
+  $(btn).attr("style", "margin: 5px;");
   $("<button>")
-    .addClass("mr-4 float-right v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn")
+    .attr("style", "margin: 5px;")
     .attr("id", "copyClipboardBtn")
+    .attr("data-v-34905e32", "")
+    .addClass("copyClipboardBtn summit-btn")
     .attr("onclick", 'lbChannel = new BroadcastChannel("TerrainSummit");lbChannel.postMessage({type: "loadLogbookData", record: window.$nuxt.$store._vm["logbook/getRecordId"], download: false});lbChannel.close();')
-    .text("Copy to Clipboard")
+    .html('<span class="v-btn__content">Copy to Clipboard')
     .appendTo($(btn).parent());
 
+  setClasses("copyClipboardBtn", $(btn).attr("class") ?? "");
+  observe(btn, "copyClipboardBtn");
+
   $("<button>")
-    .addClass("mr-4 float-right v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn")
+    .attr("style", "margin: 5px;")
     .attr("id", "copyExportBtn")
+    .attr("data-v-34905e32", "")
+    .addClass("copyExportBtn summit-btn")
     .attr("onclick", 'lbChannel = new BroadcastChannel("TerrainSummit");lbChannel.postMessage({type: "loadLogbookData", record: window.$nuxt.$store._vm["logbook/getRecordId"], download: true});lbChannel.close();')
-    .text("Export")
+    .html('<span class="v-btn__content">Export')
     .appendTo($(btn).parent());
+  setClasses("copyExportBtn", $(btn).attr("class") ?? "");
+  observe(btn, "copyExportBtn");
 }
 export async function loadLogbookData(messageData: SummitDownloadLogbookMessage, context: SummitContext): Promise<void> {
   console.debug("Recieved loadLogbook message from Channel");
