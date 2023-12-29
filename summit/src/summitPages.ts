@@ -23,7 +23,7 @@ export class SummitPageManager {
     new SummitPage("fa52775b-b30c-4e56-83ce-918411303373", "Summit Home", "Summit Home", "/summit", "", homeHtml, homePageLoaded),
     new SummitPage("7a806481-4360-4ecc-aa00-89095156696a", "Milestone Planning Report", "Milestone Planning", "/summit/reports/msplanreport", "unit:unit-council", msPlanningReportHtml, MileStonePlanningReport),
     new SummitPage("7c61d365-35f1-4913-96f2-a95df14f0ab6", "OAS Summary Report", "OAS Summary Report", "/summit/reports/oasreport", "unit:unit-council", oasReportHtml, oasReport),
-    new SummitPage("421a1b85-bcf7-4cf0-a03a-1405b96ad5a9", "Peak Award Progress Report", "Peak Award Progress Report", "/summit/reports/oasreport", "unit:unit-council", progressReportHtml, progressReport),
+    new SummitPage("421a1b85-bcf7-4cf0-a03a-1405b96ad5a9", "Peak Award Progress Report", "Peak Award Progress Report", "/summit/reports/peakreport", "unit:unit-council", progressReportHtml, progressReport),
     new SummitPage("6a822ea7-34db-40cd-a180-9b1aa276b786", "Advanced Reports (Topo)", "Topo Blazor App", "/summit/reports/topo", "", topoHtml, topoLoaded),
     new SummitPage("717466bd-3c85-41c8-9212-dc1c295cf7c0", "Bulk Calendar", "Bulk Calendar", "/summit/tools/bulkcal", "unit:unit-council", bulkCalendarHtml, bulkCalendar),
     new SummitPage("1bfd34e1-59ed-4220-8d30-79a70dca2581", "Present Awards", "Present Awards", "/summit/tools/presentAward", "unit:unit-council", presentAwardHtml, presentAwards),
