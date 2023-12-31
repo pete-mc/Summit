@@ -176,6 +176,14 @@ jobs:
         npm publish
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+    - name: Publish to GitHub Packages
+      if: github.ref == 'refs/heads/main'
+      run:  |
+        cd npm
+        npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     # - uses: wdzeng/edge-addon@v1
     #   if: github.ref == 'refs/heads/main'
