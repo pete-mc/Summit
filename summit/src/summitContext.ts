@@ -1,6 +1,7 @@
 import { BaseSummitMessage, SummitDownloadLogbookMessage, SummitMessageEvent, SummitMessageHandler, SummitRouteChangeMessage, SummitUploadLogbookMessage } from "../typings/summitTypes";
 import { TerrainEvent, TerrainProfile } from "../typings/terrainTypes";
 import { clearCache, compareVersions, openIndexedDB, reconstructGuids, saveToIndexedDB } from "./helpers";
+import { SummitUIEnhancements } from "./pages/tools/uiEnhancements";
 import { loadLogbookData, writeLogbook } from "./terrainButtons/copyLogbook";
 import { fetchActivity, fetchMemberEvents } from "./terrainCalls";
 
@@ -40,6 +41,7 @@ export class SummitContext {
     });
     this.checkForUpdate();
     this.setupNuxtWatchers();
+    SummitUIEnhancements.getInstance();
   }
 
   public setupNuxtWatchers() {
@@ -90,9 +92,9 @@ export class SummitContext {
     fetch("https://api.github.com/repos/pete-mc/Summit/releases/latest")
       .then((response) => response.json())
       .then((releaseData) => {
-        if (compareVersions(releaseData.tag_name, this.summitVersion)) {
+        if (compareVersions(this.summitVersion, releaseData.tag_name)) {
           //get latest js from release
-          fetch("https://github.com/pete-mc/Summit/releases/download/" + releaseData.tag_name + "/summit.js")
+          fetch("https://cdn.jsdelivr.net/npm/terrain-summit@" + releaseData.tag_name)
             .then((response) => response.text())
             .then(async (data) => {
               const dbName = "TerrainSummit";

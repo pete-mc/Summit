@@ -1,22 +1,5 @@
 import { SummitContext } from "../../summitContext";
 import { fetchUnitMembersMetrics } from "../../terrainCalls";
-import $ from "jquery";
-import "jszip";
-import "pdfmake";
-//import DataTable from "datatables.net-se";
-//import Editor from "@datatables.net/editor-se";
-import "datatables.net-se";
-import "datatables.net-buttons-se";
-import "datatables.net-buttons/js/buttons.html5.mjs";
-import "datatables.net-buttons/js/buttons.print.mjs";
-//import DateTime from "datatables.net-datetime";
-import "datatables.net-fixedheader-se";
-import "datatables.net-responsive-se";
-import "datatables.net-rowgroup-se";
-import "datatables.net-select-se";
-import oasReportHTML from "raw-loader!./oasReport.html";
-
-export const oasReportHtml = oasReportHTML;
 
 export async function oasReport() {
   const context = SummitContext.getInstance();

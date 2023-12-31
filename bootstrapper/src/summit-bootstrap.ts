@@ -52,15 +52,14 @@ function compareVersions(versionA: string, versionB: string): boolean {
 }
 
 async function summitBootstrap() {
-  const dbName = "TerrainSummit";
-  const storeName = "JSStore";
-  const id = "summitJS";
-  const db = await openIndexedDB(dbName, storeName);
-
   const jarVersion = summitJS?.match(/Summit Version: \"(.*)\"/)?.[1];
   const summitVersion = localStorage.getItem("summit-version");
 
-  if (!summitVersion || (jarVersion && compareVersions(summitVersion, jarVersion))) {
+  if (!summitVersion || (jarVersion && compareVersions(summitVersion, jarVersion)) || process.env.SUMMITBUILD === "dev") {
+    const dbName = "TerrainSummit";
+    const storeName = "JSStore";
+    const id = "summitJS";
+    const db = await openIndexedDB(dbName, storeName);
     await saveToIndexedDB(db, storeName, summitJS, id);
     localStorage.setItem("summit-version", jarVersion || "");
   }

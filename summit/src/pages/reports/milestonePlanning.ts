@@ -1,24 +1,7 @@
 import { SummitContext } from "../../summitContext";
 import { fetchUnitMembersMetrics } from "../../terrainCalls";
-import msPlanningReportHTML from "raw-loader!./milestonePlanning.html";
-import $ from "jquery";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import jszip from "jszip";
-//import DataTable from "datatables.net-se";
-//import Editor from "@datatables.net/editor-se";
-import "datatables.net-se";
-import "datatables.net-buttons-se";
-import "datatables.net-buttons/js/buttons.html5.mjs";
-import "datatables.net-buttons/js/buttons.print.mjs";
-//import DateTime from "datatables.net-datetime";
-import "datatables.net-fixedheader-se";
-import "datatables.net-responsive-se";
-import "datatables.net-rowgroup-se";
-import "datatables.net-select-se";
 
-export const msPlanningReportHtml = msPlanningReportHTML;
-
-export async function MileStonePlanningReport() {
+export async function mileStonePlanningReport() {
   const context = SummitContext.getInstance();
   const unitMembers = await fetchUnitMembersMetrics();
   if (!unitMembers || !context.currentProfile) {
@@ -32,7 +15,7 @@ export async function MileStonePlanningReport() {
     );
     $("#retry").on("click", async function () {
       !context.currentProfile ? await context.getData() : undefined;
-      MileStonePlanningReport();
+      mileStonePlanningReport();
     });
     return;
   }

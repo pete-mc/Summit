@@ -1,32 +1,24 @@
+import { BulkCalendarHtml, HomeHtml, HomePage, InitUIEnhancements, MileStonePlanningReport, MileStonePlanningReportHtml, OasReport, OasReportHtml, SummitUIEnhancements, UICaller } from "./pages/pageIndex";
+import { PeakReport, PeakReportHtml, PresentAward, PresentAwardsHtml, TopoHtml, TopoLoaded, UiEnhancementsHtml, bulkCalendar } from "./pages/pageIndex";
 import { SummitAddSreensMessage, SummitOnLoadMessage, SummitRouteChangeMessage, SummitScreen } from "../typings/summitTypes";
 import { clearCache } from "./helpers";
 import { SummitContext } from "./summitContext";
-import summitMenuGroupHtml from "raw-loader!./content/navBarListGroup.html";
-import logo from "raw-loader!./content/logo.txt";
-import homeHtml from "raw-loader!./pages/home/home.html";
-import { initLogbookRead, initLogbookWrite } from "./terrainButtons/copyLogbook";
-import { initProgrammingExportBtn } from "./terrainButtons/exportiCal";
 import $ from "jquery";
-import { homePageLoaded } from "./pages/home/home";
-import { MileStonePlanningReport, msPlanningReportHtml } from "./pages/reports/milestonePlanning";
-import { bulkCalendar, bulkCalendarHtml } from "./pages/tools/bulkCalendar";
-import { oasReport, oasReportHtml } from "./pages/reports/oasReport";
-import { progressReport, progressReportHtml } from "./pages/reports/progressReport";
-import { presentAwardHtml, presentAwards } from "./pages/tools/presentAwards";
-import { topoHtml, topoLoaded } from "./pages/reports/topo";
-import { awardObserverRouter, checkAward } from "./terrainButtons/presentedAwards";
 import { fetchAchievements } from "./terrainCalls";
+import { AwardObserverRouter, CheckAward, InitLogbookRead, InitLogbookWrite, InitProgrammingExportBtn } from "./terrainButtons/buttonsIndex";
+import { Logo, SummitMenuGroupHtml } from "./content/contentIndex";
 
 export class SummitPageManager {
   private static instance: SummitPageManager;
   public pages: SummitPage[] = [
-    new SummitPage("fa52775b-b30c-4e56-83ce-918411303373", "Summit Home", "Summit Home", "/summit", "", homeHtml, homePageLoaded),
-    new SummitPage("7a806481-4360-4ecc-aa00-89095156696a", "Milestone Planning Report", "Milestone Planning", "/summit/reports/msplanreport", "unit:unit-council", msPlanningReportHtml, MileStonePlanningReport),
-    new SummitPage("7c61d365-35f1-4913-96f2-a95df14f0ab6", "OAS Summary Report", "OAS Summary Report", "/summit/reports/oasreport", "unit:unit-council", oasReportHtml, oasReport),
-    new SummitPage("421a1b85-bcf7-4cf0-a03a-1405b96ad5a9", "Peak Award Progress Report", "Peak Award Progress Report", "/summit/reports/peakreport", "unit:unit-council", progressReportHtml, progressReport),
-    new SummitPage("6a822ea7-34db-40cd-a180-9b1aa276b786", "Advanced Reports (Topo)", "Topo Blazor App", "/summit/reports/topo", "", topoHtml, topoLoaded),
-    new SummitPage("717466bd-3c85-41c8-9212-dc1c295cf7c0", "Bulk Calendar", "Bulk Calendar", "/summit/tools/bulkcal", "unit:unit-council", bulkCalendarHtml, bulkCalendar),
-    new SummitPage("1bfd34e1-59ed-4220-8d30-79a70dca2581", "Present Awards", "Present Awards", "/summit/tools/presentAward", "unit:unit-council", presentAwardHtml, presentAwards),
+    new SummitPage("fa52775b-b30c-4e56-83ce-918411303373", "Summit Home", "Summit Home", "/summit", "", HomeHtml, HomePage),
+    new SummitPage("7a806481-4360-4ecc-aa00-89095156696a", "Milestone Planning Report", "Milestone Planning", "/summit/reports/msplanreport", "unit:unit-council", MileStonePlanningReportHtml, MileStonePlanningReport),
+    new SummitPage("7c61d365-35f1-4913-96f2-a95df14f0ab6", "OAS Summary Report", "OAS Summary Report", "/summit/reports/oasreport", "unit:unit-council", OasReportHtml, OasReport),
+    new SummitPage("421a1b85-bcf7-4cf0-a03a-1405b96ad5a9", "Peak Award Progress Report", "Peak Award Progress Report", "/summit/reports/peakreport", "unit:unit-council", PeakReportHtml, PeakReport),
+    new SummitPage("6a822ea7-34db-40cd-a180-9b1aa276b786", "Advanced Reports (Topo)", "Topo Blazor App", "/summit/reports/topo", "", TopoHtml, TopoLoaded),
+    new SummitPage("717466bd-3c85-41c8-9212-dc1c295cf7c0", "Bulk Calendar", "Bulk Calendar", "/summit/tools/bulkcal", "unit:unit-council", BulkCalendarHtml, bulkCalendar),
+    new SummitPage("1bfd34e1-59ed-4220-8d30-79a70dca2581", "Present Awards", "Present Awards", "/summit/tools/presentAward", "unit:unit-council", PresentAwardsHtml, PresentAward),
+    new SummitPage("457f618b-4d0f-460a-83f9-1d40d7015fa1", "Display Options", "Display Options", "/summit/tools/uiEnhancements", "", UiEnhancementsHtml, InitUIEnhancements),
   ];
   private context: SummitContext = SummitContext.getInstance();
   constructor() {
@@ -42,6 +34,9 @@ export class SummitPageManager {
         await this.context.getData();
         this.context.setupNuxtWatchers();
         window.$nuxt.$router.push({ path: window.$nuxt.$route.fullPath, query: { Summit: true } });
+        SummitUIEnhancements.getInstance().HelpButton(UICaller.Init);
+      } else {
+        if (window.$nuxt.$route.query.Summit) window.$nuxt.$router.back();
       }
       if (this.context.loggedin && this.context.currentProfile?.member === undefined) {
         await this.context.getData();
@@ -82,28 +77,28 @@ export class SummitPageManager {
     route = route.replace("?Summit=true", "");
     switch (route) {
       case "/logbook/view-record":
-        if (this.checkElements(`//button[ancestor::section[contains(@class, 'ViewRecord__no-print')] and contains(@data-cy, 'PRINT')]`, "copyClipboardBtn")) initLogbookRead();
+        if (this.checkElements(`//button[ancestor::section[contains(@class, 'ViewRecord__no-print')] and contains(@data-cy, 'PRINT')]`, "copyClipboardBtn")) InitLogbookRead();
         break;
       case "/logbook":
-        if (this.checkElements(`//button[contains(@data-cy, 'ADD_NEW_RECORD')]`, "writeClipboardBtn")) initLogbookWrite();
+        if (this.checkElements(`//button[contains(@data-cy, 'ADD_NEW_RECORD')]`, "writeClipboardBtn")) InitLogbookWrite();
         break;
       case "/programming/view-activity":
-        if (this.checkElements(`//button[@data-cy='PRINT']`, "exportiCalBtn")) initProgrammingExportBtn();
+        if (this.checkElements(`//button[@data-cy='PRINT']`, "exportiCalBtn")) InitProgrammingExportBtn();
         break;
       case "/milestones":
         if (!window.$nuxt.$route.query.Summit) window.$nuxt.$router.push({ path: window.$nuxt.$route.fullPath, query: { Summit: true } });
         else {
           if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0 && $("div.ListItem__title:contains(Milestone 1)").length > 0)
-            checkAward({ name: "milestone", path: "achievement_meta.stage", value: 1 }).then(() => {
-              awardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", route);
+            CheckAward({ name: "milestone", path: "achievement_meta.stage", value: 1 }).then(() => {
+              AwardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", route);
             });
           if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0 && $("div.ListItem__title:contains(Milestone 2)").length > 0)
-            checkAward({ name: "milestone", path: "achievement_meta.stage", value: 2 }).then(() => {
-              awardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", route);
+            CheckAward({ name: "milestone", path: "achievement_meta.stage", value: 2 }).then(() => {
+              AwardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", route);
             });
           if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0 && $("div.ListItem__title:contains(Milestone 3)").length > 0)
-            checkAward({ name: "milestone", path: "achievement_meta.stage", value: 3 }).then(() => {
-              awardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", route);
+            CheckAward({ name: "milestone", path: "achievement_meta.stage", value: 3 }).then(() => {
+              AwardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", route);
             });
         }
         break;
@@ -115,7 +110,7 @@ export class SummitPageManager {
       case "/oas":
       case "/sia":
         if (!window.$nuxt.$route.query.Summit && !window.$nuxt.$store.state.global.routePrev.includes("Summit=true")) window.$nuxt.$router.push({ path: window.$nuxt.$route.fullPath, query: { Summit: true } });
-        if (window.$nuxt.$route.query.Summit) window.$nuxt.$router.back();
+        //if (window.$nuxt.$route.query.Summit) window.$nuxt.$router.back();
         else if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0) {
           const type =
             [
@@ -133,7 +128,7 @@ export class SummitPageManager {
           list.addClass("AwardedList");
           list.children().each((_index, element) => {
             fetchAchievements(type).then((awards) => {
-              checkAward({ name: type, parent: $(element), awardsPrefetched: awards });
+              CheckAward({ name: type, parent: $(element), awardsPrefetched: awards });
             });
           });
         }
@@ -193,7 +188,7 @@ export class SummitPageManager {
       .first()
       .html(
         `<div style="color:white; display: grid; place-items: center; height:100px !important">
-          <img width="40px" src ="data:image/webp;base64,${logo}">
+          <img width="40px" src ="${Logo}">
           <b>Summit &nbsp|&nbsp Terrain</b>
           <div id="summitVerson" style="font-size: small;">
             V${this.context.summitVersion}${this.context.upgradeAvailable ? '<span style="color: red">&nbsp⭮</span>' : ""}
@@ -238,13 +233,13 @@ export class SummitPageManager {
     const menuGroupItems = `<div class="v-list-item__content NavMenu__subitem-content summit-menu"><div class="v-list-item__title">PAGETITLE</div></div>`;
     Object.keys(groupedPages).forEach((key) => {
       $(
-        summitMenuGroupHtml
-          .replace("SummitMenuGroup-", "SummitMenuGroup-" + key)
+        SummitMenuGroupHtml.replace("SummitMenuGroup-", "SummitMenuGroup-" + key)
+          .replace("SummitMenuGroupTitle-", "SummitMenuGroupTitle-" + key)
           .replace("SummitMenuGroupItems-", "SummitMenuGroupItems-" + key)
           .replace("GROUPTITLE", key.charAt(0).toUpperCase() + key.slice(1)),
       ).appendTo(menuItem.parent());
       $("#SummitMenuGroupItems-" + key).hide();
-      $("#SummitMenuGroup-" + key).on("click", () => {
+      $("#SummitMenuGroupTitle-" + key).on("click", () => {
         $("#SummitMenuGroup-" + key)
           .children()
           .hasClass("v-list-group--active");
@@ -270,7 +265,7 @@ export class SummitPageManager {
     this.createMenuItem(menuItem.css("background-color", "#071e57").children().removeClass("summit-menu").children().removeClass("summit-menu").parent().parent(), "terrainMenu", "Back to Scouts | Terrain", "/basecamp", menuItem.parent());
     const footer = $("footer").find("a").first().clone().prependTo($("footer").find("a").first().parent()).attr({ href: "https://github.com/pete-mc/Summit/issues", target: "_blank" });
     footer.find(".Icon__label").text("Summit Support").attr("style", "color: green;");
-    footer.find(".Icon__image").attr("src", "data:image/webp;base64," + logo);
+    footer.find(".Icon__image").attr("src", Logo);
   }
 
   private createMenuItem(menuItem: JQuery<HTMLElement>, id: string, title: string, path: string, parent: JQuery<HTMLElement>): void {

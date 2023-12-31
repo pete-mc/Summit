@@ -1,0 +1,10 @@
+{
+  "extends": [
+    "development"
+  ],
+  "ignore": [
+    "**/node_modules/**/*",
+    "**/dependencies/**/*"
+    
+  ]
+}

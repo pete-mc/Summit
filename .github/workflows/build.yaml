@@ -107,7 +107,6 @@ jobs:
         name: web-extension
         path: ./bootstrapper/summit.zip
 
-
     - name: Upload AAB as artifact
       if: github.ref == 'refs/heads/dev'
       uses: actions/upload-artifact@v2
@@ -169,6 +168,14 @@ jobs:
         asset_path: ./summit/bin/summit.js
         asset_name: summit.js
         asset_content_type: application/javascript
+
+    - name: Publish
+      if: github.ref == 'refs/heads/main'
+      run:  |
+        cd npm
+        npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     # - uses: wdzeng/edge-addon@v1
     #   if: github.ref == 'refs/heads/main'

@@ -44,6 +44,21 @@ module.exports = {
         use: "ts-loader",
         exclude: [/node_modules/],
       },
+      {
+        test: /\.css$/,
+        use: ["style-loader", "css-loader"],
+        exclude: [/node_modules/],
+      },
+      {
+        test: /\.(png|svg|jpg|jpeg|gif|eot|ttf|otf|webp)$/,
+        use: { loader: "url-loader", options: { limit: 10240000 } },
+        exclude: [/node_modules/],
+      },
+      {
+        test: /\.(txt|html|csv)$/,
+        type: "asset/source",
+        exclude: [/node_modules/],
+      },
     ],
   },
   resolve: {

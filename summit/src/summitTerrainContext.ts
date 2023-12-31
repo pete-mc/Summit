@@ -23,7 +23,7 @@ export class TerrainSummitContext {
   public sendToSummitDebounced: (to: Route, from?: Route) => void;
   private observationTimer: NodeJS.Timeout | null = null;
   private readonly observationDuration = 3000; // Duration in milliseconds
-  private readonly sendInterval = 100; // Interval in milliseconds
+  private readonly sendInterval = 200; // Interval in milliseconds
   private isObserving = false;
   private bodyObserver = new MutationObserver(() => {
     const nuxtDiv = document.getElementById("__nuxt");
@@ -105,6 +105,7 @@ export class TerrainSummitContext {
 
   public sendToSummit(to: Route, from?: Route) {
     try {
+      console.debug("Sending route change to Summit:", to.fullPath + " : " + Date.now());
       this.bcChannel.postMessage({
         type: "routeChange",
         newRoute: to.fullPath,
@@ -138,6 +139,7 @@ export class TerrainSummitContext {
       mounted() {
         if (!this.isLoaded) {
           this.isLoaded = true;
+          console.debug("Sending onload message to Summit:", screen.id);
           self.bcChannel.postMessage({
             type: "onloadSummit",
             id: screen.id,
@@ -164,8 +166,6 @@ export class TerrainSummitContext {
     });
   }
 }
-
-
 
 // $nuxt.$router: This is the Vue Router instance. You can use it to programmatically navigate to different routes, add new routes, or listen for route changes.
 // $nuxt.$store: If the application uses Vuex for state management, this is the Vuex store. You can use it to read state, commit mutations, or dispatch actions.
