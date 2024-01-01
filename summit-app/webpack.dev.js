@@ -1,0 +1,29 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+const Webpack = require("webpack");
+const { merge } = require("webpack-merge");
+const common = require("./webpack.common.js");
+const Path = require("path");
+const fs = require("fs");
+
+module.exports = merge(common, {
+  mode: "development",
+  devtool: "inline-source-map",
+  plugins: [
+    new Webpack.DefinePlugin({
+      "process.env.SUMMITBUILD": JSON.stringify("dev"),
+    }),
+  ],
+  devServer: {
+    static: {
+      directory: Path.join(__dirname, 'dist'),
+    },
+    disableHostCheck: true,
+    public: 'localhost:443',
+    compress: true,
+    port: 443,
+    https: {
+      pfx: fs.readFileSync(Path.resolve(__dirname, 'cert.pfx')),
+      passphrase: 'YourPassword'
+    },
+  },
+});
