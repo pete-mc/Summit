@@ -7,7 +7,10 @@
       "plugin:react/recommended"
   ],
   "parserOptions": {
-      "project": "./summit-app/tsconfig.json"
+      "project": "./summit-app/tsconfig.json",
+      "tsconfigRootDir": "./",
+      "extraFileExtensions": [".json"],
+      "createDefaultProgram": true
   },
   "plugins": [
       "@typescript-eslint",
@@ -16,5 +19,15 @@
   ],
   "rules": {
       "prettier/prettier": "error"
-  }
+  },
+  "ignorePatterns":[
+      "node_modules/",
+      "build/",
+    "./*"
+  ],
+    "settings": {
+        "react": {
+            "version": "18.2.0"
+        }
+    }
 }

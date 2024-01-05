@@ -1,6 +1,13 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import App from './components/app';
+import React from "react";
+import { createRoot } from "react-dom/client";
+import App from "./components/app";
+import Summit from "./services/summit";
+import { ServiceType } from "./constants/enums";
 
-ReactDOM.render(<App />, document.getElementById('root'));
-console.log("Loaded Terrain Summit React")
+(() => {
+  window.Summit = Summit.getService<Summit>(ServiceType.Summit);
+  const summitContainer = document.getElementById("summitContainer");
+  if (!summitContainer) throw new Error("No root element found");
+  const root = createRoot(summitContainer);
+  root.render(<App />);
+})();

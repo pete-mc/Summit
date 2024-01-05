@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "useDefineForClassFields": true,
+    "experimentalDecorators": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "target": "ES2022",
