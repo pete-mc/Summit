@@ -114,3 +114,69 @@ hotUpdate({
   mutations: { newMutation(state, payload) { /* ... */ } },
   actions: { newAction({ commit }, payload) { /* ... */ } }
 });
+
+
+
+
+
+//working example:
+
+// Define a simple Vuex module
+const testModule = {
+    namespaced: true,
+    state: {
+      message: 'Initial Message'
+    },
+    mutations: {
+      updateMessage(state, newMessage) {
+        console.log('Mutation called with:', newMessage);
+        state.message = newMessage;
+      }
+    },
+    actions: {
+      setMessage({ commit }, newMessage) {
+        console.log('Action called with:', newMessage);
+        commit('updateMessage', newMessage);
+      }
+    },
+    getters: {
+      getMessage(state) {
+        console.log('Getter called, current message:', state.message);
+        return state.message;
+      }
+    }
+  };
+  
+  // Dynamically register this module in the existing Vuex store
+  window.$nuxt.$store.registerModule('test', testModule);
+
+  // Access the Vue constructor from the Nuxt instance
+const VueConstructor = window.$nuxt.$root.constructor;
+
+// Define a simple Vue component
+const TestComponent = VueConstructor.extend({
+  template: '<div>Message from Vuex: {{ message }}</div>',
+  computed: {
+    message() {
+      console.log("Computed property evaluated with message:", this.$store.getters['test/getMessage']);
+      return this.$store.getters['test/getMessage'];
+    }
+  }
+});
+
+// Create an instance of the component and mount it
+const componentInstance = new TestComponent({
+  store: window.$nuxt.$store
+});
+
+// Append the new component to the body
+const mountPoint = document.createElement('div');
+document.body.appendChild(mountPoint);
+componentInstance.$mount(mountPoint);
+
+window.$nuxt.$store.dispatch('test/setMessage', 'New message from Vuex');
+window.$nuxt.$store.commit('test/updateMessage', 'Another new message');
+
+
+
+

@@ -4,7 +4,7 @@
 		{
 			"label": "Build Extension",
 			"type": "shell",
-			"command": "npm-run-all -s build",
+			"command": "npm-run-all -s build bootstrapper",
 			"group": {
 				"kind": "build",
 				"isDefault": true
@@ -15,7 +15,7 @@
 			},
 			"problemMatcher": [],
 			"options": {
-				"cwd": "${env:WORKSPACE_PATH}/summit"
+				"cwd": "${env:WORKSPACE_PATH}/summit-app"
 			}
 		},
 		{

@@ -1,14 +1,9 @@
-import Summit from "../services/summit";
-import { NuxtAppOptions } from "@nuxt/types";
-
-interface MyNuxtApp extends NuxtAppOptions {
-  // add your own properties and methods here
-}
+import { NuxtApp } from "@nuxt/types/app";
 
 export {};
 
 declare global {
   interface Window {
-    Summit: Summit;
+    $nuxt: NuxtApp;
   }
 }

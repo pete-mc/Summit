@@ -78,3 +78,10 @@ export default {
       this.$emit('myEvent', 'Hello from MyComponent');
   }
 };
+
+
+//register a component
+if 
+(window.$nuxt && window.$nuxt.$root) {
+    window.$nuxt.$root.$options.components['my-new-component'] = MyComponent;
+  }

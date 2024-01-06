@@ -1,33 +1,32 @@
 {
-  "parser": "@typescript-eslint/parser",
-  "extends": [
-      "plugin:@typescript-eslint/recommended",
-      "plugin:prettier/recommended",
-      "prettier",
-      "plugin:react/recommended"
-  ],
+  "parser": "vue-eslint-parser",
   "parserOptions": {
-      "project": "./summit-app/tsconfig.json",
-      "tsconfigRootDir": "./",
-      "extraFileExtensions": [".json"],
-      "createDefaultProgram": true
+    "parser": "@typescript-eslint/parser",
+    "project": "./tsconfig.json",
+    "tsconfigRootDir": "./summit-app",
+    "extraFileExtensions": [".json", ".vue"],
+    "createDefaultProgram": true
   },
+  "extends": [
+    "plugin:@typescript-eslint/recommended",
+    "plugin:vue/recommended",
+    "plugin:prettier/recommended",
+    "prettier"
+  ],
   "plugins": [
-      "@typescript-eslint",
-      "prettier",
-      "react"
+    "@typescript-eslint",
+    "vue",
+    "prettier"
   ],
   "rules": {
-      "prettier/prettier": "error"
+    "prettier/prettier": "error"
+    // add any Vue-specific rules here
   },
   "ignorePatterns":[
-      "node_modules/",
-      "build/",
-    "./*"
-  ],
-    "settings": {
-        "react": {
-            "version": "18.2.0"
-        }
-    }
+    "docs/",
+    "node_modules/",
+    "build/",
+    "./*",
+    "webpack*"
+  ]
 }

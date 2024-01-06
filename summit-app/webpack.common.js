@@ -5,7 +5,9 @@ const shell = require("shelljs");
 const xml2js = require("xml2js");
 const version = require("../bootstrapper/manifest.json").version;
 const fs = require("fs");
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const { VueLoaderPlugin } = require('vue-loader');
+
 
 fs.readFile("../cordova-app/config.xml", "utf8", function (err, data) {
   if (err) {
@@ -35,12 +37,19 @@ fs.readFile("../cordova-app/config.xml", "utf8", function (err, data) {
 });
 
 module.exports = {
-  entry: "./src/index.tsx",
+  entry: "./src/main.ts",
   module: {
     rules: [
       {
-        test: /\.(js|jsx|ts|tsx)$/, // Files to be processed
-        use: 'babel-loader',
+        test: /\.vue$/,
+        loader: "vue-loader",
+      },
+      {
+        test: /\.tsx?$/,
+        loader: 'ts-loader',
+        options: {
+          appendTsSuffixTo: [/\.vue$/],
+        },
         exclude: /node_modules/,
       },
       {
@@ -60,7 +69,15 @@ module.exports = {
       },
     ],
   },
+  // externals: {
+  //   vue: 'Vue',
+  //   'vue-router': 'VueRouter',
+  //   vuex: 'Vuex'
+  // },
   resolve: {
+    alias: {
+      vue$: "vue/dist/vue.esm.js",
+    },
     extensions: [".tsx", ".ts", ".js"],
   },
   output: {
@@ -68,22 +85,9 @@ module.exports = {
     path: Path.resolve(__dirname, "dist"),
   },
   plugins: [
+    new VueLoaderPlugin(),
     new MiniCssExtractPlugin({
-      filename: 'summit.css', // Specify the output CSS filename
-    }),
-    new Webpack.DefinePlugin({
-      "process.env.SUMMITVERSION": JSON.stringify(require("../bootstrapper/manifest.json").version),
-    }),
-    new Webpack.BannerPlugin({
-      banner: `Welcome to Terrian | Summit, go to https://github.com/pete-mc/summit for more information
-      Summit Version: ${JSON.stringify(require("../bootstrapper/manifest.json").version)}`,
-    }),
-    new WebpackShellPluginNext({
-      onBuildEnd: {
-        scripts: ["node -e \"require('shelljs').cp('-R', './bin/*', '../bootstrapper/src')\""],
-        blocking: true,
-        parallel: false,
-      },
+      filename: "summit.css", // Specify the output CSS filename
     }),
   ],
 };
