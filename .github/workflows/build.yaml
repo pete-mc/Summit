@@ -188,16 +188,8 @@ jobs:
       with: 
         registry-url: 'https://npm.pkg.github.com'
 
-    - name: Publish to GitHub Packages
-      # if: github.ref == 'refs/heads/main'
-      run:  |
-        cd npm
-        npm publish --registry https://npm.pkg.github.com
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
     - uses: wdzeng/edge-addon@v1
-      if: github.ref == 'refs/heads/main'
+      # if: github.ref == 'refs/heads/main'
       with:
         product-id: ${{ secrets.EDGE_EXTENSION_ID }}
         zip-path: ./summit.zip
