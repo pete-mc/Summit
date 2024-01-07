@@ -17,9 +17,6 @@ import { SummitContext } from "../../summitContext";
 import { createNewEvent, fetchUnitMembers } from "../../terrainCalls";
 import flatpickr from "flatpickr";
 import DataTable, { CellSelector } from "datatables.net-se";
-import bulkCalendarHTML from "raw-loader!./bulkCalendar.html";
-
-export const bulkCalendarHtml = bulkCalendarHTML;
 
 export async function bulkCalendar(message?: string): Promise<void> {
   const context = SummitContext.getInstance();

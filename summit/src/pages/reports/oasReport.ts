@@ -14,9 +14,6 @@ import "datatables.net-fixedheader-se";
 import "datatables.net-responsive-se";
 import "datatables.net-rowgroup-se";
 import "datatables.net-select-se";
-import oasReportHTML from "raw-loader!./oasReport.html";
-
-export const oasReportHtml = oasReportHTML;
 
 export async function oasReport() {
   const context = SummitContext.getInstance();

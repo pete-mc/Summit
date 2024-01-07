@@ -14,14 +14,12 @@ import "datatables.net-responsive-se";
 import "datatables.net-rowgroup-se";
 import "datatables.net-select-se";
 import { SummitContext } from "../../summitContext";
-import presentAwardHTML from "raw-loader!./presentAwards.html";
 import { createNewEvent, fetchActivity, fetchMemberEvents, fetchUnitAchievements, fetchUnitMembers, updateEvent } from "../../terrainCalls";
 import moment from "moment";
 import { SummitAchievementData } from "../../../typings/summitTypes";
 import { processGuids, reconstructGuids } from "../../helpers";
 import { TerrainEvent, TerrainEventScheduleItem } from "../../../typings/terrainTypes";
 
-export const presentAwardHtml = presentAwardHTML;
 
 export async function presentAwards(): Promise<void> {
   enum TerrainAchievementsType {

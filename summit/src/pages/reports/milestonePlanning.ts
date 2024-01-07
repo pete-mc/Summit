@@ -16,9 +16,7 @@ import "datatables.net-responsive-se";
 import "datatables.net-rowgroup-se";
 import "datatables.net-select-se";
 
-export const msPlanningReportHtml = msPlanningReportHTML;
-
-export async function MileStonePlanningReport() {
+export async function mileStonePlanningReport() {
   const context = SummitContext.getInstance();
   const unitMembers = await fetchUnitMembersMetrics();
   if (!unitMembers || !context.currentProfile) {
@@ -32,7 +30,7 @@ export async function MileStonePlanningReport() {
     );
     $("#retry").on("click", async function () {
       !context.currentProfile ? await context.getData() : undefined;
-      MileStonePlanningReport();
+      mileStonePlanningReport();
     });
     return;
   }
