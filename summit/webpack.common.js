@@ -7,31 +7,31 @@ const shell = require("shelljs");
 const xml2js = require("xml2js");
 const version = require("../bootstrapper/manifest.json").version;
 const fs = require("fs");
-// const rimraf = require('rimraf');
+
+//set version in ../cordova-app/config.xml to the version from manifest.json
 fs.readFile("../cordova-app/config.xml", "utf8", function (err, data) {
   if (err) {
     return console.log(err);
   }
-
-  // Parse XML to JS Obj
   xml2js.parseString(data, function (err, result) {
-    if (err) {
-      return console.log(err);
-    }
-
-    // Set widget.$.version to version from manifest.json
+    if (err) return console.log(err);
     result.widget.$.version = version;
-
-    // Build XML from JS Obj
     const builder = new xml2js.Builder();
     const xml = builder.buildObject(result);
-
-    // Write config.xml
     fs.writeFile("../cordova-app/config.xml", xml, function (err) {
-      if (err) {
-        return console.log(err);
-      }
+      if (err) return console.log(err);
     });
+  });
+});
+
+//set version in ../npm/package.json to the version from manifest.json
+fs.readFile("../npm/package.json", "utf8", function (err, data) {
+  if (err) return console.log(err);
+  const manifest = JSON.parse(data);
+  manifest.version = version;
+  const json = JSON.stringify(manifest, null, 2);
+  fs.writeFile("../npm/package.json", json, function (err) {
+    if (err) return console.log(err);
   });
 });
 

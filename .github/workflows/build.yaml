@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - dev
+      - '2.5.0'
     paths:
       - 'bootstrapper/**'
       - 'cordova-app/**'
@@ -171,20 +171,20 @@ jobs:
         asset_content_type: application/javascript
 
     - name: Publish
-      if: github.ref == 'refs/heads/main'
+      # if: github.ref == 'refs/heads/main'
       run:  |
         cd npm
         npm publish
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-    - name: Publish to GitHub Packages
-      if: github.ref == 'refs/heads/main'
-      run:  |
-        cd npm
-        npm publish
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # - name: Publish to GitHub Packages
+    #   //if: github.ref == 'refs/heads/main'
+    #   run:  |
+    #     cd npm
+    #     npm publish
+    #   env:
+    #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - uses: wdzeng/edge-addon@v1
       if: github.ref == 'refs/heads/main'
