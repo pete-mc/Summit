@@ -23,6 +23,7 @@
 | Retrieve Latest OAS Template          | https://templates.terrain.scouts.com.au/[stream]/latest.json 
 | Retrieve Additional Awards Specs      | https://templates.terrain.scouts.com.au/additional-awards/specifications.json 
 | Retrieve OAS Tree for Stream          | https://templates.terrain.scouts.com.au/oas/[stream]/tree.json 
+/ Retrieve SIA Template                 | https://templates.terrain.scouts.com.au/sia/[achievementTemplate].json
 */
 
 import { TerrainAchievements, TerrainEvent, TerrainEventSummary, TerrainLogbook, TerrainProfile, TerrainUnitMember, TerrainUnitMemberMetric } from "../typings/terrainTypes";
@@ -140,7 +141,32 @@ export async function fetchMemberEvents(fromDateString: string, toDateString: st
   }
 }
 
-// convert above to async function with fetch and return profile rather than setting
+//get sia template
+export async function fetchSIATemplate(templateId: string): Promise<unknown | undefined> {
+  const context = SummitContext.getInstance();
+  try {
+    if (!context.token) return undefined;
+    const response = await fetch("https://templates.terrain.scouts.com.au/sia/" + templateId + ".json", {
+      method: "GET",
+      mode: "cors",
+      cache: "no-cache",
+      credentials: "same-origin",
+      headers: {
+        Authorization: context.token,
+      },
+      redirect: "error",
+      referrerPolicy: "strict-origin-when-cross-origin",
+    });
+    if (!response.ok) {
+      return undefined;
+    }
+    return await response.json();
+  } catch (e) {
+    context.log("Error fetching sia template: " + e);
+    return undefined;
+  }
+}
+
 export async function getCurrentProfile(context: SummitContext): Promise<TerrainProfile[] | undefined> {
   try {
     if (!context.token) return undefined;

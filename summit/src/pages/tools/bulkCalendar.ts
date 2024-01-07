@@ -17,6 +17,7 @@ import { SummitContext } from "../../summitContext";
 import { createNewEvent, fetchUnitMembers } from "../../terrainCalls";
 import flatpickr from "flatpickr";
 import DataTable, { CellSelector } from "datatables.net-se";
+import { BulkCalendarHtml } from "..";
 
 export async function bulkCalendar(message?: string): Promise<void> {
   const context = SummitContext.getInstance();
@@ -49,21 +50,24 @@ export async function bulkCalendar(message?: string): Promise<void> {
     $("#loadingP").text(
       "Error loading members. Please click the button to try again. This is a Summit error. Please do not contact Terrain support for this issue. If this error persists please add an issue to the Summit GitHub repository. ",
     );
+    $("#retry").remove();
+    $("#github").remove();
     $("#loadingP").after('<button id="retry" class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Retry</button>');
     // button to access github issues list
     $("#loadingP").after(
-      '<a id="guthub" href="https://github.com/pete-mc/Summit/issues" target="_blank"><button class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Summit Issues Register</button></a>',
+      '<a id="github" href="https://github.com/pete-mc/Summit/issues" target="_blank"><button class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Summit Issues Register</button></a>',
     );
     $("#retry").on("click", async function () {
       !context.currentProfile ? await context.getData() : undefined;
+      $("#summitContentDiv").replaceWith(BulkCalendarHtml);
       bulkCalendar();
     });
     return;
   }
-  $("#bulkHeader").text(context.currentProfile.unit.name + " Bulk Calendar Events");
+  $("#bulkHeader").text("Bulk Calendar Events - " + context.currentProfile.unit.name);
   $("#loadingP").remove();
   $("#retry").remove();
-  $("#guthub").remove();
+  $("#github").remove();
 
   //remove loading text and show button
   $("#loadingP").remove();
@@ -256,7 +260,7 @@ export async function bulkCalendar(message?: string): Promise<void> {
       // Find the oldest record
       const oldestRecord = data.reduce((oldest, current) => {
         const currentStartDate = moment(current.startDate, "DD/MM/YYYY HH:mm");
-        return currentStartDate.isBefore(moment(oldest.startDate, "DD/MM/YYYY HH:mm")) ? current : oldest;
+        return currentStartDate.isAfter(moment(oldest.startDate, "DD/MM/YYYY HH:mm")) ? current : oldest;
       });
 
       // Calculate the start and end dates

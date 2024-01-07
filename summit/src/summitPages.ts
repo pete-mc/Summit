@@ -1,12 +1,12 @@
-import { BulkCalendarHtml, HomeHtml, HomePage, InitUIEnhancements, MileStonePlanningReport, MileStonePlanningReportHtml, OasReport, OasReportHtml, SummitUIEnhancements, UICaller } from "./pages/pageIndex";
-import { PeakReport, PeakReportHtml, PresentAward, PresentAwardsHtml, TopoHtml, TopoLoaded, UiEnhancementsHtml, bulkCalendar } from "./pages/pageIndex";
+import { BulkCalendarHtml, HomeHtml, HomePage, InitUIEnhancements, MileStonePlanningReport, MileStonePlanningReportHtml, OasReport, OasReportHtml, SummitUIEnhancements, UICaller } from "./pages";
+import { PeakReport, PeakReportHtml, PresentAward, PresentAwardsHtml, TopoHtml, TopoLoaded, UiEnhancementsHtml, bulkCalendar } from "./pages";
 import { SummitAddSreensMessage, SummitOnLoadMessage, SummitRouteChangeMessage, SummitScreen } from "../typings/summitTypes";
 import { clearCache } from "./helpers";
 import { SummitContext } from "./summitContext";
 import $ from "jquery";
 import { fetchAchievements } from "./terrainCalls";
-import { AwardObserverRouter, CheckAward, InitLogbookRead, InitLogbookWrite, InitProgrammingExportBtn } from "./terrainButtons/buttonsIndex";
-import { Logo, SummitMenuGroupHtml } from "./content/contentIndex";
+import { AwardObserverRouter, CheckAward, InitLogbookRead, InitLogbookWrite, InitProgrammingExportBtn } from "./terrainButtons";
+import { Logo, SummitMenuGroupHtml } from "./content";
 
 export class SummitPageManager {
   private static instance: SummitPageManager;
@@ -151,6 +151,10 @@ export class SummitPageManager {
   summitPermissionCheck() {
     this.pages.forEach((page) => {
       if (page.permission === "") return;
+      if ( this.context.currentProfile?.branch && this.context.currentProfile?.branch?.roles.includes("support-leader") ){
+        $(`#SummitMenuItem-${page.pageid}`).css("color", "").css("pointer-events", "auto").children().css("color", "").css("pointer-events", "auto");
+        return;
+      }
       const level = page.permission.split(":")[0];
       const role = page.permission.split(":")[1];
       switch (level) {

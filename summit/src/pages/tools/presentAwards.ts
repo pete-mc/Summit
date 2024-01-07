@@ -14,12 +14,13 @@ import "datatables.net-responsive-se";
 import "datatables.net-rowgroup-se";
 import "datatables.net-select-se";
 import { SummitContext } from "../../summitContext";
-import { createNewEvent, fetchActivity, fetchMemberEvents, fetchUnitAchievements, fetchUnitMembers, updateEvent } from "../../terrainCalls";
+import { createNewEvent, fetchActivity, fetchMemberEvents, fetchSIATemplate, fetchUnitAchievements, fetchUnitMembers, updateEvent } from "../../terrainCalls";
 import moment from "moment";
 import { SummitAchievementData } from "../../../typings/summitTypes";
 import { processGuids, reconstructGuids } from "../../helpers";
 import { TerrainEvent, TerrainEventScheduleItem } from "../../../typings/terrainTypes";
-
+import { PresentAwardsHtml } from "..";
+import { siaTypes } from "../../constants";
 
 export async function presentAwards(): Promise<void> {
   enum TerrainAchievementsType {
@@ -43,12 +44,15 @@ export async function presentAwards(): Promise<void> {
     $("#loadingP").text(
       "Error loading members. Please click the button to try again. This is a Summit error. Please do not contact Terrain support for this issue. If this error persists please add an issue to the Summit GitHub repository. ",
     );
+    $("#retry").remove();
+    $("#github").remove();
     $("#loadingP").after('<button id="retry" class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Retry</button>');
     $("#loadingP").after(
       '<a id="github" href="https://github.com/pete-mc/Summit/issues" target="_blank"><button class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Summit Issues Register</button></a>',
     );
     $("#retry").on("click", async function () {
       !context.currentProfile ? await context.getData() : undefined;
+      $("#presentAwardsDiv").text("Record Badge Presentations" + PresentAwardsHtml);
       presentAwards();
     });
     return;
@@ -69,32 +73,30 @@ export async function presentAwards(): Promise<void> {
     .filter((achievement) => achievement.status === "awarded")
     .map((achievement) => {
       const member = members.find((member) => member.id === achievement.member_id);
+      let section = achievement.section?.replace(/-/g, " ").replace(/\w\S*/g, (w) => w.replace(/^\w/, (c) => c.toUpperCase()));
+      section = section ? section + "s" : "";
       const getName = (): string => {
         switch (achievement.type) {
           case TerrainAchievementsType.AdditionalAward:
             return achievement.achievement_meta?.additional_award_id?.replace(/_/g, " ").replace(/\w\S*/g, (w) => w.replace(/^\w/, (c) => c.toUpperCase())) ?? "Additional Award";
           case TerrainAchievementsType.AdventurousJourney:
-            return "Adventurous Journey";
+            return `Adventurous Journey (${section})`;
           case TerrainAchievementsType.CourseReflection:
-            return "Reflection";
+            return `LS/PD Course (${section})`;
           case TerrainAchievementsType.IntroScouting:
             return "Introduction to Scouting";
           case TerrainAchievementsType.IntroSection:
-            return "Introduction to Section";
+            return `Introduction to ${section ?? "Section"}`;
           case TerrainAchievementsType.Milestone:
-            return "Milestone " + achievement.achievement_meta?.stage;
+            return `Milestone ${achievement.achievement_meta?.stage} (${section})`;
           case TerrainAchievementsType.OutdoorAdventureSkill:
-            return achievement.achievement_meta?.branch?.replace(/-/g, " ").replace(/\w\S*/g, (w) => w.replace(/^\w/, (c) => c.toUpperCase())) ?? "Outdoor Adventure Skill";
+            return `${achievement.achievement_meta?.branch?.replace(/-/g, " ").replace(/\w\S*/g, (w) => w.replace(/^\w/, (c) => c.toUpperCase())) ?? "Outdoor Adventure Skill"} ${achievement.achievement_meta?.stage}`;
           case TerrainAchievementsType.PeakAward:
-            return "Peak Award";
+            return `Peak Award (${section})`;
           case TerrainAchievementsType.PersonalReflection:
-            return "Reflection";
+            return `${section ?? "Reflection"}`;
           case TerrainAchievementsType.SpecialInterestArea:
-            let siaName = "SIA";
-            if (Array.isArray(achievement.answers)) {
-              siaName = siaName + " - " + achievement.answers.find((answer) => answer.question_id === "project_name")?.answer;
-            }
-            return siaName;
+            return `${achievement.answers && achievement.answers.special_interest_area_selection ? siaTypes.find((s)=> s.id === achievement.answers?.special_interest_area_selection)?.title : "Special Interest Area"} (${section})`;
           default:
             return "Unknown Achievement";
         }
