@@ -1,6 +1,5 @@
 import { SummitContext } from "../../summitContext";
 import { fetchUnitMembersMetrics } from "../../terrainCalls";
-import msPlanningReportHTML from "raw-loader!./milestonePlanning.html";
 import $ from "jquery";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import jszip from "jszip";
@@ -15,39 +14,41 @@ import "datatables.net-fixedheader-se";
 import "datatables.net-responsive-se";
 import "datatables.net-rowgroup-se";
 import "datatables.net-select-se";
+import { MileStonePlanningReportHtml } from "..";
 
-export const msPlanningReportHtml = msPlanningReportHTML;
-
-export async function MileStonePlanningReport() {
+export async function mileStonePlanningReport() {
   const context = SummitContext.getInstance();
   const unitMembers = await fetchUnitMembersMetrics();
   if (!unitMembers || !context.currentProfile) {
     $("#loadingP").text(
       "Error loading members. Please click the button to try again. This is a Summit error. Please do not contact Terrain support for this issue. If this error persists please add an issue to the Summit GitHub repository. ",
     );
+    $("#retry").remove();
+    $("#github").remove();
     $("#loadingP").after('<button id="retry" class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Retry</button>');
     // button to access github issues list
     $("#loadingP").after(
-      '<a id="guthub" href="https://github.com/pete-mc/Summit/issues" target="_blank"><button class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Summit Issues Register</button></a>',
+      '<a id="github" href="https://github.com/pete-mc/Summit/issues" target="_blank"><button class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Summit Issues Register</button></a>',
     );
     $("#retry").on("click", async function () {
       !context.currentProfile ? await context.getData() : undefined;
-      MileStonePlanningReport();
+      $("#summitContentDiv").replaceWith(MileStonePlanningReportHtml);
+      mileStonePlanningReport();
     });
     return;
   }
-  $("#milestoneHeader").text(context.currentProfile.unit.name);
+  $("#milestoneHeader").text("Milestone Planning - " + context.currentProfile.unit.name);
   if ($("#milestoneHeader").data("loaded")) return;
   $("#milestoneHeader").data("loaded", true);
   $("#loadingP").remove();
   $("#retry").remove();
-  $("#guthub").remove();
+  $("#github").remove();
 
   // Get the milestone for each member
   const tableData = unitMembers.map((r) => {
+    const maxL = r.milestone.milestone === 1 ? 1 : r.milestone.milestone === 2 ? 2 : 4;
+    const maxA = r.milestone.milestone === 1 ? 2 : r.milestone.milestone === 2 ? 3 : 4;
     const maxP = r.milestone.milestone === 1 ? 6 : r.milestone.milestone === 2 ? 5 : 4;
-    const maxL = r.milestone.milestone === 1 ? 2 : r.milestone.milestone === 2 ? 3 : 4;
-    const maxA = r.milestone.milestone === 1 ? 1 : r.milestone.milestone === 2 ? 2 : 4;
     return [
       r.name,
       r.milestone.milestone,
@@ -125,6 +126,7 @@ export async function MileStonePlanningReport() {
   const buttonClasses = "mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn";
 
   // Create Print Button
+  $("#printButton").remove();
   $("<button/>", {
     text: "Print",
     id: "printButton",
@@ -135,6 +137,7 @@ export async function MileStonePlanningReport() {
   }).appendTo($buttonsDiv);
 
   // Create CSV Button
+  $("#csvButton").remove();
   $("<button/>", {
     text: "Export to CSV",
     id: "csvButton",

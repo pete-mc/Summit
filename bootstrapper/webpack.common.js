@@ -17,7 +17,7 @@ module.exports = {
       },
       {
         resourceQuery: /raw/,
-        type: 'asset/source',
+        type: "asset/source",
       },
     ],
   },
@@ -36,10 +36,12 @@ module.exports = {
           "node -e \"require('shelljs').mkdir('-p', '../cordova-app/www/styles')\"",
           "node -e \"require('shelljs').cp('-R', './bin/*', '../cordova-app/www/bin')\"",
           "node -e \"require('shelljs').cp('-R', './styles/*', '../cordova-app/www/styles')\"",
+          "node -e \"require('shelljs').cp('-R', './bin/*', '../npm')\"",
+          "node -e \"require('shelljs').cp('-R', '../README.md', '../npm')\"",
         ],
         blocking: true,
         parallel: false,
       },
-    })
+    }),
   ],
 };

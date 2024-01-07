@@ -1,5 +1,7 @@
 import { SummitContext } from "./summitContext";
 import $ from "jquery";
+window.$ = $;
+window.jQuery = $;
 import { SummitPageManager } from "./summitPages";
 import { initCache } from "./helpers";
 import { TerrainSummitContext, loadTerrainContext } from "./summitTerrainContext";
@@ -13,6 +15,6 @@ async function initSummit() {
   const context = SummitContext.getInstance();
   context.log("Start");
   SummitPageManager.getInstance();
-  initCache(); 
+  initCache();
 }
 initSummit();

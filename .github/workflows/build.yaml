@@ -170,22 +170,38 @@ jobs:
         asset_name: summit.js
         asset_content_type: application/javascript
 
-    # - uses: wdzeng/edge-addon@v1
-    #   if: github.ref == 'refs/heads/main'
-    #   with:
-    #     product-id: ${{ secrets.EDGE_EXTENSION_ID }}
-    #     zip-path: ./summit.zip
-    #     client-id: ${{ secrets.EDGE_CLIENT_ID }}
-    #     client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
-    #     access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}
+    - name: Publish
+      if: github.ref == 'refs/heads/main'
+      run:  |
+        cd npm
+        npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-    # - name: Upload & release
-    #   if: github.ref == 'refs/heads/main'
-    #   uses: mnao305/chrome-extension-upload@v4.0.1
-    #   with:
-    #     file-path: ./summit.zip
-    #     extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
-    #     client-id: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
-    #     client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
-    #     refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
-    #     publish: false
+    - name: Publish to GitHub Packages
+      if: github.ref == 'refs/heads/main'
+      run:  |
+        cd npm
+        npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: wdzeng/edge-addon@v1
+      if: github.ref == 'refs/heads/main'
+      with:
+        product-id: ${{ secrets.EDGE_EXTENSION_ID }}
+        zip-path: ./summit.zip
+        client-id: ${{ secrets.EDGE_CLIENT_ID }}
+        client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
+        access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}
+
+    - name: Upload & release
+      if: github.ref == 'refs/heads/main'
+      uses: mnao305/chrome-extension-upload@v4.0.1
+      with:
+        file-path: ./summit.zip
+        extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+        client-id: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
+        client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
+        refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
+        publish: false

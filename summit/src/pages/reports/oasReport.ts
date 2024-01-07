@@ -14,9 +14,7 @@ import "datatables.net-fixedheader-se";
 import "datatables.net-responsive-se";
 import "datatables.net-rowgroup-se";
 import "datatables.net-select-se";
-import oasReportHTML from "raw-loader!./oasReport.html";
-
-export const oasReportHtml = oasReportHTML;
+import { OasReportHtml } from "..";
 
 export async function oasReport() {
   const context = SummitContext.getInstance();
@@ -26,21 +24,24 @@ export async function oasReport() {
     $("#loadingP").text(
       "Error loading members. Please click the button to try again. This is a Summit error. Please do not contact Terrain support for this issue. If this error persists please add an issue to the Summit GitHub repository. ",
     );
+    $("#retry").remove();
+    $("#github").remove();
     $("#loadingP").after('<button id="retry" class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Retry</button>');
     // button to access github issues list
     $("#loadingP").after(
-      '<a id="guthub" href="https://github.com/pete-mc/Summit/issues" target="_blank"><button class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Summit Issues Register</button></a>',
+      '<a id="github" href="https://github.com/pete-mc/Summit/issues" target="_blank"><button class="mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn">Summit Issues Register</button></a>',
     );
     $("#retry").on("click", async function () {
+      $("#summitContentDiv").replaceWith(OasReportHtml);
       !context.currentProfile ? await context.getData() : undefined;
       oasReport();
     });
     return;
   }
-  $("#peakHeader").text(context.currentProfile.unit.name);
+  $("#OASHeader").text("OAS Summary - " + context.currentProfile.unit.name);
   $("#loadingP").remove();
   $("#retry").remove();
-  $("#guthub").remove();
+  $("#github").remove();
   $("#oasReportTable").show();
   const tableData = unitMembers.map((r) => {
     return [
@@ -204,6 +205,7 @@ export async function oasReport() {
   const buttonClasses = "mr-4 v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default summit-btn";
 
   // Create Print Button
+  $("#printButton").remove();
   $("<button/>", {
     text: "Print",
     id: "printButton",
@@ -214,6 +216,7 @@ export async function oasReport() {
   }).appendTo($buttonsDiv);
 
   // Create CSV Button
+  $("#csvButton").remove();
   $("<button/>", {
     text: "Export to CSV",
     id: "csvButton",
