@@ -4,11 +4,10 @@ on:
   push:
     branches:
       - main
-      - 2.5.0
-    # paths:
-    #   - 'bootstrapper/**'
-    #   - 'cordova-app/**'
-    #   - 'summit/**'
+    paths:
+      - 'bootstrapper/**'
+      - 'cordova-app/**'
+      - 'summit/**'
 
 permissions:
   contents: write
@@ -67,11 +66,11 @@ jobs:
         cd ../bootstrapper
         npm ci
       
-    # - name: Remove and re-add Android platform
-    #   run: |
-    #     cd cordova-app
-    #     cordova platform rm android
-    #     cordova platform add android
+    - name: Remove and re-add Android platform
+      run: |
+        cd cordova-app
+        cordova platform rm android
+        cordova platform add android
 
     - name: Build Contents
       run: npx webpack --config webpack.prod.js
@@ -84,16 +83,16 @@ jobs:
     - name: Install xmlstarlet
       run: sudo apt-get install -y xmlstarlet
 
-    # - name: Build Cordova app
-    #   run: |
-    #     echo ${{ secrets.PLAY_UPLOAD_KEYSTORE }} | base64 --decode > upload-key.keystore
-    #     cd cordova-app
-    #     cordova prepare
-    #     cordova build android --release -- --keystore=../upload-key.keystore --storePassword=${{ secrets.PLAY_UPLOAD_PASSWORD }} --alias=${{ secrets.PLAY_UPLOAD_ALIAS }} --password=${{ secrets.PLAY_UPLOAD_PASSWORD }}
+    - name: Build Cordova app
+      run: |
+        echo ${{ secrets.PLAY_UPLOAD_KEYSTORE }} | base64 --decode > upload-key.keystore
+        cd cordova-app
+        cordova prepare
+        cordova build android --release -- --keystore=../upload-key.keystore --storePassword=${{ secrets.PLAY_UPLOAD_PASSWORD }} --alias=${{ secrets.PLAY_UPLOAD_ALIAS }} --password=${{ secrets.PLAY_UPLOAD_PASSWORD }}
 
-    # - name: Sign AAB
-    #   run: |
-    #     jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore upload-key.keystore -storepass ${{ secrets.PLAY_UPLOAD_PASSWORD }} -keypass ${{ secrets.PLAY_UPLOAD_PASSWORD }} cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab ${{ secrets.PLAY_UPLOAD_ALIAS }}
+    - name: Sign AAB
+      run: |
+        jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore upload-key.keystore -storepass ${{ secrets.PLAY_UPLOAD_PASSWORD }} -keypass ${{ secrets.PLAY_UPLOAD_PASSWORD }} cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab ${{ secrets.PLAY_UPLOAD_ALIAS }}
 
     - name: Zip summit
       run: |
@@ -108,12 +107,12 @@ jobs:
         path: ./bootstrapper/summit.zip
 
 
-    # - name: Upload AAB as artifact
-    #   if: github.ref == 'refs/heads/dev'
-    #   uses: actions/upload-artifact@v2
-    #   with:
-    #     name: android-app
-    #     path: ./cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab
+    - name: Upload AAB as artifact
+      if: github.ref == 'refs/heads/dev'
+      uses: actions/upload-artifact@v2
+      with:
+        name: android-app
+        path: ./cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab
 
     - name: Upload JS as artifact
       if: github.ref == 'refs/heads/dev'
@@ -198,7 +197,7 @@ jobs:
         access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}
 
     - name: Upload & release
-      #if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/main'
       uses: mnao305/chrome-extension-upload@v4.0.1
       with:
         file-path: ./bootstrapper/summit.zip
