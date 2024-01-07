@@ -202,7 +202,7 @@ jobs:
       uses: mnao305/chrome-extension-upload@v4.0.1
       with:
         file-path: ./bootstrapper/summit.zip
-        extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+        extension-id: ${{ secrets.CHORME_EXTENSION_ID }}
         client-id: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
         client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
         refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
