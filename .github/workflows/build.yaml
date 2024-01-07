@@ -189,7 +189,7 @@ jobs:
         registry-url: 'https://npm.pkg.github.com'
 
     - uses: wdzeng/edge-addon@v1
-      # if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/main'
       with:
         product-id: ${{ secrets.EDGE_EXTENSION_ID }}
         zip-path: ./bootstrapper/summit.zip
@@ -198,7 +198,7 @@ jobs:
         access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}
 
     - name: Upload & release
-      if: github.ref == 'refs/heads/main'
+      #if: github.ref == 'refs/heads/main'
       uses: mnao305/chrome-extension-upload@v4.0.1
       with:
         file-path: ./bootstrapper/summit.zip
@@ -206,4 +206,3 @@ jobs:
         client-id: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
         client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
         refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
-        publish: false
