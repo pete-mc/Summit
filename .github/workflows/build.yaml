@@ -192,7 +192,7 @@ jobs:
       # if: github.ref == 'refs/heads/main'
       run:  |
         cd npm
-        npm publish
+        npm publish --registry https://npm.pkg.github.com
       env:
         NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
