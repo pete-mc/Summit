@@ -15,19 +15,19 @@ A few of the features are showcased below. [Visit the Wiki to see the full list 
 ## Peak Award Progress Report
 
 User friendly single page report to see where each of the youth members are traveling on the peak award journey.
-![Peak Award](/bootstrapper/images/peakaward.jpg)
+![Peak Award](https://github.com/pete-mc/Summit/wiki/images/peak-award.png)
 
 ## OAS Report
 
 This report will give you a nice summary of the OAS levels each youth member is at and the related streams. This is a nice one pager to help you see where all the members of your unit are up to.
-![OAS Report](/bootstrapper/images/oas-report.jpg)
+![OAS Report](https://github.com/pete-mc/Summit/wiki/images/oas-report.png)
 
 ## Bulk Calendar Entry Form
 
 This is to help you submit a full term or more of activities to your plan. It simplifies the process by only asking the basic questions and you can enter many on a single page.
-![Bulk Calendar Tool](/bootstrapper/images/bulk-calendar.jpg)
+![Bulk Calendar Tool](https://github.com/pete-mc/Summit/wiki/images/bulk-events.png)
 
 ## Export events to your own calendar
 
 Sick of adding events in Terrain and also your own calendar. Use the shiny new button contained in a planned activity and you will recieve a ical file ready to be imported into whichever calendar application you use.
-![Export Events](/bootstrapper/images/export-cal.jpg)
+![Export Events](https://github.com/pete-mc/Summit/wiki/images/save-calendar.png)

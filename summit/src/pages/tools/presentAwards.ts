@@ -96,7 +96,7 @@ export async function presentAwards(): Promise<void> {
           case TerrainAchievementsType.PersonalReflection:
             return `${section ?? "Reflection"}`;
           case TerrainAchievementsType.SpecialInterestArea:
-            return `${achievement.answers && achievement.answers.special_interest_area_selection ? siaTypes.find((s)=> s.id === achievement.answers?.special_interest_area_selection)?.title : "Special Interest Area"} (${section})`;
+            return `${achievement.answers && achievement.answers.special_interest_area_selection ? siaTypes.find((s) => s.id === achievement.answers?.special_interest_area_selection)?.title : "Special Interest Area"} (${section})`;
           default:
             return "Unknown Achievement";
         }
