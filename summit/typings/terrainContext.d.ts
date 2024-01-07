@@ -21,6 +21,8 @@ declare global {
   }
 
   interface Window {
+    $: any;
+    jQuery: any;
     $nuxt: {
       [x: string]: any;
       $router: {

@@ -1,6 +1,5 @@
 import { SummitContext } from "../../summitContext";
 import { fetchUnitMembersMetrics } from "../../terrainCalls";
-import msPlanningReportHTML from "raw-loader!./milestonePlanning.html";
 import $ from "jquery";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import jszip from "jszip";
@@ -43,9 +42,9 @@ export async function mileStonePlanningReport() {
 
   // Get the milestone for each member
   const tableData = unitMembers.map((r) => {
+    const maxL = r.milestone.milestone === 1 ? 1 : r.milestone.milestone === 2 ? 2 : 4;
+    const maxA = r.milestone.milestone === 1 ? 2 : r.milestone.milestone === 2 ? 3 : 4;
     const maxP = r.milestone.milestone === 1 ? 6 : r.milestone.milestone === 2 ? 5 : 4;
-    const maxL = r.milestone.milestone === 1 ? 2 : r.milestone.milestone === 2 ? 3 : 4;
-    const maxA = r.milestone.milestone === 1 ? 1 : r.milestone.milestone === 2 ? 2 : 4;
     return [
       r.name,
       r.milestone.milestone,

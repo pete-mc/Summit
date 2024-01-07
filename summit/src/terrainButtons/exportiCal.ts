@@ -54,7 +54,7 @@ export function initProgrammingExportBtn() {
   // add property data-v-718788cc to button
   jquery(".exportiCalBtn").attr("data-v-718788cc", "");
   setClasses();
-  const targetNode = jquery(".exportiCalBtn").siblings(".v-btn--is-elevated").first().get(0);
+  const targetNode = jquery(".exportiCalBtn").siblings('button[data-cy="PRINT"]').first().get(0);
   const config = { attributes: true, childList: false, subtree: false };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const callback = function (mutationsList: any) {
@@ -74,7 +74,7 @@ function setClasses() {
   const button = jquery(".exportiCalBtn");
   button.removeClass().addClass("exportiCalBtn");
   //set all classes from target to button
-  const classes = jquery(".exportiCalBtn").siblings(".v-btn--is-elevated").first().attr("class");
+  const classes = jquery(".exportiCalBtn").siblings('button[data-cy="PRINT"]').first().attr("class");
   button.addClass(classes ? classes : "");
-  button.addClass("summit-btn");
+  button.addClass("summit-menu-outline");
 }
