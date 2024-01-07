@@ -169,7 +169,12 @@ jobs:
         asset_path: ./summit/bin/summit.js
         asset_name: summit.js
         asset_content_type: application/javascript
-
+    
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v2
+      with: 
+        registry-url: 'https://registry.npmjs.org'
+        
     - name: Publish
       # if: github.ref == 'refs/heads/main'
       run:  |
