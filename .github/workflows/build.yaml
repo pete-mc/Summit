@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - '2.5.0'
+      - 2.5.0
     paths:
       - 'bootstrapper/**'
       - 'cordova-app/**'
