@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 2.5.0
     paths:
       - 'bootstrapper/**'
       - 'cordova-app/**'
@@ -205,3 +206,12 @@ jobs:
         client-id: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
         client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
         refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
+
+    -uses: r0adkll/upload-google-play@v1
+    with:
+      serviceAccountJsonPlainText: ${{ GOOGLE_SERVICE_ACCOUNT_JSON }}
+      packageName: xyz.mcdonald.terrainsummit
+      releaseFiles: ./cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab
+      track: alpha
+      status: completed
+      releaseName: ${{ steps.get_version.outputs.VERSION }}
