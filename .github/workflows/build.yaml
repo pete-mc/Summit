@@ -183,12 +183,8 @@ jobs:
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-    - name: Setup Node.js environment
-      uses: actions/setup-node@v4
-      with: 
-        registry-url: 'https://npm.pkg.github.com'
-
-    - uses: wdzeng/edge-addon@v1
+    - name: Publish to Microsoft Edge Store
+      uses: wdzeng/edge-addon@v1
       if: github.ref == 'refs/heads/main'
       with:
         product-id: ${{ secrets.EDGE_EXTENSION_ID }}
@@ -197,7 +193,7 @@ jobs:
         client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
         access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}
 
-    - name: Upload & release
+    - name: Upload to Chrome Web Store
       if: github.ref == 'refs/heads/main'
       uses: mnao305/chrome-extension-upload@v4.0.1
       with:
@@ -207,11 +203,12 @@ jobs:
         client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
         refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
 
-    -uses: r0adkll/upload-google-play@v1
-    with:
-      serviceAccountJsonPlainText: ${{ GOOGLE_SERVICE_ACCOUNT_JSON }}
-      packageName: xyz.mcdonald.terrainsummit
-      releaseFiles: ./cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab
-      track: alpha
-      status: completed
-      releaseName: ${{ steps.get_version.outputs.VERSION }}
+    - name: Upload to Goolge Play
+      uses: r0adkll/upload-google-play@v1
+      with:
+        serviceAccountJsonPlainText: ${{ GOOGLE_SERVICE_ACCOUNT_JSON }}
+        packageName: xyz.mcdonald.terrainsummit
+        releaseFiles: ./cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab
+        track: alpha
+        status: completed
+        releaseName: ${{ steps.get_version.outputs.VERSION }}
