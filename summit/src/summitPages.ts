@@ -36,7 +36,7 @@ export class SummitPageManager {
         window.$nuxt.$router.push({ path: window.$nuxt.$route.fullPath, query: { Summit: true } });
         SummitUIEnhancements.getInstance().HelpButton(UICaller.Init);
       } else {
-        if (window.$nuxt.$route.query.Summit) window.$nuxt.$router.back();
+        if (window.$nuxt.$route.query.Summit) window.$nuxt.$router.push({ path: window.$nuxt.$route.fullPath, query: {} });
       }
       if (this.context.loggedin && this.context.currentProfile?.member === undefined) {
         await this.context.getData();
@@ -151,7 +151,7 @@ export class SummitPageManager {
   summitPermissionCheck() {
     this.pages.forEach((page) => {
       if (page.permission === "") return;
-      if ( this.context.currentProfile?.branch && this.context.currentProfile?.branch?.roles.includes("support-leader") ){
+      if (this.context.currentProfile?.branch && this.context.currentProfile?.branch?.roles.includes("support-leader")) {
         $(`#SummitMenuItem-${page.pageid}`).css("color", "").css("pointer-events", "auto").children().css("color", "").css("pointer-events", "auto");
         return;
       }

@@ -19,6 +19,7 @@
                 console.log(url.origin + url.pathname);
                 if (url.origin === 'https://terrain.scouts.com.au') {
                     console.log("Loading Summit");
+                    ref.executeScript({ code: 'window.cordova = true;' });
                     // JavaScript files to inject
                     var jsFiles = [
                        "./bin/summit-bootstrap.js"
@@ -58,7 +59,7 @@
 
             ref.addEventListener('beforeload', function(params, callback) {
             // Check if the URL is a file URL
-            if (params.url.endsWith('.pdf') || params.url.endsWith('.doc') || params.url.endsWith('.docx')|| params.url.endsWith('.xls') || params.url.endsWith('.xlsx')) {
+            if (params.url.endsWith('.csv') ||params.url.endsWith('.pdf') || params.url.endsWith('.doc') || params.url.endsWith('.docx')|| params.url.endsWith('.xls') || params.url.endsWith('.xlsx')) {
                 // Cancel the URL load
                 callback({cancel: true});
 
