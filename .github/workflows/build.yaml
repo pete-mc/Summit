@@ -85,10 +85,10 @@ jobs:
         cd flutter_app
         flutter pub get
         flutter build appbundle --release --build-name=${{ env.VERSION }} --build-number=1 --target-platform android-arm,android-arm64,android-x64 \
-          --dart-define=KEYSTORE_PATH=../upload-key.keystore \
-          --dart-define=KEYSTORE_PASSWORD=${{ secrets.PLAY_UPLOAD_PASSWORD }} \
-          --dart-define=KEY_ALIAS=${{ secrets.PLAY_UPLOAD_ALIAS }} \
-          --dart-define=KEY_PASSWORD=${{ secrets.PLAY_UPLOAD_PASSWORD }}
+
+    - name: Sign AAB
+      run: |
+        jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore upload-key.keystore -storepass ${{ secrets.PLAY_UPLOAD_PASSWORD }} -keypass ${{ secrets.PLAY_UPLOAD_PASSWORD }} flutter_app/build/app/outputs/bundle/release/app-release.aab ${{ secrets.PLAY_UPLOAD_ALIAS }}
 
     - name: Zip summit
       run: |
