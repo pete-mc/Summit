@@ -171,6 +171,7 @@ jobs:
         registry-url: 'https://registry.npmjs.org'
 
     - name: Publish
+      continue-on-error: true
       if: github.ref == 'refs/heads/main'
       run:  |
         cd npm
@@ -179,6 +180,7 @@ jobs:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     - name: Publish to Microsoft Edge Store
+      continue-on-error: true
       uses: wdzeng/edge-addon@v1
       if: github.ref == 'refs/heads/main'
       with:
@@ -189,6 +191,7 @@ jobs:
         access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}
 
     - name: Upload to Chrome Web Store
+      continue-on-error: true
       if: github.ref == 'refs/heads/main'
       uses: mnao305/chrome-extension-upload@v4.0.1
       with:
@@ -199,6 +202,7 @@ jobs:
         refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
 
     - name: Upload to Google Play
+      continue-on-error: true
       if: github.ref == 'refs/heads/main'
       uses: r0adkll/upload-google-play@v1
       with:
