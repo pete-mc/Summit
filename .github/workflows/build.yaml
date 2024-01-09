@@ -63,11 +63,10 @@ jobs:
         cd ../bootstrapper
         npm ci
       
-    - name: Remove and re-add Android platform
-      run: |
-        cd cordova-app
-        cordova platform rm android
-        cordova platform add android
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v1
+      with:
+        flutter-version: '3.16.5' 
 
     - name: Build Contents
       run: npx webpack --config webpack.prod.js
