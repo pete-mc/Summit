@@ -7,20 +7,17 @@ const shell = require("shelljs");
 const xml2js = require("xml2js");
 const version = require("../bootstrapper/manifest.json").version;
 const fs = require("fs");
+const yaml = require("js-yaml");
 
-//set version in ../cordova-app/config.xml to the version from manifest.json
-fs.readFile("../cordova-app/config.xml", "utf8", function (err, data) {
+fs.readFile("../flutter_app/pubspec.yaml", "utf8", function (err, data) {
   if (err) {
     return console.log(err);
   }
-  xml2js.parseString(data, function (err, result) {
+  const doc = yaml.load(data);
+  doc.version = version;
+  const yamlStr = yaml.dump(doc);
+  fs.writeFile("../flutter_app/pubspec.yaml", yamlStr, function (err) {
     if (err) return console.log(err);
-    result.widget.$.version = version;
-    const builder = new xml2js.Builder();
-    const xml = builder.buildObject(result);
-    fs.writeFile("../cordova-app/config.xml", xml, function (err) {
-      if (err) return console.log(err);
-    });
   });
 });
 

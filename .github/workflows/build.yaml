@@ -80,16 +80,16 @@ jobs:
     - name: Install xmlstarlet
       run: sudo apt-get install -y xmlstarlet
 
-    - name: Build Cordova app
+    - name: Build and sign Flutter app
       run: |
         echo ${{ secrets.PLAY_UPLOAD_KEYSTORE }} | base64 --decode > upload-key.keystore
-        cd cordova-app
-        cordova prepare
-        cordova build android --release -- --keystore=../upload-key.keystore --storePassword=${{ secrets.PLAY_UPLOAD_PASSWORD }} --alias=${{ secrets.PLAY_UPLOAD_ALIAS }} --password=${{ secrets.PLAY_UPLOAD_PASSWORD }}
-
-    - name: Sign AAB
-      run: |
-        jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore upload-key.keystore -storepass ${{ secrets.PLAY_UPLOAD_PASSWORD }} -keypass ${{ secrets.PLAY_UPLOAD_PASSWORD }} cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab ${{ secrets.PLAY_UPLOAD_ALIAS }}
+        cd flutter_app
+        flutter pub get
+        flutter build appbundle --release --build-name=${{ env.VERSION }} --build-number=1 --target-platform android-arm,android-arm64,android-x64 \
+          --dart-define=KEYSTORE_PATH=../upload-key.keystore \
+          --dart-define=KEYSTORE_PASSWORD=${{ secrets.PLAY_UPLOAD_PASSWORD }} \
+          --dart-define=KEY_ALIAS=${{ secrets.PLAY_UPLOAD_ALIAS }} \
+          --dart-define=KEY_PASSWORD=${{ secrets.PLAY_UPLOAD_PASSWORD }}
 
     - name: Zip summit
       run: |
@@ -109,7 +109,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: android-app
-        path: ./cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab
+        path: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
 
     - name: Upload JS as artifact
       if: github.ref != 'refs/heads/main'
@@ -150,7 +150,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab
+        asset_path: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
         asset_name: app-release.aab
         asset_content_type: application/vnd.android.package-archive
 
@@ -199,13 +199,13 @@ jobs:
         client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
         refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
 
-    - name: Upload to Goolge Play
+    - name: Upload to Google Play
       if: github.ref == 'refs/heads/main'
       uses: r0adkll/upload-google-play@v1
       with:
         serviceAccountJsonPlainText: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         packageName: xyz.mcdonald.terrainsummit
-        releaseFiles: ./cordova-app/platforms/android/app/build/outputs/bundle/release/app-release.aab
+        releaseFiles: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
         track: alpha
         status: completed
         releaseName: ${{ steps.get_version.outputs.VERSION }}
