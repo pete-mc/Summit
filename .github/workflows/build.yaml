@@ -84,7 +84,7 @@ jobs:
         echo ${{ secrets.PLAY_UPLOAD_KEYSTORE }} | base64 --decode > upload-key.keystore
         cd flutter_app
         flutter pub get
-        flutter build appbundle --release  --build-name=${{ env.VERSION }} --build-number=1 \
+        flutter build appbundle --release --build-name=${{ env.VERSION }} --build-number=1 \
         --split-debug-info=build/app/outputs/symbols \
         --target-platform android-arm,android-arm64,android-x64 \
         --dart-define=KEYSTORE_PATH=../upload-key.keystore \
