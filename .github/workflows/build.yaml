@@ -81,16 +81,13 @@ jobs:
 
     - name: Build and sign Flutter app
       run: |
-        echo ${{ secrets.PLAY_UPLOAD_KEYSTORE }} | base64 --decode > upload-key.keystore
-        cd flutter_app
+        echo ${{ secrets.PLAY_UPLOAD_KEYSTORE }} | base64 --decode > ./flutter-app/android/app/upload-key.keystore
+        export PLAY_UPLOAD_ALIAS=${{ secrets.PLAY_UPLOAD_ALIAS }}
+        export PLAY_UPLOAD_PASSWORD=${{ secrets.PLAY_UPLOAD_PASSWORD }}
+        export PLAY_UPLOAD_KEYSTORE=./flutter-app/android/app/upload-key.keystore
+        cd flutter-app
         flutter pub get
-        flutter build appbundle --release --build-name=${{ env.VERSION }} --build-number=1 \
-        --split-debug-info=build/app/outputs/symbols \
-        --target-platform android-arm,android-arm64,android-x64 \
-        --dart-define=KEYSTORE_PATH=../upload-key.keystore \
-        --dart-define=KEYSTORE_PASSWORD=${{ secrets.PLAY_UPLOAD_PASSWORD }} \
-        --dart-define=KEY_ALIAS=${{ secrets.PLAY_UPLOAD_ALIAS }} \
-        --dart-define=KEY_PASSWORD=${{ secrets.PLAY_UPLOAD_PASSWORD }}
+        flutter build appbundle --release --build-name=${{ env.VERSION }} --build-number=1 --target-platform android-arm,android-arm64,android-x64
 
     - name: Zip summit
       run: |

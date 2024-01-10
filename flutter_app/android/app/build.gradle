@@ -51,6 +51,21 @@ android {
         versionName flutterVersionName
     }
 
+    signingConfigs {
+        release {
+            keyAlias System.getenv('PLAY_UPLOAD_ALIAS')
+            keyPassword System.getenv('PLAY_UPLOAD_PASSWORD')
+            storeFile file(System.getenv('PLAY_UPLOAD_KEYSTORE'))
+            storePassword System.getenv('PLAY_UPLOAD_PASSWORD')
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
+
 }
 
 flutter {
