@@ -106,7 +106,6 @@ jobs:
         path: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
 
     - name: Upload AAB Release Asset
-      if: github.ref == 'refs/heads/main'
       id: upload-aab-release-asset 
       uses: actions/upload-release-asset@v1
       env:
@@ -119,7 +118,6 @@ jobs:
   
     - name: Upload to Google Play
       continue-on-error: true
-      if: github.ref == 'refs/heads/main'
       uses: r0adkll/upload-google-play@v1
       with:
         serviceAccountJsonPlainText: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
