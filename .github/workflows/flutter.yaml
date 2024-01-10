@@ -118,6 +118,6 @@ jobs:
         packageName: xyz.mcdonald.terrainsummit
         releaseFiles: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
         track: alpha
-        status: completed
+        status: draft
         releaseName: ${{ steps.get_version.outputs.VERSION }}
         deobfuscationFiles: ./flutter_app/debug
