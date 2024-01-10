@@ -35,18 +35,22 @@ jobs:
         if [[ -z "${{ github.event.inputs.version }}" ]]; then
           cd flutter_app
           VERSION=$(grep 'version:' pubspec.yaml | sed 's/version: //')
-          VERSIONNO=$VERSIONNO
-          VERSION="flutter-$VERSION"
+
         else
           VERSION="${{ github.event.inputs.version }}"
         fi
+        IFS='.' read -ra ADDR <<< VERSION
+        BUILD_NUMBER="${ADDR[0]}$(printf "%02d" ${ADDR[1]})$(printf "%02d" ${ADDR[2]})"
+        VERSION="flutter-$VERSION"
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "VERSIONNO=$VERSIONNO" >> $GITHUB_ENV
-        echo "versionno=$VERSIONNO" >> $GITHUB_OUTPUT
+        echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
+        echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
     
     - name: Print version
-      run: echo "Version is ${{ env.VERSION }}"
+      run: |
+        echo "Version is ${{ env.VERSION }}"
+        echo "Version is ${{ env.VERSIONNO }}"
 
     - name: Check if release already exists
       id: check_release
@@ -73,9 +77,7 @@ jobs:
         export PLAY_UPLOAD_KEYSTORE=./upload-key.keystore
         cd flutter_app
         flutter pub get
-        IFS='.' read -ra ADDR <<< "${{ env.NOVERSION }}"
-        BUILD_NUMBER="${ADDR[0]}$(printf "%02d" ${ADDR[1]})$(printf "%02d" ${ADDR[2]})"
-        flutter build appbundle --release --build-name=${{ env.VERSION }} --build-number=$BUILD_NUMBER --target-platform android-arm,android-arm64,android-x64 --obfuscate --split-debug-info=./debug
+        flutter build appbundle --release --build-name=${{ env.VERSION }} --build-number=${{ BUILD_NUMBER }} --target-platform android-arm,android-arm64,android-x64 --obfuscate --split-debug-info=./debug
 
     - name: Create Release
       id: create_release
