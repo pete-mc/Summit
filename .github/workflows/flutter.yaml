@@ -41,6 +41,8 @@ jobs:
         fi
         IFS='.' read -ra ADDR <<< $VERSION
         BUILD_NUMBER="${ADDR[0]}$(printf "%02d" ${ADDR[1]})$(printf "%02d" ${ADDR[2]})"
+        echo "SHORTVERSION=$VERSION" >> $GITHUB_ENV
+        echo "shortversion=$VERSION" >> $GITHUB_OUTPUT
         VERSION="flutter-$VERSION"
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -51,6 +53,7 @@ jobs:
       run: |
         echo "Version is ${{ env.VERSION }}"
         echo "Version is ${{ env.BUILD_NUMBER }}"
+        echo "Version is ${{ env.SHORTVERSION }}"
 
     - name: Check if release already exists
       id: check_release
@@ -124,5 +127,5 @@ jobs:
         releaseFiles: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
         track: alpha
         status: draft
-        releaseName: ${{ steps.get_version.outputs.VERSION }}
+        releaseName: ${{ steps.get_version.outputs.SHORTVERSION }}
         deobfuscationFiles: ./flutter_app/debug
