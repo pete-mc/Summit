@@ -96,28 +96,28 @@ jobs:
 
     - name: Upload web extension as artifact
       if: github.ref != 'refs/heads/main'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: web-extension
         path: ./bootstrapper/summit.zip
 
     # - name: Upload debug info as artifact
     #   if: github.ref != 'refs/heads/main'
-    #   uses: actions/upload-artifact@v2
+    #   uses: actions/upload-artifact@v3
     #   with:
     #     name: debug-info
     #     path: ./flutter_app/debug
 
     # - name: Upload AAB as artifact
     #   if: github.ref != 'refs/heads/main'
-    #   uses: actions/upload-artifact@v2
+    #   uses: actions/upload-artifact@v3
     #   with:
     #     name: android-app
     #     path: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
 
     - name: Upload JS as artifact
       if: github.ref != 'refs/heads/main'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: summit-js
         path: ./summit/bin/summit.js

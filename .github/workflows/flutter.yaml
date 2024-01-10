@@ -58,7 +58,7 @@ jobs:
         fi
 
     - name: Setup Flutter
-      uses: subosito/flutter-action@v1
+      uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.16.5' 
 
@@ -71,7 +71,7 @@ jobs:
         cd flutter_app
         flutter pub get
         flutter build appbundle --release --build-name=${{ env.VERSION }} --target-platform android-arm,android-arm64,android-x64 --obfuscate --split-debug-info=./debug
-        
+
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -84,15 +84,13 @@ jobs:
         prerelease: false
 
     - name: Upload debug info as artifact
-      if: github.ref != 'refs/heads/main'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: debug-info
         path: ./flutter_app/debug
 
     - name: Upload AAB as artifact
-      if: github.ref != 'refs/heads/main'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: android-app
         path: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
