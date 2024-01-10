@@ -50,7 +50,7 @@ jobs:
     - name: Print version
       run: |
         echo "Version is ${{ env.VERSION }}"
-        echo "Version is ${{ env.VERSIONNO }}"
+        echo "Version is ${{ env.BUILD_NUMBER }}"
 
     - name: Check if release already exists
       id: check_release
