@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - main
-      - 2.5.0
-
+  workflow_dispatch:
+  
 permissions:
   contents: write
   packages: write
@@ -63,10 +63,10 @@ jobs:
         cd ../bootstrapper
         npm ci
       
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v1
-      with:
-        flutter-version: '3.16.5' 
+    # - name: Setup Flutter
+    #   uses: subosito/flutter-action@v1
+    #   with:
+    #     flutter-version: '3.16.5' 
 
     - name: Build Contents
       run: npx webpack --config webpack.prod.js
@@ -79,16 +79,15 @@ jobs:
     - name: Install xmlstarlet
       run: sudo apt-get install -y xmlstarlet
 
-    - name: Build and sign Flutter app
-      run: |
-        echo ${{ secrets.PLAY_UPLOAD_KEYSTORE }} | base64 --decode > upload-key.keystore
-        cd flutter_app
-        flutter pub get
-        flutter build appbundle --release --build-name=${{ env.VERSION }} --build-number=1 --target-platform android-arm,android-arm64,android-x64 \
-
-    - name: Sign AAB
-      run: |
-        jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore upload-key.keystore -storepass ${{ secrets.PLAY_UPLOAD_PASSWORD }} -keypass ${{ secrets.PLAY_UPLOAD_PASSWORD }} flutter_app/build/app/outputs/bundle/release/app-release.aab ${{ secrets.PLAY_UPLOAD_ALIAS }}
+    # - name: Build and sign Flutter app
+    #   run: |
+    #     echo ${{ secrets.PLAY_UPLOAD_KEYSTORE }} | base64 --decode > ./flutter_app/android/app/upload-key.keystore
+    #     export PLAY_UPLOAD_ALIAS=${{ secrets.PLAY_UPLOAD_ALIAS }}
+    #     export PLAY_UPLOAD_PASSWORD=${{ secrets.PLAY_UPLOAD_PASSWORD }}
+    #     export PLAY_UPLOAD_KEYSTORE=./upload-key.keystore
+    #     cd flutter_app
+    #     flutter pub get
+    #     flutter build appbundle --release --build-name=${{ env.VERSION }} --target-platform android-arm,android-arm64,android-x64 --obfuscate --split-debug-info=./debug
 
     - name: Zip summit
       run: |
@@ -97,22 +96,28 @@ jobs:
 
     - name: Upload web extension as artifact
       if: github.ref != 'refs/heads/main'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: web-extension
         path: ./bootstrapper/summit.zip
 
+    # - name: Upload debug info as artifact
+    #   if: github.ref != 'refs/heads/main'
+    #   uses: actions/upload-artifact@v3
+    #   with:
+    #     name: debug-info
+    #     path: ./flutter_app/debug
 
-    - name: Upload AAB as artifact
-      if: github.ref != 'refs/heads/main'
-      uses: actions/upload-artifact@v2
-      with:
-        name: android-app
-        path: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
+    # - name: Upload AAB as artifact
+    #   if: github.ref != 'refs/heads/main'
+    #   uses: actions/upload-artifact@v3
+    #   with:
+    #     name: android-app
+    #     path: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
 
     - name: Upload JS as artifact
       if: github.ref != 'refs/heads/main'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: summit-js
         path: ./summit/bin/summit.js
@@ -141,17 +146,17 @@ jobs:
         asset_name: summit.zip
         asset_content_type: application/zip
     
-    - name: Upload AAB Release Asset
-      if: github.ref == 'refs/heads/main'
-      id: upload-aab-release-asset 
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
-        asset_name: app-release.aab
-        asset_content_type: application/vnd.android.package-archive
+    # - name: Upload AAB Release Asset
+    #   if: github.ref == 'refs/heads/main'
+    #   id: upload-aab-release-asset 
+    #   uses: actions/upload-release-asset@v1
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   with:
+    #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+    #     asset_path: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
+    #     asset_name: app-release.aab
+    #     asset_content_type: application/vnd.android.package-archive
 
     - name: Upload JS Release Asset
       if: github.ref == 'refs/heads/main'
@@ -201,14 +206,15 @@ jobs:
         client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
         refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
 
-    - name: Upload to Google Play
-      continue-on-error: true
-      if: github.ref == 'refs/heads/main'
-      uses: r0adkll/upload-google-play@v1
-      with:
-        serviceAccountJsonPlainText: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-        packageName: xyz.mcdonald.terrainsummit
-        releaseFiles: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
-        track: alpha
-        status: completed
-        releaseName: ${{ steps.get_version.outputs.VERSION }}
+    # - name: Upload to Google Play
+    #   continue-on-error: true
+    #   if: github.ref == 'refs/heads/main'
+    #   uses: r0adkll/upload-google-play@v1
+    #   with:
+    #     serviceAccountJsonPlainText: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+    #     packageName: xyz.mcdonald.terrainsummit
+    #     releaseFiles: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
+    #     track: alpha
+    #     status: completed
+    #     releaseName: ${{ steps.get_version.outputs.VERSION }}
+    #     deobfuscationFiles: ./flutter_app/debug
