@@ -81,11 +81,11 @@ jobs:
 
     - name: Build and sign Flutter app
       run: |
-        echo ${{ secrets.PLAY_UPLOAD_KEYSTORE }} | base64 --decode > ./flutter-app/android/app/upload-key.keystore
+        echo ${{ secrets.PLAY_UPLOAD_KEYSTORE }} | base64 --decode > ./flutter_app/android/app/upload-key.keystore
         export PLAY_UPLOAD_ALIAS=${{ secrets.PLAY_UPLOAD_ALIAS }}
         export PLAY_UPLOAD_PASSWORD=${{ secrets.PLAY_UPLOAD_PASSWORD }}
         export PLAY_UPLOAD_KEYSTORE=./flutter-app/android/app/upload-key.keystore
-        cd flutter-app
+        cd flutter_app
         flutter pub get
         flutter build appbundle --release --build-name=${{ env.VERSION }} --build-number=1 --target-platform android-arm,android-arm64,android-x64
 
