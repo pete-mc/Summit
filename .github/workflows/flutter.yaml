@@ -70,7 +70,9 @@ jobs:
         export PLAY_UPLOAD_KEYSTORE=./upload-key.keystore
         cd flutter_app
         flutter pub get
-        flutter build appbundle --release --build-name=${{ env.VERSION }} --target-platform android-arm,android-arm64,android-x64 --obfuscate --split-debug-info=./debug
+        IFS='.' read -ra ADDR <<< "${{ env.VERSION }}"
+        BUILD_NUMBER="${ADDR[0]}$(printf "%02d" ${ADDR[1]})$(printf "%02d" ${ADDR[2]})"
+        flutter build appbundle --release --build-name=${{ env.VERSION }} --build-number=$BUILD_NUMBER --target-platform android-arm,android-arm64,android-x64 --obfuscate --split-debug-info=./debug
 
     - name: Create Release
       id: create_release
