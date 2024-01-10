@@ -39,7 +39,7 @@ jobs:
         else
           VERSION="${{ github.event.inputs.version }}"
         fi
-        IFS='.' read -ra ADDR <<< VERSION
+        IFS='.' read -ra ADDR <<< $VERSION
         BUILD_NUMBER="${ADDR[0]}$(printf "%02d" ${ADDR[1]})$(printf "%02d" ${ADDR[2]})"
         VERSION="flutter-$VERSION"
         echo "VERSION=$VERSION" >> $GITHUB_ENV
