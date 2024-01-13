@@ -1,0 +1,46 @@
+{
+  "terminal.integrated.env.linux": {
+    "PATH": "/home/codespace/.azurelogicapps/dependencies/DotNetSDK:${env:PATH}"
+  },
+  "omnisharp.dotNetCliPaths": [
+    "/home/codespace/.azurelogicapps/dependencies/DotNetSDK"
+  ],
+  "editor.tabSize": 2,
+  "cmake.configureOnOpen": false,
+  "taskExplorer.exclude": [
+    "**/.vscode-test/**",
+    "**/Assets/**",
+    "**/bin/**",
+    "**/build/**",
+    "**/dist/**",
+    "**/doc/**",
+    "**/example/**",
+    "**/examples/**",
+    "**/ext/**",
+    "**/obj/**",
+    "**/out/**",
+    "**/output/**",
+    "**/packages/**",
+    "**/release/**",
+    "**/releases/**",
+    "**/samples/**",
+    "**/sdks/**",
+    "**/static/**",
+    "**/target/**",
+    "**/test/**",
+    "**/third_party/**",
+    "**/vendor/**",
+    "**/work/**",
+    "/c:/Users/peter/Repos/Summit-vue/Summit/node_modules/flatted/python/flatted.py",
+    "/c:/Users/peter/Repos/Summit-vue/Summit/node_modules/babel-core/node_modules/debug/Makefile",
+    "/c:/Users/peter/Repos/Summit-vue/Summit/node_modules/babel-traverse/node_modules/debug/Makefile",
+    "/c:/Users/peter/Repos/Summit-vue/Summit/node_modules/esrecurse/gulpfile.babel.js",
+    "/c:/Users/peter/Repos/Summit-vue/Summit/node_modules/estraverse/gulpfile.js",
+    "/c:/Users/peter/Repos/Summit-vue/Summit/node_modules/webpack/node_modules/estraverse/gulpfile.js"
+  ],
+  "taskExplorer.excludeTask": [
+    "pre-launch[0-9]{2}\\.r(?:b|c)",
+    "build - tsconfig.json",
+    "watch - tsconfig.json"
+  ]
+}

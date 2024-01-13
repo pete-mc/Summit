@@ -1,0 +1,102 @@
+name: Build and Release Summit
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Cache npm dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.npm
+          node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v4
+
+    - name: Install jq
+      run: sudo apt-get install jq
+
+    - name: Extract version
+      id: get_version
+      run: |
+        cd bootstrapper
+        VERSION=$(jq -r .version manifest.json)
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Print version
+      run: echo "Version is ${{ env.VERSION }}"
+
+    - name: Check if release already exists
+      if: github.ref == 'refs/heads/main'
+      id: check_release
+      run: |
+        RELEASE=$(curl --silent "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/${{ steps.get_version.outputs.VERSION }}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" || echo '{"message": "Not Found"}')
+        MESSAGE=$(echo $RELEASE | jq -r .message)
+        if [[ $MESSAGE == "Not Found" ]]; then
+          echo "Release with version ${{ steps.get_version.outputs.VERSION }} does not exist."
+        else
+          echo "Release with version ${{ steps.get_version.outputs.VERSION }} already exists."
+          exit 1
+        fi
+
+    - name: Install dependencies
+      run: npm install -g webpack @types/jest jest typescript webpack-cli npm-run-all
+      run: npm ci
+      
+    - name: Build Summit
+      run: mkdir -p ./dist
+      run: npx webpack --config webpack.prod.js
+      working-directory: ${{ github.workspace }}
+
+    - name: Zip summit
+      run: zip -r summit.zip dist/*
+
+    - name: Upload web extension as artifact
+      if: github.ref == 'refs/heads/dev'
+      uses: actions/upload-artifact@v2
+      with:
+        name: Summit
+        path: ./summit.zip
+
+    - name: Create Release
+      id: create_release
+      uses: marvinpinto/action-automatic-releases@latest
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        automatic_release_tag: ${{ steps.get_version.outputs.VERSION }}
+        release_name: Release ${{ steps.get_version.outputs.VERSION }}
+        files: |
+          ./summit.zip
+        prerelease: false
+        draft: false
+    
+    # - name: Publish
+    #   run:  |
+    #     cd npm
+    #     npm publish
+    #   env:
+    #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+    # - name: Publish to GitHub Packages
+    #   run:  |
+    #     cd npm
+    #     npm publish
+    #   env:
+    #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
