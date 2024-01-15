@@ -1,4 +1,24 @@
 {
+  "name": "terrain-summit",
+  "version": "2.5.0",
+  "description": "Terrain Summit - Where every achievement is a Summit conquered",
+  "main": "summit.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pete-mc/Summit.git"
+  },
+  "keywords": [
+    "scouts",
+    "terrain",
+    "summit",
+    "contour"
+  ],
+  "author": "Peter McDonald",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pete-mc/Summit/issues"
+  },
+  "homepage": "https://github.com/pete-mc/Summit#readme",
   "devDependencies": {
     "@types/big.js": "^6.2.2",
     "@types/jest": "^29.5.11",
@@ -55,9 +75,7 @@
     "xml2js": "^0.6.2"
   },
   "scripts": {
-    "summit": "webpack --config webpack.dev.js",
-    "bootstrapper": "cd ../bootstrapper && webpack --config webpack.dev.js",
-    "build": "npm-run-all -s summit bootstrapper",
+    "build": "webpack --config webpack.dev.js",
     "start": "node ./scripts/server.js",
     "watch": "webpack --watch --config webpack.dev.js",
     "devmode": "npm-run-all --parallel start watch"
