@@ -60,6 +60,8 @@ jobs:
       run: |
         cd summit
         npm ci
+        cd ..\bootstraper
+        npm ci
   
     - name: Build Contents
       run: npx webpack --config webpack.prod.js
