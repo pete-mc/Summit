@@ -60,12 +60,15 @@ jobs:
       run: |
         cd summit
         npm ci
-        cd ..\bootstraper
-        npm ci
-  
+
     - name: Build Contents
       run: npx webpack --config webpack.prod.js
       working-directory: ${{ github.workspace }}/summit
+
+    - name: Install dependencies
+      run: |
+        cd bootstrapper
+        npm ci
 
     - name: Build project
       run: npx webpack --config webpack.prod.js
