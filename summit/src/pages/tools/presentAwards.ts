@@ -259,7 +259,7 @@ export async function presentAwards(): Promise<void> {
       iana_timezone: "Australia/Brisbane",
       justification: "",
       location: "Summit Award Storage ",
-      organisers: ["ceec946a-6197-3cb0-acf9-5d8ab519c59d"],
+      organisers: [context.currentProfile?.member.id],
       review: { general_tags: [], scout_method_elements: ["symbolic_framework"], scout_spices_elements: [] },
       start_datetime: "2100-01-10T02:00:00.000+00:00",
       status: "planned",

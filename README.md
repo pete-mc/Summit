@@ -4,7 +4,7 @@ This tool is to help provide usability features to the Scouts | Terrain website.
 
 To get started install the add on for your browser below:
 
-[![Chome Logo](/bootstrapper/images/chrome.png)](https://chromewebstore.google.com/detail/terrain-summit/fkpdafjknodpembpmogbcblabonpmhoo?hl=en&pli=1) [![Edge Logo](/bootstrapper/images/edge.png)](https://microsoftedge.microsoft.com/addons/detail/terrain-summit/eoemenakogcfmmhkoiejhefmdijgpgnb)
+[![Chome Logo](https://github.com/pete-mc/Summit/wiki/images/chrome.png)](https://chromewebstore.google.com/detail/terrain-summit/fkpdafjknodpembpmogbcblabonpmhoo?hl=en&pli=1) [![Edge Logo](https://github.com/pete-mc/Summit/wiki/images/edge.png)](https://microsoftedge.microsoft.com/addons/detail/terrain-summit/eoemenakogcfmmhkoiejhefmdijgpgnb)
 
 [![Build and Release Chrome Extension](https://github.com/pete-mc/Summit/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/pete-mc/Summit/actions/workflows/build.yaml)
 

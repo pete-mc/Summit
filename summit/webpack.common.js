@@ -1,36 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-var-requires */
 const Webpack = require("webpack");
 const Path = require("path");
 const WebpackShellPluginNext = require("webpack-shell-plugin-next");
-const shell = require("shelljs");
-const xml2js = require("xml2js");
-const version = require("../bootstrapper/manifest.json").version;
-const fs = require("fs");
-const yaml = require("js-yaml");
-
-fs.readFile("../flutter_app/pubspec.yaml", "utf8", function (err, data) {
-  if (err) {
-    return console.log(err);
-  }
-  const doc = yaml.load(data);
-  doc.version = version;
-  const yamlStr = yaml.dump(doc);
-  fs.writeFile("../flutter_app/pubspec.yaml", yamlStr, function (err) {
-    if (err) return console.log(err);
-  });
-});
-
-//set version in ../npm/package.json to the version from manifest.json
-fs.readFile("../npm/package.json", "utf8", function (err, data) {
-  if (err) return console.log(err);
-  const manifest = JSON.parse(data);
-  manifest.version = version;
-  const json = JSON.stringify(manifest, null, 2);
-  fs.writeFile("../npm/package.json", json, function (err) {
-    if (err) return console.log(err);
-  });
-});
 
 module.exports = {
   entry: "./src/summitStart.ts",
@@ -67,15 +38,21 @@ module.exports = {
   },
   plugins: [
     new Webpack.DefinePlugin({
-      "process.env.SUMMITVERSION": JSON.stringify(require("../bootstrapper/manifest.json").version),
+      "process.env.SUMMITVERSION": JSON.stringify(require("./package.json").version),
     }),
     new Webpack.BannerPlugin({
       banner: `Welcome to Terrian | Summit, go to https://github.com/pete-mc/summit for more information
-      Summit Version: ${JSON.stringify(require("../bootstrapper/manifest.json").version)}`,
+      Summit Version: ${JSON.stringify(require("./package.json").version)}`,
     }),
     new WebpackShellPluginNext({
       onBuildEnd: {
-        scripts: ["node -e \"require('shelljs').cp('-R', './bin/*', '../bootstrapper/src')\""],
+        scripts: [
+          "node -e \"require('shelljs').cp('-R', './bin/*', '../bootstrapper/src')\"",
+          "node -e \"require('shelljs').cp('-R', './styles/*', './bin')\"",
+          "node -e \"require('shelljs').cp('-R', './package.json', './bin')\"",
+          "node -e \"require('shelljs').cp('-R', './README.md', './bin')\"",
+          "node -e \"require('shelljs').cp('-R', './LICENSE', './bin')\"",
+        ],
         blocking: true,
         parallel: false,
       },

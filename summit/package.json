@@ -1,4 +1,24 @@
 {
+  "name": "terrain-summit",
+  "version": "2.5.0",
+  "description": "Terrain Summit - Where every achievement is a Summit conquered",
+  "main": "summit.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pete-mc/Summit.git"
+  },
+  "keywords": [
+    "scouts",
+    "terrain",
+    "summit",
+    "contour"
+  ],
+  "author": "Peter McDonald",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pete-mc/Summit/issues"
+  },
+  "homepage": "https://github.com/pete-mc/Summit#readme",
   "devDependencies": {
     "@types/big.js": "^6.2.2",
     "@types/jest": "^29.5.11",

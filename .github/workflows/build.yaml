@@ -1,10 +1,9 @@
-name: Build and Release Chrome Extension
+name: Build and Release Extension
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
   
 permissions:
   contents: write
@@ -17,6 +16,22 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Cache node modules
+      uses: actions/cache@v3
+      with:
+        path: ./summit/node_modules
+        key: ${{ runner.os }}-node-summit-${{ hashFiles('./summit/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-summit-${{ hashFiles('./summit/package-lock.json') }}
+
+    - name: Cache node modules
+      uses: actions/cache@v3
+      with:
+        path: ./bootstrapper/node_modules
+        key: ${{ runner.os }}-node-bootstrapper-${{ hashFiles('./bootstrapper/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-bootstrapper-${{ hashFiles('./bootstrapper/package-lock.json') }}
+
     - name: Setup Node.js environment
       uses: actions/setup-node@v4
 
@@ -26,48 +41,26 @@ jobs:
     - name: Extract version
       id: get_version
       run: |
-        cd bootstrapper
-        VERSION=$(jq -r .version manifest.json)
+        cd summit
+        VERSION=$(jq -r .version package.json)
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-    - name: Print version
-      run: echo "Version is ${{ env.VERSION }}"
-
-    - name: Check if release already exists
-      if: github.ref == 'refs/heads/main'
-      id: check_release
-      run: |
-        RELEASE=$(curl --silent "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/${{ steps.get_version.outputs.VERSION }}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" || echo '{"message": "Not Found"}')
-        MESSAGE=$(echo $RELEASE | jq -r .message)
-        if [[ $MESSAGE == "Not Found" ]]; then
-          echo "Release with version ${{ steps.get_version.outputs.VERSION }} does not exist."
-        else
-          echo "Release with version ${{ steps.get_version.outputs.VERSION }} already exists."
-          exit 1
-        fi
+        echo "Version is ${{ env.VERSION }}"
 
     - name: Create bin directory
       run: |
         mkdir -p ./summit/bin
-        mkdir -p ./bootstrapper/bin
+        mkdir -p ./summit/bin/dependencies
       working-directory: ${{ github.workspace }}
 
     - name: Install global dependencies
-      run: npm install -g webpack @types/jest @vscode/vsce cordova jest typescript webpack-cli webpack npm-run-all
+      run: npm install -g webpack @types/jest jest typescript webpack-cli webpack npm-run-all
 
     - name: Install dependencies
       run: |
         cd summit
         npm ci
-        cd ../bootstrapper
-        npm ci
-      
-    # - name: Setup Flutter
-    #   uses: subosito/flutter-action@v1
-    #   with:
-    #     flutter-version: '3.16.5' 
-
+  
     - name: Build Contents
       run: npx webpack --config webpack.prod.js
       working-directory: ${{ github.workspace }}/summit
@@ -75,45 +68,12 @@ jobs:
     - name: Build project
       run: npx webpack --config webpack.prod.js
       working-directory: ${{ github.workspace }}/bootstrapper
-    
-    - name: Install xmlstarlet
-      run: sudo apt-get install -y xmlstarlet
-
-    # - name: Build and sign Flutter app
-    #   run: |
-    #     echo ${{ secrets.PLAY_UPLOAD_KEYSTORE }} | base64 --decode > ./flutter_app/android/app/upload-key.keystore
-    #     export PLAY_UPLOAD_ALIAS=${{ secrets.PLAY_UPLOAD_ALIAS }}
-    #     export PLAY_UPLOAD_PASSWORD=${{ secrets.PLAY_UPLOAD_PASSWORD }}
-    #     export PLAY_UPLOAD_KEYSTORE=./upload-key.keystore
-    #     cd flutter_app
-    #     flutter pub get
-    #     flutter build appbundle --release --build-name=${{ env.VERSION }} --target-platform android-arm,android-arm64,android-x64 --obfuscate --split-debug-info=./debug
 
     - name: Zip summit
-      run: |
-        cd bootstrapper
-        zip -r summit.zip manifest.json bin/summit-bootstrap.js styles/* images/*
-
-    - name: Upload web extension as artifact
-      if: github.ref != 'refs/heads/main'
-      uses: actions/upload-artifact@v3
-      with:
-        name: web-extension
-        path: ./bootstrapper/summit.zip
-
-    # - name: Upload debug info as artifact
-    #   if: github.ref != 'refs/heads/main'
-    #   uses: actions/upload-artifact@v3
-    #   with:
-    #     name: debug-info
-    #     path: ./flutter_app/debug
-
-    # - name: Upload AAB as artifact
-    #   if: github.ref != 'refs/heads/main'
-    #   uses: actions/upload-artifact@v3
-    #   with:
-    #     name: android-app
-    #     path: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
+      run: zip -r summit.zip manifest.json bin/summit-bootstrap.js styles/* images/*
+   
+    - name: Install xmlstarlet
+      run: sudo apt-get install -y xmlstarlet
 
     - name: Upload JS as artifact
       if: github.ref != 'refs/heads/main'
@@ -133,7 +93,7 @@ jobs:
         release_name: Release ${{ steps.get_version.outputs.VERSION }}
         draft: false
         prerelease: false
-
+        
     - name: Upload Release Asset
       if: github.ref == 'refs/heads/main'
       id: upload-release-asset 
@@ -145,18 +105,6 @@ jobs:
         asset_path: ./bootstrapper/summit.zip
         asset_name: summit.zip
         asset_content_type: application/zip
-    
-    # - name: Upload AAB Release Asset
-    #   if: github.ref == 'refs/heads/main'
-    #   id: upload-aab-release-asset 
-    #   uses: actions/upload-release-asset@v1
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #   with:
-    #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-    #     asset_path: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
-    #     asset_name: app-release.aab
-    #     asset_content_type: application/vnd.android.package-archive
 
     - name: Upload JS Release Asset
       if: github.ref == 'refs/heads/main'
@@ -179,42 +127,31 @@ jobs:
       continue-on-error: true
       if: github.ref == 'refs/heads/main'
       run:  |
-        cd npm
-        npm publish
+        cd summit
+        npm publish bin
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-    - name: Publish to Microsoft Edge Store
-      continue-on-error: true
-      uses: wdzeng/edge-addon@v1
-      if: github.ref == 'refs/heads/main'
-      with:
-        product-id: ${{ secrets.EDGE_EXTENSION_ID }}
-        zip-path: ./bootstrapper/summit.zip
-        client-id: ${{ secrets.EDGE_CLIENT_ID }}
-        client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
-        access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}
 
     - name: Upload to Chrome Web Store
       continue-on-error: true
       if: github.ref == 'refs/heads/main'
       uses: mnao305/chrome-extension-upload@v4.0.1
       with:
-        file-path: ./bootstrapper/summit.zip
+        file-path: ./summit.zip
         extension-id: ${{ secrets.CHORME_EXTENSION_ID }}
         client-id: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
         client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
         refresh-token: ${{ secrets.GOOGLE_ACCOUNT_REFRESH_TOKEN }}
-
-    # - name: Upload to Google Play
-    #   continue-on-error: true
-    #   if: github.ref == 'refs/heads/main'
-    #   uses: r0adkll/upload-google-play@v1
-    #   with:
-    #     serviceAccountJsonPlainText: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-    #     packageName: xyz.mcdonald.terrainsummit
-    #     releaseFiles: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
-    #     track: alpha
-    #     status: completed
-    #     releaseName: ${{ steps.get_version.outputs.VERSION }}
-    #     deobfuscationFiles: ./flutter_app/debug
+        publish: false
+  
+    - name: Publish to Microsoft Edge Store
+      continue-on-error: true
+      uses: wdzeng/edge-addon@v1
+      if: github.ref == 'refs/heads/main'
+      with:
+        product-id: ${{ secrets.EDGE_EXTENSION_ID }}
+        zip-path: ./summit.zip
+        client-id: ${{ secrets.EDGE_CLIENT_ID }}
+        client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
+        access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}
+        upload-only: true

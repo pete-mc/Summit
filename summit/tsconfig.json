@@ -29,6 +29,6 @@
     "pretty": true,
     "typeRoots": [
       "./typings", "node_modules/@types"
-    ]
-  }
+    ],
+  }  
 }
