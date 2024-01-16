@@ -47,6 +47,7 @@ module.exports = {
     new WebpackShellPluginNext({
       onBuildEnd: {
         scripts: [
+          "node -e \"require('shelljs').cp('-R', './bin/*', '../bootstrapper/src')\"",
           "node -e \"require('shelljs').cp('-R', './styles/*', './bin')\"",
           "node -e \"require('shelljs').cp('-R', './package.json', './bin')\"",
           "node -e \"require('shelljs').cp('-R', './README.md', './bin')\"",

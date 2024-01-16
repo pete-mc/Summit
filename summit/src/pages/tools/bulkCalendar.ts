@@ -206,6 +206,9 @@ export async function bulkCalendar(message?: string): Promise<void> {
       // Add 'date' class to the end date cell
       $(row).find("td:eq(4)").addClass("date");
     },
+    initComplete: function () {
+      $(".dataTables_scrollHead").not(":last").remove();
+    },
   });
 
   interface DTOnEvent extends Event {
@@ -359,8 +362,8 @@ export async function bulkCalendar(message?: string): Promise<void> {
           id: context.currentProfile?.unit.id,
         },
         attendance: {
-          leader_member_ids: row.leads.split(","),
-          assistant_member_ids: row.assists.split(","),
+          leader_member_ids: row.leads ? row.leads.split(",") : [],
+          assistant_member_ids: row.assists ? row.assists.split(",") : [],
           attendee_member_ids: [],
           participant_member_ids: [],
         },

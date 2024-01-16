@@ -1,6 +1,6 @@
 import { BaseSummitMessage, SummitDownloadLogbookMessage, SummitMessageEvent, SummitMessageHandler, SummitRouteChangeMessage, SummitUploadLogbookMessage } from "../typings/summitTypes";
 import { TerrainEvent, TerrainProfile } from "../typings/terrainTypes";
-import { clearCache, compareVersions, openIndexedDB, reconstructGuids, saveToIndexedDB } from "./helpers";
+import { clearCache, reconstructGuids /* saveToIndexedDBc, ompareVersions, openIndexedDB */ } from "./helpers";
 import { loadLogbookData, writeLogbook } from "./terrainButtons/copyLogbook";
 import { fetchActivity, fetchMemberEvents } from "./terrainCalls";
 
@@ -38,7 +38,7 @@ export class SummitContext {
         this.terrainRouteChangeHandlers.forEach((handler) => handler(data as SummitRouteChangeMessage));
       },
     });
-    this.checkForUpdate();
+    //this.checkForUpdate();
     this.setupNuxtWatchers();
   }
 
@@ -57,55 +57,55 @@ export class SummitContext {
     );
   }
 
-  public checkForUpdate() {
-    if (this.buildMode === "dev") {
-      this.upgradeAvailable = true;
-      return;
-    }
-    fetch("https://api.github.com/repos/pete-mc/Summit/releases/latest")
-      .then((response) => response.json())
-      .then((data) => {
-        if (compareVersions(data.tag_name, this.summitVersion)) {
-          this.upgradeAvailable = true;
-          this.log("New version available");
-        }
-      });
-  }
-  public updateSummit() {
-    if (this.buildMode === "dev") {
-      // get latest js from http://localhost:3000/summit.js
-      fetch("http://localhost:3000/summit.js")
-        .then((response) => response.text())
-        .then(async (data) => {
-          const dbName = "TerrainSummit";
-          const storeName = "JSStore";
-          const id = "summitJS";
-          const db = await openIndexedDB(dbName, storeName);
-          await saveToIndexedDB(db, storeName, data, id);
-          localStorage.setItem("summit-version", "9.9.9");
-          setTimeout(() => window.location.reload(), 1000);
-        });
-      return;
-    }
-    fetch("https://api.github.com/repos/pete-mc/Summit/releases/latest")
-      .then((response) => response.json())
-      .then((releaseData) => {
-        if (compareVersions(this.summitVersion, releaseData.tag_name)) {
-          //get latest js from release
-          fetch("https://cdn.jsdelivr.net/npm/terrain-summit@" + releaseData.tag_name)
-            .then((response) => response.text())
-            .then(async (data) => {
-              const dbName = "TerrainSummit";
-              const storeName = "JSStore";
-              const id = "summitJS";
-              const db = await openIndexedDB(dbName, storeName);
-              await saveToIndexedDB(db, storeName, data, id);
-              localStorage.setItem("summit-version", releaseData.tag_name);
-              window.location.reload();
-            });
-        }
-      });
-  }
+  // public checkForUpdate() {
+  //   if (this.buildMode === "dev") {
+  //     this.upgradeAvailable = true;
+  //     return;
+  //   }
+  //   fetch("https://api.github.com/repos/pete-mc/Summit/releases/latest")
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       if (compareVersions(data.tag_name, this.summitVersion)) {
+  //         this.upgradeAvailable = true;
+  //         this.log("New version available");
+  //       }
+  //     });
+  // }
+  // public updateSummit() {
+  //   if (this.buildMode === "dev") {
+  //     // get latest js from http://localhost:3000/summit.js
+  //     fetch("http://localhost:3000/summit.js")
+  //       .then((response) => response.text())
+  //       .then(async (data) => {
+  //         const dbName = "TerrainSummit";
+  //         const storeName = "JSStore";
+  //         const id = "summitJS";
+  //         const db = await openIndexedDB(dbName, storeName);
+  //         await saveToIndexedDB(db, storeName, data, id);
+  //         localStorage.setItem("summit-version", "9.9.9");
+  //         setTimeout(() => window.location.reload(), 1000);
+  //       });
+  //     return;
+  //   }
+  //   fetch("https://api.github.com/repos/pete-mc/Summit/releases/latest")
+  //     .then((response) => response.json())
+  //     .then((releaseData) => {
+  //       if (compareVersions(this.summitVersion, releaseData.tag_name)) {
+  //         //get latest js from release
+  //         fetch("https://cdn.jsdelivr.net/npm/terrain-summit@" + releaseData.tag_name)
+  //           .then((response) => response.text())
+  //           .then(async (data) => {
+  //             const dbName = "TerrainSummit";
+  //             const storeName = "JSStore";
+  //             const id = "summitJS";
+  //             const db = await openIndexedDB(dbName, storeName);
+  //             await saveToIndexedDB(db, storeName, data, id);
+  //             localStorage.setItem("summit-version", releaseData.tag_name);
+  //             window.location.reload();
+  //           });
+  //       }
+  //     });
+  // }
 
   public static getInstance(): SummitContext {
     if (!SummitContext.instance) {

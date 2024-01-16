@@ -17,6 +17,20 @@
 			"options": {
 				"cwd": "${env:WORKSPACE_PATH}/summit"
 			}
+		},
+		{
+			"label": "Build Cordova App",
+			"type": "shell",
+			"command": "npm-run-all -s prepare build",
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			},
+			"problemMatcher": [],
+			"options": {
+				"cwd": "${env:CORDOVA_WORKSPACE_PATH}"
+			}
 		}
 	]
 }

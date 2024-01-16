@@ -4,11 +4,7 @@ updates:
     directory: "/summit"
     schedule:
       interval: "weekly"
-    group:
-      name: "all npm updates"
   - package-ecosystem: "github-actions"
     directory: "/.github/workflows"
     schedule:
       interval: "weekly"
-    group:
-      name: "all github-actions updates"

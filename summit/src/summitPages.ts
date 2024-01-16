@@ -201,7 +201,7 @@ export class SummitPageManager {
       )
       .css("height", "100px");
     $("#summitVerson").on("click", () => {
-      this.context.updateSummit();
+      //this.context.updateSummit();
     });
     $("#summitVerson")
       .on("mouseenter", () => {

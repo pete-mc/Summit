@@ -75,7 +75,9 @@
     "xml2js": "^0.6.2"
   },
   "scripts": {
-    "build": "webpack --config webpack.dev.js",
+    "summit": "webpack --config webpack.dev.js",
+    "bootstrapper": "cd ../bootstrapper && webpack --config webpack.dev.js",
+    "build": "npm-run-all -s summit bootstrapper",
     "start": "node ./scripts/server.js",
     "watch": "webpack --watch --config webpack.dev.js",
     "devmode": "npm-run-all --parallel start watch"
