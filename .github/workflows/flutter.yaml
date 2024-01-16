@@ -84,13 +84,13 @@ jobs:
         prerelease: false
 
     - name: Upload debug info as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: debug-info
         path: ./flutter_app/debug
 
     - name: Upload AAB as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: android-app
         path: ./flutter_app/build/app/outputs/bundle/release/app-release.aab
