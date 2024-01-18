@@ -48,10 +48,11 @@ module.exports = {
       onBuildEnd: {
         scripts: [
           "node -e \"require('shelljs').cp('-R', './bin/*', '../bootstrapper/src')\"",
-          "node -e \"require('shelljs').cp('-R', './styles/*', './bin')\"",
-          "node -e \"require('shelljs').cp('-R', './package.json', './bin')\"",
-          "node -e \"require('shelljs').cp('-R', './README.md', './bin')\"",
-          "node -e \"require('shelljs').cp('-R', './LICENSE', './bin')\"",
+          "node -e \"require('shelljs').cp('-R', './bin/*', '../npm')\"",
+          "node -e \"require('shelljs').cp('-R', './styles/*', '../bootstrapper')\"",
+          "node -e \"require('shelljs').cp('-R', './styles/*', '../npm')\"",
+          "node -e \"require('shelljs').cp('-R', '../README.md', '../npm')\"",
+          "node -e \"require('shelljs').cp('-R', './package.json', '../npm')\"",
         ],
         blocking: true,
         parallel: false,

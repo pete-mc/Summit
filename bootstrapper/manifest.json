@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Terrain | Summit",
-    "version": "2.5.0",
+    "version": "2.4.0",
     "description": "Where Every Achievement is a Summit Conquered",
     "icons": {
         "16": "/images/Icon16.png",
@@ -139,6 +139,11 @@
             ],
             "js": [
                 "/bin/summit-bootstrap.js"
+            ],
+            "css": [
+                "/styles/dependencies/datatables.min.css",
+                "/styles/dependencies/flatpickr.min.css",
+                "/styles/summit.css"
             ]
         }
     ],

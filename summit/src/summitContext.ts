@@ -1,6 +1,6 @@
 import { BaseSummitMessage, SummitDownloadLogbookMessage, SummitMessageEvent, SummitMessageHandler, SummitRouteChangeMessage, SummitUploadLogbookMessage } from "../typings/summitTypes";
 import { TerrainEvent, TerrainProfile } from "../typings/terrainTypes";
-import { clearCache, reconstructGuids /* saveToIndexedDBc, ompareVersions, openIndexedDB */ } from "./helpers";
+import { clearCache, reconstructGuids, saveToIndexedDB, compareVersions, openIndexedDB } from "./helpers";
 import { loadLogbookData, writeLogbook } from "./terrainButtons/copyLogbook";
 import { fetchActivity, fetchMemberEvents } from "./terrainCalls";
 
@@ -16,6 +16,7 @@ export class SummitContext {
   public terrainRoute: string = "";
   public terrainRouteChangeHandlers: ((message: SummitRouteChangeMessage) => void)[] = [];
   public loggedin: boolean = false;
+  public latestVersion: string = process.env.SUMMITVERSION || "0.0.0";
   public summitVersion: string = process.env.SUMMITVERSION || "0.0.0";
   public buildMode: string = process.env.SUMMITBUILD || "prod";
   public presentedAwards = [] as string[];
@@ -65,31 +66,19 @@ export class SummitContext {
   //   fetch("https://api.github.com/repos/pete-mc/Summit/releases/latest")
   //     .then((response) => response.json())
   //     .then((data) => {
-  //       if (compareVersions(data.tag_name, this.summitVersion)) {
+  //       this.latestVersion = data.tag_name;
+  //       if (compareVersions(this.summitVersion, data.tag_name)) {
   //         this.upgradeAvailable = true;
   //         this.log("New version available");
+  //         this.updateSummit(false);
   //       }
   //     });
   // }
-  // public updateSummit() {
-  //   if (this.buildMode === "dev") {
-  //     // get latest js from http://localhost:3000/summit.js
-  //     fetch("http://localhost:3000/summit.js")
-  //       .then((response) => response.text())
-  //       .then(async (data) => {
-  //         const dbName = "TerrainSummit";
-  //         const storeName = "JSStore";
-  //         const id = "summitJS";
-  //         const db = await openIndexedDB(dbName, storeName);
-  //         await saveToIndexedDB(db, storeName, data, id);
-  //         localStorage.setItem("summit-version", "9.9.9");
-  //         setTimeout(() => window.location.reload(), 1000);
-  //       });
-  //     return;
-  //   }
+  // public updateSummit(reload: boolean = true) {
   //   fetch("https://api.github.com/repos/pete-mc/Summit/releases/latest")
   //     .then((response) => response.json())
   //     .then((releaseData) => {
+        
   //       if (compareVersions(this.summitVersion, releaseData.tag_name)) {
   //         //get latest js from release
   //         fetch("https://cdn.jsdelivr.net/npm/terrain-summit@" + releaseData.tag_name)
@@ -98,10 +87,18 @@ export class SummitContext {
   //             const dbName = "TerrainSummit";
   //             const storeName = "JSStore";
   //             const id = "summitJS";
-  //             const db = await openIndexedDB(dbName, storeName);
-  //             await saveToIndexedDB(db, storeName, data, id);
-  //             localStorage.setItem("summit-version", releaseData.tag_name);
-  //             window.location.reload();
+  //             const request = indexedDB.open(dbName, 1);
+  //             request.onsuccess = (event)=> {
+  //               const db = (event.target as IDBRequest).result as IDBDatabase;
+  //               const transaction = db.transaction([storeName], "readwrite");
+  //               const store = transaction.objectStore(storeName);
+  //               const request = store.put(data, id);
+  //               request.onsuccess = ()=> {
+  //                 this.log("New version loaded: " + releaseData.tag_name);
+  //                 localStorage.setItem("summit-version", releaseData.tag_name);
+  //                 if (reload) window.location.reload();
+  //               };
+  //             };
   //           });
   //       }
   //     });
