@@ -52,7 +52,7 @@ function compareVersions(versionA: string, versionB: string): boolean {
 }
 
 async function summitBootstrap() {
-  const jarVersion = summitJS?.match(/Summit Version: \"(.*)\"/)?.[1];
+  const jarVersion = process.env.SUMMITVERSION;
   const summitVersion = localStorage.getItem("summit-version");
 
   if (!summitVersion || (jarVersion && compareVersions(summitVersion, jarVersion)) || process.env.SUMMITBUILD === "dev") {

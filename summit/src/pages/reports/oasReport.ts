@@ -121,7 +121,7 @@ export async function oasReport() {
                     width: 100%;
                 }
                 th, td {
-                    border: 1px solid #ddd;
+                    border: 1.5px solid #000;
                     padding: 8px;
                     text-align: center;
                 }
@@ -131,8 +131,7 @@ export async function oasReport() {
                 th {
                     padding-top: 12px;
                     padding-bottom: 12px;
-                    background-color: #4CAF50;
-                    color: white;
+                    color: black;
                 }
                 .custom-cell {
                     text-align: center;
@@ -151,7 +150,9 @@ export async function oasReport() {
           style.type = "text/css";
           style.appendChild(document.createTextNode(css));
           (win as Window).document.head.appendChild(style);
-
+          $((win as Window).document.body)
+            .find("h1")
+            .text("Terrain | Summit: " + $("#OASHeader").text());
           // Iterate over each cell to apply custom classes
           $((win as Window).document.body)
             .find("table tr")
