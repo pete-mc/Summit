@@ -75,7 +75,9 @@ jobs:
       working-directory: ${{ github.workspace }}/bootstrapper
 
     - name: Zip summit
-      run: zip -r summit.zip manifest.json bin/summit-bootstrap.js styles/* images/*
+      run: |
+        cd bootstrapper
+        zip -r summit.zip manifest.json bin/summit-bootstrap.js styles/* images/*
    
     - name: Install xmlstarlet
       run: sudo apt-get install -y xmlstarlet
@@ -142,7 +144,7 @@ jobs:
       if: github.ref == 'refs/heads/main'
       uses: mnao305/chrome-extension-upload@v4.0.1
       with:
-        file-path: ./summit.zip
+        file-path: ./bootstrapper/summit.zip
         extension-id: ${{ secrets.CHORME_EXTENSION_ID }}
         client-id: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_ID }}
         client-secret: ${{ secrets.GOOGLE_ACCOUNT_CLIENT_SECRET }}
@@ -155,7 +157,7 @@ jobs:
       if: github.ref == 'refs/heads/main'
       with:
         product-id: ${{ secrets.EDGE_EXTENSION_ID }}
-        zip-path: ./summit.zip
+        zip-path: ./bootstrapper/summit.zip
         client-id: ${{ secrets.EDGE_CLIENT_ID }}
         client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
         access-token-url: ${{ secrets.EDGE_REFRESH_TOKEN_URL }}
