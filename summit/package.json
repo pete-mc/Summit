@@ -23,7 +23,7 @@
     "@types/big.js": "^6.2.2",
     "@types/jest": "^29.5.11",
     "@types/jquery": "^3.5.29",
-    "@types/pdfmake": "^0.2.9",
+    "@types/pdfmake": "^0.2.8",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.14.0",
     "copy-webpack-plugin": "^11.0.0",
