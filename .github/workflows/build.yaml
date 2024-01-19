@@ -10,7 +10,23 @@ permissions:
   packages: write
 
 jobs:
+  check_commit:
+    runs-on: ubuntu-latest
+    outputs:
+      version_commit: ${{ steps.check.outputs.version_commit }}
+    steps:
+    - id: check
+      run: |
+        COMMIT_MSG=$(git log --format=%B -n 1 ${{ github.event.after }})
+        if [[ "${COMMIT_MSG}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "::set-output name=version_commit::true"
+        else
+          echo "::set-output name=version_commit::false"
+        fi
+
   build:
+    if: needs.check_commit.outputs.version_commit == 'true' && github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]'
+    needs: check_commit
     runs-on: ubuntu-latest
 
     steps:
