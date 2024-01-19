@@ -21,10 +21,13 @@ module.exports = merge(common, {
     host: "localhost",
     compress: true,
     port: 443,
-    https: {
-      key: fs.readFileSync("./certs/cert.key"),
-      cert: fs.readFileSync("./certs/cert.crt"),
-      ca: fs.readFileSync("./certs/ca.crt"),
+    server: {
+      type: "https",
+      options: {
+        key: fs.readFileSync("./certs/cert.key"),
+        cert: fs.readFileSync("./certs/cert.crt"),
+        ca: fs.readFileSync("./certs/ca.crt"),
+      },
     },
     headers: {
       "Access-Control-Allow-Origin": "*",
