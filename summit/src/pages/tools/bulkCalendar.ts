@@ -24,7 +24,7 @@ export async function bulkCalendar(message?: string): Promise<void> {
   let lastId = 0; // Used to increment the ID for new records
   const challengeAreaOptions = [
     { label: "Community", value: "community" },
-    { label: "Outdoor", value: "outdoor" },
+    { label: "Outdoor", value: "outdoors" },
     { label: "Creative", value: "creative" },
     { label: "Personal Growth", value: "personal_growth" },
   ];
