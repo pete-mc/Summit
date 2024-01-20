@@ -23,12 +23,11 @@ jobs:
         else
           echo "::set-output name=version_commit::false"
         fi
-      shell: bash
-
+  
   build:
     needs: check_commit
-    runs-on: ubuntu-latest
     if: needs.check_commit.outputs.version_commit == 'true' && github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]'
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
 
