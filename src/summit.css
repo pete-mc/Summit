@@ -1,11 +1,14 @@
-div:has(> a[href*="/summit/"]) {
+div.v-list-group__header:has(* a[href*="/summit/"]),
+div.v-list-group__header:has(> a[href*="/summit/"])
+div.v-list-group__items:has(* a[href*="/summit/"])
+{
   background: #004C00 !important;
-  border-bottom-color: #197419 !important;
-  border-top-color: #197419 !important;
-}  
+}
 
-div:has(> a[href*="/summit/"]):hover {
-  background-color: #197419 !important;
+div.v-list-group__header:has(> a[href*="/summit/"]):hover,
+a.NavMenu__subitem[href*="/summit/"]:hover > div.NavMenu__subitem-content:hover,
+a.NavMenu__sub-subitem[href*="/summit/"]:hover {
+  background-color: #006600 !important;
 }
 
 .summit-btn { 

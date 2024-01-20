@@ -11,6 +11,13 @@ module.exports = {
         loader: "vue-loader",
       },
       {
+        test: /\.css$/,
+        use: [
+          'vue-style-loader',
+          'css-loader'
+        ]
+      },
+      {
         test: /\.tsx?$/,
         loader: "ts-loader",
         options: {

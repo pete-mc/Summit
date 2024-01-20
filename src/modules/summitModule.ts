@@ -1,31 +1,57 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const Summit = {
+import { ActionContext, Module } from "vuex/types/index";
+
+interface RootState {}
+interface State {
+  message: string;
+  helpButton: boolean;
+}
+
+const savedState = localStorage.getItem("SummitState");
+const initialState: State = savedState
+  ? JSON.parse(savedState)
+  : {
+      message: "Welcome To Summit!",
+      helpButton: true,
+    };
+
+const SummitModule: Module<State, RootState> = {
   namespaced: true,
-  state: {
-    // Initial state
-    message: "Bob",
-  },
+  state: initialState,
   mutations: {
-    // Mutation to update the state
-    updateMessage(state: { message: any }, newMessage: any) {
-      console.log("updateMessage in Summit module", newMessage);
+    updateMessage(state: { message: string }, newMessage: string) {
       state.message = newMessage;
+    },
+    toggleHelpButton(state: { helpButton: boolean }) {
+      state.helpButton = !state.helpButton;
+      const freshworksContainer = document.getElementById("freshworks-container");
+      if (freshworksContainer) {
+        freshworksContainer.style.display = state.helpButton ? "block" : "none";
+      }
+    },
+    saveState() {
+      localStorage.setItem("SummitState", JSON.stringify(window.$nuxt.$store.state.Summit));
+      console.log("SummitState saved");
     },
   },
   actions: {
-    // Action to commit the mutation
-    setMessage({ commit }: any, message: any) {
-      console.log("setMessage in Summit module:", message);
+    setMessage({ commit }: ActionContext<State, RootState>, message: string): void {
       commit("updateMessage", message);
+      commit("saveState");
+    },
+    toggleHelpButton({ commit }: ActionContext<State, RootState>): void {
+      console.log("toggle help");
+      commit("toggleHelpButton");
+      commit("saveState");
     },
   },
   getters: {
-    // Getter to access the state
-    getMessage(state: { message: any }) {
-      console.log("getMessage in Summit module:", state.message);
+    getMessage(state: { message: string }) {
       return state.message;
+    },
+    getHelpButton(state: { helpButton: boolean }) {
+      return state.helpButton;
     },
   },
 };
 
-export default Summit;
+export default SummitModule;

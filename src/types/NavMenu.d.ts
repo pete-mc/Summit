@@ -4,7 +4,7 @@ interface NavMenuComponent extends Vue {
 
 export interface NavMenuItem {
   title: string;
-  to: string;
+  to?: string;
   items: NavMenuItem[];
   locked: boolean;
   roles: boolean[];

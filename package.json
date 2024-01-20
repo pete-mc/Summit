@@ -25,7 +25,9 @@
   "devDependencies": {
     "@nuxt/types": "^2.17.2",
     "@types/jest": "^29.5.11",
+    "@types/webpack-env": "^1.18.4",
     "@typescript-eslint/eslint-plugin": "^6.17.0",
+    "css-loader": "^6.9.1",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.2",
@@ -33,7 +35,7 @@
     "prettier": "^3.1.1",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
-    "vue": "^2.7.14",
+    "vue": "^2.7.16",
     "vue-jest": "^3.0.7",
     "vue-loader": "^15.11.1",
     "vue-router": "^3.6.5",
