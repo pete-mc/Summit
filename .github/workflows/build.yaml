@@ -28,6 +28,7 @@ jobs:
     needs: check_commit
     if: needs.check_commit.outputs.version_commit == 'true' && github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]'
     runs-on: ubuntu-latest
+    
     steps:
     - uses: actions/checkout@v4
 
