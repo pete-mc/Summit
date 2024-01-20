@@ -1,6 +1,6 @@
 {
   "name": "terrain-summit",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "description": "Terrain Summit - Where every achievement is a Summit conquered",
   "main": "summit.js",
   "repository": {

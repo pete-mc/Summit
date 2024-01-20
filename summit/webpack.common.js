@@ -2,6 +2,17 @@
 const Webpack = require("webpack");
 const Path = require("path");
 const WebpackShellPluginNext = require("webpack-shell-plugin-next");
+const fs = require("fs");
+
+fs.readFile("../bootstrapper/manifest.json", "utf8", function (err, data) {
+  if (err) return console.log(err);
+  const manifest = JSON.parse(data);
+  manifest.version = require("./package.json").version;
+  const json = JSON.stringify(manifest, null, 2);
+  fs.writeFile("../bootstrapper/manifest.json", json, function (err) {
+    if (err) return console.log(err);
+  });
+});
 
 module.exports = {
   entry: "./src/summitStart.ts",

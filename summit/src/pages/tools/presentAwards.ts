@@ -52,12 +52,12 @@ export async function presentAwards(): Promise<void> {
     );
     $("#retry").on("click", async function () {
       !context.currentProfile ? await context.getData() : undefined;
-      $("#presentAwardsDiv").text("Record Badge Presentations" + PresentAwardsHtml);
+      $("#presentAwardsDiv").text(PresentAwardsHtml);
       presentAwards();
     });
     return;
   }
-  $("#presentAwards").append(" - " + context.currentProfile.unit.name);
+  $("#presentAwards").text("Record Badge Presentations - " + context.currentProfile.unit.name);
   $("#loadingP").remove();
   $("#retry").remove();
   $("#github").remove();
