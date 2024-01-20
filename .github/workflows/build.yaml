@@ -19,19 +19,16 @@ jobs:
       run: |
         COMMIT_MSG=${{ github.event.head_commit.message }}
         if [[ "${COMMIT_MSG}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "true"
+          echo "::set-output name=version_commit::true"
         else
-          echo "false"
+          echo "::set-output name=version_commit::false"
         fi
       shell: bash
-      outputs:
-        version_commit: ${{ steps.check.outputs.stdout }}
 
   build:
-    if: needs.check_commit.outputs.version_commit == 'true' && github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]'
     needs: check_commit
-    runs_on: ubuntu-latest
-
+    runs-on: ubuntu-latest
+    if: needs.check_commit.outputs.version_commit == 'true' && github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]'
     steps:
     - uses: actions/checkout@v4
 
