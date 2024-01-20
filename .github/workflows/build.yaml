@@ -19,10 +19,11 @@ jobs:
       run: |
         COMMIT_MSG=${{ github.event.head_commit.message }}
         if [[ "${COMMIT_MSG}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "::set-output name=version_commit::true"
+          echo "version_commit=true" >> $GITHUB_ENV
         else
-          echo "::set-output name=version_commit::false"
+          echo "version_commit=false" >> $GITHUB_ENV
         fi
+      shell: bash
   
   build:
     if: needs.check_commit.outputs.version_commit == 'true' && github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]'
