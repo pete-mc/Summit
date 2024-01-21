@@ -1,4 +1,4 @@
-import { Home, MilestoneReport, Topo, UiEnhancements } from "../components";
+import { Home, MilestoneReport, Topo, UiEnhancements, PresentAwards } from "../components";
 import { AddMenuItems } from "../helpers";
 import { NavMenuItem } from "../types/NavMenu";
 
@@ -7,6 +7,7 @@ export async function initPages() {
   const navMenuItems: NavMenuItem[] = [];
 
   router.addRoute({ path: "/summit/home", component: Home });
+  router.addRoute({ path: "/summit/PresentAwards", component: PresentAwards });
   router.addRoute({ path: "/summit/uiEnhancements", component: UiEnhancements });
   router.addRoute({ path: "/summit/MilestoneReport", component: MilestoneReport });
   router.addRoute({ path: "/summit/Topo", component: Topo });
@@ -23,7 +24,15 @@ export async function initPages() {
         locked: true,
         roles: [true, false],
       },
-      { title: "Tools", items: [{ title: "UiEnchancements", to: "/summit/uiEnhancements", items: [], locked: false, roles: [true, false] }], locked: true, roles: [true, false] },
+      {
+        title: "Tools",
+        items: [
+          { title: "Present Awards", to: "/summit/PresentAwards", items: [], locked: false, roles: [true, false] },
+          { title: "UiEnchancements", to: "/summit/uiEnhancements", items: [], locked: false, roles: [true, false] },
+        ],
+        locked: true,
+        roles: [true, false],
+      },
     ],
     locked: false,
     roles: [true, false],

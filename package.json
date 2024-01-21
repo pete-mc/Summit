@@ -24,7 +24,11 @@
   "homepage": "https://github.com/pete-mc/Summit#readme",
   "devDependencies": {
     "@nuxt/types": "^2.17.2",
+    "@types/big.js": "^6.2.2",
+    "@types/datatables.net": "^1.10.28",
+    "@types/datatables.net-buttons": "^1.4.10",
     "@types/jest": "^29.5.11",
+    "@types/jquery": "^3.5.29",
     "@types/webpack-env": "^1.18.4",
     "@typescript-eslint/eslint-plugin": "^6.17.0",
     "css-loader": "^6.9.1",
@@ -32,6 +36,7 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.2",
     "eslint-plugin-vue": "^9.19.2",
+    "mini-css-extract-plugin": "^2.7.7",
     "prettier": "^3.1.1",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
@@ -40,6 +45,7 @@
     "vue-loader": "^15.11.1",
     "vue-router": "^3.6.5",
     "vue-template-compiler": "^2.7.16",
+    "vuetify": "^2.7.1",
     "vuex": "^3.6.2",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4",
@@ -49,5 +55,14 @@
     "test": "jest",
     "build": "webpack --config webpack.dev.js",
     "start": "webpack-dev-server --config webpack.dev.js"
+  },
+  "dependencies": {
+    "@types/datatables.net-rowgroup": "^1.1.5",
+    "big.js": "^6.2.1",
+    "datatables.net-buttons-dt": "^2.4.2",
+    "datatables.net-dt": "^1.13.8",
+    "datatables.net-rowgroup-dt": "^1.4.1",
+    "jquery": "^3.7.1",
+    "moment": "^2.30.1"
   }
 }

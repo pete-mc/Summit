@@ -305,6 +305,32 @@ export async function fetchUnitAchievements(): Promise<TerrainAchievements[] | u
   }
 }
 
+export async function fetchUnitAchievementsFilterd(filterString: string): Promise<TerrainAchievements[] | undefined> {
+  try {
+    if (!getToken()) return undefined;
+    const response = await fetch("https://achievements.terrain.scouts.com.au/units/" + getUnitID() + "/achievements?" + filterString, {
+      method: "GET",
+      mode: "cors",
+      cache: "no-cache",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: getToken(),
+      },
+      redirect: "error",
+      referrerPolicy: "strict-origin-when-cross-origin",
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const jsonData = await response.json();
+    return jsonData.results;
+  } catch (e) {
+    console.log("Error fetching unit achievements: " + e);
+    return undefined;
+  }
+}
+
 export async function fetchAchievements(type: string): Promise<TerrainAchievements[] | undefined> {
   try {
     if (!getToken()) return undefined;

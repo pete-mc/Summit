@@ -1,3 +1,4 @@
 import AddMenuItems from "./AddMenuItems";
 import { FindComponent } from "./FindComponent";
-export { AddMenuItems, FindComponent };
+import { processGuids, reconstructGuids } from "./CompressGuids";
+export { AddMenuItems, FindComponent, processGuids, reconstructGuids };

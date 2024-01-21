@@ -33,8 +33,9 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+export default defineComponent({
   data() {
     return {
       // Local data property to store the message
@@ -58,7 +59,7 @@ export default {
     this.first_name = this.$store.state.user.memberDetails.first_name;
   },
   // Include other methods as needed...
-}
+});
 </script>
 
 <style scoped>
