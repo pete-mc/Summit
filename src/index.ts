@@ -2,9 +2,9 @@ import summitModule from "./modules/summitModule";
 import { initPages } from "./router";
 import "./styles/datatables.min.css";
 import "./styles/summit.css";
-import $ from "jquery";
+// import $ from "jquery";
 
-window.$ = $;
+// window.$ = $;
 const Vue = window.$nuxt.$root && window.$nuxt.$root.constructor;
 window.Vue = Vue as never;
 

@@ -5,6 +5,5 @@ export {};
 declare global {
   interface Window {
     $nuxt: NuxtApp;
-    $: JQueryStatic;
   }
 }

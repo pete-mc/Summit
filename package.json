@@ -25,10 +25,9 @@
   "devDependencies": {
     "@nuxt/types": "^2.17.2",
     "@types/big.js": "^6.2.2",
-    "@types/datatables.net": "^1.10.28",
-    "@types/datatables.net-buttons": "^1.4.10",
     "@types/jest": "^29.5.11",
-    "@types/jquery": "^3.5.29",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "18.2.0",
     "@types/webpack-env": "^1.18.4",
     "@typescript-eslint/eslint-plugin": "^6.17.0",
     "css-loader": "^6.9.1",
@@ -57,12 +56,13 @@
     "start": "webpack-dev-server --config webpack.dev.js"
   },
   "dependencies": {
-    "@types/datatables.net-rowgroup": "^1.1.5",
+    "@fluentui/react-components": "^9.45.0",
     "big.js": "^6.2.1",
-    "datatables.net-buttons-dt": "^2.4.2",
-    "datatables.net-dt": "^1.13.8",
-    "datatables.net-rowgroup-dt": "^1.4.1",
-    "jquery": "^3.7.1",
-    "moment": "^2.30.1"
+    "moment": "^2.30.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "overrides": {
+    "@types/react": "18.2.0"
   }
 }

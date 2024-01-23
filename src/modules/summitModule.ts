@@ -1,5 +1,5 @@
 import { TerrainAchievements } from "../types/terrainTypes";
-import { fetchUnitAchievements } from "../helpers/terrainCalls";
+import { fetchUnitAchievements } from "../services/terrainCalls";
 import { ActionContext, Module } from "vuex/types/index";
 
 interface RootState {}

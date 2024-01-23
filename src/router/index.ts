@@ -1,4 +1,4 @@
-import { Home, MilestoneReport, Topo, UiEnhancements, PresentAwards } from "../components";
+import { Home, MilestoneReport, Topo, UiEnhancements, PresentAwards, TestComponentReact } from "../components";
 import { AddMenuItems } from "../helpers";
 import { NavMenuItem } from "../types/NavMenu";
 
@@ -11,6 +11,7 @@ export async function initPages() {
   router.addRoute({ path: "/summit/uiEnhancements", component: UiEnhancements });
   router.addRoute({ path: "/summit/MilestoneReport", component: MilestoneReport });
   router.addRoute({ path: "/summit/Topo", component: Topo });
+  router.addRoute({ path: "/summit/test", component: TestComponentReact });
   navMenuItems.push({
     title: "Summit",
     to: "/summit/home",
@@ -27,6 +28,7 @@ export async function initPages() {
       {
         title: "Tools",
         items: [
+          { title: "Test", to: "/summit/test", items: [], locked: false, roles: [true, false] },
           { title: "Present Awards", to: "/summit/PresentAwards", items: [], locked: false, roles: [true, false] },
           { title: "UiEnchancements", to: "/summit/uiEnhancements", items: [], locked: false, roles: [true, false] },
         ],
