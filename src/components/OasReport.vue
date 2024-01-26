@@ -1,12 +1,8 @@
 <template>
-  <div id="SummitContentDiv">
-    <h2 id="milestoneHeader">Milestone Planning</h2>
-    The milestones planning report is useful to see how many participates, leads and assists each member requires to
-    complete their current milestone. Note that the numbers displayed are the <b>remaining requrement</b> not the current
-    total.<br>
-    <div id="Buttons"></div>
+  <div>
+    <h2>OAS Summary</h2>
+    This report will show all of the currently held OAS levels for each member of the section.<br>
     <div ref="reactRoot"></div>
-    <canvas id="myChart"></canvas>
   </div>
 </template>
 
@@ -14,7 +10,7 @@
 <script lang="ts">
 import React from 'react';
 import { Root, createRoot } from 'react-dom/client';
-import { MilestonePlanningItem } from '../classes/MilestonePlanningItem';
+import { OasReportItem } from '../classes/OasReportItem';
 import { TerrainAchievements } from '../types/terrainTypes';
 import { fetchUnitAchievementsFilterd } from '../services/terrainCalls';
 import { Store } from 'vuex/types/index';
@@ -25,7 +21,7 @@ export default {
   name: 'ReactInVue',
   data() {
     return {
-      items: [] as MilestonePlanningItem[],
+      items: [] as OasReportItem[],
       root: undefined as Root | undefined,
      };
   },
@@ -43,20 +39,19 @@ export default {
   },
   methods: {
     async getMilestoneData(){  
-      const currentSection = (this.$store as Store<TerrainRootState>).state.me.currentUnit.section;
-      const achievements = await fetchUnitAchievementsFilterd("type=milestone&section=" + currentSection) as TerrainAchievements[];
-      const filteredAchievements = achievements.sort((a, b) => (a.achievement_meta?.stage ?? 0) - (b.achievement_meta?.stage ?? 0)).filter((a) => a.milestone_requirement_status === "incomplete" && a.status !== "awarded",)
+      const achievements = await fetchUnitAchievementsFilterd("type=outdoor_adventure_skill") as TerrainAchievements[];
+      const filteredAchievements = achievements.sort((a, b) => (a.achievement_meta?.stage ?? 0) - (b.achievement_meta?.stage ?? 0)).filter((a) => a.status === "awarded",)
       this.items = (this.$store as Store<TerrainRootState>).state.me.unitMembersData
       .filter((m) => m.unit.duty != "adult_leader")
       .map((m)=> {
-        return new MilestonePlanningItem(filteredAchievements.find(a => a.member_id === m.id), m);
+        return new OasReportItem(filteredAchievements.filter(a => a.member_id === m.id), m);
       });
     },
     mountReactComponent() {
       this.root = createRoot(this.$refs.reactRoot as HTMLElement);
       this.renderReactComponent(this.items);
     },
-    renderReactComponent(items: MilestonePlanningItem[]) {
+    renderReactComponent(items: OasReportItem[]) {
       const reactElement = React.createElement(MilestoneReportTable as any, {
         items,
         onUpdate: this.handleUpdate,

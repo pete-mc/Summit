@@ -56,13 +56,10 @@
     "start": "webpack-dev-server --config webpack.dev.js"
   },
   "dependencies": {
-    "@fluentui/react-components": "^9.45.0",
+    "@syncfusion/ej2-react-grids": "^24.1.47",
     "big.js": "^6.2.1",
     "moment": "^2.30.1",
-    "react": "18.2.0",
-    "react-dom": "18.2.0"
-  },
-  "overrides": {
-    "@types/react": "18.2.0"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }

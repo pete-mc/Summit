@@ -1,4 +1,4 @@
-GET https://achievements.terrain.scouts.com.au/units/3603056b-3928-4f66-b12e-421ca4434dcb/achievements?type=milestone&section=venturer HTTP/1.1
+GET https://achievements.terrain.scouts.com.au/units/3603056b-3928-4f66-b12e-421ca4434dcb/achievements?type=outdoor_adventure_skill&status=awarded HTTP/1.1
 authority: achievements.terrain.scouts.com.au
 accept: */*
 accept-language: en-GB,en;q=0.9,en-US;q=0.8

@@ -26,7 +26,7 @@
 / Retrieve SIA Template                 | https://templates.terrain.scouts.com.au/sia/[achievementTemplate].json
 */
 
-import { TerrainRootState } from "@/types/terrainState";
+import { TerrainRootState } from "../types/terrainState";
 import { TerrainAchievements, TerrainEvent, TerrainEventSummary, TerrainLogbook, TerrainProfile, TerrainUnitMember, TerrainUnitMemberMetric } from "../types/terrainTypes";
 
 function getUnitID(): string {

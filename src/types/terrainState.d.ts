@@ -243,7 +243,7 @@ interface Record {
 
 interface Me {
   membersData: MembersDatum[];
-  unitMembersData: UnitMembersDatum[];
+  unitMembersData: UnitMember[];
   patrolsData: PatrolsDatum[];
   unitsData: CurrentUnit[];
   groups: any[];
@@ -338,7 +338,7 @@ interface PatrolsDatum {
   name: string;
 }
 
-interface UnitMembersDatum {
+export interface UnitMember {
   id: string;
   member_number: string;
   first_name: string;

@@ -4,4 +4,5 @@ import Topo from "./Topo.vue";
 import MilestoneReport from "./MilestoneReport.vue";
 import PresentAwards from "./PresentAwards.vue";
 import TestComponentReact from "./TestComponentReact.vue";
-export { Home, UiEnhancements, Topo, MilestoneReport, PresentAwards, TestComponentReact };
+import OasReport from "./OasReport.vue";
+export { Home, UiEnhancements, Topo, MilestoneReport, PresentAwards, TestComponentReact, OasReport };

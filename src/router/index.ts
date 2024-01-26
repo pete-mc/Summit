@@ -1,4 +1,4 @@
-import { Home, MilestoneReport, Topo, UiEnhancements, PresentAwards, TestComponentReact } from "../components";
+import { Home, MilestoneReport, Topo, UiEnhancements, PresentAwards, TestComponentReact, OasReport } from "../components";
 import { AddMenuItems } from "../helpers";
 import { NavMenuItem } from "../types/NavMenu";
 
@@ -9,7 +9,8 @@ export async function initPages() {
   router.addRoute({ path: "/summit/home", component: Home });
   router.addRoute({ path: "/summit/PresentAwards", component: PresentAwards });
   router.addRoute({ path: "/summit/uiEnhancements", component: UiEnhancements });
-  router.addRoute({ path: "/summit/MilestoneReport", component: MilestoneReport });
+  router.addRoute({ path: "/summit/reports/milestone", component: MilestoneReport });
+  router.addRoute({ path: "/summit/reports/oas", component: OasReport });
   router.addRoute({ path: "/summit/Topo", component: Topo });
   router.addRoute({ path: "/summit/test", component: TestComponentReact });
   navMenuItems.push({
@@ -19,7 +20,8 @@ export async function initPages() {
       {
         title: "Reports",
         items: [
-          { title: "Milestones", to: "/summit/MilestoneReport", items: [], locked: false, roles: [true, false] },
+          { title: "Milestone Progress", to: "/summit/reports/milestone", items: [], locked: false, roles: [true, false] },
+          { title: "OAS Summary", to: "/summit/reports/oas", items: [], locked: false, roles: [true, false] },
           { title: "Topo Reports", to: "/summit/Topo", items: [], locked: false, roles: [true, false] },
         ],
         locked: true,

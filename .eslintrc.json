@@ -10,7 +10,9 @@
   "extends": [
       "plugin:@typescript-eslint/recommended",
       "plugin:prettier/recommended",
-      "prettier"
+      "prettier",
+      "react-app",
+      "react-app/jest"
   ],
   "parserOptions": {
       "project": "tsconfig.json"

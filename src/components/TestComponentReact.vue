@@ -3,14 +3,12 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
 import React from 'react';
-import ReactDOM from 'react-dom';
 import { Root, createRoot } from 'react-dom/client';
 import { ReactTable } from './ReactTable';
 import { Item } from '../classes/Item';
 
-export default Vue.extend({
+export default {
   name: 'ReactInVue',
   data() {
     return {
@@ -47,5 +45,5 @@ export default Vue.extend({
       this.items = updatedItems; // Update your Vue component's state
     },
   },
-});
+};
 </script>
