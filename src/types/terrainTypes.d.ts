@@ -313,7 +313,7 @@ export interface TerrainAchievementsUpload {
   uploaded_on: string
 }
 
-export interface TerrainUnitMember {
+export interface TerrainUnitMember implements UnitMember {
   id: string
   member_number: string
   first_name: string

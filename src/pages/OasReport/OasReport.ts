@@ -24,7 +24,7 @@ export default defineComponent({
     },
   },
   mounted() {
-    this.getMilestoneData();
+    this.getOasData();
     this.mountReactComponent();
     (window.$nuxt.$store.state as TerrainRootState).global.breadcrumbs = [
       {
@@ -52,7 +52,7 @@ export default defineComponent({
     this.unmountReactComponent();
   },
   methods: {
-    async getMilestoneData(){  
+    async getOasData(){  
       const achievements = await fetchUnitAchievementsFilterd("type=outdoor_adventure_skill") as TerrainAchievements[];
       const filteredAchievements = achievements.sort((a, b) => (a.achievement_meta?.stage ?? 0) - (b.achievement_meta?.stage ?? 0)).filter((a) => a.status === "awarded",)
       this.items = (this.$store as Store<TerrainRootState>).state.me.unitMembersData

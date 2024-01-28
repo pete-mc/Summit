@@ -1,19 +1,22 @@
-import { AddMenuItems, FindComponent } from "@/helpers";
-import { Home, DisplayOptions, MilestoneReport, OasReport, Topo } from "@/pages";
-import { NavMenuComponent, NavMenuItem } from "@/types/NavMenu";
-import { get } from "http";
-import { VueRouter } from "vue-router/types/router";
+import { FindComponent } from '@/helpers';
+import { Home, DisplayOptions, MilestoneReport, OasReport, Topo, PresentAwards } from '@/pages';
+import { NavMenuComponent, NavMenuItem } from '@/types/NavMenu';
+import VueRouter from 'vue-router';
+import Vue from 'vue';
 
 export default class SummitRouter {
   private static instance: SummitRouter;
+
   private router: VueRouter;
+
   private summitNavMenuItems: NavMenuItem[];
-  private terrainNavMenuItems: NavMenuItem[];
+
+  private static terrainNavMenuItems: NavMenuItem[];
 
   constructor() {
     this.router = window.$nuxt.$router;
     this.summitNavMenuItems = [];
-    this.terrainNavMenuItems = this.getTerrainNavMenuItems();
+    SummitRouter.terrainNavMenuItems = SummitRouter.getTerrainNavMenuItems();
     this.initRoutes();
     this.initNavMenu();
   }
@@ -26,101 +29,147 @@ export default class SummitRouter {
   }
 
   private async initRoutes(): Promise<void> {
-    this.router.addRoute({ path: '/terrain', redirect: '/basecamp'});
-    this.router.addRoute({ path: '/summit/home', component: Home });
-    this.router.addRoute({ path: '/summit/tools/DisplayOptions', component: DisplayOptions });
-    this.router.addRoute({ path: '/summit/reports/milestone', component: MilestoneReport });
-    this.router.addRoute({ path: '/summit/reports/oas', component: OasReport });
-    this.router.addRoute({ path: '/summit/reports/Topo', component: Topo });
+    this.router.addRoute({
+      path: '/terrain',
+      redirect: '/basecamp',
+    });
+    this.router.addRoute({
+      path: '/summit/home',
+      component: Home,
+    });
+    this.router.addRoute({
+      path: '/summit/tools/DisplayOptions',
+      component: DisplayOptions,
+    });
+    this.router.addRoute({
+      path: '/summit/tools/PresentAwards',
+      component: PresentAwards,
+    });
+    this.router.addRoute({
+      path: '/summit/reports/milestone',
+      component: MilestoneReport,
+    });
+    this.router.addRoute({
+      path: '/summit/reports/oas',
+      component: OasReport,
+    });
+    this.router.addRoute({
+      path: '/summit/reports/Topo',
+      component: Topo,
+    });
     this.router.beforeEach((to, from, next) => {
       if (to.path.includes('summit')) {
-        this.switchMenu(this.summitNavMenuItems);
-      }
-      else {
-        this.switchMenu(this.terrainNavMenuItems);
+        SummitRouter.switchMenu(this.summitNavMenuItems);
+      } else {
+        SummitRouter.switchMenu(SummitRouter.terrainNavMenuItems);
       }
       next();
     });
   }
 
   private async initNavMenu(): Promise<void> {
-    this.summitNavMenuItems = [{
-      title: "Basecamp",
-      to: '/terrain',
-      items: [],
-      locked: this.terrainNavMenuItems[0].locked,
-      roles: this.terrainNavMenuItems[0].roles
-    },
-    {
-      title: 'Reports',
-      items: [
-        { title: 'Milestone Progress', to: '/summit/reports/milestone', items: [], locked: false, roles: [true, false] },
-        { title: 'OAS Summary', to: '/summit/reports/oas', items: [], locked: false, roles: [true, false] },
-        { title: 'Topo Reports', to: '/summit/reports/Topo', items: [], locked: false, roles: [true, false] }
-      ],
-      locked: false,
-      roles: [true, false]
-    },
-    {
-      title: 'Tools',
-      items: [
-        { title: 'Present Awards', to: '/summit/PresentAwards', items: [], locked: false, roles: [true, false] },
-        { title: 'Display Options', to: '/summit/tools/DisplayOptions', items: [], locked: false, roles: [true, false] }
-      ],
-      locked: false,
-      roles: [true, false]
-    }];
+    this.summitNavMenuItems = [
+      {
+        title: 'Basecamp',
+        to: '/terrain',
+        items: [],
+        locked: SummitRouter.terrainNavMenuItems[0].locked,
+        roles: SummitRouter.terrainNavMenuItems[0].roles,
+      },
+      {
+        title: 'Reports',
+        items: [
+          {
+            title: 'Milestone Progress',
+            to: '/summit/reports/milestone',
+            items: [],
+            locked: false,
+            roles: [true, false],
+          },
+          {
+            title: 'OAS Summary',
+            to: '/summit/reports/oas',
+            items: [],
+            locked: false,
+            roles: [true, false],
+          },
+          {
+            title: 'Topo Reports',
+            to: '/summit/reports/Topo',
+            items: [],
+            locked: false,
+            roles: [true, false],
+          },
+        ],
+        locked: false,
+        roles: [true, false],
+      },
+      {
+        title: 'Tools',
+        items: [
+          {
+            title: 'Present Awards',
+            to: '/summit/tools/PresentAwards',
+            items: [],
+            locked: false,
+            roles: [true, false],
+          },
+          {
+            title: 'Display Options',
+            to: '/summit/tools/DisplayOptions',
+            items: [],
+            locked: false,
+            roles: [true, false],
+          },
+        ],
+        locked: false,
+        roles: [true, false],
+      },
+    ];
     const SummitNavMenuItem: NavMenuItem = {
       title: 'Summit',
       to: '/summit/home',
       items: [],
       locked: false,
-      roles: [true, false]
-    }
-    this.addMenuItems([SummitNavMenuItem]);
+      roles: [true, false],
+    };
+    SummitRouter.addMenuItems([SummitNavMenuItem]);
   }
 
-  private getTerrainNavMenuItems(): NavMenuItem[] {
-    const navMenuComponent: NavMenuComponent = FindComponent('NavMenu', window.$nuxt.$root as Vue) as NavMenuComponent
+  private static getTerrainNavMenuItems(): NavMenuItem[] {
+    const navMenuComponent: NavMenuComponent = FindComponent('NavMenu', window.$nuxt.$root as Vue) as NavMenuComponent;
     if (navMenuComponent != null) {
-      return  Array.from(navMenuComponent.items);
+      return Array.from(navMenuComponent.items);
     }
-    else {
-      return [];
-    }
+
+    return [];
   }
 
-  private addMenuItems(items: NavMenuItem[]): void {
+  private static addMenuItems(items: NavMenuItem[]): void {
     window.$nuxt.$nextTick(() => {
-      const navMenuComponent: NavMenuComponent = FindComponent('NavMenu', window.$nuxt.$root as Vue) as NavMenuComponent
+      const navMenuComponent: NavMenuComponent = FindComponent('NavMenu', window.$nuxt.$root as Vue) as NavMenuComponent;
       if (navMenuComponent != null) {
-        for (let i = 0; i < items.length; i++) {
-          navMenuComponent.items.push(items[i])
+        for (let i = 0; i < items.length; i += 1) {
+          navMenuComponent.items.push(items[i]);
           this.terrainNavMenuItems = Array.from(navMenuComponent.items);
         }
-        navMenuComponent.$data.drawer = !(navMenuComponent.$data.drawer)
-        navMenuComponent.$data.drawer = !(navMenuComponent.$data.drawer)
+        navMenuComponent.$data.drawer = !navMenuComponent.$data.drawer;
+        navMenuComponent.$data.drawer = !navMenuComponent.$data.drawer;
       }
     });
   }
 
-  private switchMenu(items: NavMenuItem[]): void {
+  private static switchMenu(items: NavMenuItem[]): void {
     window.$nuxt.$nextTick(() => {
-      const navMenuComponent: NavMenuComponent = FindComponent('NavMenu', window.$nuxt.$root as Vue) as NavMenuComponent
+      const navMenuComponent: NavMenuComponent = FindComponent('NavMenu', window.$nuxt.$root as Vue) as NavMenuComponent;
       if (navMenuComponent != null) {
-        console.log("splice");
         navMenuComponent.items.splice(0, navMenuComponent.items.length);
-        console.log(navMenuComponent.items);
-        console.log("for loop");
-        for (let i = 0; i < items.length; i++) {
-          console.log("adding item" + items[i].title);
+        for (let i = 0; i < items.length; i += 1) {
           navMenuComponent.items.push(items[i]);
         }
-        console.log(navMenuComponent.items);
-        navMenuComponent.$data.drawer = !(navMenuComponent.$data.drawer)
-        navMenuComponent.$data.drawer = !(navMenuComponent.$data.drawer)
+        navMenuComponent.$data.drawer = !navMenuComponent.$data.drawer;
+        navMenuComponent.$data.drawer = !navMenuComponent.$data.drawer;
       }
     });
   }
-
 }

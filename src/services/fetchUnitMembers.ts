@@ -1,9 +1,9 @@
 import { type TerrainUnitMember } from '../types/terrainTypes';
 import { TerrainState } from '@/helpers';
 
-export default async function fetchUnitMembers(): Promise<TerrainUnitMember[] | undefined> {
+export default async function fetchUnitMembers(): Promise<TerrainUnitMember[]> {
   try {
-    if (!TerrainState.getToken()) return undefined;
+    if (!TerrainState.getToken()) return [];
     const response = await fetch('https://members.terrain.scouts.com.au/units/' + TerrainState.getUnitID() + '/members', {
       method: 'GET',
       mode: 'cors',
@@ -23,6 +23,6 @@ export default async function fetchUnitMembers(): Promise<TerrainUnitMember[] | 
     return jsonData.results;
   } catch (e) {
     console.log('Error fetching unit members: ' + e);
-    return undefined;
+    return [];
   }
 }

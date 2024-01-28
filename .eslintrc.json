@@ -1,24 +1,63 @@
 {
+    "parser": "@typescript-eslint/parser",
     "env": {
         "browser": true,
         "es2021": true
     },
     "extends": [
-        "standard-with-typescript",
         "plugin:react/recommended",
+        "plugin:vue/recommended",
+        "plugin:import/recommended",
         "prettier",
-        "react-app"
+        "airbnb"
     ],
     "parserOptions": {
         "ecmaVersion": "latest",
         "sourceType": "module",
-        "project": "./tsconfig.json"
+        "project": "./tsconfig.json",
+        "extraFileExtensions": [".vue"]
     },
     "plugins": [
+        "@typescript-eslint",
         "react",
+        "vue",
         "prettier"
     ],
     "rules": {
-        "prettier/prettier": "error"
+        "prettier/prettier": "error",
+        "linebreak-style": "off",
+        "import/extensions": ["error", "ignorePackages", {
+            "js": "never",
+            "jsx": "never",
+            "ts": "never",
+            "tsx": "never"
+        }],
+        "brace-style": ["error", "1tbs"],
+        "max-len": ["error", { "code": 170 }],
+        "object-curly-newline": ["error", {
+            "ObjectExpression": "always",
+            "ObjectPattern": { "multiline": true },
+            "ImportDeclaration": "never",
+            "ExportDeclaration": { "multiline": true, "minProperties": 3 }
+        }],
+        "react/jsx-filename-extension": [2, { "extensions": [".js", ".jsx", ".tsx"] }],
+        "no-use-before-define": "off",
+        "@typescript-eslint/no-use-before-define": ["error"]
+
+    },
+    "settings": {
+        "import/resolver": {
+            "alias": {
+                "map": [["@", "./src"]],
+                "extensions": [".ts", ".js", ".jsx", ".json", ".vue", ".d.ts"]
+            },
+            "typescript": {
+                "alwaysTryTypes": true,
+                "project": "./tsconfig.json"
+            },
+            "node": {
+                "extensions": [".js", ".jsx", ".ts", ".tsx", ".vue", ".d.ts"]
+            }
+        }
     }
 }
