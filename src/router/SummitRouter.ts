@@ -73,8 +73,8 @@ export default class SummitRouter {
         title: 'Basecamp',
         to: '/terrain',
         items: [],
-        locked: SummitRouter.terrainNavMenuItems[0].locked,
-        roles: SummitRouter.terrainNavMenuItems[0].roles,
+        locked: false,
+        roles: [true, false],
       },
       {
         title: 'Reports',
