@@ -1,27 +1,24 @@
 {
-  "parser": "@typescript-eslint/parser",
-  "env": {
-      "browser": true,
-      "commonjs": true,
-      "es6": true,
-      "jest": true,
-      "jasmine": true
-  },
-  "extends": [
-      "plugin:@typescript-eslint/recommended",
-      "plugin:prettier/recommended",
-      "prettier",
-      "react-app",
-      "react-app/jest"
-  ],
-  "parserOptions": {
-      "project": "tsconfig.json"
-  },
-  "plugins": [
-      "@typescript-eslint",
-      "prettier"
-  ],
-  "rules": {
-      "prettier/prettier": "error"
-  }
+    "env": {
+        "browser": true,
+        "es2021": true
+    },
+    "extends": [
+        "standard-with-typescript",
+        "plugin:react/recommended",
+        "prettier",
+        "react-app"
+    ],
+    "parserOptions": {
+        "ecmaVersion": "latest",
+        "sourceType": "module",
+        "project": "./tsconfig.json"
+    },
+    "plugins": [
+        "react",
+        "prettier"
+    ],
+    "rules": {
+        "prettier/prettier": "error"
+    }
 }

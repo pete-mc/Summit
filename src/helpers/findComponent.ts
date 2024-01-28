@@ -1,12 +1,12 @@
-export function FindComponent(componentName: string, instance: Vue): Vue | null {
+export default function FindComponent (componentName: string, instance: Vue): Vue | null {
   if (instance.$options.name === componentName) {
-    return instance;
+    return instance
   }
   for (const child of instance.$children) {
-    const found = FindComponent(componentName, child);
-    if (found) {
-      return found;
+    const found = FindComponent(componentName, child)
+    if (found != null) {
+      return found
     }
   }
-  return null;
+  return null
 }

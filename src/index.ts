@@ -1,15 +1,10 @@
-import summitModule from "./modules/summitModule";
-import { initPages } from "./router";
-import "./styles/datatables.min.css";
-import "./styles/summit.css";
-// import $ from "jquery";
+import './styles/index.css';
+import summitModule from '@/modules/summitModule'
+import SummitRouter from '@/router/SummitRouter';
 
-// window.$ = $;
-// const Vue = window.$nuxt.$root && window.$nuxt.$root.constructor;
-// window.Vue = Vue as never;
+window.$nuxt.$store.registerModule('Summit', summitModule);
+window.$nuxt.$store.dispatch('Summit/initialize');
 
-window.$nuxt.$store.registerModule("Summit", summitModule);
-
-window.$nuxt.$nextTick(() => {
-  initPages();
-});
+window.$nuxt.$nextTick(async () => {
+  SummitRouter.getInstance();
+})

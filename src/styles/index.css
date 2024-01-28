@@ -1,0 +1,68 @@
+@import './fluent.min.css';  
+
+nav:has(* a[href*="/terrain"]),
+nav:has(* a[href*="/terrain"]) * .NavMenu__list-group:not(div:has(* a[href*="/terrain"])),
+.NavMenu__list-group:has(* a[href*="/summit"]),
+div.NavMenu__list-group:has(* a[href*="/summit/"]) * div.NavMenu__subitem-content
+{
+  background: #004C00 !important;
+  border-bottom: 1px solid #004100 !important;
+  border-top: 0px solid #004100 !important;
+}
+
+nav:has(* a[href*="/terrain"]) * .NavMenu__list-group:not(div:has(* a[href*="/terrain"])):hover,
+nav:has(* a[href*="/terrain"]) * .NavMenu__list-group:not(div:has(* a[href*="/terrain"])) > .v-list-group__header:hover,
+.NavMenu__list-group:has(* a[href*="/summit"]):hover,
+.NavMenu__list-group:has(* a[href*="/summit"]) > .v-list-group__header:hover,
+div.NavMenu__list-group.v-list-group--active:has(* a[href*="/summit/"]) * a.v-list-item--active > .NavMenu__subitem-content,
+div.NavMenu__list-group.v-list-group--active:has(* a[href*="/summit/"]) > .v-list-group__header {
+  background: #006600 !important;
+}
+
+div.NavMenu__list-group.v-list-group--active:has(* a[href*="/summit/"]) * a.v-list-item--active > .NavMenu__subitem-content
+{
+  background: #197419 !important;
+}
+
+div.v-list-group__header:has(* a[href*="/summit/"]),
+div.v-list-group__header:has(> a[href*="/summit/"]),
+div.v-list-group__items:has(* a[href*="/summit/"])
+{
+  background: #004C00 !important;
+}
+
+div.v-list-group__header:has(> a[href*="/summit/"]):hover,
+a.NavMenu__subitem[href*="/summit/"]:hover > div.NavMenu__subitem-content:hover,
+a.NavMenu__sub-subitem[href*="/summit/"]:hover {
+  background-color: #006600 !important;
+}
+
+
+div.NavMenu__list-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-content:hover{
+  background: #006600 !important;
+  cursor: default;
+}
+
+
+/* .e-grid .e-headercell {
+  background-color: #004C00; 
+  color: #fff;
+} */
+
+.summit-btn { 
+  background: linear-gradient(97.08deg,#004C00,#197419) !important;
+}
+.summit-menu { 
+  background: #004C00 !important;
+  border-bottom-color: #197419 !important;
+  border-top-color: #197419 !important;
+}
+
+.summit-menu-outline { 
+  border: 1px solid #004C00 !important;
+  color: #004C00 !important;
+}
+.summit-menu:hover {
+  background-color: #197419 !important;
+}
+
