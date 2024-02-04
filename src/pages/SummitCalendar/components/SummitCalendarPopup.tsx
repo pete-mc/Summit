@@ -1,9 +1,8 @@
 import React from "react";
 import SummitCalendarItem from "../models/SummitCalendarItems";
-//import { fetchActivity } from "@/services";
 import { TerrainEvent } from "@/types/terrainTypes";
 import { fetchActivity } from "@/services";
-import { Spinner } from "@syncfusion/ej2-react-popups";
+import { LoadingSpinner } from "./LoadingSpinnger";
 
 interface State {
   isLoading: boolean;
@@ -52,7 +51,7 @@ export class SummitCalendarPopup extends React.Component<SummitCalendarItem, Sta
     const { isLoading, isEditable, data, activity } = this.state;
 
     if (isLoading) {
-      return <Spinner />; // Replace with your spinner component
+      return <LoadingSpinner isLoading={isLoading} />; // Replace with your spinner component
     }
 
     return (
@@ -73,3 +72,4 @@ export class SummitCalendarPopup extends React.Component<SummitCalendarItem, Sta
       </div>
     );
   }
+}
