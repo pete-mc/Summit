@@ -1,4 +1,4 @@
-import { TerrainAchievements, TerrainAchievementsStream } from "@/types/terrainTypes";
+import { TerrainAchievements } from "@/types/terrainTypes";
 import { UnitMember } from "@/types/terrainState";
 
 export interface OasReportSubItem {
@@ -9,11 +9,11 @@ export interface OasReportSubItem {
 }
 
 type OasReportSubItems = {
-  [K in 'bushwalking' | 'bushcraft' | 'camping' | 'alpine' | 'cycling' | 'vertical' | 'aquatics' | 'boating' | 'paddling']?: OasReportSubItem[];
+  [K in "bushwalking" | "bushcraft" | "camping" | "alpine" | "cycling" | "vertical" | "aquatics" | "boating" | "paddling"]?: OasReportSubItem[];
 };
 
 export default class OasReportItem implements OasReportSubItems {
-  [key: string]: any;
+  [key: string]: OasReportSubItem[] | string | undefined;
   name: string;
   bushwalking?: OasReportSubItem[];
   bushcraft?: OasReportSubItem[];
@@ -46,7 +46,7 @@ export default class OasReportItem implements OasReportSubItems {
           (this[stream] as OasReportSubItem[]).forEach((otherReportItem) => {
             const reportItemTemplatePrefix = reportItem.template.slice(0, -2);
             const otherReportItemTemplatePrefix = otherReportItem.template.slice(0, -2);
-        
+
             if (otherReportItemTemplatePrefix.startsWith(reportItemTemplatePrefix) && otherReportItemTemplatePrefix !== reportItemTemplatePrefix) {
               itemsToRemove.push(reportItem);
             }

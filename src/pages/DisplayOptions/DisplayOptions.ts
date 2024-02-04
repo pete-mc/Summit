@@ -10,15 +10,15 @@ export default defineComponent({
   },
   methods: {
     updateHelpButton() {
-      this.$store.dispatch('Summit/toggleHelpButton', this.helpbutton);
+      this.$store.dispatch("Summit/toggleHelpButton", this.helpbutton);
       console.log("Help button updated to " + this.helpbutton);
-    }
+    },
   },
-   
+
   computed: {
     // Computed property to get the message from Vuex
     computedMessage() {
-      return this.$store.getters['Summit/getHelpButton'];
+      return this.$store.getters["Summit/getHelpButton"];
     },
   },
   watch: {
@@ -42,8 +42,7 @@ export default defineComponent({
         disabled: true,
         to: "/summit/tools",
         exact: true,
-      }
-      ,
+      },
       {
         text: "Display Options",
         disabled: true,
@@ -51,6 +50,6 @@ export default defineComponent({
         exact: true,
       },
     ];
-  }
+  },
   // Include other methods as needed...
 });

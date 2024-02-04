@@ -1,5 +1,5 @@
-import { TerrainRootState } from '@/types/terrainState';
-import { defineComponent } from 'vue';
+import { TerrainRootState } from "@/types/terrainState";
+import { defineComponent } from "vue";
 export default defineComponent({
   data() {
     return {
@@ -10,7 +10,7 @@ export default defineComponent({
   computed: {
     // Computed property to get the message from Vuex
     computedMessage() {
-      return this.$store.getters['user/getMemberFirstName'];
+      return this.$store.getters["user/getMemberFirstName"];
     },
   },
   watch: {

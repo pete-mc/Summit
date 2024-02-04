@@ -1,20 +1,20 @@
-import { type TerrainUnitMember } from '../types/terrainTypes';
-import { TerrainState } from '@/helpers';
+import { type TerrainUnitMember } from "../types/terrainTypes";
+import { TerrainState } from "@/helpers";
 
 export default async function fetchUnitMembers(): Promise<TerrainUnitMember[]> {
   try {
     if (!TerrainState.getToken()) return [];
-    const response = await fetch('https://members.terrain.scouts.com.au/units/' + TerrainState.getUnitID() + '/members', {
-      method: 'GET',
-      mode: 'cors',
-      cache: 'no-cache',
-      credentials: 'same-origin',
+    const response = await fetch("https://members.terrain.scouts.com.au/units/" + TerrainState.getUnitID() + "/members", {
+      method: "GET",
+      mode: "cors",
+      cache: "no-cache",
+      credentials: "same-origin",
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: TerrainState.getToken()
+        "Content-Type": "application/json",
+        Authorization: TerrainState.getToken(),
       },
-      redirect: 'error',
-      referrerPolicy: 'strict-origin-when-cross-origin'
+      redirect: "error",
+      referrerPolicy: "strict-origin-when-cross-origin",
     });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -22,7 +22,7 @@ export default async function fetchUnitMembers(): Promise<TerrainUnitMember[]> {
     const jsonData = await response.json();
     return jsonData.results;
   } catch (e) {
-    console.log('Error fetching unit members: ' + e);
+    console.log("Error fetching unit members: " + e);
     return [];
   }
 }

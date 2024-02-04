@@ -174,7 +174,7 @@ interface IDTokenPayload {
   token_use: string;
   auth_time: number;
   iss: string;
-  'cognito:username': string;
+  "cognito:username": string;
   exp: number;
   iat: number;
   email: string;
@@ -211,11 +211,11 @@ interface Global {
 }
 
 declare enum Section {
-  Cub = 'cub',
-  Joey = 'joey',
-  Rover = 'rover',
-  Scout = 'scout',
-  Venturer = 'venturer',
+  Cub = "cub",
+  Joey = "joey",
+  Rover = "rover",
+  Scout = "scout",
+  Venturer = "venturer",
 }
 
 interface Breadcrumb {
@@ -261,12 +261,12 @@ interface CurrentUnit {
 }
 
 declare enum InviteeNameEnum {
-  MountCottonCubUnit = 'Mount Cotton Cub Unit',
-  MountCottonJoeyUnit = 'Mount Cotton Joey Unit',
-  MountCottonRoverUnit = 'Mount Cotton Rover Unit ',
-  MountCottonScoutUnit = 'Mount Cotton Scout Unit',
-  MountCottonVenturerUnit = 'Mount Cotton Venturer Unit',
-  RoverCrew = 'Rover Crew',
+  MountCottonCubUnit = "Mount Cotton Cub Unit",
+  MountCottonJoeyUnit = "Mount Cotton Joey Unit",
+  MountCottonRoverUnit = "Mount Cotton Rover Unit ",
+  MountCottonScoutUnit = "Mount Cotton Scout Unit",
+  MountCottonVenturerUnit = "Mount Cotton Venturer Unit",
+  RoverCrew = "Rover Crew",
 }
 
 interface MembersDatum {
@@ -284,7 +284,7 @@ interface MembersDatum {
 }
 
 interface Metadata {
-  'achievement-import'?: string;
+  "achievement-import"?: string;
 }
 
 interface Patrol {
@@ -294,18 +294,18 @@ interface Patrol {
 }
 
 declare enum Type {
-  AssistantPatrolLeader = 'assistant_patrol_leader',
-  Member = 'member',
-  PatrolLeader = 'patrol_leader',
+  AssistantPatrolLeader = "assistant_patrol_leader",
+  Member = "member",
+  PatrolLeader = "patrol_leader",
 }
 
 declare enum Role {
-  Leader = 'leader',
-  Member = 'member',
+  Leader = "leader",
+  Member = "member",
 }
 
 declare enum Status {
-  Active = 'active',
+  Active = "active",
 }
 
 interface MembersDatumUnit {
@@ -318,8 +318,8 @@ interface MembersDatumUnit {
 }
 
 declare enum Duty {
-  AdultLeader = 'adult_leader',
-  Member = 'member',
+  AdultLeader = "adult_leader",
+  Member = "member",
 }
 
 interface GroupElement {
@@ -328,8 +328,8 @@ interface GroupElement {
 }
 
 declare enum GroupName {
-  MountCottonScoutGroup = 'Mount Cotton Scout Group',
-  TaringaMiltonToowongScoutGroup = 'Taringa Milton Toowong Scout Group',
+  MountCottonScoutGroup = "Mount Cotton Scout Group",
+  TaringaMiltonToowongScoutGroup = "Taringa Milton Toowong Scout Group",
 }
 
 interface PatrolsDatum {
@@ -476,10 +476,10 @@ interface Tree {
 }
 
 interface StreamTreeHeaders {
-  'cache-control': string;
-  'content-length': string;
-  'content-type': string;
-  'last-modified': string;
+  "cache-control": string;
+  "content-length": string;
+  "content-type": string;
+  "last-modified": string;
 }
 
 interface PE {

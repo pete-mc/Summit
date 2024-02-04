@@ -1,12 +1,12 @@
-import React from 'react';
-import { Root, createRoot } from 'react-dom/client';
-import OasReportItem from './models/OasReportItem';
-import { TerrainAchievements } from '@/types/terrainTypes';
-import { fetchUnitAchievementsFilterd } from '@/services';
-import { Store } from 'vuex/types/index';
-import { TerrainRootState } from '@/types/terrainState';
-import { OasReportTable } from './components/OasReport';
-import { defineComponent } from 'vue';
+import React from "react";
+import { Root, createRoot } from "react-dom/client";
+import OasReportItem from "./models/OasReportItem";
+import { TerrainAchievements } from "@/types/terrainTypes";
+import { fetchUnitAchievementsFilterd } from "@/services";
+import { Store } from "vuex/types/index";
+import { TerrainRootState } from "@/types/terrainState";
+import { OasReportTable } from "./components/OasReport";
+import { defineComponent } from "vue";
 
 function data() {
   return {
@@ -16,7 +16,7 @@ function data() {
 }
 
 export default defineComponent({
-  name: 'OasReport',
+  name: "OasReport",
   data,
   watch: {
     items(newItems: OasReportItem[]) {
@@ -38,8 +38,7 @@ export default defineComponent({
         disabled: true,
         to: "/summit/reports",
         exact: true,
-      }
-      ,
+      },
       {
         text: "OAS Report",
         disabled: true,
@@ -52,24 +51,27 @@ export default defineComponent({
     this.unmountReactComponent();
   },
   methods: {
-    async getOasData(){  
-      const achievements = await fetchUnitAchievementsFilterd("type=outdoor_adventure_skill") as TerrainAchievements[];
-      const filteredAchievements = achievements.sort((a, b) => (a.achievement_meta?.stage ?? 0) - (b.achievement_meta?.stage ?? 0)).filter((a) => a.status === "awarded",)
+    async getOasData() {
+      const achievements = (await fetchUnitAchievementsFilterd("type=outdoor_adventure_skill")) as TerrainAchievements[];
+      const filteredAchievements = achievements.sort((a, b) => (a.achievement_meta?.stage ?? 0) - (b.achievement_meta?.stage ?? 0)).filter((a) => a.status === "awarded");
       this.items = (this.$store as Store<TerrainRootState>).state.me.unitMembersData
-      .filter((m) => m.unit.duty != "adult_leader")
-      .map((m)=> {
-        return new OasReportItem(filteredAchievements.filter(a => a.member_id === m.id), m);
-      });
+        .filter((m) => m.unit.duty != "adult_leader")
+        .map((m) => {
+          return new OasReportItem(
+            filteredAchievements.filter((a) => a.member_id === m.id),
+            m,
+          );
+        });
     },
     mountReactComponent() {
       this.root = createRoot(this.$refs.reactRoot as HTMLElement);
       this.renderReactComponent(this.items);
     },
     renderReactComponent(items: OasReportItem[]) {
-      const reactElement = React.createElement(OasReportTable as any, {
+      const reactElement = React.createElement(OasReportTable, {
         items,
         onUpdate: this.handleUpdate,
-      });    
+      });
       this.root?.render(reactElement);
     },
     unmountReactComponent() {
@@ -82,4 +84,3 @@ export default defineComponent({
     },
   },
 });
-

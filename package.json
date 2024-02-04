@@ -41,11 +41,13 @@
     ]
   },
   "dependencies": {
-    "@syncfusion/ej2-base": "^24.1.46",
-    "@syncfusion/ej2-react-buttons": "^24.1.46",
-    "@syncfusion/ej2-react-grids": "^24.1.47",
-    "@syncfusion/ej2-react-navigations": "^24.1.46",
-    "@syncfusion/ej2-react-notifications": "^24.1.41",
+    "@syncfusion/ej2-base": "^24.2.3",
+    "@syncfusion/ej2-react-buttons": "^24.2.3",
+    "@syncfusion/ej2-react-grids": "^24.2.3",
+    "@syncfusion/ej2-react-navigations": "24.2.3",
+    "@syncfusion/ej2-react-notifications": "^24.2.3",
+    "@syncfusion/ej2-react-popups": "^24.2.3",
+    "@syncfusion/ej2-react-schedule": "^24.2.3",
     "big.js": "^6.2.1",
     "moment": "^2.30.1",
     "react": "^18.2.0",

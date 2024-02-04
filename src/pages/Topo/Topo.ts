@@ -1,5 +1,5 @@
-import { TerrainRootState } from '@/types/terrainState';
-import { defineComponent } from 'vue';
+import { TerrainRootState } from "@/types/terrainState";
+import { defineComponent } from "vue";
 export default defineComponent({
   mounted() {
     (window.$nuxt.$store.state as TerrainRootState).global.breadcrumbs = [
@@ -14,8 +14,7 @@ export default defineComponent({
         disabled: true,
         to: "/summit/reports",
         exact: true,
-      }
-      ,
+      },
       {
         text: "Topo",
         disabled: true,
