@@ -158,7 +158,7 @@ jobs:
     - name: Upload to Chrome Web Store
       continue-on-error: true
       if: github.ref == 'refs/heads/main'
-      uses: mnao305/chrome-extension-upload@v4.0.1
+      uses: mnao305/chrome-extension-upload@v5.0.0
       with:
         file-path: ./bootstrapper/summit.zip
         extension-id: ${{ secrets.CHORME_EXTENSION_ID }}
