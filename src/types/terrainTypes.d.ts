@@ -36,8 +36,8 @@ export interface TerrainLogbook {
 
 export interface TerrainEvent {
   id?: string;
-  status: string;
-  title: string;
+  status?: string;
+  title?: string;
   achievement_pathway_logbook_data?: TerrainLogbook;
   achievement_pathway_oas_data?: {
     award_rule: string;
@@ -48,19 +48,19 @@ export interface TerrainEvent {
     };
     groups: unknown[];
   };
-  attendance: {
+  attendance?: {
     leader_members?: unknown[];
   };
   schedule_items?: TerrainEventScheduleItem[];
-  challenge_area: string;
-  description: string;
-  end_datetime: string;
+  challenge_area?: string;
+  description?: string;
+  end_datetime?: string;
   invitees?: Array<{
     invitee_id: string;
     invitee_type: string;
   }>;
-  location: string;
-  organisers:
+  location?: string;
+  organisers?:
     | Array<{
         id: string;
         first_name: string;
@@ -69,10 +69,10 @@ export interface TerrainEvent {
     | string[];
   owner_id?: string;
   owner_type?: string;
-  review: {
+  review?: {
     scout_method_elements: string[];
   };
-  start_datetime: string;
+  start_datetime?: string;
   uploads?: never[];
 }
 

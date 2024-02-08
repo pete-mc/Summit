@@ -1,5 +1,19 @@
 @import './fluent.min.css';  
 
+.editor-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.button-container {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
 nav:has(* a[href*="/terrain"]),
 nav:has(* a[href*="/terrain"]) * .NavMenu__list-group:not(div:has(* a[href*="/terrain"])),
 .NavMenu__list-group:has(* a[href*="/summit"]),
