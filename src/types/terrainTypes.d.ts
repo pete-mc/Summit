@@ -49,7 +49,21 @@ export interface TerrainEvent {
     groups: unknown[];
   };
   attendance?: {
-    leader_members?: unknown[];
+    leader_members?: Array<{
+      id: string;
+      first_name: string;
+      last_name: string;
+    }>;
+    assistant_members?: Array<{
+      id: string;
+      first_name: string;
+      last_name: string;
+    }>;
+    attendee_members?: Array<{
+      id: string;
+      first_name: string;
+      last_name: string;
+    }>;
   };
   schedule_items?: TerrainEventScheduleItem[];
   challenge_area?: string;
@@ -60,13 +74,11 @@ export interface TerrainEvent {
     invitee_type: string;
   }>;
   location?: string;
-  organisers?:
-    | Array<{
-        id: string;
-        first_name: string;
-        last_name: string;
-      }>
-    | string[];
+  organisers?: Array<{
+    id: string;
+    first_name: string;
+    last_name: string;
+  }>;
   owner_id?: string;
   owner_type?: string;
   review?: {

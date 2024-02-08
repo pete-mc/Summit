@@ -2,12 +2,11 @@ import React from "react";
 import { Inject, EventSettingsModel, ScheduleComponent, ActionEventArgs, EventRenderedArgs, ViewsDirective, ViewDirective, PopupOpenEventArgs } from "@syncfusion/ej2-react-schedule";
 import SummitCalendarItem from "../models/SummitCalendarItems";
 import { Agenda, Month, Week } from "@syncfusion/ej2-react-schedule";
-import { fetchActivity, fetchMemberEvents } from "@/services";
+import { fetchActivity, fetchMemberEvents, fetchUnitMembers } from "@/services";
 import moment from "moment";
 import { TerrainEvent } from "@/types/terrainTypes";
-import { DropDownListComponent, MultiSelectComponent } from "@syncfusion/ej2-react-dropdowns";
+import { DropDownListComponent, DropDownTreeComponent } from "@syncfusion/ej2-react-dropdowns";
 import { DateTimePickerComponent } from "@syncfusion/ej2-react-calendars";
-import { MultiSelect } from "@syncfusion/ej2-dropdowns";
 
 interface SummitCalendarProps {
   onUpdate: (items: SummitCalendarItem[]) => void;
@@ -18,6 +17,7 @@ interface SummitCalendarState {
   sortState: { sortColumn: string; sortDirection: string };
   activity: TerrainEvent | null;
   editorIsLoading: boolean;
+  members: { value: string; text: string }[];
 }
 
 export class SummitCalendarComponent extends React.Component<SummitCalendarProps, SummitCalendarState> {
@@ -30,6 +30,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       sortState: { sortColumn: "file", sortDirection: "ascending" },
       activity: null,
       editorIsLoading: false,
+      members: [],
     };
   }
 
@@ -38,6 +39,10 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   }
 
   fetchData = () => {
+    fetchUnitMembers().then((data) => {
+      const members = data.map((member) => ({ value: member.id, text: member.first_name + " " + member.last_name }));
+      this.setState({ members: members });
+    }); // need to get members per event and ensure they are from the right unit, group, patrol etc
     const scheduleObj = this.scheduleComponent.current;
     const viewDates = scheduleObj?.getCurrentViewDates();
     const startDate = moment(viewDates ? viewDates[0] : new Date()).format("YYYY-MM-DDTHH:mm:ss");
@@ -75,12 +80,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     );
   };
 
-  componentDidUpdate() {
-    if (this.state.editorIsLoading && this.state.activity !== null) {
-      this.setState({ editorIsLoading: false });
-    }
-  }
-
   eventRendered = (args: EventRenderedArgs) => {
     const data = args.data as SummitCalendarItem;
     args.element.style.backgroundColor = data.color ?? "";
@@ -88,20 +87,24 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
 
   getActivity = async (id: string) => {
     const activity = (await fetchActivity(id)) || null;
+    console.log(activity);
     this.setState({ activity: activity, editorIsLoading: false }, () => {
-      if (this.scheduleComponent.current && this.state.activity) {
-        this.scheduleComponent.current.openEditor(this.state.activity, "Add", false);
-      }
+      setTimeout(() => {
+        if (this.scheduleComponent.current && this.state.activity) {
+          this.scheduleComponent.current.openEditor(this.state.activity, "Add", false);
+        }
+      }, 200);
     });
   };
 
   onPopupOpen = (args: PopupOpenEventArgs) => {
-    console.log(args);
     if (args.type === "Editor" && args.data) {
-      if (args.target) args.cancel = true;
-      this.setState({ editorIsLoading: true });
-      const eventId = args.data.Id;
-      this.getActivity(eventId);
+      if (args.target) {
+        args.cancel = true;
+        this.setState({ editorIsLoading: true });
+        const eventId = args.data.Id;
+        this.getActivity(eventId);
+      }
     }
   };
 
@@ -133,8 +136,9 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   ];
 
   editorTemplate = (props: SummitCalendarItem) => {
-    const { activity } = this.state;
+    const { activity, members } = this.state;
     const isEditable = activity?.status !== "concluded";
+    console.log(this.challangeAreas.some((item) => item.value === this.state.activity?.challenge_area));
     return props !== undefined ? (
       <div className="editor-container">
         <label>
@@ -147,7 +151,15 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         </label>
         <label>
           Challenge Area
-          <DropDownListComponent dataSource={this.challangeAreas} value={this.state.activity?.challenge_area} onChange={this.handleInputChange} bind={this} />
+          <DropDownListComponent
+            id="caDD"
+            dataSource={this.challangeAreas}
+            value={this.state.activity?.challenge_area}
+            text={this.challangeAreas.find((c) => c.value == this.state.activity?.challenge_area)?.text}
+            onChange={this.handleInputChange}
+            bind={this}
+            enabled={isEditable}
+          />
         </label>
         <label>
           Start & End
@@ -158,7 +170,53 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         </label>
         <label>
           Scout Method
-          <MultiSelectComponent dataSource={this.scoutMethodOptions} value={this.state.activity?.review?.scout_method_elements} onChange={this.handleInputChange} mode="CheckBox" showDropDownIcon={true} disabled={!isEditable} />
+          <DropDownTreeComponent
+            showCheckBox={true}
+            id="scoutMethod"
+            fields={{ dataSource: this.scoutMethodOptions, text: "text", value: "value" }}
+            value={this.state.activity?.review?.scout_method_elements}
+            onChange={this.handleInputChange}
+            enabled={isEditable}
+          />
+        </label>
+        <label>
+          Organisers
+          <DropDownTreeComponent
+            showCheckBox={true}
+            id="organisers"
+            fields={{ dataSource: members, text: "text", value: "value" }}
+            value={this.state.activity?.organisers?.map((i) => {
+              return i?.id ?? "";
+            })}
+            onChange={this.handleInputChange}
+            enabled={isEditable}
+          />
+        </label>
+        <label>
+          Leads
+          <DropDownTreeComponent
+            showCheckBox={true}
+            id="leads"
+            fields={{ dataSource: members, text: "text", value: "value" }}
+            value={this.state.activity?.attendance?.leader_members?.map((i) => {
+              return i?.id ?? "";
+            })}
+            onChange={this.handleInputChange}
+            enabled={isEditable}
+          />
+        </label>
+        <label>
+          Assists
+          <DropDownTreeComponent
+            showCheckBox={true}
+            id="assists"
+            fields={{ dataSource: members, text: "text", value: "value" }}
+            value={this.state.activity?.attendance?.assistant_members?.map((i) => {
+              return i?.id ?? "";
+            })}
+            onChange={this.handleInputChange}
+            enabled={isEditable}
+          />
         </label>
       </div>
     ) : (
