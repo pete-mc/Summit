@@ -31,7 +31,7 @@ export default class SummitCalendarItem {
       case "venturer":
         this.color = "#9e1b32";
         break;
-      case "rovers":
+      case "rover":
         this.color = "#dc291e";
         break;
       default:

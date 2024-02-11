@@ -38,6 +38,7 @@ export interface TerrainEvent {
   id?: string;
   status?: string;
   title?: string;
+  justification?: string;
   achievement_pathway_logbook_data?: TerrainLogbook;
   achievement_pathway_oas_data?: {
     award_rule: string;

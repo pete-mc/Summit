@@ -53,6 +53,7 @@
     "@syncfusion/ej2-react-calendars": "^24.2.3",
     "@syncfusion/ej2-react-dropdowns": "^24.2.3",
     "@syncfusion/ej2-react-grids": "^24.2.3",
+    "@syncfusion/ej2-react-inputs": "^24.2.4",
     "@syncfusion/ej2-react-navigations": "24.2.3",
     "@syncfusion/ej2-react-notifications": "^24.2.3",
     "@syncfusion/ej2-react-popups": "^24.2.3",

@@ -11,3 +11,4 @@ export { default as getCurrentProfile } from "./getCurrentProfile";
 export { default as getLogbookData } from "./getLogbookData";
 export { default as saveLogbookData } from "./saveLogbookData";
 export { default as updateEvent } from "./updateEvent";
+export { default as deleteEvent } from "./deleteEvent";
