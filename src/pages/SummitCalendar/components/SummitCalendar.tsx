@@ -2,9 +2,9 @@ import React from "react";
 import { Inject, EventSettingsModel, ScheduleComponent, ActionEventArgs, EventRenderedArgs, ViewsDirective, ViewDirective, PopupOpenEventArgs } from "@syncfusion/ej2-react-schedule";
 import SummitCalendarItem from "../models/SummitCalendarItems";
 import { Agenda, Month, Week } from "@syncfusion/ej2-react-schedule";
-import { createNewEvent, deleteEvent, fetchActivity, fetchMemberEvents, updateEvent } from "@/services";
+import { createNewEvent, deleteEvent, fetchActivity, fetchMemberEvents, fetchUnitMembers, updateEvent } from "@/services";
 import moment from "moment";
-import { TerrainEvent, TerrainEventSummary } from "@/types/terrainTypes";
+import { TerrainEvent, TerrainEventSummary, TerrainUnitMember } from "@/types/terrainTypes";
 import { DropDownListComponent, DropDownTreeComponent } from "@syncfusion/ej2-react-dropdowns";
 import { DateTimePickerComponent } from "@syncfusion/ej2-react-calendars";
 import { TerrainState } from "@/helpers";
@@ -13,9 +13,9 @@ import { DdtChangeEventArgs } from "@syncfusion/ej2-dropdowns";
 import { enableRipple } from "@syncfusion/ej2-base";
 import TerrainEventItem from "../models/TerrainEventItem";
 import { DialogUtility } from "@syncfusion/ej2-popups";
-//import { DialogComponent } from "@syncfusion/ej2-react-popups";
 
 interface SummitCalendarProps {
+  items: SummitCalendarItem[];
   onUpdate: (items: SummitCalendarItem[]) => void;
 }
 
@@ -26,6 +26,7 @@ interface SummitCalendarState {
   editorIsLoading: boolean;
   members: { value: string; text: string }[];
   currentUnitID: string;
+  unitMembers: TerrainUnitMember[];
 }
 
 export class SummitCalendarComponent extends React.Component<SummitCalendarProps, SummitCalendarState> {
@@ -41,6 +42,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       editorIsLoading: false,
       members: [],
       currentUnitID: TerrainState.getUnitID(),
+      unitMembers: [],
     };
     this.handleInputChange = this.handleInputChange.bind(this);
   }
@@ -49,9 +51,10 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     this.fetchData();
   }
 
-  fetchData = () => {
-    const members = TerrainState.getUnitMembers().map((member) => ({ value: member.id, text: member.first_name + " " + member.last_name }));
-    this.setState({ members: members });
+  fetchData = async () => {
+    const unitMembers = await fetchUnitMembers();
+    const members = unitMembers.map((member) => ({ value: member.id, text: member.first_name + " " + member.last_name }));
+    this.setState({ members: members, unitMembers: unitMembers });
 
     const scheduleObj = this.scheduleComponent.current;
     const viewDates = scheduleObj?.getCurrentViewDates();
@@ -159,7 +162,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           activity: {
             ...prevState.activity,
             organisers: event.value
-              ? TerrainState.getUnitMembers()
+              ? this.state.unitMembers
                   .filter((um) => {
                     return event.value.includes(um.id);
                   })
@@ -181,7 +184,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             attendance: {
               ...prevState.activity?.attendance,
               leader_members: event.value
-                ? TerrainState.getUnitMembers()
+                ? this.state.unitMembers
                     .filter((um) => {
                       return event.value.includes(um.id);
                     })
@@ -204,7 +207,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             attendance: {
               ...prevState.activity?.attendance,
               assistant_members: event.value
-                ? TerrainState.getUnitMembers()
+                ? this.state.unitMembers
                     .filter((um) => {
                       return event.value.includes(um.id);
                     })
@@ -325,7 +328,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
               id="organisers"
               fields={{ dataSource: members, text: "text", value: "value" }}
               value={this.state.activity?.organisers?.map((i) => {
-                return i?.id ?? "";
+                return typeof i === "object" ? i.id : "";
               })}
               change={this.handleTreeChange}
               enabled={isEditable}
@@ -343,7 +346,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
               id="leader_members"
               fields={{ dataSource: members, text: "text", value: "value" }}
               value={this.state.activity?.attendance?.leader_members?.map((i) => {
-                return i?.id ?? "";
+                return typeof i === "object" ? i.id : "";
               })}
               change={this.handleTreeChange}
               enabled={isEditable}
@@ -373,9 +376,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   };
 
   saveActivity = async (nextWeek?: boolean) => {
-    if (nextWeek) {
-      this.scheduleComponent.current?.closeEditor();
-    }
     const { activity } = this.state;
     if (!activity) return;
     console.log(activity);
@@ -412,6 +412,13 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       await createNewEvent(JSON.stringify(eventToSave));
       this.scheduleComponent.current?.closeEditor();
       this.fetchData();
+    }
+    if (nextWeek) {
+      setTimeout(() => {
+        const newStartDatetime = moment(eventToSave.start_datetime).add(7, "days").toISOString();
+        const newEndDatetime = moment(eventToSave.end_datetime).add(7, "days").toISOString();
+        this.newActivity(newStartDatetime, newEndDatetime);
+      }, 1000);
     }
   };
 

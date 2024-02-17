@@ -69,6 +69,13 @@ export default class SummitRouter {
       }
       next();
     });
+    this.router.afterEach(() => {
+      if (this.summitNavMenuItems.length === 0 || SummitRouter.terrainNavMenuItems.length === 0) {
+        setTimeout(() => {
+          this.initNavMenu();
+        }, 1000);
+      }
+    });
   }
 
   private async initNavMenu(): Promise<void> {

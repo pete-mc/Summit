@@ -2,10 +2,11 @@ import React from "react";
 import { Root, createRoot } from "react-dom/client";
 import { defineComponent } from "vue";
 import { TerrainAchievements } from "@/types/terrainTypes";
-import { fetchUnitAchievementsFilterd } from "@/services";
+import { fetchUnitAchievementsFilterd, fetchUnitMembers } from "@/services";
 import { TerrainRootState } from "@/types/terrainState";
 import MilestoneReportTable from "./components/MilestoneReport";
 import MilestonePlanningItem from "./models/MilestonePlanningItem";
+import { TerrainState } from "@/helpers";
 
 function data() {
   return {
@@ -51,10 +52,11 @@ export default defineComponent({
   },
   methods: {
     async getMilestoneData() {
-      const currentSection = (window.$nuxt.$store.state as TerrainRootState).me.currentUnit.section;
+      const currentSection = TerrainState.getSectionName();
       const achievements = (await fetchUnitAchievementsFilterd(`type=milestone&section=${currentSection}`)) as TerrainAchievements[];
       const filteredAchievements = achievements.sort((a, b) => (a.achievement_meta?.stage ?? 0) - (b.achievement_meta?.stage ?? 0)).filter((a) => a.milestone_requirement_status === "incomplete" && a.status !== "awarded");
-      this.items = (window.$nuxt.$store.state as TerrainRootState).me.unitMembersData
+
+      this.items = (await fetchUnitMembers())
         .filter((m) => m.unit.duty !== "adult_leader")
         .map(
           (m) =>
@@ -63,11 +65,15 @@ export default defineComponent({
               m,
             ),
         );
+      console.log(this.items);
+      this.renderReactComponent(this.items);
     },
+
     mountReactComponent() {
       this.root = createRoot(this.$refs.reactRoot as HTMLElement);
       this.renderReactComponent(this.items);
     },
+
     renderReactComponent(items: MilestonePlanningItem[]) {
       const reactElement = React.createElement(MilestoneReportTable, {
         items,
@@ -75,10 +81,12 @@ export default defineComponent({
       });
       this.root?.render(reactElement);
     },
+
     unmountReactComponent() {
       if (this.root) this.root.unmount();
       this.root = undefined;
     },
+
     handleUpdate(updatedItems: MilestonePlanningItem[]) {
       // Handle the updates here
       this.items = updatedItems; // Update your Vue component's state

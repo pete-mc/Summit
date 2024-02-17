@@ -1,5 +1,4 @@
-import { TerrainAchievements } from "@/types/terrainTypes";
-import { UnitMember } from "@/types/terrainState";
+import { TerrainAchievements, TerrainUnitMember } from "@/types/terrainTypes";
 
 export default class MilestonePlanningItem {
   name: string;
@@ -11,7 +10,7 @@ export default class MilestonePlanningItem {
   personalGrowth: number;
   community: number;
 
-  constructor(CurrentMilestone: TerrainAchievements | undefined, UnitMember: UnitMember) {
+  constructor(CurrentMilestone: TerrainAchievements | undefined, UnitMember: TerrainUnitMember) {
     if (!CurrentMilestone) {
       this.name = UnitMember.first_name;
       this.milestone = "-";

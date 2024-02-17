@@ -1,6 +1,5 @@
 import moment from "moment";
-import type { TerrainAchievements } from "@/types/terrainTypes";
-import type { UnitMember } from "@/types/terrainState";
+import type { TerrainAchievements, TerrainUnitMember } from "@/types/terrainTypes";
 import { TerrainAchievementsType, siaTypes } from "@/shared";
 
 export default class SummitAchievement {
@@ -12,7 +11,7 @@ export default class SummitAchievement {
   dateAwarded: string;
   presented: string;
 
-  constructor(achievement: TerrainAchievements, member: UnitMember, existingGuids: string[]) {
+  constructor(achievement: TerrainAchievements, member: TerrainUnitMember, existingGuids: string[]) {
     this.id = achievement.id;
     this.memberid = achievement.member_id;
     this.member = `${member?.first_name} ${member?.last_name}`;

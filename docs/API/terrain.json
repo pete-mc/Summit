@@ -1,0 +1,296 @@
+{
+  "openapi":"3.0.2",
+  "info": {
+    "title":"Terrain Achievements API",
+    "version":"1.0"
+  },
+  "servers": [
+    {"url":"https://terrain.scouts.com.au", "description":"Scouts Terrain API"}
+  ],
+  "paths": {
+    "/units/{unitId}/members":{
+      "get":{
+        "summary": "Get Profiles for a unit",
+        "servers": [
+          {"url":"https://members.terrain.scouts.com.au"}
+        ],
+        "parameters": [
+          {
+            "name":"unitId",
+            "in":"path",
+            "required":true,
+            "schema": {
+              "type":"string",
+              "format":"uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description":"List of profiles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type":"array",
+                  "items": {
+                    "$ref":"#/components/schemas/Profile"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profiles":{
+      "get": {
+        "summary":"Get profiles for a user",
+        "servers": [
+          {"url":"https://members.terrain.scouts.com.au"}
+        ],
+        "responses": {
+          "200": {
+            "description":"List of profiles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type":"array",
+                  "items": {
+                    "$ref":"#/components/schemas/Profile"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/units/{unitId}/achievements": {
+      "get": {
+        "summary":"Get achievements for a unit",
+        "servers": [
+          {"url":"https://achievements.terrain.scouts.com.au"}
+        ],
+        "parameters": [
+          {
+            "name":"unitId",
+            "in":"path",
+            "required":true,
+            "schema": {
+              "type":"string",
+              "format":"uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description":"List of achievements",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type":"array",
+                  "items": {
+                    "$ref":"#/components/schemas/Achievement"
+                  }
+
+                }
+              }
+            }
+          }
+        }
+      }
+
+    }
+  },
+  "components": {
+    "schemas": {
+      "Profile": {
+        "type":"object",
+        "properties": {
+          "member": {
+            "$ref":"#/components/schemas/Member"
+          },
+          "unit": {
+            "$ref":"#/components/schemas/Unit"
+          },
+          "group": {
+            "$ref":"#/components/schemas/Group"
+          }
+        }
+      },
+      "Member": {
+        "type":"object",
+        "properties": {
+          "id": {
+            "type":"string",
+            "format":"uuid"
+          },
+          "name": {
+            "type":"string"
+          },
+          "roles": {
+            "type":"array",
+            "items": {
+              "type":"string",
+              "enum": ["achievement-write", "member"]
+            }
+          }
+        }
+      },
+      "Unit": {
+        "type":"object",
+        "properties": {
+          "id": {
+            "type":"string",
+            "format":"uuid"
+          },
+          "name": {
+            "type":"string"
+          },
+          "roles": {
+            "type":"array",
+            "items": {
+              "type":"string",
+              "enum": ["unit-council", "unit-member", "unit-write"]
+            }
+          },
+          "section": {
+            "type":"string",
+            "enum": ["joey", "cub", "scout", "venturer", "rover"]
+          }
+        }
+      },
+      "Group": {
+        "type":"object",
+        "properties": {
+          "id": {
+            "type":"string",
+            "format":"uuid"
+          },
+          "name": {
+            "type":"string"
+          },
+          "roles": {
+            "type":"array",
+            "items": {
+              "type":"string",
+              "enum": ["group-leader"]
+            }
+          }
+        }
+      },
+      "Achievement": {
+        "type":"object",
+        "properties": {
+          "id": {
+            "type":"string",
+            "format":"uuid"
+          },
+          "member_id": {
+            "type":"string",
+            "format":"uuid"
+          },
+          "section": {
+            "type":"string",
+            "enum": ["joey", "cub", "scout", "venturer", "rover"]
+          },
+          "type": {
+            "type":"string",
+            "enum": ["milestone", "outdoor_adventure_skill"]
+          },
+          "status": {
+            "type":"string",
+            "enum": ["in_progress", "complete"]
+          },
+          "status_updated": {
+            "type":"string",
+            "format":"date-time"
+          },
+          "milestone_requirement_status": {
+            "type":"string",
+            "enum": ["incomplete", "complete"]
+          },
+          "event_log": {
+            "type":"array",
+            "items": {
+              "$ref":"#/components/schemas/EventLog"
+            }
+          },
+          "event_count": {
+            "type":"object",
+            "properties": {
+              "participant": {
+                "$ref":"#/components/schemas/EventCount"
+              },
+              "assistant": {
+                "$ref":"#/components/schemas/EventCount"
+              },
+              "leader": {
+                "$ref":"#/components/schemas/EventCount"
+              }
+            }
+          },
+         "achievement_meta": {
+            "type":"object",
+            "properties": {
+              "stream": {
+                "type":"string",
+                "enum": ["alpine", "aquatics", "boating", "bushcraft", "bushwalking", "camping", "cycling", "paddling", "vertical"]
+              },
+              "branch": {
+                "type":"string",
+                "enum": ["alpine", "aquatics", "boating", "bushcraft", "bushwalking", "camping", "cycling", "paddling", "sailing", "skiing", "snowboarding", "surfing", "vertical"]
+              },
+              "stage": {
+                "type":"integer",
+                "minimum":1,
+                "maximum":9
+              }
+            }
+          }
+        }
+      },
+      "EventLog": {
+        "type":"object",
+        "properties": {
+          "credit_type": {
+            "type":"string",
+            "enum": ["participant", "assistant", "leader"]
+          },
+          "challenge_area": {
+            "type":"string",
+            "enum": ["community", "outdoors", "creative", "personal_growth"]
+          },
+          "event_id": {
+            "type":"string",
+            "format":"uuid"
+          },
+          "event_name": {
+            "type":"string"
+          },
+          "event_start_datetime": {
+            "type":"string",
+            "format":"date-time"
+          }
+        }
+      },
+      "EventCount": {
+        "type":"object",
+        "properties": {
+          "community": {
+            "type":"number"
+          },
+          "outdoors": {
+            "type":"number"
+          },
+          "creative": {
+            "type":"number"
+          },
+          "personal_growth": {
+            "type":"number"
+          }
+        }
+      }
+    }
+  }
+}

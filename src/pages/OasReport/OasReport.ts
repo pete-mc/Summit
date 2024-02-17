@@ -2,8 +2,7 @@ import React from "react";
 import { Root, createRoot } from "react-dom/client";
 import OasReportItem from "./models/OasReportItem";
 import { TerrainAchievements } from "@/types/terrainTypes";
-import { fetchUnitAchievementsFilterd } from "@/services";
-import { Store } from "vuex/types/index";
+import { fetchUnitAchievementsFilterd, fetchUnitMembers } from "@/services";
 import { TerrainRootState } from "@/types/terrainState";
 import { OasReportTable } from "./components/OasReport";
 import { defineComponent } from "vue";
@@ -54,7 +53,7 @@ export default defineComponent({
     async getOasData() {
       const achievements = (await fetchUnitAchievementsFilterd("type=outdoor_adventure_skill")) as TerrainAchievements[];
       const filteredAchievements = achievements.sort((a, b) => (a.achievement_meta?.stage ?? 0) - (b.achievement_meta?.stage ?? 0)).filter((a) => a.status === "awarded");
-      this.items = (this.$store as Store<TerrainRootState>).state.me.unitMembersData
+      this.items = (await fetchUnitMembers())
         .filter((m) => m.unit.duty != "adult_leader")
         .map((m) => {
           return new OasReportItem(

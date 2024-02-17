@@ -1,8 +1,8 @@
 import React from "react";
 import { Root, createRoot } from "react-dom/client";
-import { TerrainEvent, TerrainEventScheduleItem } from "@/types/terrainTypes";
-import { fetchMemberEvents, fetchUnitAchievementsFilterd, fetchActivity, updateEvent, createNewEvent } from "@/services";
-import { TerrainRootState, UnitMember } from "@/types/terrainState";
+import { TerrainEvent, TerrainEventScheduleItem, TerrainUnitMember, TerrrainPostEvent } from "@/types/terrainTypes";
+import { fetchMemberEvents, fetchUnitAchievementsFilterd, fetchActivity, updateEvent, createNewEvent, fetchUnitMembers } from "@/services";
+import { TerrainRootState } from "@/types/terrainState";
 import { defineComponent } from "vue";
 import { TerrainState, processGuids, reconstructGuids } from "@/helpers";
 import AwardsTable from "./components/PresentAwards";
@@ -59,12 +59,12 @@ export default defineComponent({
         (await fetchMemberEvents("2100-01-01T00:00:00", "2100-01-30T00:00:00")).find((event) => event.title === "Summit Award Storage - Please Ignore" && event.invitee_id === TerrainState.getUnitID())?.id,
       );
       const fetchPromises = Object.values(TerrainAchievementsType).map((type) => fetchUnitAchievementsFilterd(`type=${type}`));
-      const membersMap = TerrainState.getUnitMembers().reduce(
+      const membersMap = (await fetchUnitMembers()).reduce(
         (map, member) => {
           map[member.id] = member;
           return map;
         },
-        {} as { [id: string]: UnitMember },
+        {} as { [id: string]: TerrainUnitMember },
       );
       const existingAwards = this.storeEvent && this.storeEvent.schedule_items ? this.storeEvent.schedule_items.flatMap((item) => item.description) : [];
       const existingGuids = reconstructGuids(existingAwards);
@@ -159,7 +159,7 @@ export default defineComponent({
         start_datetime: "2100-01-10T02:00:00.000+00:00",
         status: "planned",
         uploads: [],
-      } as TerrainEvent;
+      } as TerrrainPostEvent;
       if (this.storeEvent?.id) {
         updateEvent(this.storeEvent.id, JSON.stringify(eventToUpload));
       } else {

@@ -4,6 +4,7 @@ const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const { VueLoaderPlugin } = require("vue-loader");
 const isDevelopment = process.env.NODE_ENV !== 'production';
 const fs = require("fs");
+const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: './src/index.ts',
@@ -43,6 +44,11 @@ module.exports = {
   plugins: [
     new MiniCssExtractPlugin({
       filename: 'summit.css',
+    }),
+    new CopyPlugin({
+      patterns: [
+        { from: 'package.json', to: '' }, { from: 'LICENSE', to: '' }, { from: 'README.md', to: '' }
+      ],
     }),
     new VueLoaderPlugin()
   ],

@@ -1,5 +1,4 @@
-import { TerrainAchievements } from "@/types/terrainTypes";
-import { UnitMember } from "@/types/terrainState";
+import { TerrainAchievements, TerrainUnitMember } from "@/types/terrainTypes";
 
 export interface OasReportSubItem {
   template: string;
@@ -25,7 +24,7 @@ export default class OasReportItem implements OasReportSubItems {
   boating?: OasReportSubItem[];
   paddling?: OasReportSubItem[];
 
-  constructor(memberOAS: TerrainAchievements[], UnitMember: UnitMember) {
+  constructor(memberOAS: TerrainAchievements[], UnitMember: TerrainUnitMember) {
     this.name = UnitMember.first_name + " " + UnitMember.last_name;
     ["bushwalking", "bushcraft", "camping", "alpine", "cycling", "vertical", "aquatics", "boating", "paddling"].forEach((stream) => {
       this[stream] = [] as OasReportSubItem[];
