@@ -1,8 +1,10 @@
 import { FindComponent } from "@/helpers";
 import { Home, DisplayOptions, MilestoneReport, OasReport, Topo, PresentAwards, SummitCalendar } from "@/pages";
 import { NavMenuComponent, NavMenuItem } from "@/types/NavMenu";
-import VueRouter from "vue-router";
+import VueRouter, { Route } from "vue-router";
 import Vue from "vue";
+import { InitLogbookRead, InitLogbookWrite, InitProgrammingExportBtn, CheckAward, AwardObserverRouter } from "@/components";
+import { fetchAchievements } from "@/services";
 
 export default class SummitRouter {
   private static instance: SummitRouter;
@@ -69,12 +71,17 @@ export default class SummitRouter {
       }
       next();
     });
-    this.router.afterEach(() => {
+    this.router.afterEach((to) => {
       if (this.summitNavMenuItems.length === 0 || SummitRouter.terrainNavMenuItems.length === 0) {
         setTimeout(() => {
           this.initNavMenu();
         }, 1000);
       }
+      window.$nuxt.$nextTick(() => {
+        setTimeout(() => {
+          SummitRouter.pageChecks(to);
+        }, 1000);
+      });
     });
   }
 
@@ -189,5 +196,67 @@ export default class SummitRouter {
         navMenuComponent.$data.drawer = !navMenuComponent.$data.drawer;
       }
     });
+  }
+
+  private static checkElements(query: string, id: string): boolean {
+    if (document.evaluate(query, document, null, XPathResult.ANY_TYPE, null).iterateNext()) return !document.getElementById(id);
+    return false;
+  }
+
+  private static pageChecks(to: Route): void {
+    switch (to.path) {
+      case "/logbook/view-record":
+        if (this.checkElements(`//button[ancestor::section[contains(@class, 'ViewRecord__no-print')] and contains(@data-cy, 'PRINT')]`, "copyClipboardBtn")) InitLogbookRead();
+        break;
+      case "/logbook":
+        if (this.checkElements(`//button[contains(@data-cy, 'ADD_NEW_RECORD')]`, "writeClipboardBtn")) InitLogbookWrite();
+        break;
+      case "/programming/view-activity":
+        if (this.checkElements(`//button[@data-cy='PRINT']`, "exportiCalBtn")) InitProgrammingExportBtn();
+        break;
+      case "/milestones":
+        if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0 && $("div.ListItem__title:contains(Milestone 1)").length > 0)
+          CheckAward({ name: "milestone", path: "achievement_meta.stage", value: 1 }).then(() => {
+            AwardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", to, this.pageChecks);
+          });
+        if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0 && $("div.ListItem__title:contains(Milestone 2)").length > 0)
+          CheckAward({ name: "milestone", path: "achievement_meta.stage", value: 2 }).then(() => {
+            AwardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", to, this.pageChecks);
+          });
+        if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0 && $("div.ListItem__title:contains(Milestone 3)").length > 0)
+          CheckAward({ name: "milestone", path: "achievement_meta.stage", value: 3 }).then(() => {
+            AwardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", to, this.pageChecks);
+          });
+        break;
+      case "/intro-scouting":
+      case "/intro-section":
+      case "/adventurous-journey":
+      case "/personal-reflection":
+      case "/personal-development":
+      case "/oas":
+      case "/sia":
+        if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0) {
+          const type =
+            [
+              { route: "/oas", type: "outdoor_adventure_skill" },
+              { route: "/sia", type: "special_interest_area" },
+              { route: "/personal-development", type: "course_reflection" },
+              { route: "/intro-scouting", type: "intro_scouting" },
+              { route: "/intro-section", type: "intro_section" },
+              { route: "/adventurous-journey", type: "adventurous_journey" },
+              { route: "/personal-reflection", type: "personal_reflection" },
+            ].find((type) => type.route === to.path)?.type ?? "outdoor_adventure_skill";
+          to.path === "/oas" ? "outdoor_adventure_skill" : "special_interest_area";
+          const header = to.path.startsWith("/intro-") ? $("hr.BaseList__divider").first() : $("div.AchievementOverview__awarded").first();
+          const list = header.next().children("div.List").first();
+          list.addClass("AwardedList");
+          list.children().each((_index, element) => {
+            fetchAchievements(type).then((awards) => {
+              CheckAward({ name: type, parent: $(element), awardsPrefetched: awards });
+            });
+          });
+        }
+        break;
+    }
   }
 }

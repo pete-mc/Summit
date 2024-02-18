@@ -69,7 +69,7 @@ export interface TerrainEvent {
   schedule_items?: TerrainEventScheduleItem[];
   challenge_area?: string;
   description?: string;
-  end_datetime?: string;
+  end_datetime: string;
   invitees?: Array<{
     invitee_id: string;
     invitee_type: string;
@@ -85,7 +85,7 @@ export interface TerrainEvent {
   review?: {
     scout_method_elements: string[];
   };
-  start_datetime?: string;
+  start_datetime: string;
   uploads?: never[];
 }
 

@@ -1,4 +1,4 @@
-import { createSpinner, showSpinner, hideSpinner } from "@syncfusion/ej2-popups";
+import { createSpinner, showSpinner, hideSpinner } from "@syncfusion/ej2-react-popups";
 import React from "react";
 
 export class LoadingSpinner extends React.Component<{ isLoading: boolean }, Record<string, never>> {

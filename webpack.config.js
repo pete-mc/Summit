@@ -47,7 +47,7 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [
-        { from: 'package.json', to: '' }, { from: 'LICENSE', to: '' }, { from: 'README.md', to: '' }
+        { from: 'package.json', to: '' }, { from: 'LICENSE', to: '' }, { from: 'README.md', to: '' }, { from: 'src/styles/fluent.min.css', to: ''}
       ],
     }),
     new VueLoaderPlugin()
@@ -61,7 +61,6 @@ module.exports = {
   performance: {
     hints: false,
   },
-
   devtool: isDevelopment ? 'inline-source-map' : false,
   devServer: {
     static: {

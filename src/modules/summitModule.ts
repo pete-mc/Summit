@@ -1,13 +1,16 @@
-import { type TerrainAchievements } from "@/types/terrainTypes";
-import { fetchUnitAchievements } from "@/services";
+import { TerrainEvent, type TerrainAchievements } from "@/types/terrainTypes";
+import { fetchActivity, fetchMemberEvents, fetchUnitAchievements } from "@/services";
 import { type ActionContext, type Module } from "vuex/types/index";
 import { type TerrainRootState } from "@/types/terrainState";
+import { TerrainState, reconstructGuids } from "@/helpers";
 
 interface State {
   message: string;
   helpButton: boolean;
   achievements: TerrainAchievements[];
   achievementsTimestamp: null | number;
+  presentedAwards: string[];
+  presentedAwardsTimestamp: null | number;
 }
 
 const SummitModule: Module<State, TerrainRootState> = {
@@ -18,6 +21,7 @@ const SummitModule: Module<State, TerrainRootState> = {
       helpButton: true,
       achievements: [],
       achievementsTimestamp: null,
+      presentedAwards: [],
     },
     ...JSON.parse(localStorage.getItem("SummitState") ?? "{}"),
   },
@@ -43,6 +47,10 @@ const SummitModule: Module<State, TerrainRootState> = {
       state.achievements = payload.achievements;
       state.achievementsTimestamp = payload.timestamp;
     },
+    updatePresentedAwards(state: { presentedAwards: string[]; presentedAwardsTimestamp: number | null }, payload: { presentedAwards: string[]; timestamp: number }) {
+      state.presentedAwards = payload.presentedAwards;
+      state.presentedAwardsTimestamp = payload.timestamp;
+    },
   },
   actions: {
     saveState({ commit }: ActionContext<State, TerrainRootState>): void {
@@ -59,7 +67,20 @@ const SummitModule: Module<State, TerrainRootState> = {
       const achievements = await fetchUnitAchievements();
       commit("updateAchievements", { achievements, timestamp: Date.now() });
     },
+    async getPresentedAwards({ commit }: ActionContext<State, TerrainRootState>): Promise<void> {
+      let presentedAwards: string[] = [];
+      const memberEvents = await fetchMemberEvents("2100-01-01T00:00:00", "2100-01-30T00:00:00");
+      let existingEvent = undefined as TerrainEvent | undefined;
+      const existingEventId = memberEvents?.find((event) => event.title === "Summit Award Storage - Please Ignore" && event.invitee_id === TerrainState.getUnitID())?.id;
+      if (existingEventId) {
+        existingEvent = await fetchActivity(existingEventId);
+      }
+      const existingAwards = existingEvent && existingEvent.schedule_items ? existingEvent.schedule_items.flatMap((item) => item.description) : [];
+      if (existingAwards.length > 0) presentedAwards = reconstructGuids(existingAwards);
+      commit("updatePresentedAwards", { presentedAwards, timestamp: Date.now() });
+    },
     initialize(context: ActionContext<State, TerrainRootState>): void {
+      context.dispatch("getPresentedAwards");
       const freshworksContainer = document.getElementById("freshworks-container");
       if (freshworksContainer != null) {
         freshworksContainer.style.display = context.getters.getHelpButton ? "block" : "none";
@@ -79,6 +100,13 @@ const SummitModule: Module<State, TerrainRootState> = {
         rootGetters.dispatch("getAchievements");
       }
       return state.achievements;
+    },
+    getPresentedAwards(state, _getters, _rootState, rootGetters) {
+      const FIVE_MINS = 5 * 60 * 1000;
+      if (state.presentedAwardsTimestamp == null || Date.now() - state.presentedAwardsTimestamp > FIVE_MINS) {
+        rootGetters.dispatch("getPresentedAwards");
+      }
+      return state.presentedAwards;
     },
   },
 };

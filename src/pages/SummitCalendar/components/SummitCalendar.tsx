@@ -1,18 +1,16 @@
 import React from "react";
-import { Inject, EventSettingsModel, ScheduleComponent, ActionEventArgs, EventRenderedArgs, ViewsDirective, ViewDirective, PopupOpenEventArgs } from "@syncfusion/ej2-react-schedule";
+import { Agenda, Month, Week, Inject, EventSettingsModel, ScheduleComponent, ActionEventArgs, EventRenderedArgs, ViewsDirective, ViewDirective, PopupOpenEventArgs } from "@syncfusion/ej2-react-schedule";
 import SummitCalendarItem from "../models/SummitCalendarItems";
-import { Agenda, Month, Week } from "@syncfusion/ej2-react-schedule";
 import { createNewEvent, deleteEvent, fetchActivity, fetchMemberEvents, fetchUnitMembers, updateEvent } from "@/services";
 import moment from "moment";
 import { TerrainEvent, TerrainEventSummary, TerrainUnitMember } from "@/types/terrainTypes";
-import { DropDownListComponent, DropDownTreeComponent } from "@syncfusion/ej2-react-dropdowns";
+import { DdtChangeEventArgs, DropDownListComponent, DropDownTreeComponent } from "@syncfusion/ej2-react-dropdowns";
 import { DateTimePickerComponent } from "@syncfusion/ej2-react-calendars";
 import { TerrainState } from "@/helpers";
 import { FormValidator, FormValidatorModel, TextBoxComponent } from "@syncfusion/ej2-react-inputs";
-import { DdtChangeEventArgs } from "@syncfusion/ej2-dropdowns";
-import { enableRipple } from "@syncfusion/ej2-base";
+//import { enableRipple } from "@syncfusion/ej2-base";
 import TerrainEventItem from "../models/TerrainEventItem";
-import { DialogUtility } from "@syncfusion/ej2-popups";
+import { DialogUtility } from "@syncfusion/ej2-react-popups";
 
 interface SummitCalendarProps {
   items: SummitCalendarItem[];
@@ -22,7 +20,7 @@ interface SummitCalendarProps {
 interface SummitCalendarState {
   items: SummitCalendarItem[];
   sortState: { sortColumn: string; sortDirection: string };
-  activity: TerrainEvent | null;
+  activity: TerrainEvent;
   editorIsLoading: boolean;
   members: { value: string; text: string }[];
   currentUnitID: string;
@@ -34,11 +32,11 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
 
   constructor(props: SummitCalendarProps) {
     super(props);
-    enableRipple(true);
+    //enableRipple(true);
     this.state = {
       items: [],
       sortState: { sortColumn: "file", sortDirection: "ascending" },
-      activity: {},
+      activity: { start_datetime: "", end_datetime: "" },
       editorIsLoading: false,
       members: [],
       currentUnitID: TerrainState.getUnitID(),
@@ -84,7 +82,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   };
 
   getActivity = async (id: string) => {
-    const activity = (await fetchActivity(id)) || {};
+    const activity = (await fetchActivity(id)) || { start_datetime: "", end_datetime: "" };
     this.setState({ activity: activity, editorIsLoading: false }, () => {
       if (this.scheduleComponent.current && this.state.activity) {
         this.scheduleComponent.current.openEditor(this.state.activity, "Add", false);
@@ -123,7 +121,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   onPopupClosed = (args: PopupOpenEventArgs) => {
     console.log("closed");
     if (args.type === "Editor") {
-      this.setState({ activity: {} });
+      this.setState({ activity: { start_datetime: "", end_datetime: "" } });
     }
   };
 
