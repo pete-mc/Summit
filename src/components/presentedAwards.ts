@@ -9,7 +9,7 @@ export async function CheckAward(params: { name: string; path?: string; value?: 
   if (!awards) return;
   for (const award of awards) {
     if (params.path && HasPropAtPath(award, params.path, params.value)) continue;
-    if (window.$nuxt.$store.state.Summit.presentedAwards.includes(award.id)) continue;
+    if (!window.$nuxt.$store.state.Summit.presentedAwards.includes(award.id)) continue;
     presented = true;
     break;
   }

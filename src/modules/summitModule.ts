@@ -3,6 +3,7 @@ import { fetchActivity, fetchMemberEvents, fetchUnitAchievements } from "@/servi
 import { type ActionContext, type Module } from "vuex/types/index";
 import { type TerrainRootState } from "@/types/terrainState";
 import { TerrainState, reconstructGuids } from "@/helpers";
+import SummitRouter from "@/router/SummitRouter";
 
 interface State {
   message: string;
@@ -85,6 +86,15 @@ const SummitModule: Module<State, TerrainRootState> = {
       if (freshworksContainer != null) {
         freshworksContainer.style.display = context.getters.getHelpButton ? "block" : "none";
       }
+      this.watch(
+        () => context.rootState.user.profileIndex, //profile changed
+        () => {
+          console.log("profile changed");
+          SummitRouter.getInstance().resetMenu();
+          context.dispatch("getPresentedAwards");
+          context.dispatch("getAchievements");
+        },
+      );
     },
   },
   getters: {

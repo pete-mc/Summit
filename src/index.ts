@@ -3,12 +3,14 @@ import summitModule from "@/modules/summitModule";
 import SummitRouter from "@/router/SummitRouter";
 import $ from "jquery";
 
-setTimeout(() => {
+$(function () {
   window.$ = $;
   window.$nuxt.$store.registerModule("Summit", summitModule);
   window.$nuxt.$store.dispatch("Summit/initialize");
   SummitRouter.getInstance();
-}, 1000);
+  const Vue = window.$nuxt.$root && window.$nuxt.$root.constructor;
+  window.Vue = Vue as never;
+});
 
 $.fn.xpath = function (expr) {
   const found = [];

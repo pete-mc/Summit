@@ -17,9 +17,14 @@ export const TerrainState = {
     return (window.$nuxt.$store.state as TerrainRootState).auth.idToken;
   },
 
-  getMemberID(): string {
+  getProfileMemberID(): string {
     // eslint-disable-next-line max-len
     return (window.$nuxt.$store.state as TerrainRootState).user.profiles[(window.$nuxt.$store.state as TerrainRootState).user.profileIndex].member.id;
+  },
+
+  getMemberID(): string {
+    // eslint-disable-next-line max-len
+    return (window.$nuxt.$store.state as TerrainRootState).user.memberDetails.id;
   },
 
   getMemberName(): string {

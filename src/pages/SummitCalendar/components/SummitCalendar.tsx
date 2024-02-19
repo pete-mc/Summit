@@ -10,7 +10,7 @@ import { TerrainState } from "@/helpers";
 import { FormValidator, FormValidatorModel, TextBoxComponent } from "@syncfusion/ej2-react-inputs";
 //import { enableRipple } from "@syncfusion/ej2-base";
 import TerrainEventItem from "../models/TerrainEventItem";
-import { DialogUtility } from "@syncfusion/ej2-react-popups";
+import { DialogComponent, DialogUtility } from "@syncfusion/ej2-react-popups";
 
 interface SummitCalendarProps {
   items: SummitCalendarItem[];
@@ -25,11 +25,13 @@ interface SummitCalendarState {
   members: { value: string; text: string }[];
   currentUnitID: string;
   unitMembers: TerrainUnitMember[];
+  hideDialog: boolean;
+  iframeKey: number;
 }
 
 export class SummitCalendarComponent extends React.Component<SummitCalendarProps, SummitCalendarState> {
   private scheduleComponent: React.RefObject<ScheduleComponent> = React.createRef();
-
+  private dialogInstance: DialogComponent | null = null;
   constructor(props: SummitCalendarProps) {
     super(props);
     //enableRipple(true);
@@ -41,6 +43,8 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       members: [],
       currentUnitID: TerrainState.getUnitID(),
       unitMembers: [],
+      hideDialog: true,
+      iframeKey: 0,
     };
     this.handleInputChange = this.handleInputChange.bind(this);
   }
@@ -517,11 +521,40 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
                 Add Next Week
               </button>
             )}
+            <button
+              id="open-modal"
+              className="e-event-edit e-btn e-primary"
+              title="Open Event"
+              onClick={async () => {
+                this.scheduleComponent.current?.closeQuickInfoPopup();
+                const event = await fetchActivity((props.event as TerrainEventSummary).id);
+                window.$nuxt.$accessor.programming.setActivity(event);
+                window.$nuxt.$accessor.programming.setActivityFlow("view");
+                this.dialogInstance?.show(true);
+                $("#eventFrame").attr("src", $("#eventFrame").attr("src") ?? "");
+                $("#eventFrame").on("load", function () {
+                  const iframeHead = $(this).contents().find("head");
+                  const css = '<style type="text/css">' + "header, nav, footer { visibility: hidden; } " + "</style>";
+                  $(iframeHead).append(css);
+                });
+              }}
+            >
+              Open
+            </button>
           </div>
         </div>
       );
     }
   };
+
+  dialogButtons = [
+    {
+      click: () => {
+        this.dialogInstance?.hide();
+      },
+      buttonModel: { content: "Close Event", isPrimary: true, cssClass: "e-event-edit e-btn e-primary" },
+    },
+  ];
 
   render(): React.ReactNode {
     const eventSettings: EventSettingsModel = { dataSource: this.state.items };
@@ -529,7 +562,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       <div id="scheduler">
         <ScheduleComponent
           width="100%"
-          height="500px"
+          height="100%"
           currentView="Month"
           ref={this.scheduleComponent}
           eventSettings={eventSettings}
@@ -550,9 +583,22 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           </ViewsDirective>
           <Inject services={[Week, Month, Agenda]} />
         </ScheduleComponent>
-        {/* <DialogComponent width="250px" isModal={true} target="#scheduler" visible={this.state.hideDialog} close={this.dialogClose} overlayClick={this.onOverlayClick}>
-          This is a modal Dialog{" "}
-        </DialogComponent> */}
+        <DialogComponent
+          id="dialog"
+          isModal={true}
+          visible={false}
+          header="View Event"
+          target="#scheduler"
+          animationSettings={{ effect: "None" }}
+          close={() => this.fetchData()}
+          closeOnEscape={true}
+          showCloseIcon={true}
+          ref={(dialog: DialogComponent) => (this.dialogInstance = dialog!)}
+          cssClass="summit-dialog-max-size"
+          buttons={this.dialogButtons}
+        >
+          <iframe id="eventFrame" src="https://terrain.scouts.com.au/programming/view-activity" title="Modal Content" style={{ width: "100%", height: "100%" }} />
+        </DialogComponent>
       </div>
     ) as React.ReactNode;
   }

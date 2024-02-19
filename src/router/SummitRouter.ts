@@ -30,6 +30,11 @@ export default class SummitRouter {
     return SummitRouter.instance;
   }
 
+  public resetMenu(): void {
+    SummitRouter.terrainNavMenuItems = SummitRouter.getTerrainNavMenuItems();
+    this.initNavMenu();
+  }
+
   private async initRoutes(): Promise<void> {
     this.router.addRoute({
       path: "/terrain",
@@ -80,7 +85,7 @@ export default class SummitRouter {
       window.$nuxt.$nextTick(() => {
         setTimeout(() => {
           SummitRouter.pageChecks(to);
-        }, 1000);
+        }, 100);
       });
     });
   }
@@ -207,12 +212,15 @@ export default class SummitRouter {
     switch (to.path) {
       case "/logbook/view-record":
         if (this.checkElements(`//button[ancestor::section[contains(@class, 'ViewRecord__no-print')] and contains(@data-cy, 'PRINT')]`, "copyClipboardBtn")) InitLogbookRead();
+        else setTimeout(() => SummitRouter.pageChecks(to), 100);
         break;
       case "/logbook":
         if (this.checkElements(`//button[contains(@data-cy, 'ADD_NEW_RECORD')]`, "writeClipboardBtn")) InitLogbookWrite();
+        else setTimeout(() => SummitRouter.pageChecks(to), 100);
         break;
       case "/programming/view-activity":
         if (this.checkElements(`//button[@data-cy='PRINT']`, "exportiCalBtn")) InitProgrammingExportBtn();
+        else setTimeout(() => SummitRouter.pageChecks(to), 100);
         break;
       case "/milestones":
         if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0 && $("div.ListItem__title:contains(Milestone 1)").length > 0)
@@ -236,6 +244,7 @@ export default class SummitRouter {
       case "/oas":
       case "/sia":
         if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0) {
+          console.log("Fetching achievements");
           const type =
             [
               { route: "/oas", type: "outdoor_adventure_skill" },
@@ -255,7 +264,7 @@ export default class SummitRouter {
               CheckAward({ name: type, parent: $(element), awardsPrefetched: awards });
             });
           });
-        }
+        } else setTimeout(() => SummitRouter.pageChecks(to), 100);
         break;
     }
   }

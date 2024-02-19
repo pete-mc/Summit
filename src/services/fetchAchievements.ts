@@ -4,7 +4,7 @@ import { TerrainState } from "@/helpers";
 export default async function fetchAchievements(type: string): Promise<TerrainAchievements[] | undefined> {
   try {
     if (!TerrainState.getToken()) return undefined;
-    const response = await fetch("https://achievements.terrain.scouts.com.au/members/" + TerrainState.getMemberID() + "/achievements?type=" + type, {
+    const response = await fetch("https://achievements.terrain.scouts.com.au/members/" + TerrainState.getCurrentProfile().member.id + "/achievements?type=" + type, {
       method: "GET",
       mode: "cors",
       cache: "no-cache",
