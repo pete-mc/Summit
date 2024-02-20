@@ -5,7 +5,7 @@ import { createNewEvent, deleteEvent, fetchActivity, fetchMemberEvents, fetchUni
 import moment from "moment";
 import { TerrainEvent, TerrainEventSummary, TerrainUnitMember } from "@/types/terrainTypes";
 import { DdtChangeEventArgs, DropDownListComponent, DropDownTreeComponent } from "@syncfusion/ej2-react-dropdowns";
-import { DateTimePickerComponent } from "@syncfusion/ej2-react-calendars";
+import { DatePickerComponent, TimePickerComponent } from "@syncfusion/ej2-react-calendars";
 import { TerrainState } from "@/helpers";
 import { FormValidator, FormValidatorModel, TextBoxComponent } from "@syncfusion/ej2-react-inputs";
 //import { enableRipple } from "@syncfusion/ej2-base";
@@ -118,7 +118,9 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     }
     if (args.type === "QuickInfo" && args.data && !args.data.Id) {
       args.cancel = true;
-      this.newActivity(args.data.startTime.toISOString(), args.data.endTime.toISOString());
+      if (args.data.isAllDay) {
+        this.newActivity(moment(args.data.startTime).hour(19).minute(0).toISOString(), moment(args.data.endTime).hour(21).minute(0).toISOString());
+      } else this.newActivity(args.data.startTime.toISOString(), args.data.endTime.toISOString());
     }
   };
 
@@ -155,6 +157,45 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         [name]: value,
       },
     }));
+  };
+
+  handleDateTimeChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = event.target;
+    //if name ends with time change name to be datetime and set previous values time but not date if it ends with date change name to be datetime and update the date but not the time of the previous value
+    switch (name) {
+      case "start_date":
+        this.setState((prevState) => ({
+          activity: {
+            ...prevState.activity,
+            start_datetime: moment(value).format("YYYY-MM-DD") + "T" + moment(prevState.activity.start_datetime).format("HH:mm:ss"),
+          },
+        }));
+        break;
+      case "start_time":
+        this.setState((prevState) => ({
+          activity: {
+            ...prevState.activity,
+            start_datetime: moment(prevState.activity.start_datetime).format("YYYY-MM-DD") + "T" + moment(value).format("HH:mm:ss"),
+          },
+        }));
+        break;
+      case "end_date":
+        this.setState((prevState) => ({
+          activity: {
+            ...prevState.activity,
+            end_datetime: moment(value).format("YYYY-MM-DD") + "T" + moment(prevState.activity.end_datetime).format("HH:mm:ss"),
+          },
+        }));
+        break;
+      case "end_time":
+        this.setState((prevState) => ({
+          activity: {
+            ...prevState.activity,
+            end_datetime: moment(prevState.activity.end_datetime).format("YYYY-MM-DD") + "T" + moment(value).format("HH:mm:ss"),
+          },
+        }));
+        break;
+    }
   };
 
   handleTreeChange = (event: DdtChangeEventArgs) => {
@@ -291,11 +332,12 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           <div id="caError"></div>
         </label>
         <label>
-          Start & End <span style={{ color: "red" }}>*</span>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <DateTimePickerComponent id="start_datetime" value={new Date(activity?.start_datetime || "")} format="dd/MM/yy hh:mm" onChange={this.handleInputChange} name="start_datetime" disabled={!isEditable} />
-            <DateTimePickerComponent id="end_datetime" value={new Date(activity?.end_datetime || "")} format="dd/MM/yy hh:mm" name="end_datetime" disabled={!isEditable} openOnFocus />
-          </div>
+          Start <span style={{ color: "red" }}>*</span>
+          <DatePickerComponent id="start_date" value={new Date(activity?.start_datetime || "")} format="dd/MM/yy" onChange={this.handleDateTimeChange} name="start_date" disabled={!isEditable} showClearButton={false} />
+          <TimePickerComponent id="start_time" value={new Date(activity?.start_datetime || "")} format="hh:mm a" onChange={this.handleDateTimeChange} name="start_time" disabled={!isEditable} showClearButton={false} />
+          End <span style={{ color: "red" }}>*</span>
+          <DatePickerComponent id="end_date" value={new Date(activity?.end_datetime || "")} format="dd/MM/yy" onChange={this.handleDateTimeChange} name="end_date" disabled={!isEditable} showClearButton={false} />
+          <TimePickerComponent id="end_time" value={new Date(activity?.end_datetime || "")} format="hh:mm a" onChange={this.handleDateTimeChange} name="end_time" disabled={!isEditable} showClearButton={false} />
         </label>
         <label>
           Scout Method <span style={{ color: "red" }}>*</span>
@@ -388,8 +430,10 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         challenge_area: { required: true },
         scout_method_elements: { required: true },
         organisers: { required: true },
-        start_datetime: { required: true },
-        end_datetime: { required: true },
+        start_date: { required: true },
+        end_date: { required: true },
+        start_time: { required: true },
+        end_time: { required: true },
       },
     };
     const formObject = new FormValidator(".editor-container", options);
@@ -441,8 +485,8 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
               data-ripple="true"
               onClick={() => {
                 const dialogObj = DialogUtility.confirm({
-                  title: "Delete Multiple Items",
-                  content: "Are you sure you want to permanently delete these items?",
+                  title: "Delete Item",
+                  content: "Are you sure you want to permanently delete this item?",
                   width: "300px",
                   okButton: {
                     click: () => {
@@ -523,7 +567,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             )}
             <button
               id="open-modal"
-              className="e-event-edit e-btn e-primary"
+              className="e-event-edit e-btn e-secondary"
               title="Open Event"
               onClick={async () => {
                 this.scheduleComponent.current?.closeQuickInfoPopup();
@@ -531,15 +575,30 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
                 window.$nuxt.$accessor.programming.setActivity(event);
                 window.$nuxt.$accessor.programming.setActivityFlow("view");
                 this.dialogInstance?.show(true);
-                $("#eventFrame").attr("src", $("#eventFrame").attr("src") ?? "");
+                $("#eventFrame").attr("src", "https://terrain.scouts.com.au/programming/view-activity");
                 $("#eventFrame").on("load", function () {
                   const iframeHead = $(this).contents().find("head");
-                  const css = '<style type="text/css">' + "header, nav, footer { visibility: hidden; } " + "</style>";
+                  const css =
+                    '<style type="text/css">' +
+                    `
+                  #freshworks-container, header, nav, footer { 
+                    visibility: hidden; display: none; 
+                  } 
+                  main {
+                    padding: 0 !important; 
+                  }
+                  .v-application .v-main__wrap .container {
+                    margin: 0 !important; 
+                    max-width: 100% !important;
+                    padding: 0 !important; 
+                }
+                  ` +
+                    "</style>";
                   $(iframeHead).append(css);
                 });
               }}
             >
-              Open
+              Open in Terain
             </button>
           </div>
         </div>
@@ -590,14 +649,17 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           header="View Event"
           target="#scheduler"
           animationSettings={{ effect: "None" }}
-          close={() => this.fetchData()}
+          close={() => {
+            $("#eventFrame").attr("src", "about:blank");
+            this.fetchData();
+          }}
           closeOnEscape={true}
           showCloseIcon={true}
           ref={(dialog: DialogComponent) => (this.dialogInstance = dialog!)}
           cssClass="summit-dialog-max-size"
           buttons={this.dialogButtons}
         >
-          <iframe id="eventFrame" src="https://terrain.scouts.com.au/programming/view-activity" title="Modal Content" style={{ width: "100%", height: "100%" }} />
+          <iframe id="eventFrame" src="about:blank" title="Modal Content" style={{ width: "100%", height: "100%" }} />
         </DialogComponent>
       </div>
     ) as React.ReactNode;

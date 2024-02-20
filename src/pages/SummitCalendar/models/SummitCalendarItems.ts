@@ -14,7 +14,7 @@ export default class SummitCalendarItem {
   constructor(event: TerrainEventSummary) {
     this.Id = event.id;
     this.event = event;
-    this.Subject = event.title;
+    this.Subject = event.status === "concluded" ? "✅" + event.title : event.title;
     this.StartTime = new Date(event.start_datetime);
     this.EndTime = new Date(event.end_datetime);
     this.Description = "Status:" + event.status.replace(/(?:^|_)(.)/g, (match, group1) => " " + group1.toUpperCase()) + "\n" + "Area:" + event.challenge_area.replace(/(?:^|_)(.)/g, (match, group1) => " " + group1.toUpperCase());
