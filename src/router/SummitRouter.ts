@@ -1,5 +1,5 @@
 import { FindComponent } from "@/helpers";
-import { Home, DisplayOptions, MilestoneReport, OasReport, Topo, PresentAwards, SummitCalendar } from "@/pages";
+import { Home, DisplayOptions, MilestoneReport, OasReport, Topo, PresentAwards, SummitCalendar, PeakAward } from "@/pages";
 import { NavMenuComponent, NavMenuItem } from "@/types/NavMenu";
 import VueRouter, { Route } from "vue-router";
 import Vue from "vue";
@@ -65,6 +65,10 @@ export default class SummitRouter {
       component: OasReport,
     });
     this.router.addRoute({
+      path: "/summit/reports/peakaward",
+      component: PeakAward,
+    });
+    this.router.addRoute({
       path: "/summit/reports/Topo",
       component: Topo,
     });
@@ -117,6 +121,13 @@ export default class SummitRouter {
             roles: [true, false],
           },
           {
+            title: "Peak Award Report",
+            to: "/summit/reports/peakaward",
+            items: [],
+            locked: false,
+            roles: [true, false],
+          },
+          {
             title: "Topo Reports",
             to: "/summit/reports/Topo",
             items: [],
@@ -157,7 +168,7 @@ export default class SummitRouter {
       },
     ];
     const SummitNavMenuItem: NavMenuItem = {
-      title: "Summit",
+      title: "Terrain | Summit",
       to: "/summit/home",
       items: [],
       locked: false,

@@ -4,3 +4,4 @@ export { default as TerrainState } from "./TerrainState";
 import { processGuids, reconstructGuids } from "./CompressGuids";
 export { processGuids, reconstructGuids };
 export { default as HasPropAtPath } from "./HasPropAtPath";
+export { default as verticalText } from "./VerticleText";
