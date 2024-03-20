@@ -76,13 +76,18 @@ export default class SummitRouter {
       if (to.path.includes("summit")) {
         SummitRouter.switchMenu(this.summitNavMenuItems);
       } else {
+        if (SummitRouter.terrainNavMenuItems.length === 0) {
+          this.initNavMenu();
+        }
         SummitRouter.switchMenu(SummitRouter.terrainNavMenuItems);
       }
       next();
     });
     this.router.afterEach((to) => {
+      console.log("After each");
       if (this.summitNavMenuItems.length === 0 || SummitRouter.terrainNavMenuItems.length === 0) {
         setTimeout(() => {
+          console.log("waiting for nav menu items to load");
           this.initNavMenu();
         }, 1000);
       }
@@ -94,7 +99,7 @@ export default class SummitRouter {
     });
   }
 
-  private async initNavMenu(): Promise<void> {
+  private initNavMenu(): void {
     this.summitNavMenuItems = [
       {
         title: "Basecamp",

@@ -20,44 +20,44 @@
 }
 
 nav:has(* a[href*="/terrain"]),
-nav:has(* a[href*="/terrain"]) * .NavMenu__list-group:not(div:has(* a[href*="/terrain"])),
-.NavMenu__list-group:has(* a[href*="/summit"]),
-div.NavMenu__list-group:has(* a[href*="/summit/"]) * div.NavMenu__subitem-content
+nav:has(* a[href*="/terrain"]) * .NavMenu__menu-group:not(div:has(* a[href*="/terrain"])),
+.NavMenu__menu-group:has(* a[href*="/summit"]),
+div.NavMenu__menu-group:has(* a[href*="/summit/"]) * div.NavMenu__subitem-content
 {
   background: #004C00 !important;
   border-bottom: 1px solid #004100 !important;
   border-top: 0px solid #004100 !important;
 }
 
-nav:has(* a[href*="/terrain"]) * .NavMenu__list-group:not(div:has(* a[href*="/terrain"])):hover,
-nav:has(* a[href*="/terrain"]) * .NavMenu__list-group:not(div:has(* a[href*="/terrain"])) > .v-list-group__header:hover,
-.NavMenu__list-group:has(* a[href*="/summit"]):hover,
-.NavMenu__list-group:has(* a[href*="/summit"]) > .v-list-group__header:hover,
-div.NavMenu__list-group.v-list-group--active:has(* a[href*="/summit/"]) * a.v-list-item--active > .NavMenu__subitem-content,
-div.NavMenu__list-group.v-list-group--active:has(* a[href*="/summit/"]) > .v-list-group__header {
+nav:has(* a[href*="/terrain"]) * .NavMenu__menu-group:not(div:has(* a[href*="/terrain"])):hover,
+nav:has(* a[href*="/terrain"]) * .NavMenu__menu-group:not(div:has(* a[href*="/terrain"])) > .v-menu-group__header:hover,
+.NavMenu__menu-group:has(* a[href*="/summit"]):hover,
+.NavMenu__menu-group:has(* a[href*="/summit"]) > .v-menu-group__header:hover,
+div.NavMenu__menu-group.v-menu-group--active:has(* a[href*="/summit/"]) * a.v-list-item--active > .NavMenu__subitem-content,
+div.NavMenu__menu-group.v-menu-group--active:has(* a[href*="/summit/"]) > .v-menu-group__header {
   background: #006600 !important;
 }
 
-div.NavMenu__list-group.v-list-group--active:has(* a[href*="/summit/"]) * a.v-list-item--active > .NavMenu__subitem-content
+div.NavMenu__menu-group.v-menu-group--active:has(* a[href*="/summit/"]) * a.v-list-item--active > .NavMenu__subitem-content
 {
   background: #197419 !important;
 }
 
-div.v-list-group__header:has(* a[href*="/summit/"]),
-div.v-list-group__header:has(> a[href*="/summit/"]),
-div.v-list-group__items:has(* a[href*="/summit/"])
+div.v-menu-group__header:has(* a[href*="/summit/"]),
+div.v-menu-group__header:has(> a[href*="/summit/"]),
+div.v-menu-group__items:has(* a[href*="/summit/"])
 {
   background: #004C00 !important;
 }
 
-div.v-list-group__header:has(> a[href*="/summit/"]):hover,
+div.v-menu-group__header:has(> a[href*="/summit/"]):hover,
 a.NavMenu__subitem[href*="/summit/"]:hover > div.NavMenu__subitem-content:hover,
 a.NavMenu__sub-subitem[href*="/summit/"]:hover {
   background-color: #006600 !important;
 }
 
 
-div.NavMenu__list-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-content:hover{
+div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-content:hover{
   background: #006600 !important;
   cursor: default;
 }

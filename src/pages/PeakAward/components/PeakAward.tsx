@@ -146,25 +146,25 @@ export default class PeakAwardTable extends React.Component<PeakAwardReportTable
         ref={(g: GridComponent | null) => (this.grid = g)}
       >
         <ColumnsDirective>
-          <ColumnDirective field="name" headerText="Name" width="150" />
-          <ColumnDirective field="milestone3" headerText="Milestone 3" width="20" headerTemplate={this.verticalHeaders("Milestone 3")} />
-          <ColumnDirective field="leads" headerText="Leads" width="20" headerTemplate={this.verticalHeaders("Leads")} />
-          <ColumnDirective field="assists" headerText="Assists" width="20" headerTemplate={this.verticalHeaders("Assists")} />
-          <ColumnDirective field="outdoors" headerText="Outdoors" width="20" headerTemplate={this.verticalHeaders("Outdoors")} />
-          <ColumnDirective field="creative" headerText="Creative" width="20" headerTemplate={this.verticalHeaders("Creative")} />
-          <ColumnDirective field="personalGrowth" headerText="Personal Growth" width="20" headerTemplate={this.verticalHeaders("Personal Growth")} />
-          <ColumnDirective field="community" headerText="Community" width="20" headerTemplate={this.verticalHeaders("Community")} />
-          <ColumnDirective field="SIAInProgress" headerText="SIA In Progress" width="20" headerTemplate={this.verticalHeaders("SIA In Progress")} />
-          <ColumnDirective field="SIACompleted" headerText="SIA Completed" width="20" headerTemplate={this.verticalHeaders("SIA Completed")} />
-          <ColumnDirective field="OASProgressions" headerText="OAS Progressions" width="20" headerTemplate={this.verticalHeaders("Progressions")} />
-          <ColumnDirective field="Bushcraft" headerText="Bushcraft" width="20" headerTemplate={this.verticalHeaders("Bushcraft")} />
-          <ColumnDirective field="Bushwalking" headerText="Bushwalking" width="20" headerTemplate={this.verticalHeaders("Bushwalking")} />
-          <ColumnDirective field="Camping" headerText="Camping" width="20" headerTemplate={this.verticalHeaders("Camping")} />
-          <ColumnDirective field="Scouts" headerText="Scouts" width="20" headerTemplate={this.verticalHeaders("Scouts")} />
-          <ColumnDirective field="Section" headerText="Section" width="20" headerTemplate={this.verticalHeaders("Section")} />
-          <ColumnDirective field="PersonalDevelopment" headerText="Personal Development" width="25" headerTemplate={this.verticalHeaders("Course")} />
-          <ColumnDirective field="Reflection" headerText="Reflection" width="20" headerTemplate={this.verticalHeaders("Reflection")} />
-          <ColumnDirective field="Journey" headerText="Journey" width="20" headerTemplate={this.verticalHeaders("Journey")} />
+          <ColumnDirective field="name" headerText="Name" width="150" isFrozen={true} />
+          <ColumnDirective field="milestone3" headerText="Milestone 3" width="50" headerTemplate={this.verticalHeaders("Milestone 3")} />
+          <ColumnDirective field="leads" headerText="Leads" width="50" headerTemplate={this.verticalHeaders("Leads")} />
+          <ColumnDirective field="assists" headerText="Assists" width="50" headerTemplate={this.verticalHeaders("Assists")} />
+          <ColumnDirective field="outdoors" headerText="Outdoors" width="50" headerTemplate={this.verticalHeaders("Outdoors")} />
+          <ColumnDirective field="creative" headerText="Creative" width="50" headerTemplate={this.verticalHeaders("Creative")} />
+          <ColumnDirective field="personalGrowth" headerText="Personal Growth" width="50" headerTemplate={this.verticalHeaders("Personal Growth")} />
+          <ColumnDirective field="community" headerText="Community" width="50" headerTemplate={this.verticalHeaders("Community")} />
+          <ColumnDirective field="SIAInProgress" headerText="SIA In Progress" width="50" headerTemplate={this.verticalHeaders("SIA In Progress")} />
+          <ColumnDirective field="SIACompleted" headerText="SIA Completed" width="50" headerTemplate={this.verticalHeaders("SIA Completed")} />
+          <ColumnDirective field="OASProgressions" headerText="OAS Progressions" width="50" headerTemplate={this.verticalHeaders("Progressions")} />
+          <ColumnDirective field="Bushcraft" headerText="Bushcraft" width="50" headerTemplate={this.verticalHeaders("Bushcraft")} />
+          <ColumnDirective field="Bushwalking" headerText="Bushwalking" width="50" headerTemplate={this.verticalHeaders("Bushwalking")} />
+          <ColumnDirective field="Camping" headerText="Camping" width="50" headerTemplate={this.verticalHeaders("Camping")} />
+          <ColumnDirective field="Scouts" headerText="Scouts" width="50" headerTemplate={this.verticalHeaders("Scouts")} />
+          <ColumnDirective field="Section" headerText="Section" width="50" headerTemplate={this.verticalHeaders("Section")} />
+          <ColumnDirective field="PersonalDevelopment" headerText="Personal Development" width="50" headerTemplate={this.verticalHeaders("Course")} />
+          <ColumnDirective field="Reflection" headerText="Reflection" width="50" headerTemplate={this.verticalHeaders("Reflection")} />
+          <ColumnDirective field="Journey" headerText="Journey" width="50" headerTemplate={this.verticalHeaders("Journey")} />
         </ColumnsDirective>
         <Inject services={[Toolbar, PdfExport, ExcelExport, Sort]} />
       </GridComponent>

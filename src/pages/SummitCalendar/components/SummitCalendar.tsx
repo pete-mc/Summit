@@ -636,9 +636,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           enableAdaptiveUI={true}
         >
           <ViewsDirective>
-            <ViewDirective option="Week" />
             <ViewDirective option="Month" />
-            <ViewDirective option="Agenda" />
           </ViewsDirective>
           <Inject services={[Week, Month, Agenda]} />
         </ScheduleComponent>
