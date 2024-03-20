@@ -21,7 +21,10 @@
 
 nav:has(* a[href*="/terrain"]),
 nav:has(* a[href*="/terrain"]) * .NavMenu__menu-group:not(div:has(* a[href*="/terrain"])),
+nav:has(* a[href*="/terrain"]) * .NavMenu__expansion-panel-content,
+nav:has(* a[href*="/terrain"]) * .NavMenu__expansion-panel,
 .NavMenu__menu-group:has(* a[href*="/summit"]),
+div.NavMenu__menu-group:has(* a[href*="/summit/"]) * .NavMenu__expansion-panel,
 div.NavMenu__menu-group:has(* a[href*="/summit/"]) * div.NavMenu__subitem-content
 {
   background: #004C00 !important;
@@ -29,16 +32,20 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]) * div.NavMenu__subitem-conten
   border-top: 0px solid #004100 !important;
 }
 
+
+nav:has(* a[href*="/terrain"]) * .NavMenu__expansion-panel:hover,
+nav:has(* a[href*="/terrain"]) * .NavMenu__secondary-link:hover,
 nav:has(* a[href*="/terrain"]) * .NavMenu__menu-group:not(div:has(* a[href*="/terrain"])):hover,
 nav:has(* a[href*="/terrain"]) * .NavMenu__menu-group:not(div:has(* a[href*="/terrain"])) > .v-menu-group__header:hover,
+div.NavMenu__menu-group:has(* a[href*="/summit/"]) * .NavMenu__expansion-panel:hover,
 .NavMenu__menu-group:has(* a[href*="/summit"]):hover,
 .NavMenu__menu-group:has(* a[href*="/summit"]) > .v-menu-group__header:hover,
-div.NavMenu__menu-group.v-menu-group--active:has(* a[href*="/summit/"]) * a.v-list-item--active > .NavMenu__subitem-content,
-div.NavMenu__menu-group.v-menu-group--active:has(* a[href*="/summit/"]) > .v-menu-group__header {
+div.NavMenu__expansion-panel.v-menu-group--active:has(* a[href*="/summit/"]) * a.v-list-item--active > .NavMenu__subitem-content,
+div.NavMenu__expansion-panel.v-menu-group--active:has(* a[href*="/summit/"]) > .v-menu-group__header {
   background: #006600 !important;
 }
 
-div.NavMenu__menu-group.v-menu-group--active:has(* a[href*="/summit/"]) * a.v-list-item--active > .NavMenu__subitem-content
+div.NavMenu__expansion-panel.v-menu-group--active:has(* a[href*="/summit/"]) * a.v-list-item--active > .NavMenu__subitem-content
 {
   background: #197419 !important;
 }

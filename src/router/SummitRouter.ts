@@ -30,6 +30,15 @@ export default class SummitRouter {
     return SummitRouter.instance;
   }
 
+  public finaliseSetup(): void {
+    if (SummitRouter.terrainNavMenuItems.length === 0 && window.$nuxt.$store.state.user.username.length != 0) {
+      setTimeout(() => {
+        this.resetMenu();
+        this.finaliseSetup();
+      }, 100);
+    }
+  }
+
   public resetMenu(): void {
     SummitRouter.terrainNavMenuItems = SummitRouter.getTerrainNavMenuItems();
     this.initNavMenu();
@@ -77,7 +86,7 @@ export default class SummitRouter {
         SummitRouter.switchMenu(this.summitNavMenuItems);
       } else {
         if (SummitRouter.terrainNavMenuItems.length === 0) {
-          this.initNavMenu();
+          this.resetMenu();
         }
         SummitRouter.switchMenu(SummitRouter.terrainNavMenuItems);
       }
@@ -87,8 +96,7 @@ export default class SummitRouter {
       console.log("After each");
       if (this.summitNavMenuItems.length === 0 || SummitRouter.terrainNavMenuItems.length === 0) {
         setTimeout(() => {
-          console.log("waiting for nav menu items to load");
-          this.initNavMenu();
+          this.resetMenu();
         }, 1000);
       }
       window.$nuxt.$nextTick(() => {
@@ -179,7 +187,8 @@ export default class SummitRouter {
       locked: false,
       roles: [true, false],
     };
-    SummitRouter.addMenuItems([SummitNavMenuItem]);
+    //check if SummitRouter.terrainNavMenuItems has a item with the title "Terrain | Summit"
+    if (!SummitRouter.terrainNavMenuItems.some((item) => item.title === "Terrain | Summit")) SummitRouter.addMenuItems([SummitNavMenuItem]);
   }
 
   private static getTerrainNavMenuItems(): NavMenuItem[] {

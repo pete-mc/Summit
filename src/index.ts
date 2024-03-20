@@ -3,12 +3,10 @@ import summitModule from "@/modules/summitModule";
 import SummitRouter from "@/router/SummitRouter";
 import $ from "jquery";
 window.$ = $;
-console.log("Hello from Summit");
-console.log(window.$nuxt);
 $(function () {
   window.$nuxt.$store.registerModule("Summit", summitModule);
   window.$nuxt.$store.dispatch("Summit/initialize");
-  SummitRouter.getInstance();
+  SummitRouter.getInstance().finaliseSetup();
   const Vue = window.$nuxt.$root && window.$nuxt.$root.constructor;
   window.Vue = Vue as never;
 });
