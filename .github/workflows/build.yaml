@@ -48,7 +48,7 @@ jobs:
     - name: Build Summit
       run: |
         mkdir -p ./dist
-        npx webpack --config webpack.prod.js
+        npx webpack --config webpack.config.js --mode production
       working-directory: ${{ github.workspace }}
 
     - name: Zip summit
