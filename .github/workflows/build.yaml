@@ -3,7 +3,7 @@ name: Build and Release Summit
 on:
   push:
     branches:
-      - main
+      - summit-main
 
 permissions:
   contents: write
@@ -26,43 +26,29 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
+    - name: Cache node modules
+      uses: actions/cache@v3
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
     - name: Setup Node.js environment
       uses: actions/setup-node@v4
 
     - name: Install jq
       run: sudo apt-get install jq
 
-    - name: Extract version
-      id: get_version
-      run: |
-        cd bootstrapper
-        VERSION=$(jq -r .version manifest.json)
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-    - name: Print version
-      run: echo "Version is ${{ env.VERSION }}"
-
-    - name: Check if release already exists
-      if: github.ref == 'refs/heads/main'
-      id: check_release
-      run: |
-        RELEASE=$(curl --silent "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/${{ steps.get_version.outputs.VERSION }}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" || echo '{"message": "Not Found"}')
-        MESSAGE=$(echo $RELEASE | jq -r .message)
-        if [[ $MESSAGE == "Not Found" ]]; then
-          echo "Release with version ${{ steps.get_version.outputs.VERSION }} does not exist."
-        else
-          echo "Release with version ${{ steps.get_version.outputs.VERSION }} already exists."
-          exit 1
-        fi
-
     - name: Install dependencies
-      run: npm install -g webpack @types/jest jest typescript webpack-cli npm-run-all
-      run: npm ci
+      run: |
+        npm install -g webpack @types/jest jest typescript webpack-cli npm-run-all
+        npm ci
       
     - name: Build Summit
-      run: mkdir -p ./dist
-      run: npx webpack --config webpack.prod.js
+      run: |
+        mkdir -p ./dist
+        npx webpack --config webpack.prod.js
       working-directory: ${{ github.workspace }}
 
     - name: Zip summit
