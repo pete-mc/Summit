@@ -14,7 +14,7 @@
                 "https://terrain.scouts.com.au/*"
             ],
             "js": [
-                "/scripts/summitLoader.js"
+                "/scripts/summitloader.js"
             ],
             "css": [
                 "/styles/summit.css",
