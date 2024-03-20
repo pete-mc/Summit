@@ -1,4 +1,4 @@
-import { FindComponent } from "@/helpers";
+import FindComponent from "../helpers/FindComponent";
 import { Home, DisplayOptions, MilestoneReport, OasReport, Topo, PresentAwards, SummitCalendar, PeakAward } from "@/pages";
 import { NavMenuComponent, NavMenuItem } from "@/types/NavMenu";
 import VueRouter, { Route } from "vue-router";

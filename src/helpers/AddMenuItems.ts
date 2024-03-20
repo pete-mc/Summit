@@ -1,6 +1,6 @@
 import { type NavMenuComponent, type NavMenuItem } from "@/types/NavMenu";
 import Vue from "vue";
-import { FindComponent } from ".";
+import FindComponent from "./FindComponent";
 
 function addMenuItems(items: NavMenuItem[]): void {
   const navMenuComponent: NavMenuComponent = FindComponent("NavMenu", window.$nuxt.$root as Vue) as NavMenuComponent;
