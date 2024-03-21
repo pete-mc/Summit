@@ -1,9 +1,8 @@
 <template>
   <div id="SummitContentDiv">
-    <h2 id="milestoneHeader">Milestone Planning</h2>
-    The milestones planning report is useful to see how many participates, leads and assists each member requires to
-    complete their current milestone. Note that the numbers displayed are the <b>remaining requrement</b> not the current
-    total.<br />
+    <h2 id="milestoneHeader">Peak Award Progress</h2>
+    This report will show the current progress towards the peak award for each member for the section. Note that the
+  remaining milestone points only appear once the youth member is in milestone 3<br />
     <div id="Buttons"></div>
     <div ref="reactRoot"></div>
     <canvas id="myChart"></canvas>
