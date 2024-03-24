@@ -88,6 +88,7 @@ export default class MilestoneReprtTable extends React.Component<MilestoneReport
       >
         <ColumnsDirective>
           <ColumnDirective field="name" headerText="Name" width="150" isFrozen={true} />
+          <ColumnDirective field="milestone" headerText="Milestone" width="100" isFrozen={true} />
           <ColumnDirective field="total_leads" headerText="Leads" width="100" />
           <ColumnDirective field="total_assists" headerText="Assists" width="100" />
           <ColumnDirective field="outdoors" headerText="Outdoors" width="100" />
