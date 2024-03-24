@@ -32,11 +32,13 @@ export default class MilestoneReportTable extends React.Component<MilestoneRepor
         },
         columns: [
           { field: "name", headerText: "Name", width: 150 },
+          { field: "milestone", headerText: "Next Milestone", width: 150 },
+          { field: "overall_percent", headerText: "Complete", width: 150 },
           { field: "total_leads", headerText: "Leads", width: 120 },
           { field: "total_assists", headerText: "Assists", width: 120 },
           { field: "outdoors", headerText: "Outdoors", width: 120 },
           { field: "creative", headerText: "Creative", width: 120 },
-          { field: "personalGrowth", headerText: "Personal Growth", width: 120 },
+          { field: "personal_growth", headerText: "Personal Growth", width: 120 },
           { field: "community", headerText: "Community", width: 120 },
         ] as Column[],
       } as ExcelExportProperties;
@@ -49,11 +51,12 @@ export default class MilestoneReportTable extends React.Component<MilestoneRepor
         fileName: "MilestoneReport.pdf",
         columns: [
           { field: "name", headerText: "Name", width: 140 },
+
           { field: "total_leads", headerText: "Leads", width: 90 },
           { field: "total_assists", headerText: "Assists", width: 90 },
           { field: "outdoors", headerText: "Outdoors", width: 90 },
           { field: "creative", headerText: "Creative", width: 90 },
-          { field: "personalGrowth", headerText: "Personal Growth", width: 90 },
+          { field: "personal_growth", headerText: "Personal Growth", width: 90 },
           { field: "community", headerText: "Community", width: 90 },
         ] as Column[],
         header: {
@@ -88,7 +91,7 @@ export default class MilestoneReportTable extends React.Component<MilestoneRepor
       >
         <ColumnsDirective>
           <ColumnDirective field="name" headerText="Name" width="150" isFrozen={true} />
-          <ColumnDirective field="milestone" headerText="Milestone" width="100" isFrozen={true} />
+          <ColumnDirective field="milestone" headerText="Next Milestone" width="auto" isFrozen={true} />
           <ColumnDirective field="overall_percent" type="string" headerText="Complete" width="auto" />
           <ColumnDirective field="total_leads" headerText="Leads" width="auto" />
           <ColumnDirective field="total_assists" headerText="Assists" width="auto" />
