@@ -116,7 +116,7 @@ export default class MilestonePlanningItem {
   overall_percent: string;
   outdoors: number;
   creative: number;
-  personalGrowth: number;
+  personal_growth: number;
   community: number;
 
   constructor(CurrentMilestone: TerrainAchievements | undefined, UnitMember: TerrainUnitMember) {
@@ -128,7 +128,7 @@ export default class MilestonePlanningItem {
       this.total_assists = 0;
       this.outdoors = 0;
       this.creative = 0;
-      this.personalGrowth = 0;
+      this.personal_growth = 0;
       this.community = 0;
       return;
     }
@@ -144,7 +144,7 @@ export default class MilestonePlanningItem {
     this.overall_percent = result.overallPercent + "%";
     this.outdoors = result.outdoors;
     this.creative = result.creative;
-    this.personalGrowth = result.personalGrowth;
+    this.personal_growth = result.personalGrowth;
     this.community = result.community;
   }
 }

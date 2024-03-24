@@ -8,7 +8,7 @@ interface MilestoneReportTableProps {
   onUpdate: (items: MilestonePlanningItem[]) => void;
 }
 
-export default class MilestoneReprtTable extends React.Component<MilestoneReportTableProps> {
+export default class MilestoneReportTable extends React.Component<MilestoneReportTableProps> {
   constructor(props: MilestoneReportTableProps) {
     super(props);
     this.state = {
@@ -89,12 +89,13 @@ export default class MilestoneReprtTable extends React.Component<MilestoneReport
         <ColumnsDirective>
           <ColumnDirective field="name" headerText="Name" width="150" isFrozen={true} />
           <ColumnDirective field="milestone" headerText="Milestone" width="100" isFrozen={true} />
-          <ColumnDirective field="total_leads" headerText="Leads" width="100" />
-          <ColumnDirective field="total_assists" headerText="Assists" width="100" />
-          <ColumnDirective field="outdoors" headerText="Outdoors" width="100" />
-          <ColumnDirective field="creative" headerText="Creative" width="100" />
-          <ColumnDirective field="personalGrowth" headerText="Personal Growth" width="100" />
-          <ColumnDirective field="community" headerText="Community" width="100" />
+          <ColumnDirective field="overall_percent" type="string" headerText="Complete" width="auto" />
+          <ColumnDirective field="total_leads" headerText="Leads" width="auto" />
+          <ColumnDirective field="total_assists" headerText="Assists" width="auto" />
+          <ColumnDirective field="outdoors" headerText="Outdoors" width="auto" />
+          <ColumnDirective field="creative" headerText="Creative" width="auto" />
+          <ColumnDirective field="personal_growth" headerText="Personal Growth" width="auto" />
+          <ColumnDirective field="community" headerText="Community" width="auto" />
         </ColumnsDirective>
         <Inject services={[Toolbar, PdfExport, ExcelExport, Sort]} />
       </GridComponent>
