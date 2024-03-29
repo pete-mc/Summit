@@ -61,7 +61,6 @@ jobs:
       run: zip -r summit.zip dist/*
 
     - name: Upload web extension as artifact
-      if: github.ref == 'refs/heads/dev'
       uses: actions/upload-artifact@v2
       with:
         name: Summit
