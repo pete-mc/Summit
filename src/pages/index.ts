@@ -6,4 +6,5 @@ import OasReport from "./OasReport/OasReport.vue";
 import PresentAwards from "./PresentAwards/PresentAwards.vue";
 import SummitCalendar from "./SummitCalendar/SummitCalendar.vue";
 import PeakAward from "./PeakAward/PeakAward.vue";
-export { MilestoneReport, Topo, Home, DisplayOptions, OasReport, PresentAwards, SummitCalendar, PeakAward };
+import TermPlanner from "@/pages/TermPlanner/TermPlanner.vue";
+export { MilestoneReport, Topo, Home, DisplayOptions, OasReport, PresentAwards, SummitCalendar, PeakAward, TermPlanner };

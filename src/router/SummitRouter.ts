@@ -1,5 +1,5 @@
 import FindComponent from "../helpers/FindComponent";
-import { Home, DisplayOptions, MilestoneReport, OasReport, Topo, PresentAwards, SummitCalendar, PeakAward } from "@/pages";
+import { Home, DisplayOptions, MilestoneReport, OasReport, Topo, PresentAwards, TermPlanner, SummitCalendar, PeakAward } from "@/pages";
 import { NavMenuComponent, NavMenuItem } from "@/types/NavMenu";
 import VueRouter, { Route } from "vue-router";
 import Vue from "vue";
@@ -52,6 +52,10 @@ export default class SummitRouter {
     this.router.addRoute({
       path: "/summit/home",
       component: Home,
+    });
+    this.router.addRoute({
+      path: "/summit/tools/TermPlanner",
+      component: TermPlanner,
     });
     this.router.addRoute({
       path: "/summit/tools/SummitCalendar",
@@ -157,6 +161,13 @@ export default class SummitRouter {
           {
             title: "Summit Calendar",
             to: "/summit/tools/SummitCalendar",
+            items: [],
+            locked: false,
+            roles: [true, false],
+          },
+          {
+            title: "Term Planner",
+            to: "/summit/tools/TermPlanner",
             items: [],
             locked: false,
             roles: [true, false],

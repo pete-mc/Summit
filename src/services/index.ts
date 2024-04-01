@@ -7,6 +7,7 @@ export { default as fetchUnitAchievements } from "./fetchUnitAchievements";
 export { default as fetchUnitAchievementsFilterd } from "./fetchUnitAchievementsFilterd";
 export { default as fetchUnitMembers } from "./fetchUnitMembers";
 export { default as fetchUnitMembersMetrics } from "./fetchUnitMembersMetrics";
+export { default as fetchSchoolTermDates } from "./fetchSchoolTermDates";
 export { default as getCurrentProfile } from "./getCurrentProfile";
 export { default as getLogbookData } from "./getLogbookData";
 export { default as saveLogbookData } from "./saveLogbookData";
