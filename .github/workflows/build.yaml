@@ -1,10 +1,9 @@
-name: Build Summit
+name: Build
 
 on:
   push:
     branches:
-      - main
-      - 3.1.0
+      - '*'
 
 permissions:
   contents: write
@@ -49,7 +48,7 @@ jobs:
     - name: Activate Syncfusion License
       run: npx syncfusion-license activate
       env:
-        SYNCFUSION_LICENSE: $
+        SYNCFUSION_LICENSE: ${{ secrets.SYNCFUSION_LICENSE }}
         
     - name: Build Summit
       run: |
@@ -57,11 +56,8 @@ jobs:
         npx webpack --config webpack.config.js --mode production
       working-directory: ${{ github.workspace }}
 
-    - name: Zip summit
-      run: zip -r summit.zip dist/*
-
     - name: Upload web extension as artifact
       uses: actions/upload-artifact@v2
       with:
         name: Summit
-        path: ./summit.zip
+        path: dist/*
