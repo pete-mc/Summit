@@ -4,6 +4,20 @@ export interface TerrainCache {
   data: TerrainCacheData;
   ttl: number;
 }
+
+interface Term {
+  start: string;
+  end: string;
+}
+
+interface StateTerms {
+  [year: string]: Term[];
+}
+
+interface SchoolTerms {
+  [state: string]: StateTerms;
+}
+
 export interface TerrainLogbook {
   id?: string;
   title?: string;

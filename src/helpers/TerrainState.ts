@@ -1,4 +1,5 @@
 import { Profile, TerrainRootState, State } from "@/types/terrainState";
+import { SchoolTerms } from "@/types/terrainTypes";
 
 export const TerrainState = {
   getCurrentProfile(): Profile {
@@ -30,8 +31,13 @@ export const TerrainState = {
   getMemberName(): string {
     return (window.$nuxt.$store.state as TerrainRootState).user.memberDetails.first_name + " " + (window.$nuxt.$store.state as TerrainRootState).user.memberDetails.last_name;
   },
+
   getMemberState(): State {
     return (window.$nuxt.$store.state as TerrainRootState).user.username.split("-")[0].toUpperCase() as State;
+  },
+
+  getSchoolTerms(state: State): SchoolTerms {
+    return JSON.parse(localStorage.getItem("SCHOOL_TERM_DATES") ?? "{}")[state] as SchoolTerms;
   },
 };
 

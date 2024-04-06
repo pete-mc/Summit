@@ -3,7 +3,6 @@ import { defineComponent } from "vue";
 import { createRoot, Root } from "react-dom/client";
 import React from "react";
 import TermPlannerTable from "@/pages/TermPlanner/components/TermPlanner";
-import fetchSchoolTermDates from "@/services/fetchSchoolTermDates";
 import { TerrainState } from "@/helpers";
 function data() {
   // Initialize items and root
@@ -54,7 +53,9 @@ export default defineComponent({
   },
   methods: {
     getSchoolTerm(): void {
-      fetchSchoolTermDates(TerrainState.getMemberState());
+      const state = TerrainState.getMemberState();
+      const schoolTerms = TerrainState.getSchoolTerms(state);
+      console.log(schoolTerms);
     },
     mountReactComponent() {
       // Mounting React.js component to defined root
