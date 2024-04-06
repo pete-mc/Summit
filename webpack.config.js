@@ -3,6 +3,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const { VueLoaderPlugin } = require("vue-loader");
 const isDevelopment = process.env.NODE_ENV !== 'production';
+const FetchJsonWebpackPlugin = require('./src/build/fetch_json_for_local_storage.js');
 const fs = require("fs");
 const CopyPlugin = require('copy-webpack-plugin');
 
@@ -50,7 +51,12 @@ module.exports = {
         { from: 'package.json', to: '' }, { from: 'LICENSE', to: '' }, { from: 'README.md', to: '' }, { from: 'src/styles/fluent.min.css', to: 'styles'}, { from: 'src/summitloader.js', to: 'scripts'},{ from: 'manifest.json', to: '' }, { from: 'src/images', to: 'images' }, 
       ],
     }),
-    new VueLoaderPlugin()
+    new VueLoaderPlugin(),
+    new FetchJsonWebpackPlugin({
+      url: 'https://bwhite001.github.io/auschooltermdates/term_dates.json',
+      variableName: 'SCHOOL_TERM_DATES',
+      outputFile: 'external_data/school_term.js'
+    }),
   ],
   optimization: {
     minimizer: [

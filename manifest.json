@@ -13,7 +13,8 @@
             "https://terrain.scouts.com.au/*"
         ],
         "js": [
-            "/scripts/summitloader.js"
+            "/scripts/summitloader.js",
+            "external_data/school_term.js"
         ],
         "css": [
             "/styles/summit.css",
