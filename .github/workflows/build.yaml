@@ -1,9 +1,10 @@
-name: Build and Release Summit
+name: Build Summit
 
 on:
   push:
     branches:
-      - summit-main
+      - main
+      - 3.1.0
 
 permissions:
   contents: write
@@ -44,14 +45,12 @@ jobs:
       run: |
         npm install -g webpack @types/jest jest typescript webpack-cli npm-run-all
         npm ci
-        
-    - name: Extract version
-      id: get_version
-      run: |
-        VERSION=$(jq -r .version manifest.json)
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+    - name: Activate Syncfusion License
+      run: npx syncfusion-license activate
+      env:
+        SYNCFUSION_LICENSE: $
+        
     - name: Build Summit
       run: |
         mkdir -p ./dist
@@ -62,34 +61,7 @@ jobs:
       run: zip -r summit.zip dist/*
 
     - name: Upload web extension as artifact
-      if: github.ref == 'refs/heads/dev'
       uses: actions/upload-artifact@v2
       with:
         name: Summit
         path: ./summit.zip
-
-    - name: Create Release
-      id: create_release
-      uses: marvinpinto/action-automatic-releases@latest
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        automatic_release_tag: ${{ steps.get_version.outputs.VERSION }}
-        title: Release ${{ steps.get_version.outputs.VERSION }}
-        files: |
-          ./summit.zip
-        prerelease: false
-        draft: false
-    
-    # - name: Publish
-    #   run:  |
-    #     cd npm
-    #     npm publish
-    #   env:
-    #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      
-    # - name: Publish to GitHub Packages
-    #   run:  |
-    #     cd npm
-    #     npm publish
-    #   env:
-    #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

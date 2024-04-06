@@ -1,35 +1,31 @@
 {
     "manifest_version": 3,
-    "name": "Terrain | Summit",
-    "version": "3.0.4",
+    "name": "Terrain | Summit - Test",
+    "version": "3.1.0",
     "description": "Where Every Achievement is a Summit Conquered",
     "icons": {
         "16": "/images/Icon16.png",
         "48": "/images/Icon48.png",
         "128": "/images/Icon128.png"
     },
-    "content_scripts": [
-        {
-            "matches": [
-                "https://terrain.scouts.com.au/*"
-            ],
-            "js": [
-                "/scripts/summitloader.js"
-            ],
-            "css": [
-                "/styles/summit.css",
-                "/styles/fluent.min.css"
-            ]
-        }
-    ],
-    "web_accessible_resources": [
-        {
-          "resources": ["scripts/summit.js"],
-          "matches": ["https://terrain.scouts.com.au/*"]
-        }
-      ],
+    "content_scripts": [{
+        "matches": [
+            "https://terrain.scouts.com.au/*"
+        ],
+        "js": [
+            "/scripts/summitloader.js"
+        ],
+        "css": [
+            "/styles/summit.css",
+            "/styles/fluent.min.css"
+        ]
+    }],
+    "web_accessible_resources": [{
+        "resources": ["scripts/summit.js"],
+        "matches": ["https://terrain.scouts.com.au/*"]
+    }],
     "permissions": ["activeTab", "scripting"],
     "content_security_policy": {
         "extension_pages": "default-src 'self'"
-      }
+    }
 }

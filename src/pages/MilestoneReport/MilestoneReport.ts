@@ -1,5 +1,5 @@
 import React from "react";
-import { createRoot, Root } from "react-dom/client";
+import { Root, createRoot } from "react-dom/client";
 import { defineComponent } from "vue";
 import { TerrainAchievements } from "@/types/terrainTypes";
 import { fetchUnitAchievementsFilterd, fetchUnitMembers } from "@/services";
@@ -51,19 +51,11 @@ export default defineComponent({
     this.unmountReactComponent();
   },
   methods: {
-    /**
-     * Retrieves milestone data for the current section.
-     *
-     * @async
-     * @function getMilestoneData
-     * @returns {Promise<void>} - Resolves when the milestone data has been retrieved and processed.
-     */
-    getMilestoneData: async function () {
+    async getMilestoneData() {
       const currentSection = TerrainState.getSectionName();
       const achievements = (await fetchUnitAchievementsFilterd(`type=milestone&section=${currentSection}`)) as TerrainAchievements[];
-      const sortedAchievements = achievements.sort((a, b) => (a.achievement_meta?.stage ?? 0) - (b.achievement_meta?.stage ?? 0));
-      // Filter by Achievements that are incomplete and not awarded, include "Not Required" for skipped milestones
-      const filteredAchievements = sortedAchievements.filter((a) => a.milestone_requirement_status === "incomplete" && a.status !== "awarded" && a.status != "not_required");
+      const filteredAchievements = achievements.sort((a, b) => (a.achievement_meta?.stage ?? 0) - (b.achievement_meta?.stage ?? 0)).filter((a) => a.milestone_requirement_status === "incomplete" && a.status !== "awarded");
+
       this.items = (await fetchUnitMembers())
         .filter((m) => m.unit.duty !== "adult_leader")
         .map(
