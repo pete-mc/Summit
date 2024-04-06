@@ -51,7 +51,8 @@ export default class MilestoneReportTable extends React.Component<MilestoneRepor
         fileName: "MilestoneReport.pdf",
         columns: [
           { field: "name", headerText: "Name", width: 140 },
-
+          { field: "milestone", headerText: "Next Milestone" },
+          { field: "overall_percent", headerText: "Completed" },
           { field: "total_leads", headerText: "Leads", width: 90 },
           { field: "total_assists", headerText: "Assists", width: 90 },
           { field: "outdoors", headerText: "Outdoors", width: 90 },
@@ -92,8 +93,8 @@ export default class MilestoneReportTable extends React.Component<MilestoneRepor
         <ColumnsDirective>
           <ColumnDirective field="name" headerText="Name" width="150" isFrozen={true} />
           <ColumnDirective field="milestone" headerText="Next Milestone" width="auto" isFrozen={true} />
-          <ColumnDirective field="overall_percent" type="string" headerText="Complete" width="auto" />
-          <ColumnDirective field="total_leads" headerText="Leads" width="auto" />
+          <ColumnDirective field="" type="string" headerText="Complete" width="auto" />
+          <ColumnDirective field="total_leadsoverall_percent" headerText="Leads" width="auto" />
           <ColumnDirective field="total_assists" headerText="Assists" width="auto" />
           <ColumnDirective field="outdoors" headerText="Outdoors" width="auto" />
           <ColumnDirective field="creative" headerText="Creative" width="auto" />
