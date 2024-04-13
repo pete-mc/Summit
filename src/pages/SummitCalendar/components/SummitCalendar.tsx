@@ -1,9 +1,9 @@
-import React from "react";
+import React, { FocusEvent } from "react";
 import { Agenda, Month, Week, Inject, EventSettingsModel, ScheduleComponent, ActionEventArgs, EventRenderedArgs, ViewsDirective, ViewDirective, PopupOpenEventArgs } from "@syncfusion/ej2-react-schedule";
 import SummitCalendarItem from "../models/SummitCalendarItems";
-import { createNewEvent, deleteEvent, fetchActivity, fetchMemberEvents, fetchUnitMembers, updateEvent } from "@/services";
+import { createNewEvent, deleteEvent, fetchActivity, fetchMemberCalendars, fetchMemberEvents, fetchUnitMembers, updateEvent, updateMemberCalendars } from "@/services";
 import moment from "moment";
-import { TerrainEvent, TerrainEventSummary, TerrainUnitMember } from "@/types/terrainTypes";
+import { TerrainEvent, TerrainEventSummary, TerrainUnitMember, TerrrainCalendarResult } from "@/types/terrainTypes";
 import { DdtChangeEventArgs, DropDownListComponent, DropDownTreeComponent } from "@syncfusion/ej2-react-dropdowns";
 import { DatePickerComponent, TimePickerComponent } from "@syncfusion/ej2-react-calendars";
 import { TerrainState } from "@/helpers";
@@ -27,6 +27,8 @@ interface SummitCalendarState {
   unitMembers: TerrainUnitMember[];
   hideDialog: boolean;
   iframeKey: number;
+  calendars: TerrrainCalendarResult;
+  allCalendars: { id: string; name: string; selected: boolean }[];
 }
 
 export class SummitCalendarComponent extends React.Component<SummitCalendarProps, SummitCalendarState> {
@@ -45,19 +47,32 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       unitMembers: [],
       hideDialog: true,
       iframeKey: 0,
+      calendars: {},
+      allCalendars: [],
     };
     this.handleInputChange = this.handleInputChange.bind(this);
   }
 
   componentDidMount() {
+    this.fetchCalendars();
     this.fetchData();
   }
+
+  fetchCalendars = async () => {
+    const calendars = await fetchMemberCalendars();
+    const allCalendars =
+      calendars && calendars.own_calendars && calendars.other_calendars
+        ? calendars.own_calendars
+            ?.map((calendar) => ({ id: calendar.id, name: calendar.title, selected: calendar.selected }))
+            .concat(calendars.other_calendars?.map((calendar) => ({ id: calendar.id, name: calendar.title, selected: calendar.selected })))
+        : [];
+    this.setState({ calendars: calendars, allCalendars: allCalendars });
+  };
 
   fetchData = async () => {
     const unitMembers = await fetchUnitMembers();
     const members = unitMembers.map((member) => ({ value: member.id, text: member.first_name + " " + member.last_name }));
     this.setState({ members: members, unitMembers: unitMembers });
-
     const scheduleObj = this.scheduleComponent.current;
     const viewDates = scheduleObj?.getCurrentViewDates();
     const startDate = moment(viewDates ? viewDates[0] : new Date()).format("YYYY-MM-DDTHH:mm:ss");
@@ -303,7 +318,20 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     if (!this.state.activity?.id) return <div className="e-title-text">New Event</div>;
     else return <div className="e-title-text">{this.state.activity?.title}</div>;
   };
+  handleFocus = (e: FocusEvent) => {
+    // Get the id of the relatedTarget
+    const relatedTargetId = e.relatedTarget?.id;
 
+    // List of ids of other date and time pickers
+    const otherPickerIds = ["start_time", "end_date", "end_time"];
+
+    // If the relatedTarget is one of the other pickers, stop the event propagation
+    if (relatedTargetId && otherPickerIds.includes(relatedTargetId)) {
+      e.stopPropagation();
+    }
+
+    // Your existing code here
+  };
   editorTemplate = (props: SummitCalendarItem) => {
     console.log("editorTemplate Opened");
     console.log(this.state.activity);
@@ -337,7 +365,16 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         </label>
         <label>
           Start <span style={{ color: "red" }}>*</span>
-          <DatePickerComponent id="start_date" value={new Date(activity?.start_datetime || new Date())} format="dd/MM/yy" onChange={this.handleDateTimeChange} name="start_date" disabled={!isEditable} showClearButton={false} />
+          <DatePickerComponent
+            id="start_date"
+            value={new Date(activity?.start_datetime || new Date())}
+            format="dd/MM/yy"
+            onChange={this.handleDateTimeChange}
+            name="start_date"
+            disabled={!isEditable}
+            showClearButton={false}
+            onFocus={this.handleFocus}
+          />
           <TimePickerComponent id="start_time" value={new Date(activity?.start_datetime || new Date())} format="hh:mm a" onChange={this.handleDateTimeChange} name="start_time" disabled={!isEditable} showClearButton={false} />
           End <span style={{ color: "red" }}>*</span>
           <DatePickerComponent id="end_date" value={new Date(activity?.end_datetime || new Date())} format="dd/MM/yy" onChange={this.handleDateTimeChange} name="end_date" disabled={!isEditable} showClearButton={false} />
@@ -619,13 +656,27 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     },
   ];
 
+  handleCalendarChange = (event: DdtChangeEventArgs) => {
+    if (!event.isInteracted) return;
+    const selectedCalendars = event.value as string[];
+    const calendarUpdate = this.state.calendars;
+    if (!calendarUpdate.own_calendars) return;
+    calendarUpdate.own_calendars = calendarUpdate.own_calendars.map((calendar) => {
+      return { ...calendar, selected: selectedCalendars.includes(calendar.id) };
+    });
+    calendarUpdate.other_calendars = calendarUpdate.other_calendars?.map((calendar) => {
+      return { ...calendar, selected: selectedCalendars.includes(calendar.id) };
+    });
+    updateMemberCalendars(JSON.stringify(calendarUpdate)).then(() => {
+      this.fetchData();
+    });
+  };
+
   render(): React.ReactNode {
     const eventSettings: EventSettingsModel = { dataSource: this.state.items };
     return (
-      <div id="scheduler">
+      <div id="scheduler" style={{ width: "100%", height: "100%" }}>
         <ScheduleComponent
-          width="100%"
-          height="100%"
           currentView="Month"
           ref={this.scheduleComponent}
           eventSettings={eventSettings}
@@ -644,6 +695,17 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           </ViewsDirective>
           <Inject services={[Week, Month, Agenda]} />
         </ScheduleComponent>
+        Select Calendars{" "}
+        <DropDownTreeComponent
+          width="250"
+          name="calendarSelector"
+          showCheckBox={true}
+          id="calendarSelector"
+          fields={{ dataSource: this.state.allCalendars, text: "name", value: "id" }}
+          value={this.state.allCalendars.filter((c) => c.selected).map((c) => c.id)}
+          change={this.handleCalendarChange}
+          showSelectAll={true}
+        />
         <DialogComponent
           id="dialog"
           isModal={true}
