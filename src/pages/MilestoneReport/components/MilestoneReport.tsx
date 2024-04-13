@@ -8,7 +8,7 @@ interface MilestoneReportTableProps {
   onUpdate: (items: MilestonePlanningItem[]) => void;
 }
 
-export default class MilestoneReprtTable extends React.Component<MilestoneReportTableProps> {
+export default class MilestoneReportTable extends React.Component<MilestoneReportTableProps> {
   constructor(props: MilestoneReportTableProps) {
     super(props);
     this.state = {
@@ -32,11 +32,13 @@ export default class MilestoneReprtTable extends React.Component<MilestoneReport
         },
         columns: [
           { field: "name", headerText: "Name", width: 150 },
+          { field: "milestone", headerText: "Next Milestone", width: 150 },
+          { field: "overall_percent", headerText: "Complete", width: 150 },
           { field: "total_leads", headerText: "Leads", width: 120 },
           { field: "total_assists", headerText: "Assists", width: 120 },
           { field: "outdoors", headerText: "Outdoors", width: 120 },
           { field: "creative", headerText: "Creative", width: 120 },
-          { field: "personalGrowth", headerText: "Personal Growth", width: 120 },
+          { field: "personal_growth", headerText: "Personal Growth", width: 120 },
           { field: "community", headerText: "Community", width: 120 },
         ] as Column[],
       } as ExcelExportProperties;
@@ -49,11 +51,13 @@ export default class MilestoneReprtTable extends React.Component<MilestoneReport
         fileName: "MilestoneReport.pdf",
         columns: [
           { field: "name", headerText: "Name", width: 140 },
+          { field: "milestone", headerText: "Next Milestone" },
+          { field: "overall_percent", headerText: "Completed" },
           { field: "total_leads", headerText: "Leads", width: 90 },
           { field: "total_assists", headerText: "Assists", width: 90 },
           { field: "outdoors", headerText: "Outdoors", width: 90 },
           { field: "creative", headerText: "Creative", width: 90 },
-          { field: "personalGrowth", headerText: "Personal Growth", width: 90 },
+          { field: "personal_growth", headerText: "Personal Growth", width: 90 },
           { field: "community", headerText: "Community", width: 90 },
         ] as Column[],
         header: {
@@ -88,12 +92,14 @@ export default class MilestoneReprtTable extends React.Component<MilestoneReport
       >
         <ColumnsDirective>
           <ColumnDirective field="name" headerText="Name" width="150" isFrozen={true} />
-          <ColumnDirective field="total_leads" headerText="Leads" width="100" />
-          <ColumnDirective field="total_assists" headerText="Assists" width="100" />
-          <ColumnDirective field="outdoors" headerText="Outdoors" width="100" />
-          <ColumnDirective field="creative" headerText="Creative" width="100" />
-          <ColumnDirective field="personalGrowth" headerText="Personal Growth" width="100" />
-          <ColumnDirective field="community" headerText="Community" width="100" />
+          <ColumnDirective field="milestone" headerText="Next Milestone" width="auto" isFrozen={true} />
+          <ColumnDirective field="" type="string" headerText="Complete" width="auto" />
+          <ColumnDirective field="total_leadsoverall_percent" headerText="Leads" width="auto" />
+          <ColumnDirective field="total_assists" headerText="Assists" width="auto" />
+          <ColumnDirective field="outdoors" headerText="Outdoors" width="auto" />
+          <ColumnDirective field="creative" headerText="Creative" width="auto" />
+          <ColumnDirective field="personal_growth" headerText="Personal Growth" width="auto" />
+          <ColumnDirective field="community" headerText="Community" width="auto" />
         </ColumnsDirective>
         <Inject services={[Toolbar, PdfExport, ExcelExport, Sort]} />
       </GridComponent>
