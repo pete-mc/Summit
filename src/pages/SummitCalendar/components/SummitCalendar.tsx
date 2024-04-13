@@ -38,7 +38,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     this.state = {
       items: [],
       sortState: { sortColumn: "file", sortDirection: "ascending" },
-      activity: { start_datetime: "", end_datetime: "" },
+      activity: { start_datetime: moment().utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"), end_datetime: moment().utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ") },
       editorIsLoading: false,
       members: [],
       currentUnitID: TerrainState.getUnitID(),
@@ -86,18 +86,23 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   };
 
   getActivity = async (id: string) => {
-    const activity = (await fetchActivity(id)) || { start_datetime: "", end_datetime: "" };
-    this.setState({ activity: activity, editorIsLoading: false }, () => {
-      if (this.scheduleComponent.current && this.state.activity) {
-        this.scheduleComponent.current.openEditor(this.state.activity, "Add", false);
-      }
-    });
+    const activity = await fetchActivity(id);
+    if (activity) {
+      activity.start_datetime = moment(activity.start_datetime).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+      activity.end_datetime = moment(activity.end_datetime).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+      this.setState({ activity: activity, editorIsLoading: false }, () => {
+        if (this.scheduleComponent.current && this.state.activity) {
+          this.scheduleComponent.current.openEditor(this.state.activity, "Add", false);
+        }
+      });
+    } else this.newActivity(moment().utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"), moment().utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"));
   };
 
   newActivity = async (startDate: string, endDate: string) => {
+    moment(this.state.activity?.start_datetime).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
     const activity = {
-      start_datetime: startDate,
-      end_datetime: endDate,
+      start_datetime: moment(startDate).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
+      end_datetime: moment(endDate).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
     };
     this.setState({ activity: activity, editorIsLoading: false }, () => {
       if (this.scheduleComponent.current && this.state.activity) {
@@ -107,7 +112,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   };
 
   onPopupOpen = (args: PopupOpenEventArgs) => {
-    console.log(args);
     if (args.type === "Editor" && args.data) {
       if (args.target) {
         args.cancel = true;
@@ -119,15 +123,14 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     if (args.type === "QuickInfo" && args.data && !args.data.Id) {
       args.cancel = true;
       if (args.data.isAllDay) {
-        this.newActivity(moment(args.data.startTime).hour(19).minute(0).toISOString(), moment(args.data.endTime).hour(21).minute(0).toISOString());
-      } else this.newActivity(args.data.startTime.toISOString(), args.data.endTime.toISOString());
+        this.newActivity(moment(args.data.startTime).hour(19).minute(0).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"), moment(args.data.startTime).hour(21).minute(0).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"));
+      } else this.newActivity(args.data.startTime.utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"), args.data.endTime.utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"));
     }
   };
 
   onPopupClosed = (args: PopupOpenEventArgs) => {
-    console.log("closed");
     if (args.type === "Editor") {
-      this.setState({ activity: { start_datetime: "", end_datetime: "" } });
+      this.setState({ activity: { start_datetime: moment().utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"), end_datetime: moment().utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ") } });
     }
   };
 
@@ -167,7 +170,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         this.setState((prevState) => ({
           activity: {
             ...prevState.activity,
-            start_datetime: moment(value).format("YYYY-MM-DD") + "T" + moment(prevState.activity.start_datetime).format("HH:mm:ss"),
+            start_datetime: moment(value).utc().format("YYYY-MM-DD") + "T" + moment(prevState.activity.start_datetime).utc().format("HH:mm:ss"),
           },
         }));
         break;
@@ -175,7 +178,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         this.setState((prevState) => ({
           activity: {
             ...prevState.activity,
-            start_datetime: moment(prevState.activity.start_datetime).format("YYYY-MM-DD") + "T" + moment(value).format("HH:mm:ss"),
+            start_datetime: moment(prevState.activity.start_datetime).utc().format("YYYY-MM-DD") + "T" + moment(value).utc().format("HH:mm:ss"),
           },
         }));
         break;
@@ -183,7 +186,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         this.setState((prevState) => ({
           activity: {
             ...prevState.activity,
-            end_datetime: moment(value).format("YYYY-MM-DD") + "T" + moment(prevState.activity.end_datetime).format("HH:mm:ss"),
+            end_datetime: moment(value).utc().format("YYYY-MM-DD") + "T" + moment(prevState.activity.end_datetime).utc().format("HH:mm:ss"),
           },
         }));
         break;
@@ -191,7 +194,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         this.setState((prevState) => ({
           activity: {
             ...prevState.activity,
-            end_datetime: moment(prevState.activity.end_datetime).format("YYYY-MM-DD") + "T" + moment(value).format("HH:mm:ss"),
+            end_datetime: moment(prevState.activity.end_datetime).utc().format("YYYY-MM-DD") + "T" + moment(value).utc().format("HH:mm:ss"),
           },
         }));
         break;
@@ -302,7 +305,8 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   };
 
   editorTemplate = (props: SummitCalendarItem) => {
-    console.log(props);
+    console.log("editorTemplate Opened");
+    console.log(this.state.activity);
     const { activity, members, currentUnitID } = this.state;
     const isEditable = (activity?.status !== "concluded" && currentUnitID === activity?.owner_id) || (activity && activity.id === undefined);
     return props !== undefined ? (
@@ -333,11 +337,11 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         </label>
         <label>
           Start <span style={{ color: "red" }}>*</span>
-          <DatePickerComponent id="start_date" value={new Date(activity?.start_datetime || "")} format="dd/MM/yy" onChange={this.handleDateTimeChange} name="start_date" disabled={!isEditable} showClearButton={false} />
-          <TimePickerComponent id="start_time" value={new Date(activity?.start_datetime || "")} format="hh:mm a" onChange={this.handleDateTimeChange} name="start_time" disabled={!isEditable} showClearButton={false} />
+          <DatePickerComponent id="start_date" value={new Date(activity?.start_datetime || new Date())} format="dd/MM/yy" onChange={this.handleDateTimeChange} name="start_date" disabled={!isEditable} showClearButton={false} />
+          <TimePickerComponent id="start_time" value={new Date(activity?.start_datetime || new Date())} format="hh:mm a" onChange={this.handleDateTimeChange} name="start_time" disabled={!isEditable} showClearButton={false} />
           End <span style={{ color: "red" }}>*</span>
-          <DatePickerComponent id="end_date" value={new Date(activity?.end_datetime || "")} format="dd/MM/yy" onChange={this.handleDateTimeChange} name="end_date" disabled={!isEditable} showClearButton={false} />
-          <TimePickerComponent id="end_time" value={new Date(activity?.end_datetime || "")} format="hh:mm a" onChange={this.handleDateTimeChange} name="end_time" disabled={!isEditable} showClearButton={false} />
+          <DatePickerComponent id="end_date" value={new Date(activity?.end_datetime || new Date())} format="dd/MM/yy" onChange={this.handleDateTimeChange} name="end_date" disabled={!isEditable} showClearButton={false} />
+          <TimePickerComponent id="end_time" value={new Date(activity?.end_datetime || new Date())} format="hh:mm a" onChange={this.handleDateTimeChange} name="end_time" disabled={!isEditable} showClearButton={false} />
         </label>
         <label>
           Scout Method <span style={{ color: "red" }}>*</span>
@@ -461,8 +465,8 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     }
     if (nextWeek) {
       setTimeout(() => {
-        const newStartDatetime = moment(eventToSave.start_datetime).add(7, "days").toISOString();
-        const newEndDatetime = moment(eventToSave.end_datetime).add(7, "days").toISOString();
+        const newStartDatetime = moment(eventToSave.start_datetime).add(7, "days").utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+        const newEndDatetime = moment(eventToSave.end_datetime).add(7, "days").utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
         this.newActivity(newStartDatetime, newEndDatetime);
       }, 1000);
     }
@@ -556,8 +560,8 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
                   const start_datetime = (props.event as TerrainEventSummary).start_datetime;
                   const end_datetime = (props.event as TerrainEventSummary).end_datetime;
 
-                  const newStartDatetime = moment(start_datetime).add(7, "days").toISOString();
-                  const newEndDatetime = moment(end_datetime).add(7, "days").toISOString();
+                  const newStartDatetime = moment(start_datetime).add(7, "days").utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+                  const newEndDatetime = moment(end_datetime).add(7, "days").utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
 
                   this.newActivity(newStartDatetime, newEndDatetime);
                 }}
