@@ -329,8 +329,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     if (relatedTargetId && otherPickerIds.includes(relatedTargetId)) {
       e.stopPropagation();
     }
-
-    // Your existing code here
   };
   editorTemplate = (props: SummitCalendarItem) => {
     console.log("editorTemplate Opened");

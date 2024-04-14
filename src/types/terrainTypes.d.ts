@@ -66,6 +66,7 @@ export interface TerrainEvent {
       last_name: string;
     }>;
   };
+  equipment_notes?: string;
   schedule_items?: TerrainEventScheduleItem[];
   challenge_area?: string;
   description?: string;
