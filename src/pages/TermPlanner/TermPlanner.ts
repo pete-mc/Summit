@@ -7,7 +7,7 @@ import { TerrainState } from "@/helpers";
 function data() {
   // Initialize items and root
   return {
-    items: [] as Record<string, object>[],
+    items: [],
     root: undefined as Root | undefined,
   };
 }
