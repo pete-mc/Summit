@@ -4,7 +4,7 @@ import { TerrainEvent, TerrainEventScheduleItem, TerrainUnitMember, TerrrainPost
 import { fetchMemberEvents, fetchUnitAchievementsFilterd, fetchActivity, updateEvent, createNewEvent, fetchUnitMembers } from "@/services";
 import { TerrainRootState } from "@/types/terrainState";
 import { defineComponent } from "vue";
-import { TerrainState, processGuids, reconstructGuids } from "@/helpers";
+import { TerrainState, processGuidsAndDates, reconstructGuids, reconstructGuidsAndDates } from "@/helpers";
 import AwardsTable from "./components/PresentAwards";
 import SummitAchievement from "./models/SummitAchievement";
 import { TerrainAchievementsType } from "@/shared";
@@ -58,6 +58,7 @@ export default defineComponent({
       this.storeEvent = await fetchActivity(
         (await fetchMemberEvents("2100-01-01T00:00:00", "2100-01-30T00:00:00")).find((event) => event.title === "Summit Award Storage - Please Ignore" && event.invitee_id === TerrainState.getUnitID())?.id,
       );
+
       const fetchPromises = Object.values(TerrainAchievementsType).map((type) => fetchUnitAchievementsFilterd(`type=${type}`));
       const membersMap = (await fetchUnitMembers()).reduce(
         (map, member) => {
@@ -67,7 +68,10 @@ export default defineComponent({
         {} as { [id: string]: TerrainUnitMember },
       );
       const existingAwards = this.storeEvent && this.storeEvent.schedule_items ? this.storeEvent.schedule_items.flatMap((item) => item.description) : [];
-      const existingGuids = reconstructGuids(existingAwards);
+      const existingGuids =
+        this.storeEvent?.equipment_notes === "2" //check version of event data (version 1 only has guids and no dates, version 2 has guids and dates)
+          ? reconstructGuidsAndDates(existingAwards)
+          : reconstructGuids(existingAwards).map((guid) => ({ guid, date: null }));
       this.items = (await Promise.all(fetchPromises)).flat().reduce((result, item) => {
         if (item.status === "awarded") {
           result.push(new SummitAchievement(item, membersMap[item.member_id], existingGuids));
@@ -93,36 +97,43 @@ export default defineComponent({
       this.root = undefined;
     },
 
+    //update process from react component when save button is clicked
     handleUpdate(newItems: SummitAchievement[]) {
-      let presentedIds = [] as { memberid: string; membername: string; awards: string[] }[];
+      console.log("Updating items", newItems);
+      //get a list of member ids and the awards they have been presented
+      const presentedRecordsByMember = [] as { memberid: string; membername: string; awards: { guid: string; date: Date }[] }[];
       newItems.forEach((item) => {
-        const existing = presentedIds.find((i) => i.memberid === item.memberid);
+        const existing = presentedRecordsByMember.find((i) => i.memberid === item.memberid);
         if (existing) {
-          existing.awards.push(item.id);
+          existing.awards.push({ guid: item.id, date: moment(item.presented, "DD/MM/YYYY").toDate() });
         } else {
-          presentedIds.push({ memberid: item.memberid, membername: item.member, awards: [item.id] });
+          presentedRecordsByMember.push({ memberid: item.memberid, membername: item.member, awards: [{ guid: item.id, date: moment(item.presented, "DD/MM/YYYY").toDate() }] });
         }
       });
 
-      presentedIds = presentedIds.map((idArray) => {
-        return { memberid: idArray.memberid, membername: idArray.membername, awards: processGuids(idArray.awards) };
+      //compress the award guids to base 300
+      const compressedRecordsByMember = presentedRecordsByMember.map((idArray) => {
+        return { memberid: idArray.memberid, membername: idArray.membername, awards: processGuidsAndDates(idArray.awards) };
       });
+
+      //unbatch the awards and create one schedule item per member or more for members who exeed the award batch limit
+      const scheduleItems = [] as TerrainEventScheduleItem[];
+      compressedRecordsByMember.forEach((idArray) => {
+        idArray.awards.forEach((award) => {
+          scheduleItems.push({
+            start_datetime: moment().format(),
+            end_datetime: moment().format(),
+            description: award,
+            leader_notes: idArray.memberid,
+            assistant_notes: idArray.membername,
+          });
+        });
+      });
+
+      console.log("Schedule Items", scheduleItems);
+      //create the event object
       const eventToUpload = {
-        schedule_items: presentedIds
-          .flatMap((idArray) => {
-            return idArray.awards.map((award) => {
-              return { memberid: idArray.memberid, membername: idArray.membername, awards: award };
-            });
-          })
-          .map((idArray) => {
-            return {
-              start_datetime: moment().format(),
-              end_datetime: moment().format(),
-              description: idArray.awards,
-              leader_notes: idArray.memberid,
-              assistant_notes: idArray.membername,
-            } as TerrainEventScheduleItem;
-          }),
+        schedule_items: scheduleItems,
         title: "Summit Award Storage - Please Ignore",
         achievement_pathway_logbook_data: {
           achievement_meta: {
@@ -148,7 +159,7 @@ export default defineComponent({
         challenge_area: "creative",
         description: "This is for keeping track of badges that have been presented, please do not modify this event or delete it.",
         end_datetime: "2100-01-10T03:00:00.000+00:00",
-        equipment_notes: "",
+        equipment_notes: "2",
         event_type: { type: "unit", id: TerrainState.getUnitID() },
         type: "unit",
         iana_timezone: "Australia/Brisbane",
@@ -166,11 +177,12 @@ export default defineComponent({
         createNewEvent(JSON.stringify(eventToUpload));
       }
 
-      this.items.forEach((item) => {
-        if (newItems.find((i) => i.id === item.id)) {
-          item.presented = "Yes";
-        }
-      });
+      // this.items.forEach((item) => {
+      //   const newItem = newItems.find((i) => i.id === item.id);
+      //   if (newItem) {
+      //     item.presented = newItem.presented;
+      //   }
+      // });
       this.renderReactComponent(this.items);
     },
   },

@@ -61,10 +61,10 @@ export default class SummitRouter {
       path: "/summit/tools/DisplayOptions",
       component: DisplayOptions,
     });
-    this.router.addRoute({
-      path: "/summit/tools/PresentAwards",
-      component: PresentAwards,
-    });
+    // this.router.addRoute({
+    //   path: "/summit/tools/PresentAwards",
+    //   component: PresentAwards,
+    // });
     this.router.addRoute({
       path: "/summit/reports/milestone",
       component: MilestoneReport,
@@ -161,13 +161,13 @@ export default class SummitRouter {
             locked: false,
             roles: [true, false],
           },
-          {
-            title: "Present Awards",
-            to: "/summit/tools/PresentAwards",
-            items: [],
-            locked: false,
-            roles: [true, false],
-          },
+          // {
+          //   title: "Present Awards",
+          //   to: "/summit/tools/PresentAwards",
+          //   items: [],
+          //   locked: false,
+          //   roles: [true, false],
+          // },
           {
             title: "Display Options",
             to: "/summit/tools/DisplayOptions",

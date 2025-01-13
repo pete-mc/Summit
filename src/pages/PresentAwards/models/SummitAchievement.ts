@@ -10,15 +10,29 @@ export default class SummitAchievement {
   achievementName: string;
   dateAwarded: string;
   presented: string;
+  previouslyPresented: boolean;
 
-  constructor(achievement: TerrainAchievements, member: TerrainUnitMember, existingGuids: string[]) {
+  constructor(
+    achievement: TerrainAchievements,
+    member: TerrainUnitMember,
+    existingPresentation: {
+      guid: string;
+      date: Date | null;
+    }[],
+  ) {
     this.id = achievement.id;
     this.memberid = achievement.member_id;
     this.member = `${member?.first_name} ${member?.last_name}`;
     this.type = achievement.type.replace(/_/g, " ").replace(/\w\S*/g, (w) => w.replace(/^\w/, (c) => c.toUpperCase()));
     this.achievementName = SummitAchievement.getName(achievement).toString();
     this.dateAwarded = moment(achievement.status_updated).format("DD/MM/YYYY");
-    this.presented = existingGuids.includes(achievement.id) ? "Yes" : "No";
+    const presentation = existingPresentation.find((g) => g.guid === achievement.id);
+    this.presented = presentation && presentation.date ? moment(presentation.date).format("DD/MM/YYYY") : presentation ? moment(achievement.status_updated).format("DD/MM/YYYY") : "No";
+    this.previouslyPresented = presentation ? true : false;
+  }
+
+  public updatePresented(newValue: string) {
+    this.presented = newValue;
   }
 
   private static getName(achievement: TerrainAchievements): string {

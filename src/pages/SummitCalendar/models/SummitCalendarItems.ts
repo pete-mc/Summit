@@ -17,7 +17,17 @@ export default class SummitCalendarItem {
     this.Subject = event.status === "concluded" ? "✅" + event.title : event.title;
     this.StartTime = new Date(event.start_datetime);
     this.EndTime = new Date(event.end_datetime);
-    this.Description = "Status:" + event.status.replace(/(?:^|_)(.)/g, (match, group1) => " " + group1.toUpperCase()) + "\n" + "Area:" + event.challenge_area.replace(/(?:^|_)(.)/g, (match, group1) => " " + group1.toUpperCase());
+    this.Description =
+      event.invitee_type.charAt(0).toUpperCase() +
+      event.invitee_type.slice(1).toLowerCase() +
+      ": " +
+      event.invitee_name +
+      "\n" +
+      "Status:" +
+      event.status.replace(/(?:^|_)(.)/g, (match, group1) => " " + group1.toUpperCase()) +
+      "\n" +
+      "Area:" +
+      event.challenge_area.replace(/(?:^|_)(.)/g, (match, group1) => " " + group1.toUpperCase());
     switch (event.section) {
       case "joey":
         this.color = "#b65518";

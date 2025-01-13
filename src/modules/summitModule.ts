@@ -2,7 +2,7 @@ import { TerrainEvent, type TerrainAchievements } from "@/types/terrainTypes";
 import { fetchActivity, fetchMemberEvents, fetchUnitAchievements } from "@/services";
 import { type ActionContext, type Module } from "vuex/types/index";
 import { type TerrainRootState } from "@/types/terrainState";
-import { TerrainState, reconstructGuids } from "@/helpers";
+import { TerrainState, reconstructGuids, reconstructGuidsAndDates } from "@/helpers";
 import SummitRouter from "@/router/SummitRouter";
 
 interface State {
@@ -10,7 +10,7 @@ interface State {
   helpButton: boolean;
   achievements: TerrainAchievements[];
   achievementsTimestamp: null | number;
-  presentedAwards: string[];
+  presentedAwards: { guid: string; date: Date }[] | { guid: string; date: null }[];
   presentedAwardsTimestamp: null | number;
 }
 
@@ -48,7 +48,10 @@ const SummitModule: Module<State, TerrainRootState> = {
       state.achievements = payload.achievements;
       state.achievementsTimestamp = payload.timestamp;
     },
-    updatePresentedAwards(state: { presentedAwards: string[]; presentedAwardsTimestamp: number | null }, payload: { presentedAwards: string[]; timestamp: number }) {
+    updatePresentedAwards(
+      state: { presentedAwards: { guid: string; date: Date }[] | { guid: string; date: null }[]; presentedAwardsTimestamp: number | null },
+      payload: { presentedAwards: { guid: string; date: Date }[] | { guid: string; date: null }[]; timestamp: number },
+    ) {
       state.presentedAwards = payload.presentedAwards;
       state.presentedAwardsTimestamp = payload.timestamp;
     },
@@ -69,7 +72,7 @@ const SummitModule: Module<State, TerrainRootState> = {
       commit("updateAchievements", { achievements, timestamp: Date.now() });
     },
     async getPresentedAwards({ commit }: ActionContext<State, TerrainRootState>): Promise<void> {
-      let presentedAwards: string[] = [];
+      let presentedAwards: { guid: string; date: Date }[] | { guid: string; date: null }[] = [];
       const memberEvents = await fetchMemberEvents("2100-01-01T00:00:00", "2100-01-30T00:00:00");
       let existingEvent = undefined as TerrainEvent | undefined;
       const existingEventId = memberEvents?.find((event) => event.title === "Summit Award Storage - Please Ignore" && event.invitee_id === TerrainState.getUnitID())?.id;
@@ -77,7 +80,12 @@ const SummitModule: Module<State, TerrainRootState> = {
         existingEvent = await fetchActivity(existingEventId);
       }
       const existingAwards = existingEvent && existingEvent.schedule_items ? existingEvent.schedule_items.flatMap((item) => item.description) : [];
-      if (existingAwards.length > 0) presentedAwards = reconstructGuids(existingAwards);
+      if (existingAwards.length > 0) {
+        presentedAwards =
+          existingEvent?.equipment_notes === "2" //check version of event data (version 1 only has guids and no dates, version 2 has guids and dates)
+            ? reconstructGuidsAndDates(existingAwards)
+            : reconstructGuids(existingAwards).map((guid) => ({ guid, date: null }));
+      }
       commit("updatePresentedAwards", { presentedAwards, timestamp: Date.now() });
     },
     initialize(context: ActionContext<State, TerrainRootState>): void {

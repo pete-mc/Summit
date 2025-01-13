@@ -37,8 +37,8 @@ export default class TerrainEventItem {
     this.justification = terrainEvent?.justification ?? "";
     this.organisers = terrainEvent?.organisers?.map((o) => o.id) ?? [];
     this.challenge_area = terrainEvent?.challenge_area ?? "";
-    this.start_datetime = moment(terrainEvent?.start_datetime).format("YYYY-MM-DDTHH:mm:ss.SSSZ");
-    this.end_datetime = moment(terrainEvent?.end_datetime).format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+    this.start_datetime = moment(terrainEvent?.start_datetime).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+    this.end_datetime = moment(terrainEvent?.end_datetime).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
     this.event_type = {
       type: terrainEvent?.owner_type ?? "unit",
       id: terrainEvent?.owner_id ?? TerrainState.getUnitID(),
