@@ -637,7 +637,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
                 });
               }}
             >
-              Open in Terain
+              Open in Terrain
             </button>
           </div>
         </div>
