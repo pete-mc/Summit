@@ -1,5 +1,10 @@
 # Summit
 
+## Important Project Annoucement
+Sorry everyone, I have moved to Scotland and as such dont have proper access anymore to Terrain to further develop summit. I am happy to hand over access to the code if someone is interested in taking over the project. Please reach out if this if of interest.
+
+## Summary
+
 This tool is to help provide usability features to the Scouts | Terrain website. Feel free to let us know about any issues or request new features in the issues tab.
 
 To get started install the add on for your browser below:
