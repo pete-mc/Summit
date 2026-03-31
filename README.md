@@ -1,6 +1,7 @@
 # Summit
 
 ## Important Project Annoucement
+
 Sorry everyone, I have moved to Scotland and as such dont have proper access anymore to Terrain to further develop summit. I am happy to hand over access to the code if someone is interested in taking over the project. Please reach out if this if of interest.
 
 ## Summary
@@ -12,6 +13,11 @@ To get started install the add on for your browser below:
 [![Chome Logo](https://github.com/pete-mc/Summit/wiki/images/chrome.png)](https://chromewebstore.google.com/detail/terrain-summit/fkpdafjknodpembpmogbcblabonpmhoo?hl=en&pli=1) [![Edge Logo](https://github.com/pete-mc/Summit/wiki/images/edge.png)](https://microsoftedge.microsoft.com/addons/detail/terrain-summit/eoemenakogcfmmhkoiejhefmdijgpgnb)
 
 [![Build and Release Chrome Extension](https://github.com/pete-mc/Summit/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/pete-mc/Summit/actions/workflows/build.yaml)
+
+## Pull request quality gate
+
+- Unit tests run on pull requests targeting `main` via `.github/workflows/build.yaml`.
+- Configure branch protection (or a ruleset) on `main` to require the `Build / test` status check before merge.
 
 ## Examples
 
