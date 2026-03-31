@@ -4,6 +4,9 @@ export default function HasPropAtPath(obj: Record<string, any>, path: string, va
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let current: any = obj;
   for (const part of pathParts) {
+    if (current == null) {
+      return false;
+    }
     if (current[part] === undefined) {
       return false;
     }
