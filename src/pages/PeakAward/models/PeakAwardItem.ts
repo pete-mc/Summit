@@ -52,19 +52,40 @@ export default class PeakAwardItem {
     this.SIACompleted = Awards?.filter((award) => award.section === CurrentSection && award.type === TerrainAchievementsType.SpecialInterestArea && award.status === "awarded").length ?? 0;
     this.OASProgressions = Awards?.filter((award) => award.section === CurrentSection && award.type === TerrainAchievementsType.OutdoorAdventureSkill && award.status === "awarded").length ?? 0;
     this.Bushcraft = Math.max(
-      ...(Awards?.filter((award) => award.type === TerrainAchievementsType.OutdoorAdventureSkill && award.status === "awarded" && award.achievement_meta?.stream === "bushcraft" && award.achievement_meta?.stage !== undefined).map(
+      ...(Awards?.filter(
+        (award) =>
+          award.section === CurrentSection &&
+          award.type === TerrainAchievementsType.OutdoorAdventureSkill &&
+          award.status === "awarded" &&
+          award.achievement_meta?.stream === "bushcraft" &&
+          award.achievement_meta?.stage !== undefined,
+      ).map(
         (award) => award.achievement_meta!.stage ?? 0,
       ) ?? [0]),
       0,
     );
     this.Bushwalking = Math.max(
-      ...(Awards?.filter((award) => award.type === TerrainAchievementsType.OutdoorAdventureSkill && award.status === "awarded" && award.achievement_meta?.stream === "bushwalking" && award.achievement_meta?.stage !== undefined).map(
+      ...(Awards?.filter(
+        (award) =>
+          award.section === CurrentSection &&
+          award.type === TerrainAchievementsType.OutdoorAdventureSkill &&
+          award.status === "awarded" &&
+          award.achievement_meta?.stream === "bushwalking" &&
+          award.achievement_meta?.stage !== undefined,
+      ).map(
         (award) => award.achievement_meta!.stage ?? 0,
       ) ?? [0]),
       0,
     );
     this.Camping = Math.max(
-      ...(Awards?.filter((award) => award.type === TerrainAchievementsType.OutdoorAdventureSkill && award.status === "awarded" && award.achievement_meta?.stream === "camping" && award.achievement_meta?.stage !== undefined).map(
+      ...(Awards?.filter(
+        (award) =>
+          award.section === CurrentSection &&
+          award.type === TerrainAchievementsType.OutdoorAdventureSkill &&
+          award.status === "awarded" &&
+          award.achievement_meta?.stream === "camping" &&
+          award.achievement_meta?.stage !== undefined,
+      ).map(
         (award) => award.achievement_meta!.stage ?? 0,
       ) ?? [0]),
       0,

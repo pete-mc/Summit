@@ -92,6 +92,9 @@ function calculateMilestone(currentRequirements: MilestoneRequirements, eventCou
       totalRequirements += currentRequirements[key];
       totalCompleted += eventCount[key];
     });
+    if (totalRequirements === 0) {
+      return 0;
+    }
     return Math.floor((totalCompleted / totalRequirements) * 100);
   }
 
