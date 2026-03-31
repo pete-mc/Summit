@@ -4,6 +4,13 @@ module.exports = {
   testEnvironment: 'jsdom',
   roots: ['<rootDir>/tests/unit'],
   testMatch: ['**/*.spec.ts'],
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/**/index.ts',
+  ],
+  coverageDirectory: '<rootDir>/coverage',
+  coverageReporters: ['text', 'text-summary', 'lcov', 'html'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },

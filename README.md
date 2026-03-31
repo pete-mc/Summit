@@ -19,6 +19,27 @@ To get started install the add on for your browser below:
 - Unit tests run on pull requests targeting `main` via `.github/workflows/build.yaml`.
 - Configure branch protection (or a ruleset) on `main` to require the `Build / test` status check before merge.
 
+## Unit testing conventions
+
+- Centralized test folders:
+  - `tests/unit/helpers`
+  - `tests/unit/models`
+  - `tests/unit/services`
+  - `tests/unit/smoke`
+- Naming convention:
+  - Use `*.spec.ts` for unit tests.
+  - Name files to mirror source behavior (for example: `CompressGuids.spec.ts`, `fetchActivity.spec.ts`).
+- Mock strategy:
+  - Keep mocks local to the test where possible for readability.
+  - Reuse shared service mocks via `tests/unit/services/mocks/*` when multiple tests require the same setup.
+  - Mock external/runtime boundaries (network, Terrain host/runtime globals), not pure helper/model logic.
+
+## Test and coverage behavior in CI
+
+- Pull requests must pass tests (`npm test`) before merge.
+- Coverage (`npm run test:coverage`) is informational only and is used for visibility/tracking.
+- No hard coverage threshold is enforced in Jest/CI, so coverage does not block merges by itself.
+
 ## Examples
 
 A few of the features are showcased below. [Visit the Wiki to see the full list of features and how-to guides](https://github.com/pete-mc/Summit/wiki).
