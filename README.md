@@ -1,7 +1,9 @@
 # Summit
 
-## Important Project Annoucement
+## Important Project Annoucement - plus update
 Sorry everyone, I have moved to Scotland and as such dont have proper access anymore to Terrain to further develop summit. I am happy to hand over access to the code if someone is interested in taking over the project. Please reach out if this if of interest.
+
+Updated - I have taken over maintaining Summit and will be looking at addressing bugs and adding improvements. Watch this space for details anything that changes.
 
 ## Summary
 
