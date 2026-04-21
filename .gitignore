@@ -3,3 +3,5 @@
 # production
 /dist
 syncfusion-license.txt
+.env
+/artifacts
