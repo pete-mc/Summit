@@ -57,7 +57,7 @@ jobs:
       working-directory: ${{ github.workspace }}
 
     - name: Upload web extension as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Summit
         path: dist/*
