@@ -44,6 +44,19 @@ describe('getLogbookData service', () => {
     );
   });
 
+  it('uses the selected profile member ID when building the logbook URL', async () => {
+    restoreTerrainState(terrainSpies);
+    terrainSpies = mockTerrainState({ memberId: 'member-456', profileMemberId: 'profile-member-789' });
+    mockFetchResponse(fetchMock, { ok: true, jsonData: { id: 'logbook-1' } });
+
+    await getLogbookData('logbook-1');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://achievements.terrain.scouts.com.au/members/profile-member-789/logbook/logbook-1',
+      expect.any(Object),
+    );
+  });
+
   it('returns parsed response json on success', async () => {
     const logbook = { id: 'logbook-1', sections: [] };
     mockFetchResponse(fetchMock, { ok: true, jsonData: logbook });
