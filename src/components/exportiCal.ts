@@ -40,7 +40,6 @@ END:VCALENDAR`;
 }
 
 export function InitProgrammingExportBtn() {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   if (jquery(".exportiCalBtn").length > 0) return;
   const printBtn = jquery('button[data-cy="PRINT"]').first();
   printBtn.before(

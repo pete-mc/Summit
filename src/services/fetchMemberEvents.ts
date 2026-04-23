@@ -22,7 +22,6 @@ export default async function fetchMemberEvents(fromDateString: string, toDateSt
     const data = await response.json();
     return data.results;
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.log(`Error fetching member events: ${e}`);
     return [];
   }

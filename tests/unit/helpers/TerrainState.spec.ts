@@ -1,7 +1,7 @@
-import { TerrainState } from '@/helpers';
-import type { TerrainRootState } from '@/types/terrainState';
+import { TerrainState } from "@/helpers";
+import type { TerrainRootState } from "@/types/terrainState";
 
-describe('TerrainState', () => {
+describe("TerrainState", () => {
   const originalNuxt = window.$nuxt;
 
   afterEach(() => {
@@ -13,20 +13,20 @@ describe('TerrainState', () => {
     delete (window as Partial<Window>).$nuxt;
   });
 
-  it('returns one of two profile member IDs based on the selected profile index', () => {
+  it("returns one of two profile member IDs based on the selected profile index", () => {
     const state = {
       user: {
         profileIndex: 0,
         profiles: [
           {
-            member: { id: 'profile-member-0', name: 'Profile Zero', roles: [] },
-            unit: { id: 'unit-0', name: 'Unit Zero', roles: [] },
-            group: { id: 'group-0', name: 'Group Zero', roles: [] },
+            member: { id: "profile-member-0", name: "Profile Zero", roles: [] },
+            unit: { id: "unit-0", name: "Unit Zero", roles: [] },
+            group: { id: "group-0", name: "Group Zero", roles: [] },
           },
           {
-            member: { id: 'profile-member-1', name: 'Profile One', roles: [] },
-            unit: { id: 'unit-1', name: 'Unit One', roles: [] },
-            group: { id: 'group-1', name: 'Group One', roles: [] },
+            member: { id: "profile-member-1", name: "Profile One", roles: [] },
+            unit: { id: "unit-1", name: "Unit One", roles: [] },
+            group: { id: "group-1", name: "Group One", roles: [] },
           },
         ],
       },
@@ -38,10 +38,10 @@ describe('TerrainState', () => {
       },
     } as typeof window.$nuxt;
 
-    expect(TerrainState.getProfileMemberID()).toBe('profile-member-0');
+    expect(TerrainState.getProfileMemberID()).toBe("profile-member-0");
 
     state.user.profileIndex = 1;
 
-    expect(TerrainState.getProfileMemberID()).toBe('profile-member-1');
+    expect(TerrainState.getProfileMemberID()).toBe("profile-member-1");
   });
 });
