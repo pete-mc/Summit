@@ -14,7 +14,7 @@ function makeMember(overrides: Partial<TerrainUnitMember> = {}): TerrainUnitMemb
     unit: {
       id: "unit-1",
       section: "scout",
-      duty: "member" as any,
+      duty: "member" as TerrainUnitMember["unit"]["duty"],
       unit_council: false,
       group_id: "group-1",
     },
@@ -28,9 +28,9 @@ function makeAchievement(overrides: Partial<TerrainAchievements> = {}): TerrainA
   return {
     id: "achv-1",
     member_id: "member-1",
-    section: "scout" as any,
-    type: TerrainAchievementsType.SpecialInterestArea as any,
-    status: "awarded" as any,
+    section: "scout" as TerrainAchievements["section"],
+    type: TerrainAchievementsType.SpecialInterestArea as TerrainAchievements["type"],
+    status: "awarded" as TerrainAchievements["status"],
     status_updated: "2026-03-05T00:00:00.000Z",
     answers: {
       special_interest_area_selection: "sia_stem_innovation",
@@ -74,7 +74,7 @@ describe("SummitAchievement", () => {
   });
 
   it("uses default unknown mapping for unsupported achievement types", () => {
-    const achievement = makeAchievement({ type: "unexpected_type" as any });
+    const achievement = makeAchievement({ type: "unexpected_type" as unknown as TerrainAchievements["type"] });
     const item = new SummitAchievement(achievement, makeMember(), []);
 
     expect(item.type).toBe("Unexpected Type");

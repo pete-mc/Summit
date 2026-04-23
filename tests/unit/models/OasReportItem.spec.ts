@@ -13,7 +13,7 @@ function makeMember(overrides: Partial<TerrainUnitMember> = {}): TerrainUnitMemb
     unit: {
       id: "unit-1",
       section: "scout",
-      duty: "member" as any,
+      duty: "member" as TerrainUnitMember["unit"]["duty"],
       unit_council: false,
       group_id: "group-1",
     },
@@ -27,12 +27,16 @@ function makeOasAchievement(template: string, stream: string, branch: string, st
   return {
     id: `${template}-${branch}-${stage}`,
     member_id: "member-1",
-    section: "scout" as any,
-    type: "outdoor_adventure_skill" as any,
-    status: "awarded" as any,
+    section: "scout" as TerrainAchievements["section"],
+    type: "outdoor_adventure_skill" as TerrainAchievements["type"],
+    status: "awarded" as TerrainAchievements["status"],
     status_updated: "2026-01-01T00:00:00.000Z",
-    template,
-    achievement_meta: { stream: stream as any, branch, stage },
+    template: template as NonNullable<TerrainAchievements["template"]>,
+    achievement_meta: {
+      stream: stream as NonNullable<NonNullable<TerrainAchievements["achievement_meta"]>["stream"]>,
+      branch,
+      stage,
+    },
   };
 }
 
