@@ -50,7 +50,9 @@ describe("build pipeline contract", () => {
     expect(devDependencies["@babel/preset-react"]).toBe("^7.28.5");
     expect(devDependencies["@babel/preset-typescript"]).toBe("^7.28.5");
     expect(devDependencies["babel-loader"]).toBe("^9.2.1");
+    expect(devDependencies["copy-webpack-plugin"]).toBe("^14.0.0");
     expect(devDependencies["css-loader"]).toBe("^6.11.0");
+    expect(devDependencies["css-minimizer-webpack-plugin"]).toBe("^8.0.0");
     expect(devDependencies["mini-css-extract-plugin"]).toBe("^2.10.2");
     expect(devDependencies.webpack).toBe("^5.106.2");
     expect(devDependencies["webpack-dev-server"]).toBe("^4.15.2");
