@@ -11,6 +11,8 @@ describe("TypeScript 5 toolchain compatibility", () => {
     const devDependencies = packageJson.devDependencies ?? {};
 
     expect(devDependencies.typescript).toMatch(/^\^5\./);
+    expect(devDependencies.jest).toMatch(/^\^29\./);
+    expect(devDependencies["jest-environment-jsdom"]).toMatch(/^\^30\./);
     expect(devDependencies["ts-jest"]).toMatch(/^\^29\./);
     expect(devDependencies["ts-loader"]).toMatch(/^\^9\./);
   });
