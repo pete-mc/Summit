@@ -1,24 +1,24 @@
-import OasReportItem from '@/pages/OasReport/models/OasReportItem';
-import type { TerrainAchievements, TerrainUnitMember } from '@/types/terrainTypes';
+import OasReportItem from "@/pages/OasReport/models/OasReportItem";
+import type { TerrainAchievements, TerrainUnitMember } from "@/types/terrainTypes";
 
 function makeMember(overrides: Partial<TerrainUnitMember> = {}): TerrainUnitMember {
   return {
-    id: 'member-1',
-    member_number: '123',
-    first_name: 'Alex',
-    last_name: 'Scout',
-    status: 'active',
-    date_of_birth: '2010-01-01',
+    id: "member-1",
+    member_number: "123",
+    first_name: "Alex",
+    last_name: "Scout",
+    status: "active",
+    date_of_birth: "2010-01-01",
     groups: [],
     unit: {
-      id: 'unit-1',
-      section: 'scout',
-      duty: 'member' as any,
+      id: "unit-1",
+      section: "scout",
+      duty: "member" as TerrainUnitMember["unit"]["duty"],
       unit_council: false,
-      group_id: 'group-1',
+      group_id: "group-1",
     },
     patrol: null,
-    metadata: { 'achievement-import': '' },
+    metadata: { "achievement-import": "" },
     ...overrides,
   };
 }
@@ -26,44 +26,38 @@ function makeMember(overrides: Partial<TerrainUnitMember> = {}): TerrainUnitMemb
 function makeOasAchievement(template: string, stream: string, branch: string, stage: number): TerrainAchievements {
   return {
     id: `${template}-${branch}-${stage}`,
-    member_id: 'member-1',
-    section: 'scout' as any,
-    type: 'outdoor_adventure_skill' as any,
-    status: 'awarded' as any,
-    status_updated: '2026-01-01T00:00:00.000Z',
-    template,
-    achievement_meta: { stream: stream as any, branch, stage },
+    member_id: "member-1",
+    section: "scout" as TerrainAchievements["section"],
+    type: "outdoor_adventure_skill" as TerrainAchievements["type"],
+    status: "awarded" as TerrainAchievements["status"],
+    status_updated: "2026-01-01T00:00:00.000Z",
+    template: template as NonNullable<TerrainAchievements["template"]>,
+    achievement_meta: {
+      stream: stream as NonNullable<NonNullable<TerrainAchievements["achievement_meta"]>["stream"]>,
+      branch,
+      stage,
+    },
   };
 }
 
-describe('OasReportItem', () => {
-  it('builds name and keeps highest stage per branch for each stream', () => {
+describe("OasReportItem", () => {
+  it("builds name and keeps highest stage per branch for each stream", () => {
     const item = new OasReportItem(
-      [
-        makeOasAchievement('oas-bw-1', 'bushwalking', 'navigation', 1),
-        makeOasAchievement('oas-bw-3', 'bushwalking', 'navigation', 3),
-        makeOasAchievement('oas-bw-2', 'bushwalking', 'navigation', 2),
-      ],
+      [makeOasAchievement("oas-bw-1", "bushwalking", "navigation", 1), makeOasAchievement("oas-bw-3", "bushwalking", "navigation", 3), makeOasAchievement("oas-bw-2", "bushwalking", "navigation", 2)],
       makeMember(),
     );
 
-    expect(item.name).toBe('Alex Scout');
-    expect(item.bushwalking).toEqual([{ template: 'oas-bw-1', stream: 'bushwalking', branch: 'navigation', stage: 3 }]);
+    expect(item.name).toBe("Alex Scout");
+    expect(item.bushwalking).toEqual([{ template: "oas-bw-1", stream: "bushwalking", branch: "navigation", stage: 3 }]);
   });
 
-  it('removes broader templates when a more specific template progression exists', () => {
-    const item = new OasReportItem(
-      [
-        makeOasAchievement('core-1', 'camping', 'campcraft', 2),
-        makeOasAchievement('core-advanced-2', 'camping', 'expedition-campcraft', 4),
-      ],
-      makeMember(),
-    );
+  it("removes broader templates when a more specific template progression exists", () => {
+    const item = new OasReportItem([makeOasAchievement("core-1", "camping", "campcraft", 2), makeOasAchievement("core-advanced-2", "camping", "expedition-campcraft", 4)], makeMember());
 
-    expect(item.camping).toEqual([{ template: 'core-advanced-2', stream: 'camping', branch: 'expedition-campcraft', stage: 4 }]);
+    expect(item.camping).toEqual([{ template: "core-advanced-2", stream: "camping", branch: "expedition-campcraft", stage: 4 }]);
   });
 
-  it('initializes non-achieved streams as empty arrays', () => {
+  it("initializes non-achieved streams as empty arrays", () => {
     const item = new OasReportItem([], makeMember());
 
     expect(item.bushwalking).toEqual([]);

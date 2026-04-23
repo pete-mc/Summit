@@ -1,5 +1,5 @@
 import FindComponent from "../helpers/FindComponent";
-import { Home, DisplayOptions, MilestoneReport, OasReport, Topo, PresentAwards, SummitCalendar, PeakAward } from "@/pages";
+import { Home, DisplayOptions, MilestoneReport, OasReport, Topo, SummitCalendar, PeakAward } from "@/pages";
 import { NavMenuComponent, NavMenuItem } from "@/types/NavMenu";
 import VueRouter, { Route } from "vue-router";
 import Vue from "vue";
@@ -280,7 +280,6 @@ export default class SummitRouter {
               { route: "/adventurous-journey", type: "adventurous_journey" },
               { route: "/personal-reflection", type: "personal_reflection" },
             ].find((type) => type.route === to.path)?.type ?? "outdoor_adventure_skill";
-          to.path === "/oas" ? "outdoor_adventure_skill" : "special_interest_area";
           const header = to.path.startsWith("/intro-") ? $("hr.BaseList__divider").first() : $("div.AchievementOverview__awarded").first();
           const list = header.next().children("div.List").first();
           list.addClass("AwardedList");

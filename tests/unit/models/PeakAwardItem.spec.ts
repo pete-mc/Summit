@@ -1,25 +1,30 @@
-import PeakAwardItem from '@/pages/PeakAward/models/PeakAwardItem';
-import { TerrainAchievementsType } from '@/shared';
-import type { TerrainAchievements, TerrainAchievementsEventCount, TerrainUnitMember } from '@/types/terrainTypes';
+import PeakAwardItem from "@/pages/PeakAward/models/PeakAwardItem";
+import { TerrainAchievementsType } from "@/shared";
+import type { TerrainAchievements, TerrainAchievementsEventCount, TerrainUnitMember } from "@/types/terrainTypes";
+
+const asSection = (section: string): TerrainAchievements["section"] => section as TerrainAchievements["section"];
+const asType = (type: TerrainAchievementsType): TerrainAchievements["type"] => type as TerrainAchievements["type"];
+const asStatus = (status: string): TerrainAchievements["status"] => status as TerrainAchievements["status"];
+const asStream = (stream: string): NonNullable<NonNullable<TerrainAchievements["achievement_meta"]>["stream"]> => stream as NonNullable<NonNullable<TerrainAchievements["achievement_meta"]>["stream"]>;
 
 function makeMember(overrides: Partial<TerrainUnitMember> = {}): TerrainUnitMember {
   return {
-    id: 'member-1',
-    member_number: '123',
-    first_name: 'Alex',
-    last_name: 'Scout',
-    status: 'active',
-    date_of_birth: '2010-01-01',
+    id: "member-1",
+    member_number: "123",
+    first_name: "Alex",
+    last_name: "Scout",
+    status: "active",
+    date_of_birth: "2010-01-01",
     groups: [],
     unit: {
-      id: 'unit-1',
-      section: 'scout',
-      duty: 'member' as any,
+      id: "unit-1",
+      section: "scout",
+      duty: "member" as TerrainUnitMember["unit"]["duty"],
       unit_council: false,
-      group_id: 'group-1',
+      group_id: "group-1",
     },
     patrol: null,
-    metadata: { 'achievement-import': '' },
+    metadata: { "achievement-import": "" },
     ...overrides,
   };
 }
@@ -35,39 +40,39 @@ function makeEventCount(): TerrainAchievementsEventCount {
 function makeAward(overrides: Partial<TerrainAchievements>): TerrainAchievements {
   return {
     id: Math.random().toString(),
-    member_id: 'member-1',
-    section: 'scout' as any,
-    type: TerrainAchievementsType.Milestone as any,
-    status: 'in_progress' as any,
-    status_updated: '2026-01-01T00:00:00.000Z',
+    member_id: "member-1",
+    section: asSection("scout"),
+    type: asType(TerrainAchievementsType.Milestone),
+    status: asStatus("in_progress"),
+    status_updated: "2026-01-01T00:00:00.000Z",
     ...overrides,
   } as TerrainAchievements;
 }
 
-describe('PeakAwardItem', () => {
-  it('aggregates milestone counts and award status flags for current section', () => {
+describe("PeakAwardItem", () => {
+  it("aggregates milestone counts and award status flags for current section", () => {
     const awards: TerrainAchievements[] = [
-      makeAward({ type: TerrainAchievementsType.Milestone as any, section: 'scout' as any, achievement_meta: { stage: 3 }, status: 'in_progress' as any, event_count: makeEventCount() }),
-      makeAward({ type: TerrainAchievementsType.SpecialInterestArea as any, section: 'scout' as any, status: 'in_progress' as any }),
-      makeAward({ type: TerrainAchievementsType.SpecialInterestArea as any, section: 'scout' as any, status: 'awarded' as any }),
-      makeAward({ type: TerrainAchievementsType.SpecialInterestArea as any, section: 'cub' as any, status: 'awarded' as any }),
-      makeAward({ type: TerrainAchievementsType.OutdoorAdventureSkill as any, section: 'scout' as any, status: 'awarded' as any, achievement_meta: { stream: 'bushcraft' as any, stage: 2 } }),
-      makeAward({ type: TerrainAchievementsType.OutdoorAdventureSkill as any, section: 'cub' as any, status: 'awarded' as any, achievement_meta: { stream: 'bushcraft' as any, stage: 6 } }),
-      makeAward({ type: TerrainAchievementsType.OutdoorAdventureSkill as any, section: 'scout' as any, status: 'awarded' as any, achievement_meta: { stream: 'bushwalking' as any, stage: 3 } }),
-      makeAward({ type: TerrainAchievementsType.OutdoorAdventureSkill as any, section: 'cub' as any, status: 'awarded' as any, achievement_meta: { stream: 'bushwalking' as any, stage: 8 } }),
-      makeAward({ type: TerrainAchievementsType.OutdoorAdventureSkill as any, section: 'scout' as any, status: 'awarded' as any, achievement_meta: { stream: 'camping' as any, stage: 1 } }),
-      makeAward({ type: TerrainAchievementsType.OutdoorAdventureSkill as any, section: 'cub' as any, status: 'awarded' as any, achievement_meta: { stream: 'camping' as any, stage: 7 } }),
-      makeAward({ type: TerrainAchievementsType.IntroScouting as any, status: 'awarded' as any }),
-      makeAward({ type: TerrainAchievementsType.IntroSection as any, section: 'scout' as any, status: 'in_progress' as any }),
-      makeAward({ type: TerrainAchievementsType.CourseReflection as any, section: 'scout' as any, status: 'awarded' as any }),
-      makeAward({ type: TerrainAchievementsType.PersonalReflection as any, section: 'scout' as any, status: 'in_progress' as any }),
-      makeAward({ type: TerrainAchievementsType.AdventurousJourney as any, section: 'scout' as any, status: 'awarded' as any }),
+      makeAward({ type: asType(TerrainAchievementsType.Milestone), section: asSection("scout"), achievement_meta: { stage: 3 }, status: asStatus("in_progress"), event_count: makeEventCount() }),
+      makeAward({ type: asType(TerrainAchievementsType.SpecialInterestArea), section: asSection("scout"), status: asStatus("in_progress") }),
+      makeAward({ type: asType(TerrainAchievementsType.SpecialInterestArea), section: asSection("scout"), status: asStatus("awarded") }),
+      makeAward({ type: asType(TerrainAchievementsType.SpecialInterestArea), section: asSection("cub"), status: asStatus("awarded") }),
+      makeAward({ type: asType(TerrainAchievementsType.OutdoorAdventureSkill), section: asSection("scout"), status: asStatus("awarded"), achievement_meta: { stream: asStream("bushcraft"), stage: 2 } }),
+      makeAward({ type: asType(TerrainAchievementsType.OutdoorAdventureSkill), section: asSection("cub"), status: asStatus("awarded"), achievement_meta: { stream: asStream("bushcraft"), stage: 6 } }),
+      makeAward({ type: asType(TerrainAchievementsType.OutdoorAdventureSkill), section: asSection("scout"), status: asStatus("awarded"), achievement_meta: { stream: asStream("bushwalking"), stage: 3 } }),
+      makeAward({ type: asType(TerrainAchievementsType.OutdoorAdventureSkill), section: asSection("cub"), status: asStatus("awarded"), achievement_meta: { stream: asStream("bushwalking"), stage: 8 } }),
+      makeAward({ type: asType(TerrainAchievementsType.OutdoorAdventureSkill), section: asSection("scout"), status: asStatus("awarded"), achievement_meta: { stream: asStream("camping"), stage: 1 } }),
+      makeAward({ type: asType(TerrainAchievementsType.OutdoorAdventureSkill), section: asSection("cub"), status: asStatus("awarded"), achievement_meta: { stream: asStream("camping"), stage: 7 } }),
+      makeAward({ type: asType(TerrainAchievementsType.IntroScouting), status: asStatus("awarded") }),
+      makeAward({ type: asType(TerrainAchievementsType.IntroSection), section: asSection("scout"), status: asStatus("in_progress") }),
+      makeAward({ type: asType(TerrainAchievementsType.CourseReflection), section: asSection("scout"), status: asStatus("awarded") }),
+      makeAward({ type: asType(TerrainAchievementsType.PersonalReflection), section: asSection("scout"), status: asStatus("in_progress") }),
+      makeAward({ type: asType(TerrainAchievementsType.AdventurousJourney), section: asSection("scout"), status: asStatus("awarded") }),
     ];
 
-    const item = new PeakAwardItem(awards, 'scout', makeMember());
+    const item = new PeakAwardItem(awards, "scout", makeMember());
 
-    expect(item.name).toBe('Alex Scout');
-    expect(item.milestone3).toBe('⌛');
+    expect(item.name).toBe("Alex Scout");
+    expect(item.milestone3).toBe("⌛");
     expect(item.leads).toBe(10);
     expect(item.assists).toBe(10);
     expect(item.outdoors).toBe(7);
@@ -83,17 +88,17 @@ describe('PeakAwardItem', () => {
     expect(item.Bushwalking).toBe(3);
     expect(item.Camping).toBe(1);
 
-    expect(item.Scouts).toBe('✅');
-    expect(item.Section).toBe('⌛');
-    expect(item.PersonalDevelopment).toBe('✅');
-    expect(item.Reflection).toBe('⌛');
-    expect(item.Journey).toBe('✅');
+    expect(item.Scouts).toBe("✅");
+    expect(item.Section).toBe("⌛");
+    expect(item.PersonalDevelopment).toBe("✅");
+    expect(item.Reflection).toBe("⌛");
+    expect(item.Journey).toBe("✅");
   });
 
-  it('defaults milestone-3 fields when no stage-3 milestone exists for the section', () => {
-    const item = new PeakAwardItem([], 'scout', makeMember());
+  it("defaults milestone-3 fields when no stage-3 milestone exists for the section", () => {
+    const item = new PeakAwardItem([], "scout", makeMember());
 
-    expect(item.milestone3).toBe('❌');
+    expect(item.milestone3).toBe("❌");
     expect(item.leads).toBe(0);
     expect(item.assists).toBe(0);
     expect(item.outdoors).toBe(0);

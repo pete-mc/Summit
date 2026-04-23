@@ -1,7 +1,7 @@
-import $ from 'jquery';
-import { InitLogbookRead } from '@/components/copyLogbook';
+import $ from "jquery";
+import { InitLogbookRead } from "@/components/copyLogbook";
 
-describe('InitLogbookRead', () => {
+describe("InitLogbookRead", () => {
   const originalMutationObserver = global.MutationObserver;
   const originalDollar = window.$;
 
@@ -19,7 +19,7 @@ describe('InitLogbookRead', () => {
       }
 
       return matches;
-    } as unknown as JQuery['xpath'];
+    } as unknown as JQuery["xpath"];
     (globalThis as { $: typeof $ }).$ = $;
   });
 
@@ -27,11 +27,11 @@ describe('InitLogbookRead', () => {
     global.MutationObserver = originalMutationObserver;
     window.$ = originalDollar;
     delete (globalThis as Partial<typeof globalThis>).$;
-    document.body.innerHTML = '';
+    document.body.innerHTML = "";
     jest.clearAllMocks();
   });
 
-  it('creates read buttons before print, mirrors classes, and copies data-v attributes', () => {
+  it("creates read buttons before print, mirrors classes, and copies data-v attributes", () => {
     const observeMock = jest.fn();
 
     class MockMutationObserver {
@@ -39,7 +39,9 @@ describe('InitLogbookRead', () => {
       disconnect = jest.fn();
       takeRecords = jest.fn(() => []);
 
-      constructor(_callback: MutationCallback) {}
+      constructor(callback: MutationCallback) {
+        void callback;
+      }
     }
 
     global.MutationObserver = MockMutationObserver as unknown as typeof MutationObserver;
@@ -55,25 +57,25 @@ describe('InitLogbookRead', () => {
     InitLogbookRead();
 
     const printBtn = document.querySelector('button[data-cy="PRINT"]');
-    const copyBtn = document.querySelector('.copyClipboardBtn') as HTMLButtonElement | null;
-    const exportBtn = document.querySelector('.copyExportBtn') as HTMLButtonElement | null;
+    const copyBtn = document.querySelector(".copyClipboardBtn") as HTMLButtonElement | null;
+    const exportBtn = document.querySelector(".copyExportBtn") as HTMLButtonElement | null;
 
     expect(copyBtn).not.toBeNull();
     expect(exportBtn).not.toBeNull();
-    expect(copyBtn?.id).toBe('copyClipboardBtn');
-    expect(exportBtn?.id).toBe('copyExportBtn');
-    expect(copyBtn?.textContent).toBe('Copy to Clipboard');
-    expect(exportBtn?.textContent).toBe('Export');
-    expect(copyBtn?.hasAttribute('data-v-abc123')).toBe(true);
-    expect(copyBtn?.hasAttribute('data-v-def456')).toBe(true);
-    expect(exportBtn?.hasAttribute('data-v-abc123')).toBe(true);
-    expect(exportBtn?.hasAttribute('data-v-def456')).toBe(true);
-    expect(copyBtn?.classList.contains('print-base')).toBe(true);
-    expect(copyBtn?.classList.contains('print-extra')).toBe(true);
-    expect(exportBtn?.classList.contains('print-base')).toBe(true);
-    expect(exportBtn?.classList.contains('print-extra')).toBe(true);
-    expect(copyBtn?.classList.contains('summit-btn')).toBe(true);
-    expect(exportBtn?.classList.contains('summit-btn')).toBe(true);
+    expect(copyBtn?.id).toBe("copyClipboardBtn");
+    expect(exportBtn?.id).toBe("copyExportBtn");
+    expect(copyBtn?.textContent).toBe("Copy to Clipboard");
+    expect(exportBtn?.textContent).toBe("Export");
+    expect(copyBtn?.hasAttribute("data-v-abc123")).toBe(true);
+    expect(copyBtn?.hasAttribute("data-v-def456")).toBe(true);
+    expect(exportBtn?.hasAttribute("data-v-abc123")).toBe(true);
+    expect(exportBtn?.hasAttribute("data-v-def456")).toBe(true);
+    expect(copyBtn?.classList.contains("print-base")).toBe(true);
+    expect(copyBtn?.classList.contains("print-extra")).toBe(true);
+    expect(exportBtn?.classList.contains("print-base")).toBe(true);
+    expect(exportBtn?.classList.contains("print-extra")).toBe(true);
+    expect(copyBtn?.classList.contains("summit-btn")).toBe(true);
+    expect(exportBtn?.classList.contains("summit-btn")).toBe(true);
     expect(copyBtn?.nextElementSibling).toBe(exportBtn);
     expect(exportBtn?.nextElementSibling).toBe(printBtn);
 

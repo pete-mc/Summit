@@ -21,7 +21,6 @@ export default async function fetchActivity(activityId: string | undefined): Pro
     }
     return await response.json();
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.log(`Error fetching activity: ${e}`);
     return undefined;
   }
