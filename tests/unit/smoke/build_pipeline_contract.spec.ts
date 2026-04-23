@@ -37,6 +37,27 @@ describe("build pipeline contract", () => {
     );
   });
 
+  it("supports overriding dev-server port while keeping secure default", async () => {
+    process.env.SUMMIT_DEV_SERVER_PORT = "8443";
+    jest.resetModules();
+
+    const webpackConfigModule = await import(path.resolve(__dirname, "../../../webpack.config.js"));
+    const webpackConfig = (webpackConfigModule.default ?? webpackConfigModule) as {
+      devServer?: { port?: number };
+    };
+
+    expect(webpackConfig.devServer?.port).toBe(8443);
+
+    delete process.env.SUMMIT_DEV_SERVER_PORT;
+    jest.resetModules();
+    const webpackConfigDefaultModule = await import(path.resolve(__dirname, "../../../webpack.config.js"));
+    const webpackConfigDefault = (webpackConfigDefaultModule.default ?? webpackConfigDefaultModule) as {
+      devServer?: { port?: number };
+    };
+
+    expect(webpackConfigDefault.devServer?.port).toBe(443);
+  });
+
   it("pins build-tooling dependencies to refreshed in-major releases", () => {
     const packageJsonPath = path.resolve(__dirname, "../../../package.json");
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as {
@@ -55,6 +76,6 @@ describe("build pipeline contract", () => {
     expect(devDependencies["css-minimizer-webpack-plugin"]).toBe("^8.0.0");
     expect(devDependencies["mini-css-extract-plugin"]).toBe("^2.10.2");
     expect(devDependencies.webpack).toBe("^5.106.2");
-    expect(devDependencies["webpack-dev-server"]).toBe("^4.15.2");
+    expect(devDependencies["webpack-dev-server"]).toMatch(/^\^5\./);
   });
 });

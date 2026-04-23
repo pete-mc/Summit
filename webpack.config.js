@@ -5,6 +5,7 @@ const { VueLoaderPlugin } = require("vue-loader");
 const isDevelopment = process.env.NODE_ENV !== 'production';
 const fs = require("fs");
 const CopyPlugin = require('copy-webpack-plugin');
+const devServerPort = Number(process.env.SUMMIT_DEV_SERVER_PORT ?? process.env.PORT ?? 443);
 
 module.exports = {
   entry: './src/index.ts',
@@ -69,7 +70,7 @@ module.exports = {
     allowedHosts: "all",
     host: "localhost",
     compress: true,
-    port: 443,
+    port: devServerPort,
     server: {
       type: "https",
       options: {
