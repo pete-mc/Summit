@@ -13,7 +13,7 @@ function makeMember(overrides: Partial<TerrainUnitMember> = {}): TerrainUnitMemb
     unit: {
       id: "unit-1",
       section: "scout",
-      duty: "member" as any,
+      duty: "member" as TerrainUnitMember["unit"]["duty"],
       unit_council: false,
       group_id: "group-1",
     },
@@ -32,16 +32,16 @@ function makeEventCount(overrides: Partial<TerrainAchievementsEventCount> = {}):
   };
 }
 
-function makeMilestoneAchievement(stage: number, event_count?: TerrainAchievementsEventCount): TerrainAchievements {
+function makeMilestoneAchievement(stage: number, eventCount?: TerrainAchievementsEventCount): TerrainAchievements {
   return {
     id: "achv-1",
     member_id: "member-1",
-    section: "scout" as any,
-    type: "milestone" as any,
-    status: "in_progress" as any,
+    section: "scout" as TerrainAchievements["section"],
+    type: "milestone" as TerrainAchievements["type"],
+    status: "in_progress" as TerrainAchievements["status"],
     status_updated: "2026-01-01T00:00:00.000Z",
     achievement_meta: { stage },
-    event_count,
+    event_count: eventCount,
   };
 }
 

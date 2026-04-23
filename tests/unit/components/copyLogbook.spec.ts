@@ -39,7 +39,9 @@ describe("InitLogbookRead", () => {
       disconnect = jest.fn();
       takeRecords = jest.fn(() => []);
 
-      constructor(_callback: MutationCallback) {}
+      constructor(callback: MutationCallback) {
+        void callback;
+      }
     }
 
     global.MutationObserver = MockMutationObserver as unknown as typeof MutationObserver;

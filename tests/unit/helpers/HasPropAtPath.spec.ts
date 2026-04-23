@@ -30,7 +30,7 @@ describe("HasPropAtPath", () => {
       profile: null,
     } as unknown as Record<string, unknown>;
 
-    expect(HasPropAtPath(target as Record<string, any>, "profile.details.name", "Alex")).toBe(false);
+    expect(HasPropAtPath(target as Record<string, unknown>, "profile.details.name", "Alex")).toBe(false);
   });
 
   it("handles falsey values correctly", () => {

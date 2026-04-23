@@ -592,11 +592,11 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
                 title="Add"
                 onClick={() => {
                   this.scheduleComponent.current?.closeQuickInfoPopup();
-                  const start_datetime = (props.event as TerrainEventSummary).start_datetime;
-                  const end_datetime = (props.event as TerrainEventSummary).end_datetime;
+                  const startDatetime = (props.event as TerrainEventSummary).start_datetime;
+                  const endDatetime = (props.event as TerrainEventSummary).end_datetime;
 
-                  const newStartDatetime = moment(start_datetime).add(7, "days").utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
-                  const newEndDatetime = moment(end_datetime).add(7, "days").utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+                  const newStartDatetime = moment(startDatetime).add(7, "days").utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+                  const newEndDatetime = moment(endDatetime).add(7, "days").utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
 
                   this.newActivity(newStartDatetime, newEndDatetime);
                 }}

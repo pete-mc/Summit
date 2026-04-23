@@ -2,11 +2,12 @@ import fs from "fs";
 import path from "path";
 
 describe("lint stack loads", () => {
-  it("loads eslint flat config and preserves TypeScript lint intent", () => {
+  it("loads eslint flat config and preserves TypeScript lint intent", async () => {
     const configPath = path.resolve(process.cwd(), "eslint.config.js");
     expect(fs.existsSync(configPath)).toBe(true);
 
-    const config = require(configPath);
+    const configModule = await import(configPath);
+    const config = configModule.default ?? configModule;
 
     expect(Array.isArray(config)).toBe(true);
 

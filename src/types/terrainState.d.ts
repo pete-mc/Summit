@@ -44,7 +44,7 @@ interface Current {
   latest_submission: LatestSubmission;
 }
 
-interface ReviewTemplate {}
+type ReviewTemplate = Record<string, unknown>;
 
 interface LatestSubmission {
   submission_id: string;

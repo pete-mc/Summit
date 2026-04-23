@@ -18,8 +18,9 @@ describe("build pipeline contract", () => {
     expect(resources).toContain("scripts/summit.js");
   });
 
-  it("keeps webpack output and copied assets aligned to extension contract", () => {
-    const webpackConfig = require(path.resolve(__dirname, "../../../webpack.config.js")) as {
+  it("keeps webpack output and copied assets aligned to extension contract", async () => {
+    const webpackConfigModule = await import(path.resolve(__dirname, "../../../webpack.config.js"));
+    const webpackConfig = (webpackConfigModule.default ?? webpackConfigModule) as {
       output: { filename: string };
       plugins: Array<{ constructor: { name: string }; options?: { filename?: string; patterns?: Array<{ from: string; to?: string }> } }>;
     };
