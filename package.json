@@ -15,6 +15,9 @@
   ],
   "author": "Peter McDonald",
   "license": "MIT",
+  "engines": {
+    "node": "24.x"
+  },
   "bugs": {
     "url": "https://github.com/pete-mc/Summit/issues"
   },
