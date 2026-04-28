@@ -80,9 +80,9 @@ export const DialogComponent = forwardRef<DialogHandle, DialogComponentProps>(({
             </button>
           )}
         </div>
-        <div style={{ flex: 1, minHeight: 0 }}>{children}</div>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden" }}>{children}</div>
         {buttons.length > 0 && (
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 }}>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8, position: "sticky", bottom: 0, background: "var(--summit-color-bg-surface)", paddingTop: 8, flexShrink: 0 }}>
             {buttons.map((button, index) => (
               <button key={`${button.buttonModel.content}-${index}`} type="button" className={button.buttonModel.cssClass} onClick={button.click}>
                 {button.buttonModel.content}
