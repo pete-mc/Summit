@@ -17,8 +17,7 @@
                 "/scripts/summitloader.js"
             ],
             "css": [
-                "/styles/summit.css",
-                "/styles/fluent.min.css"
+                "/styles/summit.css"
             ]
         }
     ],

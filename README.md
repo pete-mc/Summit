@@ -61,10 +61,6 @@ Run `npm start` to launch the local webpack dev server.
 - It binds to `https://localhost:443`.
 - On Windows, port `443` may require elevated privileges or may already be in use.
 
-### Optional Syncfusion license activation
-
-If you have a Syncfusion license key, add it to the local `.env` file as `SYNCFUSION_LICENSE=...` and then run `npm run licence`.
-
 ### VS Code tasks
 
 This repository includes VS Code tasks for dependency install, development build, production build, packaging the extension artifact, watch mode, and starting the local dev server.

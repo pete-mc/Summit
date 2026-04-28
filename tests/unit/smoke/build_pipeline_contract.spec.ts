@@ -12,7 +12,7 @@ describe("build pipeline contract", () => {
     const contentScript = manifest.content_scripts[0];
     expect(contentScript.js).toContain("/scripts/summitloader.js");
     expect(contentScript.css).toContain("/styles/summit.css");
-    expect(contentScript.css).toContain("/styles/fluent.min.css");
+    expect(contentScript.css).toHaveLength(1);
 
     const resources = manifest.web_accessible_resources[0]?.resources ?? [];
     expect(resources).toContain("scripts/summit.js");
@@ -32,9 +32,9 @@ describe("build pipeline contract", () => {
 
     const copyPlugin = webpackConfig.plugins.find((plugin) => plugin.constructor.name === "CopyPlugin") as { patterns?: Array<{ from: string; to?: string }> } | undefined;
     const patterns = copyPlugin?.patterns ?? [];
-    expect(patterns).toEqual(
-      expect.arrayContaining([expect.objectContaining({ from: "manifest.json" }), expect.objectContaining({ from: "src/summitloader.js", to: "scripts" }), expect.objectContaining({ from: "src/styles/fluent.min.css", to: "styles" })]),
-    );
+    expect(patterns).toEqual(expect.arrayContaining([expect.objectContaining({ from: "manifest.json" }), expect.objectContaining({ from: "src/summitloader.js", to: "scripts" })]));
+
+    expect(patterns).not.toEqual(expect.arrayContaining([expect.objectContaining({ from: "src/styles/fluent.min.css", to: "styles" })]));
   });
 
   it("supports overriding dev-server port while keeping secure default", async () => {
