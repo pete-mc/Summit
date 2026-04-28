@@ -51,8 +51,13 @@ export function InitProgrammingExportBtn() {
       class: "exportiCalBtn",
     }),
   );
-  // add property data-v-718788cc to button
-  jquery(".exportiCalBtn").attr("data-v-718788cc", "");
+  // copy data-v-* attributes from print button to export button
+  const exportBtn = jquery(".exportiCalBtn");
+  Array.from(printBtn.get(0)?.attributes ?? []).forEach((attr) => {
+    if (attr.name.startsWith("data-v-")) {
+      exportBtn.attr(attr.name, "");
+    }
+  });
   setClasses();
   const targetNode = jquery(".exportiCalBtn").siblings('button[data-cy="PRINT"]').first().get(0);
   const config = { attributes: true, childList: false, subtree: false };

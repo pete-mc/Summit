@@ -4,17 +4,39 @@ on:
   push:
     branches:
       - '*'
+  pull_request:
+    branches:
+      - main
 
 permissions:
-  contents: write
-  packages: write
+  contents: read
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: npm
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run unit tests
+      run: npm test
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push'
+
+    steps:
+    - uses: actions/checkout@v4
 
     - name: Cache npm dependencies
       uses: actions/cache@v3
@@ -36,13 +58,14 @@ jobs:
 
     - name: Setup Node.js environment
       uses: actions/setup-node@v4
+      with:
+        node-version: 20
 
     - name: Install jq
       run: sudo apt-get install jq
 
     - name: Install dependencies
       run: |
-        npm install -g webpack @types/jest jest typescript webpack-cli npm-run-all
         npm ci
 
     - name: Activate Syncfusion License
