@@ -24,9 +24,7 @@ describe("Phase 1 dialog scroll behavior contract", () => {
     const overflowingChildren = Array.from({ length: 80 }, (_, index) => React.createElement("p", { key: `line-${index}` }, `Scrollable line ${index + 1}`));
 
     act(() => {
-      root.render(
-        React.createElement(DialogComponent, { id: "scroll-test-dialog", visible: true, header: "Scrollable Dialog" }, React.createElement("div", { id: "overflowing-content" }, overflowingChildren)),
-      );
+      root.render(React.createElement(DialogComponent, { id: "scroll-test-dialog", visible: true, header: "Scrollable Dialog" }, React.createElement("div", { id: "overflowing-content" }, overflowingChildren)));
     });
 
     const dialogSurface = container.querySelector(".summit-dialog-surface") as HTMLDivElement;
