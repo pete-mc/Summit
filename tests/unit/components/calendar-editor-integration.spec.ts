@@ -1,9 +1,15 @@
 import React from "react";
 import { createRoot, Root } from "react-dom/client";
 import { act } from "react-dom/test-utils";
+import * as fs from "fs";
+import * as path from "path";
 import { DialogComponent } from "@/components/DialogComponent";
 
-describe("Phase 1 calendar editor integration contract", () => {
+const REPO_ROOT = path.resolve(__dirname, "../../..");
+const SUMMIT_CALENDAR_PATH = path.resolve(REPO_ROOT, "src/pages/SummitCalendar/components/SummitCalendar.tsx");
+const STYLES_PATH = path.resolve(REPO_ROOT, "src/styles/index.css");
+
+describe("Phase 3 calendar editor integration contract", () => {
   let container: HTMLDivElement;
   let root: Root;
 
@@ -47,5 +53,22 @@ describe("Phase 1 calendar editor integration contract", () => {
 
     const saveButton = Array.from(dialog.querySelectorAll("button")).find((button) => button.textContent?.trim() === "Save") as HTMLButtonElement | undefined;
     expect(saveButton).toBeTruthy();
+  });
+
+  it("calendar editor long-form sections remain accessible without clipping", () => {
+    const summitCalendarSource = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+    const stylesSource = fs.readFileSync(STYLES_PATH, "utf8");
+
+    expect(summitCalendarSource).toContain('<DialogComponent id="calendar-editor-dialog"');
+    expect(summitCalendarSource).toContain('data-editor-speed-contract="calendar-editor-speed"');
+    expect(summitCalendarSource).toContain("this.editorTemplate()");
+    expect(summitCalendarSource).toContain("this.editorFooterTemplate()");
+
+    const editorContainerRule = stylesSource.match(/\.editor-container\s*\{[\s\S]*?\}/)?.[0] ?? "";
+    expect(editorContainerRule).toContain("display: flex");
+    expect(editorContainerRule).toContain("flex-direction: column");
+    expect(editorContainerRule).not.toMatch(/overflow\s*:\s*hidden/i);
+    expect(editorContainerRule).not.toMatch(/overflow-y\s*:\s*hidden/i);
+    expect(editorContainerRule).not.toMatch(/max-height\s*:/i);
   });
 });
