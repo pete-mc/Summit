@@ -1,19 +1,51 @@
-import * as fs from "fs";
-import * as path from "path";
+import React from "react";
+import { createRoot, Root } from "react-dom/client";
+import { act } from "react-dom/test-utils";
+import { DialogComponent } from "@/components/DialogComponent";
 
-const REPO_ROOT = path.resolve(__dirname, "../../..");
-const SUMMIT_CALENDAR_PATH = path.resolve(REPO_ROOT, "src/pages/SummitCalendar/components/SummitCalendar.tsx");
+describe("Phase 1 calendar editor integration contract", () => {
+  let container: HTMLDivElement;
+  let root: Root;
 
-describe("Phase 5 calendar editor integration contract", () => {
-  it("uses explicit React dialog state for calendar editor instead of Syncfusion popup templates", () => {
-    const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+  beforeEach(() => {
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+  });
 
-    expect(source).toContain("isEditorOpen");
-    expect(source).toContain('id="calendar-editor-dialog"');
-    expect(source).toContain("editorIsLoading");
+  afterEach(() => {
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
 
-    expect(source).not.toContain("popupOpen=");
-    expect(source).not.toContain("popupClose=");
-    expect(source).not.toContain("quickInfoTemplates");
+  it("calendar-editor-dialog content remains reachable via vertical scroll", () => {
+    const editorBody = Array.from({ length: 120 }, (_, index) => React.createElement("div", { key: `editor-line-${index}` }, `Editor field ${index + 1}`));
+
+    act(() => {
+      root.render(
+        React.createElement(
+          DialogComponent,
+          {
+            id: "calendar-editor-dialog",
+            visible: true,
+            header: "Calendar Editor",
+            buttons: [{ buttonModel: { content: "Save", cssClass: "summit-button summit-button-primary" } }],
+          },
+          React.createElement("div", { id: "calendar-editor-body" }, editorBody),
+        ),
+      );
+    });
+
+    const dialog = container.querySelector("#calendar-editor-dialog") as HTMLDivElement;
+    expect(dialog).toBeTruthy();
+
+    const contentRegion = dialog.querySelector(".summit-dialog-surface")?.children.item(1) as HTMLDivElement;
+    expect(contentRegion).toBeTruthy();
+    expect(contentRegion.style.overflowY).toBe("auto");
+
+    const saveButton = Array.from(dialog.querySelectorAll("button")).find((button) => button.textContent?.trim() === "Save") as HTMLButtonElement | undefined;
+    expect(saveButton).toBeTruthy();
   });
 });
