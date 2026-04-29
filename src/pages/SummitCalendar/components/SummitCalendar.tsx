@@ -831,7 +831,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
 
   handleCalendarChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedCalendars = Array.from(event.target.selectedOptions).map((option) => option.value);
-    const calendarUpdate = this.state.calendars;
+    const calendarUpdate = { ...this.state.calendars };
     if (!calendarUpdate.own_calendars) return;
     calendarUpdate.own_calendars = calendarUpdate.own_calendars.map((calendar) => {
       return { ...calendar, selected: selectedCalendars.includes(calendar.id) };
@@ -839,8 +839,11 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     calendarUpdate.other_calendars = calendarUpdate.other_calendars?.map((calendar) => {
       return { ...calendar, selected: selectedCalendars.includes(calendar.id) };
     });
-    updateMemberCalendars(JSON.stringify(calendarUpdate)).then(() => {
-      this.fetchData();
+    const allCalendars = this.state.allCalendars.map((c) => ({ ...c, selected: selectedCalendars.includes(c.id) }));
+    this.setState({ calendars: calendarUpdate, allCalendars }, () => {
+      updateMemberCalendars(JSON.stringify(calendarUpdate)).then(() => {
+        this.fetchData();
+      });
     });
   };
 
@@ -904,7 +907,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           eventDidMount={this.eventDidMount}
           height={"auto"}
         />
-        <DialogComponent id="calendar-editor-dialog" isModal={true} visible={this.state.isEditorOpen} header={this.editorHeaderTemplate()} close={this.closeEditor} closeOnEscape={true} showCloseIcon={true}>
+        <DialogComponent id="calendar-editor-dialog" isModal={true} visible={this.state.isEditorOpen} header={this.editorHeaderTemplate()} close={this.closeEditor} closeOnEscape={true} showCloseIcon={true} footer={!this.state.editorIsLoading ? this.editorFooterTemplate() : undefined}>
           <div
             data-editor-speed-contract="calendar-editor-speed"
             data-editor-open-proxy={String(this.state.isEditorOpen)}
@@ -914,7 +917,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             tabIndex={0}
           >
             {this.state.editorIsLoading ? <div>Loading event...</div> : this.editorTemplate()}
-            {!this.state.editorIsLoading && this.editorFooterTemplate()}
           </div>
         </DialogComponent>
         <div className="calendar-selector-panel">

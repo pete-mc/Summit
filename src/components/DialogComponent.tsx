@@ -21,6 +21,7 @@ interface DialogComponentProps {
   visible?: boolean;
   header?: string;
   children?: ReactNode;
+  footer?: ReactNode;
   isModal?: boolean;
   target?: string;
   animationSettings?: { effect?: string };
@@ -31,7 +32,7 @@ interface DialogComponentProps {
   buttons?: DialogButton[];
 }
 
-export const DialogComponent = forwardRef<DialogHandle, DialogComponentProps>(({ id, visible = false, header, children, close, closeOnEscape = true, showCloseIcon = true, cssClass, buttons = [] }, ref) => {
+export const DialogComponent = forwardRef<DialogHandle, DialogComponentProps>(({ id, visible = false, header, children, footer, close, closeOnEscape = true, showCloseIcon = true, cssClass, buttons = [] }, ref) => {
   const [isOpen, setIsOpen] = useState(visible);
 
   useEffect(() => {
@@ -80,7 +81,8 @@ export const DialogComponent = forwardRef<DialogHandle, DialogComponentProps>(({
             </button>
           )}
         </div>
-        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden" }}>{children}</div>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>{children}</div>
+        {footer && <div>{footer}</div>}
         {buttons.length > 0 && (
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8, position: "sticky", bottom: 0, background: "var(--summit-color-bg-surface)", paddingTop: 8, flexShrink: 0 }}>
             {buttons.map((button, index) => (
