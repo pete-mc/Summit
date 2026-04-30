@@ -53,6 +53,49 @@
   gap: var(--summit-space-xs);
 }
 
+.editor-date-time-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--summit-space-md);
+  min-width: 0;
+}
+
+.editor-date-time-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--summit-space-xs);
+  min-width: 0;
+}
+
+.editor-date-time-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--summit-space-xs);
+  font-weight: var(--summit-font-weight-semibold);
+  color: var(--summit-color-text-primary);
+}
+
+.editor-date-time-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--summit-space-sm);
+  min-width: 0;
+}
+
+.editor-date-time-inputs > * {
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .editor-date-time-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .editor-date-time-inputs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .editor-field-status {
   min-height: var(--summit-space-lg);
   font-size: var(--summit-font-size-sm);

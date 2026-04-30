@@ -616,25 +616,35 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         </div>
         <div className="editor-field" data-editor-field="date_range">
           <div className="editor-field-control">
-            <label className="editor-field-label" htmlFor="start_date">
-              Start {requiredMarker}
-            </label>
-            <DatePickerComponent
-              id="start_date"
-              value={new Date(activity?.start_datetime || new Date())}
-              format="dd/MM/yy"
-              onChange={this.handleDateTimeChange}
-              name="start_date"
-              disabled={!isEditable}
-              showClearButton={false}
-              onFocus={this.handleFocus}
-            />
-            <TimePickerComponent id="start_time" value={new Date(activity?.start_datetime || new Date())} format="hh:mm a" onChange={this.handleDateTimeChange} name="start_time" disabled={!isEditable} showClearButton={false} />
-            <label className="editor-field-label" htmlFor="end_date">
-              End {requiredMarker}
-            </label>
-            <DatePickerComponent id="end_date" value={new Date(activity?.end_datetime || new Date())} format="dd/MM/yy" onChange={this.handleDateTimeChange} name="end_date" disabled={!isEditable} showClearButton={false} />
-            <TimePickerComponent id="end_time" value={new Date(activity?.end_datetime || new Date())} format="hh:mm a" onChange={this.handleDateTimeChange} name="end_time" disabled={!isEditable} showClearButton={false} />
+            <div className="editor-date-time-grid">
+              <div className="editor-date-time-group" data-editor-date-time-group="start">
+                <label className="editor-date-time-label" htmlFor="start_date">
+                  Start {requiredMarker}
+                </label>
+                <div className="editor-date-time-inputs">
+                  <DatePickerComponent
+                    id="start_date"
+                    value={new Date(activity?.start_datetime || new Date())}
+                    format="dd/MM/yy"
+                    onChange={this.handleDateTimeChange}
+                    name="start_date"
+                    disabled={!isEditable}
+                    showClearButton={false}
+                    onFocus={this.handleFocus}
+                  />
+                  <TimePickerComponent id="start_time" value={new Date(activity?.start_datetime || new Date())} format="hh:mm a" onChange={this.handleDateTimeChange} name="start_time" disabled={!isEditable} showClearButton={false} />
+                </div>
+              </div>
+              <div className="editor-date-time-group" data-editor-date-time-group="end">
+                <label className="editor-date-time-label" htmlFor="end_date">
+                  End {requiredMarker}
+                </label>
+                <div className="editor-date-time-inputs">
+                  <DatePickerComponent id="end_date" value={new Date(activity?.end_datetime || new Date())} format="dd/MM/yy" onChange={this.handleDateTimeChange} name="end_date" disabled={!isEditable} showClearButton={false} />
+                  <TimePickerComponent id="end_time" value={new Date(activity?.end_datetime || new Date())} format="hh:mm a" onChange={this.handleDateTimeChange} name="end_time" disabled={!isEditable} showClearButton={false} />
+                </div>
+              </div>
+            </div>
           </div>
           <div className="editor-field-status" data-editor-validation="date_range" role="status">
             {editorValidationErrors.date_range ?? ""}

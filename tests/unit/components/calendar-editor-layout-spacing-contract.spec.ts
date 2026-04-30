@@ -88,3 +88,63 @@ describe("Phase 2 calendar editor structured field layout contract", () => {
     expect(readCssRule(css, ".editor-field-required")).toContain("var(--summit-color-text-danger)");
   });
 });
+
+describe("Phase 3 calendar editor date/time layout spacing contract", () => {
+  it("places Start and End controls inside dedicated date/time layout wrappers", () => {
+    const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+
+    expect(source).toContain('className="editor-date-time-grid"');
+    expect(source).toContain('className="editor-date-time-group"');
+    expect(source).toContain('className="editor-date-time-label"');
+    expect(source).toContain('className="editor-date-time-inputs"');
+
+    const dateRangeField = source.match(/data-editor-field="date_range"[\s\S]*?data-editor-field="scout_method_elements"/)?.[0] ?? "";
+    expect(dateRangeField).toContain('className="editor-date-time-grid"');
+    expect(dateRangeField.match(/className="editor-date-time-group"/g)).toHaveLength(2);
+    expect(dateRangeField).toMatch(/className="editor-date-time-label"[\s\S]*htmlFor="start_date"[\s\S]*Start/);
+    expect(dateRangeField).toMatch(/className="editor-date-time-label"[\s\S]*htmlFor="end_date"[\s\S]*End/);
+    expect(dateRangeField).toMatch(/className="editor-date-time-inputs"[\s\S]*id="start_date"[\s\S]*id="start_time"/);
+    expect(dateRangeField).toMatch(/className="editor-date-time-inputs"[\s\S]*id="end_date"[\s\S]*id="end_time"/);
+  });
+
+  it("uses tokenized gaps and min-width safeguards to prevent adjacent date/time borders colliding", () => {
+    const css = fs.readFileSync(STYLES_PATH, "utf8");
+    const gridRule = readCssRule(css, ".editor-date-time-grid");
+    const groupRule = readCssRule(css, ".editor-date-time-group");
+    const inputsRule = readCssRule(css, ".editor-date-time-inputs");
+
+    expect(gridRule).toMatch(/display\s*:\s*grid/);
+    expect(gridRule).toMatch(/gap\s*:\s*var\(--summit-space-(sm|md|lg)\)/);
+    expect(gridRule).toContain("minmax(0, 1fr)");
+    expect(groupRule).toMatch(/gap\s*:\s*var\(--summit-space-(xs|sm|md)\)/);
+    expect(groupRule).toMatch(/min-width\s*:\s*0/);
+    expect(inputsRule).toMatch(/display\s*:\s*(grid|flex)/);
+    expect(inputsRule).toMatch(/gap\s*:\s*var\(--summit-space-(xs|sm|md)\)/);
+    expect(inputsRule).toMatch(/min-width\s*:\s*0/);
+  });
+
+  it("uses two columns when space allows and stacks date/time groups on narrow widths", () => {
+    const css = fs.readFileSync(STYLES_PATH, "utf8");
+    const gridRule = readCssRule(css, ".editor-date-time-grid");
+    const narrowLayoutRule = css.match(/@media\s*\([^)]*max-width[^)]*\)\s*\{[\s\S]*?\.editor-date-time-grid\s*\{[\s\S]*?\}\s*\}/)?.[0] ?? "";
+    const narrowInputsRule = css.match(/@media\s*\([^)]*max-width[^)]*\)\s*\{[\s\S]*?\.editor-date-time-inputs\s*\{[\s\S]*?\}\s*\}/)?.[0] ?? "";
+
+    expect(gridRule).toMatch(/grid-template-columns\s*:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+    expect(narrowLayoutRule).toContain(".editor-date-time-grid");
+    expect(narrowLayoutRule).toMatch(/grid-template-columns\s*:\s*minmax\(0,\s*1fr\)/);
+    expect(narrowInputsRule).toContain(".editor-date-time-inputs");
+    expect(narrowInputsRule).toMatch(/grid-template-columns\s*:\s*minmax\(0,\s*1fr\)/);
+  });
+
+  it("keeps date range validation and conflict warning hooks discoverable after date/time grouping", () => {
+    const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+    const dateRangeField = source.match(/data-editor-field="date_range"[\s\S]*?data-editor-field="scout_method_elements"/)?.[0] ?? "";
+
+    expect(dateRangeField).toContain('data-editor-validation="date_range"');
+    expect(dateRangeField).toContain('data-editor-warning="event-conflicts"');
+    expect(dateRangeField).toContain('className="editor-field-status"');
+    expect(dateRangeField).toContain('className="editor-field-help"');
+    expect(dateRangeField.indexOf('data-editor-validation="date_range"')).toBeGreaterThan(dateRangeField.indexOf('className="editor-date-time-grid"'));
+    expect(dateRangeField.indexOf('data-editor-warning="event-conflicts"')).toBeGreaterThan(dateRangeField.indexOf('className="editor-date-time-grid"'));
+  });
+});
