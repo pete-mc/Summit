@@ -13,6 +13,7 @@
   --summit-color-bg-muted: #f3f2f1;
   --summit-color-bg-surface: #ffffff;
   --summit-color-text-primary: #201f1e;
+  --summit-color-text-danger: #a4262c;
   --summit-color-text-on-primary: #ffffff;
   --summit-color-border-default: #c8c6c4;
   --summit-color-border-subtle: #edebe9;
@@ -28,10 +29,40 @@
   height: 100%;
 }
 
-.editor-container > label {
+.editor-field {
   display: flex;
   flex-direction: column;
   gap: var(--summit-space-xs);
+}
+
+.editor-field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--summit-space-xs);
+  font-weight: var(--summit-font-weight-semibold);
+  color: var(--summit-color-text-primary);
+}
+
+.editor-field-required {
+  color: var(--summit-color-text-danger);
+}
+
+.editor-field-control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--summit-space-xs);
+}
+
+.editor-field-status {
+  min-height: var(--summit-space-lg);
+  font-size: var(--summit-font-size-sm);
+  color: var(--summit-color-bg-primary);
+}
+
+.editor-field-help {
+  min-height: var(--summit-space-lg);
+  font-size: var(--summit-font-size-sm);
+  color: var(--summit-color-bg-primary);
 }
 
 .summit-dialog-max-size {

@@ -59,7 +59,7 @@ describe("Phase 3 calendar editor integration contract", () => {
     const summitCalendarSource = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
     const stylesSource = fs.readFileSync(STYLES_PATH, "utf8");
 
-    expect(summitCalendarSource).toContain('<DialogComponent id="calendar-editor-dialog"');
+    expect(summitCalendarSource).toMatch(/<DialogComponent\s+[\s\S]*?id="calendar-editor-dialog"/);
     expect(summitCalendarSource).toContain('data-editor-speed-contract="calendar-editor-speed"');
     expect(summitCalendarSource).toContain("this.editorTemplate()");
     expect(summitCalendarSource).toContain("this.editorFooterTemplate()");
