@@ -810,8 +810,8 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     const { activity } = this.state;
     const isEditable = (activity?.status !== "concluded" && TerrainState.getUnitID() === activity?.owner_id) || (activity && activity.id === undefined);
     return isEditable ? (
-      <div id="event-footer">
-        <div id="right-button">
+      <div id="event-footer" className="calendar-editor-footer">
+        <div id="right-button" className="calendar-editor-actions">
           {!activity?.id ? (
             <button id="Save" className="summit-button summit-button-primary" data-editor-action="save-next-week" onClick={() => this.saveActivity(true)}>
               Save & Add Next Week
@@ -820,6 +820,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             <button
               id="Delete"
               className="summit-button summit-button-danger"
+              data-editor-action="delete"
               onClick={() => {
                 const dialogObj = DialogUtility.confirm({
                   title: "Delete Item",
@@ -846,7 +847,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             </button>
           )}
           {!!activity?.id && (
-            <button id="open-modal" className="summit-button summit-button-secondary" onClick={this.openTerrainDialog}>
+            <button id="open-modal" className="summit-button summit-button-secondary" data-editor-action="open-terrain" onClick={this.openTerrainDialog}>
               Open in Terrain
             </button>
           )}
@@ -859,10 +860,10 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         </div>
       </div>
     ) : (
-      <div id="event-footer">
-        <div id="right-button">
+      <div id="event-footer" className="calendar-editor-footer">
+        <div id="right-button" className="calendar-editor-actions">
           {!!activity?.id && (
-            <button id="open-modal" className="summit-button summit-button-secondary" onClick={this.openTerrainDialog}>
+            <button id="open-modal" className="summit-button summit-button-secondary" data-editor-action="open-terrain" onClick={this.openTerrainDialog}>
               Open in Terrain
             </button>
           )}

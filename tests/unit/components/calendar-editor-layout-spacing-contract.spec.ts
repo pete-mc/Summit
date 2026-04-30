@@ -148,3 +148,64 @@ describe("Phase 3 calendar editor date/time layout spacing contract", () => {
     expect(dateRangeField.indexOf('data-editor-warning="event-conflicts"')).toBeGreaterThan(dateRangeField.indexOf('className="editor-date-time-grid"'));
   });
 });
+
+describe("Phase 5 calendar editor footer action layout contract", () => {
+  it("calendar editor footer and action group expose dedicated flex layout hooks with tokenized wrapping gaps", () => {
+    const css = fs.readFileSync(STYLES_PATH, "utf8");
+    const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+    const footerRule = readCssRule(css, ".calendar-editor-footer");
+    const actionsRule = readCssRule(css, ".calendar-editor-actions");
+
+    expect(source).toContain('id="event-footer"');
+    expect(source).toContain('className="calendar-editor-footer"');
+    expect(source).toContain('id="right-button"');
+    expect(source).toContain('className="calendar-editor-actions"');
+
+    expect(footerRule).toMatch(/display\s*:\s*flex/);
+    expect(footerRule).toMatch(/justify-content\s*:\s*flex-end/);
+    expect(footerRule).toMatch(/width\s*:\s*100%/);
+
+    expect(actionsRule).toMatch(/display\s*:\s*(inline-)?flex/);
+    expect(actionsRule).toMatch(/gap\s*:\s*var\(--summit-space-(xs|sm|md|lg)\)/);
+    expect(actionsRule).toMatch(/flex-wrap\s*:\s*wrap/);
+    expect(actionsRule).toMatch(/align-items\s*:\s*center/);
+    expect(actionsRule).toMatch(/justify-content\s*:\s*flex-end/);
+  });
+
+  it("calendar editor button spacing is owned by the action group instead of relying only on global summit-button margin-left", () => {
+    const css = fs.readFileSync(STYLES_PATH, "utf8");
+    const globalButtonRule = readCssRule(css, ".summit-button");
+    const actionsRule = readCssRule(css, ".calendar-editor-actions");
+    const scopedButtonRule = readCssRule(css, ".calendar-editor-actions .summit-button");
+
+    expect(globalButtonRule).toMatch(/margin-left\s*:\s*var\(--summit-space-sm\)/);
+    expect(actionsRule).toMatch(/gap\s*:\s*var\(--summit-space-(xs|sm|md|lg)\)/);
+    expect(scopedButtonRule).toMatch(/margin-left\s*:\s*0/);
+  });
+
+  it("calendar editor actions remain in the shared custom footer path outside scrollable content", () => {
+    const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+
+    expect(source).toMatch(/id="calendar-editor-dialog"[\s\S]*footer=\{!this\.state\.editorIsLoading \? this\.editorFooterTemplate\(\) : undefined\}/);
+
+    const scrollableChildMatch = source.match(/data-editor-speed-contract="calendar-editor-speed"[\s\S]*?<\/div>\s*<\/DialogComponent>/);
+    expect(scrollableChildMatch).not.toBeNull();
+    expect(scrollableChildMatch![0]).not.toContain("editorFooterTemplate()");
+    expect(scrollableChildMatch![0]).not.toContain("calendar-editor-footer");
+  });
+
+  it("Save, Delete, Open, and Cancel actions keep discoverable hooks and existing behavior wiring", () => {
+    const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+    const footerTemplate = source.match(/editorFooterTemplate = \(\) => \{[\s\S]*?\n  dialogButtons = \[/)?.[0] ?? "";
+
+    ["save-next-week", "delete", "open-terrain", "save", "cancel"].forEach((action) => {
+      expect(footerTemplate).toContain(`data-editor-action="${action}"`);
+    });
+
+    expect(footerTemplate).toContain("onClick={() => this.saveActivity(true)}");
+    expect(footerTemplate).toContain('deleteEvent(this.state.activity?.id || "")');
+    expect(footerTemplate).toContain("onClick={this.openTerrainDialog}");
+    expect(footerTemplate).toContain("onClick={() => this.saveActivity()}");
+    expect(footerTemplate).toContain("onClick={this.closeEditor}");
+  });
+});

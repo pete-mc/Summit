@@ -168,6 +168,31 @@
   color: #ffffff;
 }
 
+.calendar-editor-footer {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.calendar-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--summit-space-sm);
+  align-items: center;
+  justify-content: flex-end;
+  max-width: 100%;
+}
+
+.calendar-editor-actions .summit-button {
+  margin-left: 0;
+}
+
+@media (max-width: 480px) {
+  .calendar-editor-actions {
+    width: 100%;
+  }
+}
+
 .calendar-ux-toolbar {
   display: flex;
   flex-wrap: wrap;
