@@ -33,6 +33,23 @@ describe("Phase 1 dialog scroll behavior contract", () => {
     const contentRegion = dialogSurface.children.item(1) as HTMLDivElement;
     expect(contentRegion).toBeTruthy();
     expect(contentRegion.style.overflowY).toBe("auto");
+    expect(contentRegion.style.overflowX).toBe("hidden");
+  });
+
+  it("DialogComponent body prevents horizontal overflow while preserving vertical scrolling", () => {
+    act(() => {
+      root.render(
+        React.createElement(DialogComponent, { id: "horizontal-overflow-dialog", visible: true, header: "Overflow Protection" }, React.createElement("div", { style: { width: "200vw" } }, "Overwide content must not bleed horizontally")),
+      );
+    });
+
+    const dialogSurface = container.querySelector(".summit-dialog-surface") as HTMLDivElement;
+    expect(dialogSurface).toBeTruthy();
+
+    const contentRegion = dialogSurface.children.item(1) as HTMLDivElement;
+    expect(contentRegion).toBeTruthy();
+    expect(contentRegion.style.overflowY).toBe("auto");
+    expect(contentRegion.style.overflowX).toBe("hidden");
   });
 
   it("dialog footer actions remain rendered and independently accessible", () => {
@@ -78,5 +95,28 @@ describe("Phase 1 dialog scroll behavior contract", () => {
 
     expect(onSave).toHaveBeenCalledTimes(1);
     expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("custom footer prop receives sticky footer treatment outside the scrollable body", () => {
+    act(() => {
+      root.render(
+        React.createElement(
+          DialogComponent,
+          { id: "custom-footer-dialog", visible: true, header: "Custom Footer", footer: React.createElement("div", { "data-testid": "custom-footer-content" }, "Custom actions") },
+          React.createElement("div", null, "Scrollable body"),
+        ),
+      );
+    });
+
+    const dialogSurface = container.querySelector(".summit-dialog-surface") as HTMLDivElement;
+    expect(dialogSurface).toBeTruthy();
+
+    const contentRegion = dialogSurface.children.item(1) as HTMLDivElement;
+    const footerRegion = dialogSurface.children.item(2) as HTMLDivElement;
+    expect(contentRegion.textContent).not.toContain("Custom actions");
+    expect(footerRegion.textContent).toContain("Custom actions");
+    expect(footerRegion.style.position).toBe("sticky");
+    expect(footerRegion.style.bottom).toBe("0px");
+    expect(footerRegion.style.flexShrink).toBe("0");
   });
 });

@@ -907,7 +907,16 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           eventDidMount={this.eventDidMount}
           height={"auto"}
         />
-        <DialogComponent id="calendar-editor-dialog" isModal={true} visible={this.state.isEditorOpen} header={this.editorHeaderTemplate()} close={this.closeEditor} closeOnEscape={true} showCloseIcon={true} footer={!this.state.editorIsLoading ? this.editorFooterTemplate() : undefined}>
+        <DialogComponent
+          id="calendar-editor-dialog"
+          isModal={true}
+          visible={this.state.isEditorOpen}
+          header={this.editorHeaderTemplate()}
+          close={this.closeEditor}
+          closeOnEscape={true}
+          showCloseIcon={true}
+          footer={!this.state.editorIsLoading ? this.editorFooterTemplate() : undefined}
+        >
           <div
             data-editor-speed-contract="calendar-editor-speed"
             data-editor-open-proxy={String(this.state.isEditorOpen)}

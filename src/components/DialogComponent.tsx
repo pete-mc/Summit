@@ -69,6 +69,7 @@ export const DialogComponent = forwardRef<DialogHandle, DialogComponentProps>(({
   }
 
   const containerClassName = [cssClass].filter(Boolean).join(" ");
+  const footerStyle: React.CSSProperties = { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8, position: "sticky", bottom: 0, background: "var(--summit-color-bg-surface)", paddingTop: 8, flexShrink: 0 };
 
   return (
     <div id={id} className={containerClassName} role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -81,10 +82,10 @@ export const DialogComponent = forwardRef<DialogHandle, DialogComponentProps>(({
             </button>
           )}
         </div>
-        <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>{children}</div>
-        {footer && <div>{footer}</div>}
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden" }}>{children}</div>
+        {footer && <div style={footerStyle}>{footer}</div>}
         {buttons.length > 0 && (
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8, position: "sticky", bottom: 0, background: "var(--summit-color-bg-surface)", paddingTop: 8, flexShrink: 0 }}>
+          <div style={footerStyle}>
             {buttons.map((button, index) => (
               <button key={`${button.buttonModel.content}-${index}`} type="button" className={button.buttonModel.cssClass} onClick={button.click}>
                 {button.buttonModel.content}

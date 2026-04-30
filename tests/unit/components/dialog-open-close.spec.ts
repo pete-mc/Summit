@@ -68,13 +68,7 @@ describe("Phase 2 dialog behavior contract", () => {
 
   it("scrollable content area has overflowY auto so tall content is accessible", () => {
     act(() => {
-      root.render(
-        React.createElement(
-          DialogComponent,
-          { visible: true, header: "Scroll Test" },
-          React.createElement("div", { "data-testid": "scroll-content" }, "content"),
-        ),
-      );
+      root.render(React.createElement(DialogComponent, { visible: true, header: "Scroll Test" }, React.createElement("div", { "data-testid": "scroll-content" }, "content")));
     });
 
     const surface = container.querySelector(".summit-dialog-surface") as HTMLElement;
@@ -89,17 +83,7 @@ describe("Phase 2 dialog behavior contract", () => {
 
   it("renders footer prop outside the scrollable content area", () => {
     act(() => {
-      root.render(
-        React.createElement(
-          DialogComponent,
-          {
-            visible: true,
-            header: "Footer Test",
-            footer: React.createElement("div", { "data-testid": "fixed-footer" }, "Footer Buttons"),
-          },
-          React.createElement("div", {}, "Body content"),
-        ),
-      );
+      root.render(React.createElement(DialogComponent, { visible: true, header: "Footer Test", footer: React.createElement("div", { "data-testid": "fixed-footer" }, "Footer Buttons") }, React.createElement("div", {}, "Body content")));
     });
 
     const surface = container.querySelector(".summit-dialog-surface") as HTMLElement;
