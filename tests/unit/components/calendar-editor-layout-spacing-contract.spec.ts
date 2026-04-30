@@ -32,15 +32,14 @@ describe("Phase 1 calendar editor layout spacing contract", () => {
     expect(editorFieldRule).toMatch(/gap\s*:\s*var\(--summit-space-(xs|sm|md)\)/);
   });
 
-  it("documents browser-level visual coverage expectations without adding unsupported tooling in Phase 1", () => {
+  it("documents executable browser-level visual coverage added for Phase 6", () => {
     const packageJson = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, "utf8")) as {
       scripts?: Record<string, string>;
       devDependencies?: Record<string, string>;
     };
 
-    const availableScripts = Object.keys(packageJson.scripts ?? {});
-    const availableDevDependencies = Object.keys(packageJson.devDependencies ?? {});
-    const hasBrowserHarness = [...availableScripts, ...availableDevDependencies].some((name) => /playwright|cypress|webdriver|puppeteer/i.test(name));
+    const browserSpecPath = path.resolve(REPO_ROOT, "tests/browser/calendar-editor-dialog-layout.spec.ts");
+    const browserSpec = fs.readFileSync(browserSpecPath, "utf8");
 
     const expectedFutureBrowserCoverage = [
       "wide calendar editor dialog keeps field borders inside the dialog surface",
@@ -48,7 +47,10 @@ describe("Phase 1 calendar editor layout spacing contract", () => {
       "calendar editor footer remains visible outside the scrolling body",
     ];
 
-    expect(hasBrowserHarness).toBe(false);
+    expect(packageJson.scripts?.["test:browser"]).toBe("playwright test");
+    expect(packageJson.devDependencies).toHaveProperty("@playwright/test");
+    expect(browserSpec).toContain("wide viewport keeps borders and content inside the dialog with two-column date/time layout");
+    expect(browserSpec).toContain("narrow viewport stacks date/time controls, keeps footer visible, and avoids horizontal bleed");
     expect(expectedFutureBrowserCoverage).toHaveLength(3);
     expectedFutureBrowserCoverage.forEach((coverageItem) => expect(coverageItem).toContain("calendar editor"));
   });

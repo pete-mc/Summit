@@ -45,4 +45,20 @@ module.exports = [
       camelcase: ['error', { properties: 'never' }],
     },
   },
+  {
+    files: ['tests/browser/**/*.ts', 'playwright.config.ts'],
+    languageOptions: {
+      parser: typescriptEslintParser,
+    },
+    plugins: {
+      '@typescript-eslint': typescriptEslintPlugin,
+      prettier: eslintPluginPrettier,
+    },
+    rules: {
+      ...typescriptEslintPlugin.configs.recommended.rules,
+      ...eslintConfigPrettier.rules,
+      'prettier/prettier': 'error',
+      camelcase: ['error', { properties: 'never' }],
+    },
+  },
 ];
