@@ -269,6 +269,7 @@
   background: var(--summit-color-bg-surface);
   border: 1px solid var(--summit-color-border-default);
   border-radius: 8px;
+  box-sizing: border-box;
   min-width: 320px;
   min-height: 200px;
   width: 80%;
