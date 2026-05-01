@@ -18,6 +18,9 @@
   "engines": {
     "node": "24.x"
   },
+  "engines": {
+    "node": "24.x"
+  },
   "bugs": {
     "url": "https://github.com/pete-mc/Summit/issues"
   },
@@ -25,12 +28,15 @@
   "scripts": {
     "test": "jest --config jest.config.js",
     "test:browser": "playwright test",
+    "test:browser": "playwright test",
     "test:watch": "jest --config jest.config.js --watch",
     "test:coverage": "jest --config jest.config.js --coverage",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" \"tests/unit/**/*.ts\" \"tests/browser/**/*.ts\" \"playwright.config.ts\"",
     "lint": "eslint \"src/**/*.{ts,tsx}\" \"tests/unit/**/*.ts\" \"tests/browser/**/*.ts\" \"playwright.config.ts\"",
     "build-prod": "webpack --config webpack.config.js --mode production",
     "build": "webpack --config webpack.config.js --mode development",
     "build-watch": "webpack --config webpack.config.js --mode development --watch",
+    "start": "webpack-dev-server --config webpack.config.js --mode development"
     "start": "webpack-dev-server --config webpack.config.js --mode development"
   },
   "browserslist": {
@@ -54,8 +60,18 @@
     "@fullcalendar/timegrid": "^6.1.20",
     "@tanstack/react-table": "^8.21.3",
     "big.js": "^6.2.2",
+    "@fullcalendar/core": "^6.1.20",
+    "@fullcalendar/daygrid": "^6.1.20",
+    "@fullcalendar/interaction": "^6.1.20",
+    "@fullcalendar/list": "^6.1.20",
+    "@fullcalendar/react": "^6.1.20",
+    "@fullcalendar/timegrid": "^6.1.20",
+    "@tanstack/react-table": "^8.21.3",
+    "big.js": "^6.2.2",
     "install": "^0.13.0",
     "jquery": "^3.7.1",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "moment": "^2.30.1",
@@ -69,7 +85,25 @@
     "@babel/preset-react": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
     "@playwright/test": "^1.59.1",
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.2",
+    "@babel/preset-react": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
+    "@playwright/test": "^1.59.1",
     "@types/big.js": "^6.2.2",
+    "@types/jest": "^29.5.14",
+    "@types/jquery": "^3.5.34",
+    "@types/node": "^24.12.2",
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "babel-loader": "^9.2.1",
+    "copy-webpack-plugin": "^14.0.0",
+    "css-loader": "^6.11.0",
+    "css-minimizer-webpack-plugin": "^8.0.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
     "@types/jest": "^29.5.14",
     "@types/jquery": "^3.5.34",
     "@types/node": "^24.12.2",
@@ -97,6 +131,7 @@
     "vue-router": "^3.6.5",
     "vue-template-compiler": "^2.7.16",
     "vuex": "^3.6.2",
+    "webpack": "^5.106.2",
     "webpack": "^5.106.2",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.2.3"
