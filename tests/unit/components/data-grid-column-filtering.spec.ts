@@ -13,7 +13,7 @@ type FilterRow = {
   section: string;
 };
 
-describe("Phase 5 data grid column filtering contract", () => {
+describe("Data grid column filtering contract", () => {
   let container: HTMLDivElement;
   let root: Root;
 
@@ -130,5 +130,64 @@ describe("Phase 5 data grid column filtering contract", () => {
     const visibleRowsAfterColumnFilter = Array.from(container.querySelectorAll("tbody tr"));
     expect(visibleRowsAfterColumnFilter).toHaveLength(1);
     expect(visibleRowsAfterColumnFilter[0].textContent).toContain("Beta");
+  });
+
+  it("keeps raw column IDs as filter attributes and applies filtering by raw key when placeholders collide", () => {
+    type CollidingPlaceholderRow = {
+      teamCodeDashed: string;
+      teamCodeUnderscored: string;
+      scoutName: string;
+    };
+
+    const rows: CollidingPlaceholderRow[] = [
+      { teamCodeDashed: "Alpha", teamCodeUnderscored: "Zulu", scoutName: "Dash Match" },
+      { teamCodeDashed: "Beta", teamCodeUnderscored: "Alpha", scoutName: "Underscore Match" },
+      { teamCodeDashed: "Beta", teamCodeUnderscored: "Zulu", scoutName: "No Match" },
+    ];
+
+    const columns: DataGridColumn<CollidingPlaceholderRow>[] = [
+      { id: "team-code", header: "Team Code (Dashed)", accessorFn: (row) => row.teamCodeDashed },
+      { id: "team_code", header: "Team Code (Underscored)", accessorFn: (row) => row.teamCodeUnderscored },
+      { id: "scoutName", header: "Scout Name", accessorKey: "scoutName" },
+    ];
+
+    act(() => {
+      root.render(
+        React.createElement(DataGrid<CollidingPlaceholderRow>, {
+          id: "raw-contract-grid",
+          data: rows,
+          columns,
+        }),
+      );
+    });
+
+    const dashedIdFilter = container.querySelector("input[data-grid-column-filter='team-code']") as HTMLInputElement;
+    const underscoredIdFilter = container.querySelector("input[data-grid-column-filter='team_code']") as HTMLInputElement;
+
+    expect(dashedIdFilter).toBeTruthy();
+    expect(underscoredIdFilter).toBeTruthy();
+    expect(dashedIdFilter.getAttribute("data-grid-column-filter")).toBe("team-code");
+    expect(underscoredIdFilter.getAttribute("data-grid-column-filter")).toBe("team_code");
+    expect(dashedIdFilter.placeholder).toBe("Team Code");
+    expect(underscoredIdFilter.placeholder).toBe("Team Code");
+
+    act(() => {
+      Simulate.change(dashedIdFilter, { target: { value: "alpha" } });
+    });
+
+    const rowsAfterDashedFilter = Array.from(container.querySelectorAll("tbody tr"));
+    expect(rowsAfterDashedFilter).toHaveLength(1);
+    expect(rowsAfterDashedFilter[0].textContent).toContain("Dash Match");
+    expect(rowsAfterDashedFilter[0].textContent).not.toContain("Underscore Match");
+
+    act(() => {
+      Simulate.change(dashedIdFilter, { target: { value: "" } });
+      Simulate.change(underscoredIdFilter, { target: { value: "alpha" } });
+    });
+
+    const rowsAfterUnderscoredFilter = Array.from(container.querySelectorAll("tbody tr"));
+    expect(rowsAfterUnderscoredFilter).toHaveLength(1);
+    expect(rowsAfterUnderscoredFilter[0].textContent).toContain("Underscore Match");
+    expect(rowsAfterUnderscoredFilter[0].textContent).not.toContain("Dash Match");
   });
 });
