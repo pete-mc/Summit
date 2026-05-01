@@ -40,6 +40,10 @@ To get started install the add on for your browser below:
 - Coverage (`npm run test:coverage`) is informational only and is used for visibility/tracking.
 - No hard coverage threshold is enforced in Jest/CI, so coverage does not block merges by itself.
 
+## Browser layout tests
+
+`npm run test:browser` runs Playwright browser-level layout tests. Fresh environments may need to install Chromium first with `npx playwright install chromium`.
+
 ## Local build
 
 You can build Summit locally with the bundled npm scripts.

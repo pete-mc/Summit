@@ -566,120 +566,174 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     const memberGroups = buildGroupedMemberOptions(this.state.unitMembers);
     const scoutMethodGroups = this.getScoutMethodGroups();
     const isEditable = (activity?.status !== "concluded" && currentUnitID === activity?.owner_id) || (activity && activity.id === undefined);
+    const requiredMarker = (
+      <span className="editor-field-required" aria-hidden="true">
+        *
+      </span>
+    );
     return (
       <div className="editor-container" data-editor-layout="compact">
-        <label>
-          Title <span style={{ color: "red" }}>*</span>
-          <input className="summit-form-input" type="text" name="title" value={activity?.title || ""} onChange={this.handleInputChange} disabled={!isEditable} data-msg-containerid="titleError" data-editor-default="title" />
-          <div id="titleError" data-editor-validation="title" role="status">
+        <div className="editor-field" data-editor-field="title">
+          <label className="editor-field-label" htmlFor="title">
+            Title {requiredMarker}
+          </label>
+          <div className="editor-field-control">
+            <input id="title" className="summit-form-input" type="text" name="title" value={activity?.title || ""} onChange={this.handleInputChange} disabled={!isEditable} data-msg-containerid="titleError" data-editor-default="title" />
+          </div>
+          <div id="titleError" className="editor-field-status" data-editor-validation="title" role="status">
             {editorValidationErrors.title ?? ""}
           </div>
-        </label>
-        <label>
-          Location <span style={{ color: "red" }}>*</span>
-          <input className="summit-form-input" type="text" name="location" value={activity?.location || ""} onChange={this.handleInputChange} disabled={!isEditable} data-editor-default="location" />
-          <div data-editor-validation="location" role="status">
+        </div>
+        <div className="editor-field" data-editor-field="location">
+          <label className="editor-field-label" htmlFor="location">
+            Location {requiredMarker}
+          </label>
+          <div className="editor-field-control">
+            <input id="location" className="summit-form-input" type="text" name="location" value={activity?.location || ""} onChange={this.handleInputChange} disabled={!isEditable} data-editor-default="location" />
+          </div>
+          <div className="editor-field-status" data-editor-validation="location" role="status">
             {editorValidationErrors.location ?? ""}
           </div>
-        </label>
-        <label>
-          Challenge Area <span style={{ color: "red" }}>*</span>
-          <DropDownListComponent
-            id="challenge_area"
-            name="challenge_area"
-            dataSource={this.challangeAreas}
-            value={this.state.activity?.challenge_area}
-            text={this.challangeAreas.find((c) => c.value == this.state.activity?.challenge_area)?.text}
-            change={this.handleSelectChange}
-            enabled={isEditable}
-          />
-          <div id="caError" data-editor-validation="challenge_area" role="status">
+        </div>
+        <div className="editor-field" data-editor-field="challenge_area">
+          <label className="editor-field-label" htmlFor="challenge_area">
+            Challenge Area {requiredMarker}
+          </label>
+          <div className="editor-field-control">
+            <DropDownListComponent
+              id="challenge_area"
+              name="challenge_area"
+              dataSource={this.challangeAreas}
+              value={this.state.activity?.challenge_area}
+              text={this.challangeAreas.find((c) => c.value == this.state.activity?.challenge_area)?.text}
+              change={this.handleSelectChange}
+              enabled={isEditable}
+            />
+          </div>
+          <div id="caError" className="editor-field-status" data-editor-validation="challenge_area" role="status">
             {editorValidationErrors.challenge_area ?? ""}
           </div>
-        </label>
-        <label>
-          Start <span style={{ color: "red" }}>*</span>
-          <DatePickerComponent
-            id="start_date"
-            value={new Date(activity?.start_datetime || new Date())}
-            format="dd/MM/yy"
-            onChange={this.handleDateTimeChange}
-            name="start_date"
-            disabled={!isEditable}
-            showClearButton={false}
-            onFocus={this.handleFocus}
-          />
-          <TimePickerComponent id="start_time" value={new Date(activity?.start_datetime || new Date())} format="hh:mm a" onChange={this.handleDateTimeChange} name="start_time" disabled={!isEditable} showClearButton={false} />
-          End <span style={{ color: "red" }}>*</span>
-          <DatePickerComponent id="end_date" value={new Date(activity?.end_datetime || new Date())} format="dd/MM/yy" onChange={this.handleDateTimeChange} name="end_date" disabled={!isEditable} showClearButton={false} />
-          <TimePickerComponent id="end_time" value={new Date(activity?.end_datetime || new Date())} format="hh:mm a" onChange={this.handleDateTimeChange} name="end_time" disabled={!isEditable} showClearButton={false} />
-          <div data-editor-validation="date_range" role="status">
+        </div>
+        <div className="editor-field" data-editor-field="date_range">
+          <div className="editor-field-control">
+            <div className="editor-date-time-grid">
+              <div className="editor-date-time-group" data-editor-date-time-group="start">
+                <label className="editor-date-time-label" htmlFor="start_date">
+                  Start {requiredMarker}
+                </label>
+                <div className="editor-date-time-inputs">
+                  <DatePickerComponent
+                    id="start_date"
+                    value={new Date(activity?.start_datetime || new Date())}
+                    format="dd/MM/yy"
+                    onChange={this.handleDateTimeChange}
+                    name="start_date"
+                    disabled={!isEditable}
+                    showClearButton={false}
+                    onFocus={this.handleFocus}
+                  />
+                  <TimePickerComponent id="start_time" value={new Date(activity?.start_datetime || new Date())} format="hh:mm a" onChange={this.handleDateTimeChange} name="start_time" disabled={!isEditable} showClearButton={false} />
+                </div>
+              </div>
+              <div className="editor-date-time-group" data-editor-date-time-group="end">
+                <label className="editor-date-time-label" htmlFor="end_date">
+                  End {requiredMarker}
+                </label>
+                <div className="editor-date-time-inputs">
+                  <DatePickerComponent id="end_date" value={new Date(activity?.end_datetime || new Date())} format="dd/MM/yy" onChange={this.handleDateTimeChange} name="end_date" disabled={!isEditable} showClearButton={false} />
+                  <TimePickerComponent id="end_time" value={new Date(activity?.end_datetime || new Date())} format="hh:mm a" onChange={this.handleDateTimeChange} name="end_time" disabled={!isEditable} showClearButton={false} />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="editor-field-status" data-editor-validation="date_range" role="status">
             {editorValidationErrors.date_range ?? ""}
           </div>
-          <div data-editor-warning="event-conflicts" role="status">
+          <div className="editor-field-help" data-editor-warning="event-conflicts" role="status">
             {editorSoftConflictWarnings.length > 0 && <div>Potential conflict:</div>}
             {editorSoftConflictWarnings.map((warning, index) => (
               <div key={`editor-soft-conflict-warning-${index}`}>{warning}</div>
             ))}
           </div>
-        </label>
-        <label>
-          Scout Method <span style={{ color: "red" }}>*</span>
-          {isEditable ? (
-            this.renderGroupedMultiSelect("scout_method_elements", scoutMethodGroups, this.state.activity?.review?.scout_method_elements ?? [], !isEditable)
-          ) : (
-            <input
-              className="summit-form-input"
-              value={activity?.review?.scout_method_elements
-                .map((sm) => {
-                  return this.scoutMethodOptions.find((smo) => smo.value == sm)?.text;
-                })
-                ?.join(", ")}
-              disabled={true}
-            />
-          )}
-        </label>
-        <label>
-          Organisers <span style={{ color: "red" }}>*</span>
-          {isEditable ? (
-            this.renderGroupedMultiSelect(
-              "organisers",
+        </div>
+        <div className="editor-field" data-editor-field="scout_method_elements">
+          <label className="editor-field-label" htmlFor="scout_method_elements">
+            Scout Method {requiredMarker}
+          </label>
+          <div className="editor-field-control">
+            {isEditable ? (
+              this.renderGroupedMultiSelect("scout_method_elements", scoutMethodGroups, this.state.activity?.review?.scout_method_elements ?? [], !isEditable)
+            ) : (
+              <input
+                id="scout_method_elements"
+                className="summit-form-input"
+                value={activity?.review?.scout_method_elements
+                  .map((sm) => {
+                    return this.scoutMethodOptions.find((smo) => smo.value == sm)?.text;
+                  })
+                  ?.join(", ")}
+                disabled={true}
+              />
+            )}
+          </div>
+          <div className="editor-field-status" />
+        </div>
+        <div className="editor-field" data-editor-field="organisers">
+          <label className="editor-field-label" htmlFor="organisers">
+            Organisers {requiredMarker}
+          </label>
+          <div className="editor-field-control">
+            {isEditable ? (
+              this.renderGroupedMultiSelect(
+                "organisers",
+                memberGroups,
+                this.state.activity?.organisers?.map((i) => {
+                  return typeof i === "object" ? i.id : "";
+                }) ?? [],
+                !isEditable,
+              )
+            ) : (
+              <input id="organisers" className="summit-form-input" type="text" name="organisers" value={activity?.organisers?.map((i) => i.first_name + " " + i.last_name).join(", ")} disabled={true} />
+            )}
+          </div>
+          <div className="editor-field-status" />
+        </div>
+        <div className="editor-field" data-editor-field="leader_members">
+          <label className="editor-field-label" htmlFor="leader_members">
+            Leads
+          </label>
+          <div className="editor-field-control">
+            {isEditable ? (
+              this.renderGroupedMultiSelect(
+                "leader_members",
+                memberGroups,
+                this.state.activity?.attendance?.leader_members?.map((i) => {
+                  return typeof i === "object" ? i.id : "";
+                }) ?? [],
+                !isEditable,
+              )
+            ) : (
+              <input id="leader_members" className="summit-form-input" type="text" name="leads" value={activity?.attendance?.leader_members?.map((i) => i.first_name + " " + i.last_name).join(", ")} disabled={true} />
+            )}
+          </div>
+          <div className="editor-field-status" />
+        </div>
+        <div className="editor-field" data-editor-field="assistant_members">
+          <label className="editor-field-label" htmlFor="assistant_members">
+            Assists
+          </label>
+          <div className="editor-field-control">
+            {this.renderGroupedMultiSelect(
+              "assistant_members",
               memberGroups,
-              this.state.activity?.organisers?.map((i) => {
-                return typeof i === "object" ? i.id : "";
+              this.state.activity?.attendance?.assistant_members?.map((i) => {
+                return i?.id ?? "";
               }) ?? [],
               !isEditable,
-            )
-          ) : (
-            <input className="summit-form-input" type="text" name="organisers" value={activity?.organisers?.map((i) => i.first_name + " " + i.last_name).join(", ")} disabled={true} />
-          )}
-        </label>
-        <label>
-          Leads
-          {isEditable ? (
-            this.renderGroupedMultiSelect(
-              "leader_members",
-              memberGroups,
-              this.state.activity?.attendance?.leader_members?.map((i) => {
-                return typeof i === "object" ? i.id : "";
-              }) ?? [],
-              !isEditable,
-            )
-          ) : (
-            <input className="summit-form-input" type="text" name="leads" value={activity?.attendance?.leader_members?.map((i) => i.first_name + " " + i.last_name).join(", ")} disabled={true} />
-          )}
-        </label>
-        <label>
-          Assists
-          {this.renderGroupedMultiSelect(
-            "assistant_members",
-            memberGroups,
-            this.state.activity?.attendance?.assistant_members?.map((i) => {
-              return i?.id ?? "";
-            }) ?? [],
-            !isEditable,
-          )}
-        </label>
+            )}
+          </div>
+          <div className="editor-field-status" />
+        </div>
       </div>
     );
   };
@@ -756,8 +810,8 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     const { activity } = this.state;
     const isEditable = (activity?.status !== "concluded" && TerrainState.getUnitID() === activity?.owner_id) || (activity && activity.id === undefined);
     return isEditable ? (
-      <div id="event-footer">
-        <div id="right-button">
+      <div id="event-footer" className="calendar-editor-footer">
+        <div id="right-button" className="calendar-editor-actions">
           {!activity?.id ? (
             <button id="Save" className="summit-button summit-button-primary" data-editor-action="save-next-week" onClick={() => this.saveActivity(true)}>
               Save & Add Next Week
@@ -766,6 +820,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             <button
               id="Delete"
               className="summit-button summit-button-danger"
+              data-editor-action="delete"
               onClick={() => {
                 const dialogObj = DialogUtility.confirm({
                   title: "Delete Item",
@@ -792,7 +847,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             </button>
           )}
           {!!activity?.id && (
-            <button id="open-modal" className="summit-button summit-button-secondary" onClick={this.openTerrainDialog}>
+            <button id="open-modal" className="summit-button summit-button-secondary" data-editor-action="open-terrain" onClick={this.openTerrainDialog}>
               Open in Terrain
             </button>
           )}
@@ -805,10 +860,10 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         </div>
       </div>
     ) : (
-      <div id="event-footer">
-        <div id="right-button">
+      <div id="event-footer" className="calendar-editor-footer">
+        <div id="right-button" className="calendar-editor-actions">
           {!!activity?.id && (
-            <button id="open-modal" className="summit-button summit-button-secondary" onClick={this.openTerrainDialog}>
+            <button id="open-modal" className="summit-button summit-button-secondary" data-editor-action="open-terrain" onClick={this.openTerrainDialog}>
               Open in Terrain
             </button>
           )}
@@ -907,7 +962,16 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           eventDidMount={this.eventDidMount}
           height={"auto"}
         />
-        <DialogComponent id="calendar-editor-dialog" isModal={true} visible={this.state.isEditorOpen} header={this.editorHeaderTemplate()} close={this.closeEditor} closeOnEscape={true} showCloseIcon={true} footer={!this.state.editorIsLoading ? this.editorFooterTemplate() : undefined}>
+        <DialogComponent
+          id="calendar-editor-dialog"
+          isModal={true}
+          visible={this.state.isEditorOpen}
+          header={this.editorHeaderTemplate()}
+          close={this.closeEditor}
+          closeOnEscape={true}
+          showCloseIcon={true}
+          footer={!this.state.editorIsLoading ? this.editorFooterTemplate() : undefined}
+        >
           <div
             data-editor-speed-contract="calendar-editor-speed"
             data-editor-open-proxy={String(this.state.isEditorOpen)}

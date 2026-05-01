@@ -13,6 +13,7 @@
   --summit-color-bg-muted: #f3f2f1;
   --summit-color-bg-surface: #ffffff;
   --summit-color-text-primary: #201f1e;
+  --summit-color-text-danger: #a4262c;
   --summit-color-text-on-primary: #ffffff;
   --summit-color-border-default: #c8c6c4;
   --summit-color-border-subtle: #edebe9;
@@ -24,7 +25,87 @@
 .editor-container {
   display: flex;
   flex-direction: column;
+  gap: var(--summit-space-md);
   height: 100%;
+}
+
+.editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--summit-space-xs);
+}
+
+.editor-field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--summit-space-xs);
+  font-weight: var(--summit-font-weight-semibold);
+  color: var(--summit-color-text-primary);
+}
+
+.editor-field-required {
+  color: var(--summit-color-text-danger);
+}
+
+.editor-field-control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--summit-space-xs);
+}
+
+.editor-date-time-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--summit-space-md);
+  min-width: 0;
+}
+
+.editor-date-time-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--summit-space-xs);
+  min-width: 0;
+}
+
+.editor-date-time-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--summit-space-xs);
+  font-weight: var(--summit-font-weight-semibold);
+  color: var(--summit-color-text-primary);
+}
+
+.editor-date-time-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--summit-space-sm);
+  min-width: 0;
+}
+
+.editor-date-time-inputs > * {
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .editor-date-time-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .editor-date-time-inputs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.editor-field-status {
+  min-height: var(--summit-space-lg);
+  font-size: var(--summit-font-size-sm);
+  color: var(--summit-color-bg-primary);
+}
+
+.editor-field-help {
+  min-height: var(--summit-space-lg);
+  font-size: var(--summit-font-size-sm);
+  color: var(--summit-color-bg-primary);
 }
 
 .summit-dialog-max-size {
@@ -87,6 +168,31 @@
   color: #ffffff;
 }
 
+.calendar-editor-footer {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.calendar-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--summit-space-sm);
+  align-items: center;
+  justify-content: flex-end;
+  max-width: 100%;
+}
+
+.calendar-editor-actions .summit-button {
+  margin-left: 0;
+}
+
+@media (max-width: 480px) {
+  .calendar-editor-actions {
+    width: 100%;
+  }
+}
+
 .calendar-ux-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -142,6 +248,21 @@
   font-weight: var(--summit-font-weight-semibold);
 }
 
+#scheduler .fc .fc-prev-button,
+#scheduler .fc .fc-next-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#scheduler .fc .fc-prev-button .fc-icon,
+#scheduler .fc .fc-next-button .fc-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
 .data-grid-container {
   display: flex;
   flex-direction: column;
@@ -188,6 +309,7 @@
   background: var(--summit-color-bg-surface);
   border: 1px solid var(--summit-color-border-default);
   border-radius: 8px;
+  box-sizing: border-box;
   min-width: 320px;
   min-height: 200px;
   width: 80%;

@@ -29,7 +29,7 @@ export default function MilestoneReportTable(props: MilestoneReportTableProps): 
       pageSizeOptions={[10, 25, 50, 100]}
       exportOptions={{
         fileNamePrefix: "MilestoneReport",
-        title: "Terrain | Summit - Milestone Report",
+        title: "Terrain|Summit-Milestone Report",
       }}
     />
   );
