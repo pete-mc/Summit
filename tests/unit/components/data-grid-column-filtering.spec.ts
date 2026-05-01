@@ -79,4 +79,56 @@ describe("Phase 5 data grid column filtering contract", () => {
     expect(visibleRowsAfterColumn[0].textContent).toContain("Alex");
     expect(visibleRowsAfterColumn[1].textContent).toContain("Mia");
   });
+
+  it("renders humanized per-column placeholders without the Filter prefix and keeps raw column IDs for filtering", () => {
+    type PlaceholderRow = {
+      crewRole: string;
+      patrolName: string;
+      teamCode: string;
+    };
+
+    const rows: PlaceholderRow[] = [
+      { crewRole: "Alpha", patrolName: "North", teamCode: "A1" },
+      { crewRole: "Beta", patrolName: "South", teamCode: "B2" },
+    ];
+
+    const columns: DataGridColumn<PlaceholderRow>[] = [
+      { id: "crew-role", header: "Crew Role", accessorFn: (row) => row.crewRole },
+      { id: "patrol_name", header: "Patrol Name", accessorFn: (row) => row.patrolName },
+      { id: "teamCodeValue", header: "Team Code Value", accessorFn: (row) => row.teamCode },
+    ];
+
+    act(() => {
+      root.render(
+        React.createElement(DataGrid<PlaceholderRow>, {
+          id: "placeholder-grid",
+          data: rows,
+          columns,
+        }),
+      );
+    });
+
+    const hyphenFilter = container.querySelector("input[data-grid-column-filter='crew-role']") as HTMLInputElement;
+    const underscoreFilter = container.querySelector("input[data-grid-column-filter='patrol_name']") as HTMLInputElement;
+    const camelCaseFilter = container.querySelector("input[data-grid-column-filter='teamCodeValue']") as HTMLInputElement;
+
+    expect(hyphenFilter).toBeTruthy();
+    expect(underscoreFilter).toBeTruthy();
+    expect(camelCaseFilter).toBeTruthy();
+
+    expect(hyphenFilter.placeholder).toBe("Crew Role");
+    expect(underscoreFilter.placeholder).toBe("Patrol Name");
+    expect(camelCaseFilter.placeholder).toBe("Team Code Value");
+    expect(hyphenFilter.placeholder).not.toContain("Filter");
+    expect(underscoreFilter.placeholder).not.toContain("Filter");
+    expect(camelCaseFilter.placeholder).not.toContain("Filter");
+
+    act(() => {
+      Simulate.change(hyphenFilter, { target: { value: "beta" } });
+    });
+
+    const visibleRowsAfterColumnFilter = Array.from(container.querySelectorAll("tbody tr"));
+    expect(visibleRowsAfterColumnFilter).toHaveLength(1);
+    expect(visibleRowsAfterColumnFilter[0].textContent).toContain("Beta");
+  });
 });

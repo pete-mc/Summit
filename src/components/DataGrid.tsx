@@ -71,6 +71,22 @@ const toHeaderText = (column: DataGridColumn<object>): string => {
   return column.exportHeader ?? column.id;
 };
 
+const toColumnPlaceholder = (columnId: string): string => {
+  const spaced = columnId
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[-_]+/g, " ")
+    .trim();
+
+  if (spaced.length === 0) {
+    return "";
+  }
+
+  return spaced
+    .split(/\s+/)
+    .map((word) => `${word.slice(0, 1).toUpperCase()}${word.slice(1).toLowerCase()}`)
+    .join(" ");
+};
+
 const buildExportColumns = <TData extends object>(columns: DataGridColumn<TData>[]): GridExportColumn[] => {
   return columns
     .filter((column) => column.exportable !== false)
@@ -391,7 +407,7 @@ export const DataGrid = <TData extends object>({ id, data, columns, toolbarActio
                       <input
                         type="text"
                         className="summit-form-input"
-                        placeholder={`Filter ${leafColumn.id}`}
+                        placeholder={toColumnPlaceholder(leafColumn.id)}
                         data-grid-column-filter={leafColumn.id}
                         value={columnFilters[leafColumn.id] ?? ""}
                         onChange={(event) => handleColumnFilterChange(leafColumn.id, event.target.value)}
