@@ -319,7 +319,7 @@ export const DataGrid = <TData extends object>({ id, data, columns, toolbarActio
         <label htmlFor={`${id}-global-filter`} className="data-grid-filter-label">
           Search all columns
         </label>
-        <input id={`${id}-global-filter`} data-grid-global-filter="true" className="summit-form-input" type="text" value={globalFilter} onChange={handleGlobalFilterChange} onInput={handleGlobalFilterInput} placeholder="Filter rows..." />
+        <input id={`${id}-global-filter`} data-grid-global-filter="true" className="summit-form-input" type="text" value={globalFilter} onChange={handleGlobalFilterChange} onInput={handleGlobalFilterInput} placeholder="Search rows..." />
       </div>
 
       {(toolbarActions.length > 0 || rightActions.length > 0) && (

@@ -219,4 +219,30 @@ describe("Data grid column filtering contract", () => {
     expect(scrollWrapper).toBeTruthy();
     expect(scrollWrapper.contains(table)).toBe(true);
   });
+
+  it("uses the approved global search placeholder wording", () => {
+    const rows: FilterRow[] = [
+      { name: "Alex", section: "Alpha" },
+      { name: "Zara", section: "Zulu" },
+    ];
+
+    const columns: DataGridColumn<FilterRow>[] = [
+      { id: "name", header: "Name", accessorKey: "name" },
+      { id: "section", header: "Section", accessorKey: "section" },
+    ];
+
+    act(() => {
+      root.render(
+        React.createElement(DataGrid<FilterRow>, {
+          id: "global-placeholder-grid",
+          data: rows,
+          columns,
+        }),
+      );
+    });
+
+    const globalFilter = container.querySelector("input[data-grid-global-filter='true']") as HTMLInputElement;
+    expect(globalFilter).toBeTruthy();
+    expect(globalFilter.placeholder).toBe("Search rows...");
+  });
 });
