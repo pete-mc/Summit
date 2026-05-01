@@ -1,8 +1,13 @@
 # Summit
 
-## Important Project Annoucement
+## Another Important Project Annoucement
 
-Sorry everyone, I have moved to Scotland and as such dont have proper access anymore to Terrain to further develop summit. I am happy to hand over access to the code if someone is interested in taking over the project. Please reach out if this if of interest.
+I have put my hand up to take over the Summit project. I have been in contact with Peter and we are working through the steps to get everything handed over with the least distruption possible. Please feel free to raise issues for things you see that aren't working. Hopefully the should be an updated version released very soon.
+--Riggs
+
+~~## Important Project Annoucement~~
+
+~~Sorry everyone, I have moved to Scotland and as such dont have proper access anymore to Terrain to further develop summit. I am happy to hand over access to the code if someone is interested in taking over the project. Please reach out if this if of interest.~~
 
 ## Summary
 
