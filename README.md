@@ -48,6 +48,13 @@ To get started install the add on for your browser below:
 
 You can build Summit locally with the bundled npm scripts.
 
+### Prerequisite: Node.js 24
+
+This project targets Node.js `24.x`.
+
+- If you use `nvm`, run `nvm use` in the repository root (the version is pinned via `.nvmrc`).
+- If you use another version manager, use `.node-version` (`24`) as the local runtime target.
+
 1. Install dependencies with `npm ci`.
 2. Run `npm run build` for a development build.
 3. Run `npm run build-prod` for a production build.
