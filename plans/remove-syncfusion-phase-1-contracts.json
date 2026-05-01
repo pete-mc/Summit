@@ -1,0 +1,67 @@
+{
+  "syncfusionImportInventory": {
+    "src/pages/SummitCalendar/components/SummitCalendar.tsx": [
+      "@syncfusion/ej2-react-inputs"
+    ]
+  },
+  "baselineRenderContracts": [
+    {
+      "file": "src/pages/SummitCalendar/components/SummitCalendar.tsx",
+      "mustContain": [
+        "<FullCalendar",
+        "headerToolbar",
+        "id=\"calendar-editor-dialog\"",
+        "renderGroupedMultiSelect(",
+        "<optgroup",
+        "<DialogComponent",
+        "validateSummitCalendarActivity"
+      ]
+    },
+    {
+      "file": "src/pages/PresentAwards/components/PresentAwards.tsx",
+      "mustContain": [
+        "<DataGrid",
+        "<ToastComponent",
+        "<DatePickerComponent"
+      ]
+    },
+    {
+      "file": "src/pages/MilestoneReport/components/MilestoneReport.tsx",
+      "mustContain": [
+        "<DataGrid",
+        "toolbarActions={[\"pdf\", \"excel\"]}"
+      ]
+    },
+    {
+      "file": "src/pages/OasReport/components/OasReport.tsx",
+      "mustContain": [
+        "<DataGrid",
+        "toolbarActions={[\"pdf\", \"excel\"]}"
+      ]
+    },
+    {
+      "file": "src/pages/PeakAward/components/PeakAward.tsx",
+      "mustContain": [
+        "<DataGrid",
+        "toolbarActions={[\"pdf\", \"excel\"]}"
+      ]
+    },
+    {
+      "file": "src/pages/SectionSummary/components/UnitSummary.tsx",
+      "mustContain": [
+        "<DataGrid",
+        "toolbarActions={[\"pdf\", \"excel\"]}"
+      ]
+    }
+  ],
+  "ciLicenseGuard": {
+    "workflowPath": ".github/workflows/build.yaml",
+    "requiredWorkflowMarkers": [
+      "- name: Activate Syncfusion License",
+      "run: npx syncfusion-license activate",
+      "SYNCFUSION_LICENSE: ${{ secrets.SYNCFUSION_LICENSE }}"
+    ],
+    "packageScriptName": "licence",
+    "packageScriptContains": "syncfusion-license activate"
+  }
+}

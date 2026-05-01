@@ -1,304 +1,178 @@
 import React from "react";
-import { L10n } from "@syncfusion/ej2-base";
-import {
-  Column,
-  ColumnDirective,
-  ColumnsDirective,
-  ContentType,
-  ExcelExport,
-  ExcelExportProperties,
-  Filter,
-  GridComponent,
-  Group,
-  GroupSettingsModel,
-  Inject,
-  Page,
-  PageOrientation,
-  PdfExport,
-  PdfPageSize,
-  RowDataBoundEventArgs,
-  RowSelectEventArgs,
-  Sort,
-  Toolbar,
-} from "@syncfusion/ej2-react-grids";
 import SummitAchievement from "../models/SummitAchievement";
-import { ClickEventArgs } from "@syncfusion/ej2-react-navigations";
-import { ToastComponent } from "@syncfusion/ej2-react-notifications";
-import { DatePickerComponent } from "@syncfusion/ej2-react-calendars";
 import moment from "moment";
+import { ToastComponent, ToastHandle } from "@/components/ToastComponent";
+import { DatePickerComponent } from "@/components/DateTimeInputs";
+import { DataGrid, DataGridColumn, DataGridCustomToolbarAction } from "@/components/DataGrid";
 
-L10n.load({
-  "en-US": {
-    grid: {
-      EmptyRecord: "Loading Records...",
-    },
-  },
-});
-
-interface AwardsTableState {
-  items: SummitAchievement[];
-}
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface AwardsTableProps {
   items: SummitAchievement[];
   onUpdate: (PresentedItems: SummitAchievement[]) => void;
 }
 
-export default class AwardsTable extends React.Component<AwardsTableProps, AwardsTableState> {
-  constructor(props: AwardsTableProps) {
-    super(props);
-    this.state = {
-      items: props.items,
-    };
-  }
-  grid: GridComponent | null = null;
-  filtering: boolean = true;
-  toastInstance: ToastComponent = null!;
-  selIndex: number[] = [];
-  firstLoad: boolean = true;
-  componentDidUpdate(prevProps: AwardsTableProps) {
-    const { items } = this.props;
-    if (items !== prevProps.items && this.firstLoad) {
-      this.firstLoad = false;
-      console.log("items updated");
-      this.setState({
-        items,
-      });
-    }
-    this.grid?.refreshColumns();
-  }
+export default function AwardsTable(props: AwardsTableProps): React.ReactNode {
+  const [items, setItems] = useState<SummitAchievement[]>(props.items);
+  const [showPreviouslyPresented, setShowPreviouslyPresented] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(props.items.filter((item) => item.presented !== "No").map((item) => item.id)));
+  const toastRef = useRef<ToastHandle>(null);
 
-  toolbarClick = (args: ClickEventArgs) => {
-    if (this.grid && args.item.id === "Grid_excelexport") {
-      const excelExportProperties = {
-        fileName: "Awards.xlsx",
-        header: {
-          headerRows: 1,
-          rows: [
-            {
-              cells: [{ colSpan: 4, value: "Terrain | Summit - Awards Completed", style: { hAlign: "Center", bold: true, fontSize: 16 } }],
-            },
-          ],
-        },
-        columns: [
-          { field: "type", headerText: "Type", width: 200 },
-          { field: "achievementName", headerText: "Award", width: 200 },
-          { field: "dateAwarded", headerText: "Date", width: 120 },
-          { field: "presented", headerText: "Presented", width: 100 },
-        ] as Column[],
-      } as ExcelExportProperties;
-      this.grid.excelExport(excelExportProperties);
-    }
-    if (this.grid && args.item.id === "Grid_pdfexport") {
-      const PdfExportProperties = {
-        pageOrientation: "Portrait" as PageOrientation,
-        pageSize: "A4" as PdfPageSize,
-        fileName: "Awards.pdf",
-        columns: [
-          { field: "member", headerText: "Name", width: 140 },
-          { field: "type", headerText: "Type", width: 90 },
-          { field: "achievementName", headerText: "Award", width: 90 },
-          { field: "dateAwarded", headerText: "Date", width: 90 },
-          { field: "presented", headerText: "Presented", width: 90 },
-        ] as Column[],
-        header: {
-          fromTop: 0,
-          height: 60,
-          contents: [
-            {
-              type: "Text" as ContentType,
-              value: "Terrain | Summit - Awards Completed",
-              position: { x: 0, y: 30 },
-              style: { textBrushColor: "#004C00", fontSize: 20 },
-            },
-          ],
-        },
-        theme: { record: { fontColor: "#000000", fontSize: 9 }, header: { fontColor: "#000000", fontSize: 10, bold: true } },
-      };
-      this.grid.pdfExport(PdfExportProperties);
-    }
+  useEffect(() => {
+    setItems(props.items);
+    setSelectedIds(new Set(props.items.filter((item) => item.presented !== "No").map((item) => item.id)));
+  }, [props.items]);
 
-    //filter button clicked
-    if (this.grid && args.item.id === "show_presented") {
-      if (this.filtering) {
-        this.grid.clearFiltering();
-        this.filtering = false;
-        args.item.text = "Hide Previously Presented";
-      } else {
-        this.grid.filterByColumn("previouslyPresented", "equal", false);
-        this.filtering = true;
-        args.item.text = "Show Previously Presented";
-      }
-    }
+  const dateUpdated = (event: React.ChangeEvent<HTMLInputElement>, id: string) => {
+    const formatted = moment(event.target.value).format("DD/MM/YY");
+    setItems((currentItems) =>
+      currentItems.map((item) => {
+        if (item.id !== id) {
+          return item;
+        }
 
-    //save button clicked
-    if (this.grid && args.item.id === "present_awards") {
-      const selectedRecords = this.grid.getSelectedRecords() as SummitAchievement[];
-      if (selectedRecords.length > 0) {
-        const items = this.state.items.filter((item) => item.presented != "No" || selectedRecords.some((selected) => selected.id === item.id));
-        this.props.onUpdate(items);
-        console.log(items);
-      } else {
-        this.toastInstance.show();
-      }
-    }
-  };
-
-  sortingOptions = {
-    columns: [
-      {
-        field: "member",
-        direction: "Ascending",
-      },
-      {
-        field: "type",
-        direction: "Ascending",
-      },
-      {
-        field: "achievementName",
-        direction: "Ascending",
-      },
-      {
-        field: "dateAwarded",
-        direction: "Ascending",
-      },
-    ],
-  };
-
-  groupOptions: GroupSettingsModel = {
-    columns: ["member"],
-    showDropArea: false,
-    captionTemplate: '<span class="groupItems"><b> ${key} </b> (${count} Records)',
-  };
-
-  toolbarOptions = [
-    "PdfExport",
-    "ExcelExport",
-    { text: "Show Previously Presented", tooltipText: "Show only presented awards", prefixIcon: "e-filter icon", id: "show_presented" },
-    { text: "Save Changes", tooltipText: "Mark selected awards presented", prefixIcon: "e-save icon", id: "present_awards", align: "Right" },
-  ];
-
-  selectionSettings = { checkboxOnly: true, type: "Multiple", mode: "Row" };
-
-  rowDataBound = (args: RowDataBoundEventArgs) => {
-    if ((args.data as SummitAchievement).presented !== "No") {
-      this.selIndex.push(parseInt((args.row as HTMLTableRowElement).getAttribute("aria-rowindex") as string, 0) - 1);
-    }
-  };
-
-  dataBound = (): void => {
-    if (this.grid && this.selIndex.length) {
-      this.grid.selectRows(this.selIndex.reverse());
-      this.selIndex = [];
-      if (this.filtering) {
-        this.grid.filterByColumn("previouslyPresented", "equal", false);
-      } else {
-        this.grid.clearFiltering();
-      }
-    }
-  };
-
-  rowSelected = (args: RowSelectEventArgs) => {
-    if (args.isInteracted) {
-      const item = this.state.items.find((item) => item.id === (args.data as SummitAchievement).id);
-      if (item) {
-        item.presented = item.dateAwarded;
-        this.setState({
-          items: this.state.items.map((stateItem) => (stateItem.id === item.id ? item : stateItem)),
-        });
-      }
-    }
-  };
-
-  rowDeselected = (args: RowSelectEventArgs) => {
-    if (args.isInteracted) {
-      const item = this.state.items.find((item) => item.id === (args.data as SummitAchievement).id);
-      if (item) {
-        item.presented = "No";
-        this.setState({
-          items: this.state.items.map((stateItem) => (stateItem.id === item.id ? item : stateItem)),
-        });
-      }
-    }
-  };
-
-  dateUpdated = async (args: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, id: string) => {
-    const item = this.state.items.find((item) => item.id === id);
-    if (item) {
-      // const newItem = { ...item, presented: moment(args.target.value).format("DD/MM/YY") };
-      // console.log(id);
-      // console.log(moment(args.target.value).format("DD/MM/YY"));
-      // item.presented = moment(args.target.value).format("DD/MM/YY");
-      // console.log(newItem);
-      // console.log(item);
-
-      item.updatePresented(moment(args.target.value).format("DD/MM/YY"));
-      console.log(item.presented);
-      this.setState({
-        items: this.state.items.map((stateItem) => (stateItem.id === id ? item : stateItem)),
-      });
-      console.log(this.state.items.find((item) => item.id === id)?.presented);
-    }
-  };
-
-  presentedCellTemplate = (props: SummitAchievement) => {
-    // show text if presented is "No" otherwise show date picker
-    return !props.presented || props.presented === "No" ? (
-      <span>No</span>
-    ) : (
-      <span>
-        <DatePickerComponent
-          value={moment(props.presented ?? "01/01/2000", "DD/MM/YYYY").toDate()}
-          format="dd/MM/yy"
-          showClearButton={false}
-          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => this.dateUpdated(e, props.id)}
-        />
-      </span>
+        item.updatePresented(formatted);
+        return item;
+      }),
     );
   };
 
-  render(): React.ReactNode {
-    const { items } = this.state;
-    return (
-      <>
-        <div id="#toast_target" />
-        <ToastComponent id="toast_target" ref={(toast: ToastComponent) => (this.toastInstance = toast)} title="Warning" content="No new awards were selected as presented." />
-        <GridComponent
-          id="Grid"
-          dataSource={items}
-          dataBound={this.dataBound}
-          selectionSettings={this.selectionSettings}
-          allowResizing
-          allowGrouping
-          toolbar={this.toolbarOptions}
-          allowPdfExport
-          allowExcelExport
-          allowSorting
-          sortSettings={this.sortingOptions}
-          locale="en-US"
-          groupSettings={this.groupOptions}
-          allowFiltering
-          rowDataBound={this.rowDataBound}
-          filterSettings={{ type: "" }}
-          toolbarClick={this.toolbarClick}
-          ref={(g: GridComponent | null) => (this.grid = g)}
-          rowSelected={this.rowSelected}
-          rowDeselected={this.rowDeselected}
-          allowPaging={true}
-          pageSettings={{ pageSize: 100 }}
-        >
-          <ColumnsDirective>
-            <ColumnDirective field="member" headerText="Name" width="100" textAlign="Left" />
-            <ColumnDirective field="type" headerText="Type" width="100" textAlign="Left" />
-            <ColumnDirective field="achievementName" headerText="Award" width="100" textAlign="Left" />
-            <ColumnDirective field="dateAwarded" headerText="Date" width="100" textAlign="Left" />
-            <ColumnDirective field="presented" headerText="Presented" width="100" template={this.presentedCellTemplate} />
-            <ColumnDirective field="previouslyPresented" visible={false} />
-            <ColumnDirective headerText="Present" width="50" type="checkbox" />
-          </ColumnsDirective>
-          <Inject services={[Toolbar, PdfExport, ExcelExport, Sort, Group, Filter, Page]} />
-        </GridComponent>
-      </>
-    ) as React.ReactNode;
-  }
+  const setSelected = (item: SummitAchievement, isSelected: boolean) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (isSelected) {
+        next.add(item.id);
+      } else {
+        next.delete(item.id);
+      }
+      return next;
+    });
+
+    setItems((currentItems) =>
+      currentItems.map((currentItem) => {
+        if (currentItem.id !== item.id) {
+          return currentItem;
+        }
+
+        if (isSelected && (!currentItem.presented || currentItem.presented === "No")) {
+          currentItem.updatePresented(currentItem.dateAwarded);
+        }
+
+        if (!isSelected) {
+          currentItem.updatePresented("No");
+        }
+
+        return currentItem;
+      }),
+    );
+  };
+
+  const presentedCellTemplate = (item: SummitAchievement) => {
+    if (!item.presented || item.presented === "No") {
+      return <span>No</span>;
+    }
+
+    return <DatePickerComponent value={moment(item.presented ?? "01/01/2000", "DD/MM/YYYY").toDate()} format="dd/MM/yy" showClearButton={false} onChange={(event) => dateUpdated(event, item.id)} />;
+  };
+
+  const saveChanges = () => {
+    const selectedRecords = items.filter((item) => selectedIds.has(item.id));
+    if (selectedRecords.length === 0) {
+      toastRef.current?.show();
+      return;
+    }
+
+    const filteredItems = items.filter((item) => item.presented !== "No" || selectedIds.has(item.id));
+    props.onUpdate(filteredItems);
+  };
+
+  const visibleItems = useMemo(() => {
+    if (showPreviouslyPresented) {
+      return items;
+    }
+
+    return items.filter((item) => !item.previouslyPresented);
+  }, [items, showPreviouslyPresented]);
+
+  const toolbarActions: Array<"pdf" | "excel" | DataGridCustomToolbarAction> = [
+    "pdf",
+    "excel",
+    {
+      id: "show_presented",
+      label: showPreviouslyPresented ? "Hide Previously Presented" : "Show Previously Presented",
+      onClick: () => setShowPreviouslyPresented((current) => !current),
+    },
+    {
+      id: "present_awards",
+      label: "Save Changes",
+      align: "right",
+      onClick: saveChanges,
+    },
+  ];
+
+  const columns: DataGridColumn<SummitAchievement>[] = [
+    {
+      id: "member",
+      header: "Name",
+      accessorKey: "member",
+      enableSorting: true,
+    },
+    {
+      id: "type",
+      header: "Type",
+      accessorKey: "type",
+      enableSorting: true,
+    },
+    {
+      id: "achievementName",
+      header: "Award",
+      accessorKey: "achievementName",
+      enableSorting: true,
+    },
+    {
+      id: "dateAwarded",
+      header: "Date",
+      accessorKey: "dateAwarded",
+      enableSorting: true,
+    },
+    {
+      id: "presented",
+      header: "Presented",
+      accessorFn: (row) => row.presented,
+      cell: presentedCellTemplate,
+      enableSorting: true,
+    },
+    {
+      id: "present",
+      header: "Present",
+      cell: (item) => {
+        return <input type="checkbox" checked={selectedIds.has(item.id)} onChange={(event) => setSelected(item, event.target.checked)} />;
+      },
+      exportable: false,
+    },
+  ];
+
+  return (
+    <>
+      <div id="#toast_target" />
+      <ToastComponent id="toast_target" ref={toastRef} title="Warning" content="No new awards were selected as presented." />
+      <DataGrid
+        id="Grid"
+        data={visibleItems}
+        columns={columns}
+        toolbarActions={toolbarActions}
+        exportOptions={{
+          fileNamePrefix: "Awards",
+          title: "Terrain | Summit - Awards Completed",
+          columns: [
+            { key: "member", header: "Name" },
+            { key: "type", header: "Type" },
+            { key: "achievementName", header: "Award" },
+            { key: "dateAwarded", header: "Date" },
+            { key: "presented", header: "Presented" },
+          ],
+        }}
+      />
+    </>
+  );
 }

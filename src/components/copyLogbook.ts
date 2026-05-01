@@ -46,34 +46,40 @@ export function InitLogbookWrite() {
 // Initialization for reading logbook
 export function InitLogbookRead(): void {
   const btn = $(document).xpath(`//button[ancestor::section[contains(@class, \'ViewRecord__no-print\')] and contains(@data-cy, \'PRINT\')]`)[0] as unknown as HTMLButtonElement;
-  $(btn).parent().attr("style", "display: flex;flex-wrap: wrap;align-items: center;justify-content: flex-end; gap: 10px;");
-  $(btn).attr("style", "margin: 5px;");
-  $("<button>")
-    .attr("style", "margin: 5px;")
-    .attr("id", "copyClipboardBtn")
-    .attr("data-v-34905e32", "")
-    .addClass("copyClipboardBtn summit-btn")
-    .on("click", () => {
-      LoadLogbookData(true);
-    })
-    .html('<span class="v-btn__content">Copy to Clipboard')
-    .appendTo($(btn).parent());
+  const printBtn = $(btn);
+  printBtn.parent().attr("style", "display: flex;flex-wrap: wrap;align-items: center;justify-content: flex-end; gap: 10px;");
+  printBtn.attr("style", "margin: 5px;");
 
-  setClasses("copyClipboardBtn", $(btn).attr("class") ?? "");
+  createLogbookReadButton(printBtn, "copyClipboardBtn", "Copy to Clipboard", () => {
+    LoadLogbookData(false);
+  });
+  createLogbookReadButton(printBtn, "copyExportBtn", "Export", () => {
+    LoadLogbookData(true);
+  });
+
   observe(btn, "copyClipboardBtn");
-
-  $("<button>")
-    .attr("style", "margin: 5px;")
-    .attr("id", "copyExportBtn")
-    .attr("data-v-34905e32", "")
-    .addClass("copyExportBtn summit-btn")
-    .on("click", () => {
-      LoadLogbookData(true);
-    })
-    .html('<span class="v-btn__content">Export')
-    .appendTo($(btn).parent());
-  setClasses("copyExportBtn", $(btn).attr("class") ?? "");
   observe(btn, "copyExportBtn");
+}
+
+function createLogbookReadButton(printBtn: JQuery<HTMLElement>, id: string, text: string, onClick: () => void): void {
+  printBtn.before(
+    $("<button>", {
+      click: onClick,
+      id,
+      text,
+      class: `${id} summit-btn`,
+      style: "margin: 5px;",
+    }),
+  );
+
+  const button = $("." + id);
+  Array.from(printBtn.get(0)?.attributes ?? []).forEach((attr) => {
+    if (attr.name.startsWith("data-v-")) {
+      button.attr(attr.name, "");
+    }
+  });
+
+  setClasses(id, printBtn.attr("class") ?? "");
 }
 export async function LoadLogbookData(download?: boolean): Promise<void> {
   console.debug("Recieved loadLogbook message from Channel");

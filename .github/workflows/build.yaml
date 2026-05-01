@@ -16,12 +16,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Setup Node.js environment
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
-        node-version: 20
+        node-version: 24
         cache: npm
 
     - name: Install dependencies
@@ -36,10 +36,10 @@ jobs:
     if: github.event_name == 'push'
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Cache npm dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v5
       with:
         path: |
           ~/.npm
@@ -49,7 +49,7 @@ jobs:
           ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
     - name: Cache node modules
-      uses: actions/cache@v3
+      uses: actions/cache@v5
       with:
         path: node_modules
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -57,9 +57,9 @@ jobs:
           ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
     - name: Setup Node.js environment
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
-        node-version: 20
+        node-version: 24
 
     - name: Install jq
       run: sudo apt-get install jq
@@ -68,11 +68,6 @@ jobs:
       run: |
         npm ci
 
-    - name: Activate Syncfusion License
-      run: npx syncfusion-license activate
-      env:
-        SYNCFUSION_LICENSE: ${{ secrets.SYNCFUSION_LICENSE }}
-        
     - name: Build Summit
       run: |
         mkdir -p ./dist
@@ -80,7 +75,7 @@ jobs:
       working-directory: ${{ github.workspace }}
 
     - name: Upload web extension as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Summit
         path: dist/*

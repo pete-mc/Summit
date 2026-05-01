@@ -40,6 +40,35 @@ To get started install the add on for your browser below:
 - Coverage (`npm run test:coverage`) is informational only and is used for visibility/tracking.
 - No hard coverage threshold is enforced in Jest/CI, so coverage does not block merges by itself.
 
+## Browser layout tests
+
+`npm run test:browser` runs Playwright browser-level layout tests. Fresh environments may need to install Chromium first with `npx playwright install chromium`.
+
+## Local build
+
+You can build Summit locally with the bundled npm scripts.
+
+1. Install dependencies with `npm ci`.
+2. Run `npm run build` for a development build.
+3. Run `npm run build-prod` for a production build.
+4. Run the `Package Summit extension artifact` VS Code task to produce a zip archive for distribution.
+
+The output is written to `dist/`.
+
+Packaged artifacts are written to `artifacts/Summit.zip`.
+
+### Local development server
+
+Run `npm start` to launch the local webpack dev server.
+
+- It serves over HTTPS using the certificates in `certs/`.
+- It binds to `https://localhost:443`.
+- On Windows, port `443` may require elevated privileges or may already be in use.
+
+### VS Code tasks
+
+This repository includes VS Code tasks for dependency install, development build, production build, packaging the extension artifact, watch mode, and starting the local dev server.
+
 ## Examples
 
 A few of the features are showcased below. [Visit the Wiki to see the full list of features and how-to guides](https://github.com/pete-mc/Summit/wiki).

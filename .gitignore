@@ -2,4 +2,8 @@
 /node_modules
 # production
 /dist
-syncfusion-license.txt
+.env
+/artifacts
+/test-results
+/playwright-report
+/github/agents

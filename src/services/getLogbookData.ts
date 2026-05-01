@@ -4,7 +4,7 @@ import { TerrainState } from "@/helpers";
 export default async function getLogbookData(logbookId: string): Promise<TerrainLogbook | undefined> {
   try {
     if (!TerrainState.getToken()) return undefined;
-    const response = await fetch("https://achievements.terrain.scouts.com.au/members/" + TerrainState.getMemberID() + "/logbook/" + logbookId, {
+    const response = await fetch("https://achievements.terrain.scouts.com.au/members/" + TerrainState.getProfileMemberID() + "/logbook/" + logbookId, {
       method: "GET",
       mode: "cors",
       cache: "no-cache",
