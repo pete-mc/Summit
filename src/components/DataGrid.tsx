@@ -364,80 +364,82 @@ export const DataGrid = <TData extends object>({ id, data, columns, toolbarActio
         </div>
       )}
 
-      <table className="data-grid-table">
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                const canSort = header.column.getCanSort();
-                const sortState = header.column.getIsSorted();
-                const ariaSort = sortState === "asc" ? "ascending" : sortState === "desc" ? "descending" : "none";
+      <div className="data-grid-table-scroll" style={{ width: "100%", overflowX: "auto" }}>
+        <table className="data-grid-table" style={{ width: "max-content", minWidth: "100%" }}>
+          <thead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  const canSort = header.column.getCanSort();
+                  const sortState = header.column.getIsSorted();
+                  const ariaSort = sortState === "asc" ? "ascending" : sortState === "desc" ? "descending" : "none";
 
-                return (
-                  <th key={header.id} aria-sort={canSort ? ariaSort : undefined}>
-                    {canSort ? (
-                      <button
-                        type="button"
-                        className="summit-button summit-button-secondary"
-                        onClick={header.column.getToggleSortingHandler()}
-                        aria-label={`Sort by ${String(header.column.columnDef.header)}, currently ${sortState === "asc" ? "ascending" : sortState === "desc" ? "descending" : "not sorted"}`}
-                      >
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                        <span data-grid-sort-indicator={header.id} className="data-grid-sort-indicator">
-                          {sortState === "asc" ? " ▲" : sortState === "desc" ? " ▼" : " ↕"}
-                        </span>
-                      </button>
-                    ) : (
-                      flexRender(header.column.columnDef.header, header.getContext())
-                    )}
-                  </th>
-                );
-              })}
-            </tr>
-          ))}
-          {filterableColumns.length > 0 && (
-            <tr>
-              {table.getAllLeafColumns().map((leafColumn) => {
-                const dataGridColumn = columns.find((column) => column.id === leafColumn.id);
-                const canFilter = Boolean(dataGridColumn) && dataGridColumn?.enableColumnFilter !== false && (Boolean(dataGridColumn?.accessorKey) || Boolean(dataGridColumn?.accessorFn));
-
-                return (
-                  <th key={`${leafColumn.id}-filter`}>
-                    {canFilter ? (
-                      <input
-                        type="text"
-                        className="summit-form-input"
-                        placeholder={toColumnPlaceholder(leafColumn.id)}
-                        data-grid-column-filter={leafColumn.id}
-                        value={columnFilters[leafColumn.id] ?? ""}
-                        onChange={(event) => handleColumnFilterChange(leafColumn.id, event.target.value)}
-                        onInput={(event) => handleColumnFilterChange(leafColumn.id, event.currentTarget.value)}
-                      />
-                    ) : null}
-                  </th>
-                );
-              })}
-            </tr>
-          )}
-        </thead>
-        <tbody>
-          {pagedRows.length === 0 ? (
-            <tr>
-              <td colSpan={Math.max(table.getAllLeafColumns().length, 1)} data-grid-empty-state="true">
-                No rows to display
-              </td>
-            </tr>
-          ) : (
-            pagedRows.map((row) => (
-              <tr key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-                ))}
+                  return (
+                    <th key={header.id} aria-sort={canSort ? ariaSort : undefined}>
+                      {canSort ? (
+                        <button
+                          type="button"
+                          className="summit-button summit-button-secondary"
+                          onClick={header.column.getToggleSortingHandler()}
+                          aria-label={`Sort by ${String(header.column.columnDef.header)}, currently ${sortState === "asc" ? "ascending" : sortState === "desc" ? "descending" : "not sorted"}`}
+                        >
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          <span data-grid-sort-indicator={header.id} className="data-grid-sort-indicator">
+                            {sortState === "asc" ? " ▲" : sortState === "desc" ? " ▼" : " ↕"}
+                          </span>
+                        </button>
+                      ) : (
+                        flexRender(header.column.columnDef.header, header.getContext())
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ))}
+            {filterableColumns.length > 0 && (
+              <tr>
+                {table.getAllLeafColumns().map((leafColumn) => {
+                  const dataGridColumn = columns.find((column) => column.id === leafColumn.id);
+                  const canFilter = Boolean(dataGridColumn) && dataGridColumn?.enableColumnFilter !== false && (Boolean(dataGridColumn?.accessorKey) || Boolean(dataGridColumn?.accessorFn));
+
+                  return (
+                    <th key={`${leafColumn.id}-filter`}>
+                      {canFilter ? (
+                        <input
+                          type="text"
+                          className="summit-form-input"
+                          placeholder={toColumnPlaceholder(leafColumn.id)}
+                          data-grid-column-filter={leafColumn.id}
+                          value={columnFilters[leafColumn.id] ?? ""}
+                          onChange={(event) => handleColumnFilterChange(leafColumn.id, event.target.value)}
+                          onInput={(event) => handleColumnFilterChange(leafColumn.id, event.currentTarget.value)}
+                        />
+                      ) : null}
+                    </th>
+                  );
+                })}
+              </tr>
+            )}
+          </thead>
+          <tbody>
+            {pagedRows.length === 0 ? (
+              <tr>
+                <td colSpan={Math.max(table.getAllLeafColumns().length, 1)} data-grid-empty-state="true">
+                  No rows to display
+                </td>
+              </tr>
+            ) : (
+              pagedRows.map((row) => (
+                <tr key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <div className="data-grid-pagination" aria-label="Data grid pagination">
         <button type="button" data-grid-page="previous" className="summit-button summit-button-secondary" onClick={handlePreviousPage} disabled={pageIndex === 0}>

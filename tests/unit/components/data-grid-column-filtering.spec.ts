@@ -190,4 +190,33 @@ describe("Data grid column filtering contract", () => {
     expect(rowsAfterUnderscoredFilter[0].textContent).toContain("Underscore Match");
     expect(rowsAfterUnderscoredFilter[0].textContent).not.toContain("Dash Match");
   });
+
+  it("wraps the table in a horizontal scroll container", () => {
+    const rows: FilterRow[] = [
+      { name: "Alex", section: "Alpha" },
+      { name: "Zara", section: "Zulu" },
+    ];
+
+    const columns: DataGridColumn<FilterRow>[] = [
+      { id: "name", header: "Name", accessorKey: "name" },
+      { id: "section", header: "Section", accessorKey: "section" },
+    ];
+
+    act(() => {
+      root.render(
+        React.createElement(DataGrid<FilterRow>, {
+          id: "scroll-grid",
+          data: rows,
+          columns,
+        }),
+      );
+    });
+
+    const table = container.querySelector("table.data-grid-table") as HTMLTableElement;
+    const scrollWrapper = container.querySelector(".data-grid-table-scroll") as HTMLDivElement;
+
+    expect(table).toBeTruthy();
+    expect(scrollWrapper).toBeTruthy();
+    expect(scrollWrapper.contains(table)).toBe(true);
+  });
 });
