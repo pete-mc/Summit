@@ -348,6 +348,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   };
 
   challangeAreas = [
+    { text: "Not Applicable", value: "not_applicable" },
     { text: "Community", value: "community" },
     { text: "Outdoors", value: "outdoors" },
     { text: "Creative", value: "creative" },

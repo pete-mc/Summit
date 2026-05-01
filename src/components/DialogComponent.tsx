@@ -33,7 +33,7 @@ interface DialogComponentProps {
 }
 
 const dialogBodyStyle: React.CSSProperties = {
-  flex: 1,
+  flex: "1 1 0%",
   minHeight: 0,
   overflowY: "auto",
   overflowX: "hidden",
