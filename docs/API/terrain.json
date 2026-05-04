@@ -1,40 +1,37 @@
 {
-  "openapi":"3.0.2",
+  "openapi": "3.0.2",
   "info": {
-    "title":"Terrain Achievements API",
-    "version":"1.0"
+    "title": "Summit Terrain Integration Surface",
+    "version": "0.1.0",
+    "description": "Internal-first v0 contract describing Terrain resources used by Summit."
   },
   "servers": [
-    {"url":"https://terrain.scouts.com.au", "description":"Scouts Terrain API"}
+    {
+      "url": "https://terrain.scouts.com.au",
+      "description": "Terrain shell and runtime context"
+    }
+  ],
+  "tags": [
+    { "name": "auth" },
+    { "name": "members" },
+    { "name": "events" },
+    { "name": "achievements" },
+    { "name": "templates" },
+    { "name": "metrics" }
   ],
   "paths": {
-    "/units/{unitId}/members":{
-      "get":{
-        "summary": "Get Profiles for a unit",
-        "servers": [
-          {"url":"https://members.terrain.scouts.com.au"}
-        ],
-        "parameters": [
-          {
-            "name":"unitId",
-            "in":"path",
-            "required":true,
-            "schema": {
-              "type":"string",
-              "format":"uuid"
-            }
-          }
-        ],
+    "/auth/token/resolve": {
+      "get": {
+        "tags": ["auth"],
+        "summary": "Resolve an upstream auth token via Summit token provider abstraction",
+        "description": "Contract placeholder for Summit auth abstraction. Today this resolves from Terrain runtime state.",
         "responses": {
           "200": {
-            "description":"List of profiles",
+            "description": "Token resolved",
             "content": {
               "application/json": {
                 "schema": {
-                  "type":"array",
-                  "items": {
-                    "$ref":"#/components/schemas/Profile"
-                  }
+                  "$ref": "#/components/schemas/TokenResolution"
                 }
               }
             }
@@ -42,23 +39,44 @@
         }
       }
     },
-    "/profiles":{
+    "/profiles": {
       "get": {
-        "summary":"Get profiles for a user",
-        "servers": [
-          {"url":"https://members.terrain.scouts.com.au"}
-        ],
+        "tags": ["members"],
+        "summary": "Get profiles for current user",
+        "servers": [{ "url": "https://members.terrain.scouts.com.au" }],
         "responses": {
           "200": {
-            "description":"List of profiles",
+            "description": "List of profiles",
             "content": {
               "application/json": {
                 "schema": {
-                  "type":"array",
-                  "items": {
-                    "$ref":"#/components/schemas/Profile"
-                  }
+                  "$ref": "#/components/schemas/ProfileCollection"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/units/{unitId}/members": {
+      "get": {
+        "tags": ["members"],
+        "summary": "Get members for a unit",
+        "servers": [{ "url": "https://members.terrain.scouts.com.au" }],
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of unit members",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UnitMemberCollection" }
               }
             }
           }
@@ -67,228 +85,574 @@
     },
     "/units/{unitId}/achievements": {
       "get": {
-        "summary":"Get achievements for a unit",
-        "servers": [
-          {"url":"https://achievements.terrain.scouts.com.au"}
-        ],
+        "tags": ["achievements"],
+        "summary": "Get achievements for a unit",
+        "servers": [{ "url": "https://achievements.terrain.scouts.com.au" }],
         "parameters": [
           {
-            "name":"unitId",
-            "in":"path",
-            "required":true,
-            "schema": {
-              "type":"string",
-              "format":"uuid"
-            }
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
           "200": {
-            "description":"List of achievements",
+            "description": "Achievements for unit",
             "content": {
               "application/json": {
-                "schema": {
-                  "type":"array",
-                  "items": {
-                    "$ref":"#/components/schemas/Achievement"
-                  }
-
-                }
+                "schema": { "$ref": "#/components/schemas/AchievementCollection" }
               }
             }
           }
         }
       }
-
+    },
+    "/members/{memberId}/achievements": {
+      "get": {
+        "tags": ["achievements"],
+        "summary": "Get achievements for a member",
+        "servers": [{ "url": "https://achievements.terrain.scouts.com.au" }],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Achievements for member",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AchievementCollection" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/members/{memberId}/logbook/{logbookId}": {
+      "get": {
+        "tags": ["achievements"],
+        "summary": "Get logbook record",
+        "servers": [{ "url": "https://achievements.terrain.scouts.com.au" }],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "logbookId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logbook entry",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LogbookEntry" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/members/{memberId}/logbook": {
+      "post": {
+        "tags": ["achievements"],
+        "summary": "Create or update member logbook record",
+        "servers": [{ "url": "https://achievements.terrain.scouts.com.au" }],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LogbookWriteRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Logbook saved" },
+          "201": { "description": "Logbook created" }
+        }
+      }
+    },
+    "/members/{memberId}/events": {
+      "get": {
+        "tags": ["events"],
+        "summary": "Get member events in a date window",
+        "servers": [{ "url": "https://events.terrain.scouts.com.au" }],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "start_datetime",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "date-time" }
+          },
+          {
+            "name": "end_datetime",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "date-time" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of member events",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EventSummaryCollection" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{eventId}": {
+      "get": {
+        "tags": ["events"],
+        "summary": "Get event by id",
+        "servers": [{ "url": "https://events.terrain.scouts.com.au" }],
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event detail",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Event" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["events"],
+        "summary": "Update event by id",
+        "servers": [{ "url": "https://events.terrain.scouts.com.au" }],
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EventWriteRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Event updated" }
+        }
+      },
+      "delete": {
+        "tags": ["events"],
+        "summary": "Delete event by id",
+        "servers": [{ "url": "https://events.terrain.scouts.com.au" }],
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Event deleted" }
+        }
+      }
+    },
+    "/units/{unitId}/events": {
+      "post": {
+        "tags": ["events"],
+        "summary": "Create event for a unit",
+        "servers": [{ "url": "https://events.terrain.scouts.com.au" }],
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EventWriteRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Event created" },
+          "400": { "description": "Validation failed" }
+        }
+      }
+    },
+    "/members/{memberId}/calendars": {
+      "get": {
+        "tags": ["events"],
+        "summary": "Get selected calendars for a member",
+        "servers": [{ "url": "https://events.terrain.scouts.com.au" }],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Calendar settings",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MemberCalendars" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["events"],
+        "summary": "Update selected calendars for a member",
+        "servers": [{ "url": "https://events.terrain.scouts.com.au" }],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MemberCalendarsWriteRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Calendars updated" }
+        }
+      }
+    },
+    "/units/{unitId}/members/metrics": {
+      "get": {
+        "tags": ["metrics"],
+        "summary": "Get unit member metrics",
+        "servers": [{ "url": "https://metrics.terrain.scouts.com.au" }],
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 999 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Member metrics",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UnitMemberMetricCollection" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sia/{templateId}.json": {
+      "get": {
+        "tags": ["templates"],
+        "summary": "Get SIA template",
+        "servers": [{ "url": "https://templates.terrain.scouts.com.au" }],
+        "parameters": [
+          {
+            "name": "templateId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template payload",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "additionalProperties": true }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
-      "Profile": {
-        "type":"object",
+      "TokenResolution": {
+        "type": "object",
         "properties": {
-          "member": {
-            "$ref":"#/components/schemas/Member"
-          },
-          "unit": {
-            "$ref":"#/components/schemas/Unit"
-          },
-          "group": {
-            "$ref":"#/components/schemas/Group"
+          "token": { "type": "string" },
+          "source": { "type": "string", "enum": ["terrain-runtime", "external-provider"] }
+        },
+        "required": ["token", "source"]
+      },
+      "ProfileCollection": {
+        "type": "object",
+        "properties": {
+          "profiles": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Profile" }
           }
         }
       },
-      "Member": {
-        "type":"object",
+      "UnitMemberCollection": {
+        "type": "object",
         "properties": {
-          "id": {
-            "type":"string",
-            "format":"uuid"
-          },
-          "name": {
-            "type":"string"
-          },
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Member" }
+          }
+        }
+      },
+      "AchievementCollection": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Achievement" }
+          }
+        }
+      },
+      "EventSummaryCollection": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/EventSummary" }
+          }
+        }
+      },
+      "UnitMemberMetricCollection": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/UnitMemberMetric" }
+          }
+        }
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "member": { "$ref": "#/components/schemas/Member" },
+          "unit": { "$ref": "#/components/schemas/Unit" },
+          "group": { "$ref": "#/components/schemas/Group" }
+        }
+      },
+      "Member": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
           "roles": {
-            "type":"array",
+            "type": "array",
             "items": {
-              "type":"string",
-              "enum": ["achievement-write", "member"]
+              "type": "string",
+              "enum": ["achievement-write", "member", "unit-member", "unit-write", "unit-council"]
             }
           }
         }
       },
       "Unit": {
-        "type":"object",
+        "type": "object",
         "properties": {
-          "id": {
-            "type":"string",
-            "format":"uuid"
-          },
-          "name": {
-            "type":"string"
-          },
-          "roles": {
-            "type":"array",
-            "items": {
-              "type":"string",
-              "enum": ["unit-council", "unit-member", "unit-write"]
-            }
-          },
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
           "section": {
-            "type":"string",
+            "type": "string",
             "enum": ["joey", "cub", "scout", "venturer", "rover"]
           }
         }
       },
       "Group": {
-        "type":"object",
+        "type": "object",
         "properties": {
-          "id": {
-            "type":"string",
-            "format":"uuid"
-          },
-          "name": {
-            "type":"string"
-          },
-          "roles": {
-            "type":"array",
-            "items": {
-              "type":"string",
-              "enum": ["group-leader"]
-            }
-          }
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" }
         }
       },
       "Achievement": {
-        "type":"object",
+        "type": "object",
         "properties": {
-          "id": {
-            "type":"string",
-            "format":"uuid"
-          },
-          "member_id": {
-            "type":"string",
-            "format":"uuid"
-          },
-          "section": {
-            "type":"string",
-            "enum": ["joey", "cub", "scout", "venturer", "rover"]
-          },
-          "type": {
-            "type":"string",
-            "enum": ["milestone", "outdoor_adventure_skill"]
-          },
-          "status": {
-            "type":"string",
-            "enum": ["in_progress", "complete"]
-          },
-          "status_updated": {
-            "type":"string",
-            "format":"date-time"
-          },
-          "milestone_requirement_status": {
-            "type":"string",
-            "enum": ["incomplete", "complete"]
-          },
+          "id": { "type": "string", "format": "uuid" },
+          "member_id": { "type": "string", "format": "uuid" },
+          "type": { "type": "string" },
+          "status": { "type": "string" },
+          "status_updated": { "type": "string", "format": "date-time" },
           "event_log": {
-            "type":"array",
-            "items": {
-              "$ref":"#/components/schemas/EventLog"
-            }
-          },
-          "event_count": {
-            "type":"object",
-            "properties": {
-              "participant": {
-                "$ref":"#/components/schemas/EventCount"
-              },
-              "assistant": {
-                "$ref":"#/components/schemas/EventCount"
-              },
-              "leader": {
-                "$ref":"#/components/schemas/EventCount"
-              }
-            }
-          },
-         "achievement_meta": {
-            "type":"object",
-            "properties": {
-              "stream": {
-                "type":"string",
-                "enum": ["alpine", "aquatics", "boating", "bushcraft", "bushwalking", "camping", "cycling", "paddling", "vertical"]
-              },
-              "branch": {
-                "type":"string",
-                "enum": ["alpine", "aquatics", "boating", "bushcraft", "bushwalking", "camping", "cycling", "paddling", "sailing", "skiing", "snowboarding", "surfing", "vertical"]
-              },
-              "stage": {
-                "type":"integer",
-                "minimum":1,
-                "maximum":9
-              }
-            }
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/EventLog" }
           }
         }
       },
       "EventLog": {
-        "type":"object",
+        "type": "object",
         "properties": {
-          "credit_type": {
-            "type":"string",
-            "enum": ["participant", "assistant", "leader"]
+          "credit_type": { "type": "string" },
+          "challenge_area": { "type": "string" },
+          "event_id": { "type": "string", "format": "uuid" },
+          "event_name": { "type": "string" },
+          "event_start_datetime": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "start_datetime": { "type": "string", "format": "date-time" },
+          "end_datetime": { "type": "string", "format": "date-time" },
+          "location": { "type": "string" }
+        }
+      },
+      "EventSummary": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "start_datetime": { "type": "string", "format": "date-time" },
+          "end_datetime": { "type": "string", "format": "date-time" }
+        }
+      },
+      "EventWriteRequest": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "challenge_area": { "type": "string" },
+          "start_datetime": { "type": "string", "format": "date-time" },
+          "end_datetime": { "type": "string", "format": "date-time" }
+        }
+      },
+      "LogbookEntry": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "member_id": { "type": "string", "format": "uuid" },
+          "text": { "type": "string" }
+        }
+      },
+      "LogbookWriteRequest": {
+        "type": "object",
+        "properties": {
+          "text": { "type": "string" }
+        },
+        "required": ["text"]
+      },
+      "MemberCalendars": {
+        "type": "object",
+        "properties": {
+          "member_id": { "type": "string", "format": "uuid" },
+          "own_calendars": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Calendar" }
           },
-          "challenge_area": {
-            "type":"string",
-            "enum": ["community", "outdoors", "creative", "personal_growth"]
-          },
-          "event_id": {
-            "type":"string",
-            "format":"uuid"
-          },
-          "event_name": {
-            "type":"string"
-          },
-          "event_start_datetime": {
-            "type":"string",
-            "format":"date-time"
+          "other_calendars": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Calendar" }
           }
         }
       },
-      "EventCount": {
-        "type":"object",
+      "MemberCalendarsWriteRequest": {
+        "type": "object",
         "properties": {
-          "community": {
-            "type":"number"
+          "own_calendars": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CalendarSelection" }
           },
-          "outdoors": {
-            "type":"number"
-          },
-          "creative": {
-            "type":"number"
-          },
-          "personal_growth": {
-            "type":"number"
+          "other_calendars": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CalendarSelection" }
           }
+        }
+      },
+      "Calendar": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string" },
+          "title": { "type": "string" },
+          "selected": { "type": "boolean" },
+          "section": { "type": "string" }
+        }
+      },
+      "CalendarSelection": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "selected": { "type": "boolean" }
+        }
+      },
+      "UnitMemberMetric": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "member_id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" }
         }
       }
     }
