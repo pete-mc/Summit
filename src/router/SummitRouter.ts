@@ -268,10 +268,11 @@ export default class SummitRouter {
       case "/personal-development":
       case "/oas":
       case "/sia":
-        if (to.path === "/sia") {
-          InitSiaTransfer();
+      case "/sia/requirements":
+        if (to.path === "/sia" || to.path === "/sia/requirements") {
+          InitSiaTransfer(to.path);
         }
-        if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0) {
+        if (to.path !== "/sia/requirements" && $("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0) {
           console.log("Fetching achievements");
           const type =
             [
@@ -291,7 +292,7 @@ export default class SummitRouter {
               CheckAward({ name: type, parent: $(element), awardsPrefetched: awards });
             });
           });
-        } else setTimeout(() => SummitRouter.pageChecks(to), 100);
+        } else if (to.path !== "/sia/requirements") setTimeout(() => SummitRouter.pageChecks(to), 100);
         break;
     }
   }

@@ -45,108 +45,11 @@ describe("InitSiaTransfer", () => {
     await Promise.resolve();
   }
 
-  it("injects one Summit Export button per rendered SIA project card and mirrors Terrain classes/data-v attributes", () => {
+  it("injects one Summit Export button next to the Back button on /sia/requirements and mirrors Terrain classes/data-v attributes", () => {
     document.body.innerHTML = `
       <section>
-        <div class="ListItem" data-project="1">
-          <div class="ListItem__action-btn-col">
-            <button data-cy="VIEW_ACHIEVEMENT" data-v-abc123 class="v-btn theme--light action-one">View</button>
-            <button data-cy="EDIT_ACHIEVEMENT" class="v-btn theme--light action-two">Edit</button>
-          </div>
-        </div>
-        <div class="ListItem" data-project="2">
-          <div class="ListItem__action-btn-col">
-            <button data-cy="REVIEW_ACHIEVEMENT" data-v-def456 class="v-btn theme--dark action-three">Review</button>
-          </div>
-        </div>
-      </section>
-    `;
-
-    InitSiaTransfer();
-
-    const exportButtons = document.querySelectorAll("button.summitSiaExportBtn");
-    expect(exportButtons).toHaveLength(2);
-
-    const firstCardExport = document.querySelector('[data-project="1"] .summitSiaExportBtn') as HTMLButtonElement | null;
-    const secondCardExport = document.querySelector('[data-project="2"] .summitSiaExportBtn') as HTMLButtonElement | null;
-
-    expect(firstCardExport).not.toBeNull();
-    expect(secondCardExport).not.toBeNull();
-    expect(firstCardExport?.textContent).toBe("Summit Export");
-    expect(secondCardExport?.textContent).toBe("Summit Export");
-    expect(firstCardExport?.classList.contains("v-btn")).toBe(true);
-    expect(firstCardExport?.classList.contains("action-one")).toBe(true);
-    expect(firstCardExport?.classList.contains("summit-menu-outline")).toBe(true);
-    expect(firstCardExport?.hasAttribute("data-v-abc123")).toBe(true);
-    expect(secondCardExport?.hasAttribute("data-v-def456")).toBe(true);
-  });
-
-  it("places Summit Export adjacent to existing action buttons in each card action area", () => {
-    document.body.innerHTML = `
-      <section>
-        <div class="ListItem">
-          <div class="ListItem__action-btn-col" data-action-area="A">
-            <button data-cy="VIEW_ACHIEVEMENT" class="v-btn existing-action">View</button>
-            <button data-cy="EDIT_ACHIEVEMENT" class="v-btn existing-action">Edit</button>
-            <button data-cy="REVIEW_ACHIEVEMENT" class="v-btn existing-action">Review</button>
-          </div>
-        </div>
-      </section>
-    `;
-
-    InitSiaTransfer();
-
-    const actionArea = document.querySelector('[data-action-area="A"]');
-    const firstExistingAction = actionArea?.querySelector('button[data-cy="VIEW_ACHIEVEMENT"]') ?? null;
-    const exportButton = actionArea?.querySelector("button.summitSiaExportBtn") as HTMLButtonElement | null;
-
-    expect(exportButton).not.toBeNull();
-    expect(exportButton?.parentElement).toBe(actionArea);
-    expect(firstExistingAction?.previousElementSibling).toBe(exportButton);
-  });
-
-  it("dedupes on rerender and only injects for new cards", () => {
-    document.body.innerHTML = `
-      <section id="sia-list">
-        <div class="ListItem" data-project="1">
-          <div class="ListItem__action-btn-col">
-            <button data-cy="VIEW_ACHIEVEMENT" class="v-btn">View</button>
-          </div>
-        </div>
-      </section>
-    `;
-
-    InitSiaTransfer();
-    InitSiaTransfer();
-
-    expect(document.querySelectorAll('[data-project="1"] .summitSiaExportBtn')).toHaveLength(1);
-
-    const list = document.getElementById("sia-list") as HTMLElement;
-    list.insertAdjacentHTML(
-      "beforeend",
-      `
-        <div class="ListItem" data-project="2">
-          <div class="ListItem__action-btn-col">
-            <button data-cy="VIEW_ACHIEVEMENT" class="v-btn">View</button>
-          </div>
-        </div>
-      `,
-    );
-
-    InitSiaTransfer();
-
-    expect(document.querySelectorAll(".summitSiaExportBtn")).toHaveLength(2);
-    expect(document.querySelectorAll('[data-project="1"] .summitSiaExportBtn')).toHaveLength(1);
-    expect(document.querySelectorAll('[data-project="2"] .summitSiaExportBtn')).toHaveLength(1);
-  });
-
-  it("downloads summit-sia-v1 JSON for the clicked card and excludes volatile/system fields/uploads", () => {
-    document.body.innerHTML = `
-      <section>
-        <div class="ListItem" data-project="1">
-          <div class="ListItem__action-btn-col">
-            <button data-cy="VIEW_ACHIEVEMENT" class="v-btn">View</button>
-          </div>
+        <div class="Requirements__footer-actions">
+          <button data-cy="BACK" data-v-abc123 class="v-btn theme--light action-one major">Back</button>
         </div>
       </section>
     `;
@@ -155,6 +58,136 @@ describe("InitSiaTransfer", () => {
       $store: {
         state: {
           sia: {
+            currentSia: {
+              section: "scout",
+              type: "special_interest_area",
+              answers: {
+                project_name: "Current SIA Project",
+                special_interest_area_selection: "sia_environment",
+              },
+            },
+            siaList: [],
+          },
+        },
+      },
+    } as typeof window.$nuxt;
+
+    InitSiaTransfer("/sia/requirements");
+
+    const exportButtons = document.querySelectorAll("button.summitSiaExportBtn");
+    expect(exportButtons).toHaveLength(1);
+
+    const backButton = document.querySelector('button[data-cy="BACK"]') as HTMLButtonElement | null;
+    const exportButton = document.querySelector("button.summitSiaExportBtn") as HTMLButtonElement | null;
+
+    expect(exportButton).not.toBeNull();
+    expect(exportButton?.textContent).toBe("Summit Export");
+    expect(exportButton?.classList.contains("v-btn")).toBe(true);
+    expect(exportButton?.classList.contains("action-one")).toBe(true);
+    expect(exportButton?.classList.contains("summit-menu-outline")).toBe(true);
+    expect(exportButton?.hasAttribute("data-v-abc123")).toBe(true);
+    expect(backButton?.previousElementSibling).toBe(exportButton);
+  });
+
+  it("does not inject Summit Export on /sia list page", () => {
+    document.body.innerHTML = `
+      <section class="BaseOverview__main">
+        <button data-cy="CREATE_PROJECT" class="v-btn">Create project</button>
+        <div class="ListItem">
+          <div class="ListItem__action-btn-col">
+            <button data-cy="VIEW_ACHIEVEMENT" class="v-btn">View project</button>
+            <button data-cy="EDIT_ACHIEVEMENT" class="v-btn">Edit project</button>
+          </div>
+        </div>
+      </section>
+    `;
+
+    InitSiaTransfer("/sia");
+
+    expect(document.querySelectorAll("button.summitSiaExportBtn")).toHaveLength(0);
+    expect(document.querySelectorAll("button.summitSiaImportBtn")).toHaveLength(1);
+  });
+
+  it("dedupes requirements export button across rerenders", () => {
+    document.body.innerHTML = `
+      <section>
+        <div class="Requirements__footer-actions">
+          <button data-cy="BACK" class="v-btn">Back</button>
+        </div>
+      </section>
+    `;
+
+    window.$nuxt = {
+      $store: {
+        state: {
+          sia: {
+            currentSia: {
+              section: "scout",
+              type: "special_interest_area",
+              answers: {
+                project_name: "Current SIA Project",
+                special_interest_area_selection: "sia_environment",
+              },
+            },
+            siaList: [],
+          },
+        },
+      },
+    } as typeof window.$nuxt;
+
+    InitSiaTransfer("/sia/requirements");
+    InitSiaTransfer("/sia/requirements");
+
+    expect(document.querySelectorAll(".summitSiaExportBtn")).toHaveLength(1);
+  });
+
+  it("downloads summit-sia-v1 JSON for the clicked card and excludes volatile/system fields/uploads", () => {
+    document.body.innerHTML = `
+      <section class="Requirements">
+        <div class="Requirements__footer-actions">
+          <button data-cy="BACK" class="v-btn">Back</button>
+        </div>
+      </section>
+    `;
+
+    window.$nuxt = {
+      $store: {
+        state: {
+          sia: {
+            currentSia: {
+              id: "achv-1",
+              member_id: "member-1",
+              section: "scout",
+              type: "special_interest_area",
+              status: "in_progress",
+              status_updated: "2026-05-04T00:00:00Z",
+              template: "sia-template-v1",
+              version: 3,
+              answers: {
+                project_name: "My First Project",
+                special_interest_area_selection: "sia_environment",
+                project_goal: "Build a native garden",
+              },
+              achievement_meta: {
+                stage: 2,
+              },
+              event_log: [
+                {
+                  event_id: "evt-1",
+                  event_name: "Garden planning",
+                },
+              ],
+              uploads: [
+                {
+                  id: "upload-1",
+                  filename: "proof.jpg",
+                },
+              ],
+              latest_submission: {
+                submission_id: "sub-1",
+              },
+              last_updated: "2026-05-04T00:00:00Z",
+            },
             siaList: [
               {
                 id: "achv-1",
@@ -196,12 +229,12 @@ describe("InitSiaTransfer", () => {
       },
     } as typeof window.$nuxt;
 
-    InitSiaTransfer();
+    InitSiaTransfer("/sia/requirements");
 
     const appendSpy = jest.spyOn(document.body, "appendChild");
     const clickSpy = jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
 
-    const exportButton = document.querySelector('[data-project="1"] .summitSiaExportBtn') as HTMLButtonElement;
+    const exportButton = document.querySelector(".summitSiaExportBtn") as HTMLButtonElement;
     exportButton.click();
 
     expect(clickSpy).toHaveBeenCalledTimes(1);
@@ -245,18 +278,11 @@ describe("InitSiaTransfer", () => {
     expect(parsed.project.uploads).toBeUndefined();
   });
 
-  it("uses deterministic per-card mapping so each export button downloads its own project", () => {
+  it("falls back to first siaList project when currentSia is unavailable", () => {
     document.body.innerHTML = `
-      <section>
-        <div class="ListItem" data-project="1">
-          <div class="ListItem__action-btn-col">
-            <button data-cy="VIEW_ACHIEVEMENT" class="v-btn">View</button>
-          </div>
-        </div>
-        <div class="ListItem" data-project="2">
-          <div class="ListItem__action-btn-col">
-            <button data-cy="VIEW_ACHIEVEMENT" class="v-btn">View</button>
-          </div>
+      <section class="Requirements">
+        <div class="Requirements__footer-actions">
+          <button data-cy="BACK" class="v-btn">Back</button>
         </div>
       </section>
     `;
@@ -265,19 +291,20 @@ describe("InitSiaTransfer", () => {
       $store: {
         state: {
           sia: {
+            currentSia: null,
             siaList: [
               {
                 type: "special_interest_area",
                 section: "scout",
                 answers: {
-                  project_name: "Alpha",
+                  project_name: "FirstFromList",
                 },
               },
               {
                 type: "special_interest_area",
                 section: "scout",
                 answers: {
-                  project_name: "Bravo",
+                  project_name: "SecondFromList",
                 },
               },
             ],
@@ -286,13 +313,13 @@ describe("InitSiaTransfer", () => {
       },
     } as typeof window.$nuxt;
 
-    InitSiaTransfer();
+    InitSiaTransfer("/sia/requirements");
 
     const appendSpy = jest.spyOn(document.body, "appendChild");
     jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
 
-    const secondCardExport = document.querySelector('[data-project="2"] .summitSiaExportBtn') as HTMLButtonElement;
-    secondCardExport.click();
+    const exportButton = document.querySelector(".summitSiaExportBtn") as HTMLButtonElement;
+    exportButton.click();
 
     const anchor = appendSpy.mock.calls[0][0] as HTMLAnchorElement;
     const href = anchor.getAttribute("href") ?? "";
@@ -304,13 +331,13 @@ describe("InitSiaTransfer", () => {
       };
     };
 
-    expect(parsed.project.answers.project_name).toBe("Bravo");
+    expect(parsed.project.answers.project_name).toBe("FirstFromList");
   });
 
   it("injects one global Summit Import button in the /sia header action region and mirrors Terrain classes/data-v attributes", () => {
     document.body.innerHTML = `
       <section class="BaseOverview__main" data-region="sia-header-actions">
-        <button data-cy="CREATE_PROJECT" data-v-import123 class="v-btn theme--light create-project-btn">Create project</button>
+        <button data-cy="CREATE_PROJECT" data-v-import123 class="v-btn theme--light create-project-btn major">Create project</button>
       </section>
     `;
 
@@ -326,6 +353,7 @@ describe("InitSiaTransfer", () => {
     expect(importButton?.textContent).toBe("Summit Import");
     expect(importButton?.classList.contains("v-btn")).toBe(true);
     expect(importButton?.classList.contains("create-project-btn")).toBe(true);
+    expect(importButton?.classList.contains("major")).toBe(true);
     expect(importButton?.classList.contains("summit-menu-outline")).toBe(true);
     expect(importButton?.hasAttribute("data-v-import123")).toBe(true);
     expect(createProjectButton?.previousElementSibling).toBe(importButton);
