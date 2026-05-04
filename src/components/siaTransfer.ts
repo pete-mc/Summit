@@ -17,6 +17,11 @@ type SiaImportContract = {
   project: SiaProject;
 };
 
+type SiaImportAnswers = {
+  project_name: string;
+  special_interest_area_selection: string;
+};
+
 function getSiaProjects(): SiaProject[] {
   return ((window.$nuxt?.$store?.state?.sia?.siaList as SiaProject[] | undefined) ?? []).slice(0);
 }
@@ -87,14 +92,50 @@ function getImportInput(): HTMLInputElement {
   return inputElement;
 }
 
+function hasRequiredImportFields(project: SiaProject): boolean {
+  const section = project.section;
+  const answers = project.answers;
+
+  if (typeof section !== "string" || section.trim().length === 0) {
+    return false;
+  }
+
+  if (!isRecord(answers)) {
+    return false;
+  }
+
+  const typedAnswers = answers as Partial<SiaImportAnswers>;
+
+  if (typeof typedAnswers.project_name !== "string" || typedAnswers.project_name.trim().length === 0) {
+    return false;
+  }
+
+  if (typeof typedAnswers.special_interest_area_selection !== "string" || typedAnswers.special_interest_area_selection.trim().length === 0) {
+    return false;
+  }
+
+  return true;
+}
+
 function parseImportContract(text: string): SiaImportContract {
-  const parsed = JSON.parse(text) as unknown;
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(text) as unknown;
+  } catch {
+    throw new Error("Invalid SIA import file. File must be valid JSON.");
+  }
+
   if (!isRecord(parsed) || parsed.contract !== SIA_EXPORT_CONTRACT || !isRecord(parsed.project)) {
     throw new Error("Invalid SIA import file. Expected summit-sia-v1 payload.");
   }
 
   if (parsed.project.type !== "special_interest_area") {
     throw new Error("Invalid SIA import file. Expected special_interest_area project type.");
+  }
+
+  if (!hasRequiredImportFields(parsed.project)) {
+    throw new Error("Invalid SIA import file. Missing required project fields.");
   }
 
   return {

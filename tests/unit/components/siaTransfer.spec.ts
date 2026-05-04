@@ -428,6 +428,98 @@ describe("InitSiaTransfer", () => {
     expect(alertSpy).toHaveBeenCalledWith("Invalid SIA import file. Expected summit-sia-v1 payload.");
   });
 
+  it("shows validation feedback and does not create when import file is malformed JSON", async () => {
+    document.body.innerHTML = `
+      <section class="BaseOverview__main">
+        <button data-cy="CREATE_PROJECT" class="v-btn">Create project</button>
+      </section>
+    `;
+
+    const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => undefined);
+
+    InitSiaTransfer();
+
+    const importButton = document.querySelector("button.summitSiaImportBtn") as HTMLButtonElement;
+    importButton.click();
+
+    const input = document.querySelector("input.summitSiaImportInput") as HTMLInputElement;
+    const file = new File(["ignored"], "sia-import.json", { type: "application/json" });
+    Object.defineProperty(file, "text", {
+      configurable: true,
+      value: jest.fn().mockResolvedValue("{this-is-not-valid-json"),
+    });
+
+    mockInputFile(input, file);
+    input.dispatchEvent(new Event("change"));
+
+    await flushAsyncWork();
+
+    expect(mockedCreateMemberAchievement).not.toHaveBeenCalled();
+    expect(alertSpy).toHaveBeenCalledWith("Invalid SIA import file. File must be valid JSON.");
+  });
+
+  it("shows validation feedback and does not create when required payload fields are missing", async () => {
+    document.body.innerHTML = `
+      <section class="BaseOverview__main">
+        <button data-cy="CREATE_PROJECT" class="v-btn">Create project</button>
+      </section>
+    `;
+
+    const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => undefined);
+
+    InitSiaTransfer();
+
+    const importButton = document.querySelector("button.summitSiaImportBtn") as HTMLButtonElement;
+    importButton.click();
+
+    const input = document.querySelector("input.summitSiaImportInput") as HTMLInputElement;
+    const file = new File(["ignored"], "sia-import.json", { type: "application/json" });
+    Object.defineProperty(file, "text", {
+      configurable: true,
+      value: jest.fn().mockResolvedValue(
+        JSON.stringify({
+          contract: "summit-sia-v1",
+          project: {
+            section: "scout",
+            type: "special_interest_area",
+            answers: {
+              special_interest_area_selection: "sia_environment",
+            },
+          },
+        }),
+      ),
+    });
+
+    mockInputFile(input, file);
+    input.dispatchEvent(new Event("change"));
+
+    await flushAsyncWork();
+
+    expect(mockedCreateMemberAchievement).not.toHaveBeenCalled();
+    expect(alertSpy).toHaveBeenCalledWith("Invalid SIA import file. Missing required project fields.");
+  });
+
+  it("keeps duplicate init guarded for global import controls across rerenders", () => {
+    document.body.innerHTML = `
+      <section class="BaseOverview__main">
+        <button data-cy="CREATE_PROJECT" class="v-btn">Create project</button>
+      </section>
+    `;
+
+    InitSiaTransfer();
+    InitSiaTransfer();
+
+    const firstImportButton = document.querySelector("button.summitSiaImportBtn") as HTMLButtonElement;
+    firstImportButton.click();
+    InitSiaTransfer();
+
+    const secondImportButton = document.querySelector("button.summitSiaImportBtn") as HTMLButtonElement;
+    secondImportButton.click();
+
+    expect(document.querySelectorAll("button.summitSiaImportBtn")).toHaveLength(1);
+    expect(document.querySelectorAll("input.summitSiaImportInput")).toHaveLength(1);
+  });
+
   it("shows API feedback when create-only import fails", async () => {
     document.body.innerHTML = `
       <section class="BaseOverview__main">
@@ -455,6 +547,7 @@ describe("InitSiaTransfer", () => {
             type: "special_interest_area",
             answers: {
               project_name: "Imported project",
+              special_interest_area_selection: "sia_environment",
             },
           },
         }),
