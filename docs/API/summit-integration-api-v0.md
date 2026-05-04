@@ -4,6 +4,8 @@ Stable internal-first contract for Summit-mediated integrations, designed to bec
 
 Related reliability conventions for auth, error normalization, and observability are defined in `docs/API/summit-error-conventions.md`.
 
+Concrete request examples for this contract are indexed in `docs/requests/requests.ts` with runtime snippets in `docs/requests/*.rest`.
+
 ## Scope and goals
 
 - Define one consistent integration surface across Summit runtime features.

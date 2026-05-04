@@ -2,7 +2,64 @@ GET https://achievements.terrain.scouts.com.au/units/3603056b-3928-4f66-b12e-421
 authority: achievements.terrain.scouts.com.au
 accept: */*
 accept-language: en-GB,en;q=0.9,en-US;q=0.8
-authorization: {{token}}
+Authorization: Bearer {{token}}
+cache-control: max-age=0
+content-type: application/json
+dnt: 1
+origin: https://terrain.scouts.com.au
+referer: https://terrain.scouts.com.au/
+sec-ch-ua: "Not_A Brand";v="8", "Chromium";v="120", "Microsoft Edge";v="120"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "Windows"
+sec-fetch-dest: empty
+sec-fetch-mode: cors
+sec-fetch-site: same-site
+user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0
+
+### Unit achievements filtered by type only (maps to GET /units/{unitId}/achievements)
+GET https://achievements.terrain.scouts.com.au/units/3603056b-3928-4f66-b12e-421ca4434dcb/achievements?type=milestone HTTP/1.1
+authority: achievements.terrain.scouts.com.au
+accept: */*
+accept-language: en-GB,en;q=0.9,en-US;q=0.8
+Authorization: Bearer {{token}}
+cache-control: max-age=0
+content-type: application/json
+dnt: 1
+origin: https://terrain.scouts.com.au
+referer: https://terrain.scouts.com.au/
+sec-ch-ua: "Not_A Brand";v="8", "Chromium";v="120", "Microsoft Edge";v="120"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "Windows"
+sec-fetch-dest: empty
+sec-fetch-mode: cors
+sec-fetch-site: same-site
+user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0
+
+### Member achievements with filters (maps to GET /members/{memberId}/achievements)
+GET https://achievements.terrain.scouts.com.au/members/53ed4450-3a80-46a2-95e5-fa20949cb475/achievements?type=special_interest_area&status=in_progress HTTP/1.1
+authority: achievements.terrain.scouts.com.au
+accept: */*
+accept-language: en-GB,en;q=0.9,en-US;q=0.8
+Authorization: Bearer {{token}}
+cache-control: max-age=0
+content-type: application/json
+dnt: 1
+origin: https://terrain.scouts.com.au
+referer: https://terrain.scouts.com.au/
+sec-ch-ua: "Not_A Brand";v="8", "Chromium";v="120", "Microsoft Edge";v="120"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "Windows"
+sec-fetch-dest: empty
+sec-fetch-mode: cors
+sec-fetch-site: same-site
+user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0
+
+### Member achievements filtered by type only (maps to GET /members/{memberId}/achievements)
+GET https://achievements.terrain.scouts.com.au/members/53ed4450-3a80-46a2-95e5-fa20949cb475/achievements?type=special_interest_area HTTP/1.1
+authority: achievements.terrain.scouts.com.au
+accept: */*
+accept-language: en-GB,en;q=0.9,en-US;q=0.8
+Authorization: Bearer {{token}}
 cache-control: max-age=0
 content-type: application/json
 dnt: 1
