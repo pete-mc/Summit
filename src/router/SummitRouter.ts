@@ -3,7 +3,7 @@ import { Home, DisplayOptions, MilestoneReport, OasReport, Topo, SummitCalendar,
 import { NavMenuComponent, NavMenuItem } from "@/types/NavMenu";
 import VueRouter, { Route } from "vue-router";
 import Vue from "vue";
-import { InitLogbookRead, InitLogbookWrite, InitProgrammingExportBtn, CheckAward, AwardObserverRouter } from "@/components";
+import { InitLogbookRead, InitLogbookWrite, InitProgrammingExportBtn, CheckAward, AwardObserverRouter, InitSiaTransfer } from "@/components";
 import { fetchAchievements } from "@/services";
 
 export default class SummitRouter {
@@ -268,6 +268,9 @@ export default class SummitRouter {
       case "/personal-development":
       case "/oas":
       case "/sia":
+        if (to.path === "/sia") {
+          InitSiaTransfer();
+        }
         if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0) {
           console.log("Fetching achievements");
           const type =
