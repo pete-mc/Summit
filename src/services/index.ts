@@ -1,4 +1,5 @@
 export { default as createNewEvent } from "./createNewEvent";
+export { default as createMemberAchievement } from "./createMemberAchievement";
 export { default as fetchAchievements } from "./fetchAchievements";
 export { default as fetchActivity } from "./fetchActivity";
 export { default as fetchMemberEvents } from "./fetchMemberEvents";
