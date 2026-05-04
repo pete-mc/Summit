@@ -2,6 +2,8 @@
 
 Stable internal-first contract for Summit-mediated integrations, designed to become public with minimal shape changes.
 
+Related reliability conventions for auth, error normalization, and observability are defined in `docs/API/summit-error-conventions.md`.
+
 ## Scope and goals
 
 - Define one consistent integration surface across Summit runtime features.
@@ -43,6 +45,8 @@ Summit expects one of two response patterns and normalizes internally where need
 
 For all responses, Summit carries a `correlationId` through logs/telemetry, preferring `X-Correlation-Id` when provided by caller or upstream services.
 
+Detailed observability and redaction guidance is centralized in `docs/API/summit-error-conventions.md`.
+
 ## Error contract
 
 The contract-level error shape is normalized as:
@@ -57,6 +61,8 @@ Example normalized error payload:
 - `error.code`: `EVENT_VALIDATION_FAILED`
 - `error.message`: `Event start_datetime must be before end_datetime.`
 - `error.details`: `{ "field": "start_datetime", "rule": "before:end_datetime" }`
+
+For normalized error semantics, required fields (including `error.category` and `error.retryable`), and retryability rules, see `docs/API/summit-error-conventions.md`.
 
 ## Auth model
 
@@ -73,6 +79,8 @@ To keep the contract internal-first but public-ready, client code should depend 
 - `getUnitId?(): string | undefined`
 
 The implementation can resolve from Terrain state now and later from external integrator credentials without changing endpoint shapes.
+
+Auth model conventions and the token-provider abstraction are standardized in `docs/API/summit-error-conventions.md`.
 
 ## Versioning and compatibility
 
