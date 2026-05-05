@@ -22,7 +22,11 @@ type SiaImportAnswers = {
   special_interest_area_selection: string;
 };
 
-type SiaTransferRoutePath = "/sia" | "/sia/requirements" | string;
+type SiaTransferRoutePath = "/sia" | "/sia/requirements" | "/sia/review" | string;
+
+function isSiaDetailRoute(path: string): boolean {
+  return path === "/sia/requirements" || path === "/sia/review";
+}
 
 function getSiaProjects(): SiaProject[] {
   return ((window.$nuxt?.$store?.state?.sia?.siaList as SiaProject[] | undefined) ?? []).slice(0);
@@ -253,8 +257,8 @@ function copyScopedAttributes(button: JQuery<HTMLElement>, anchorButton: JQuery<
   });
 }
 
-function createRequirementsExportButton(anchorButton: JQuery<HTMLElement>, project: SiaProject): void {
-  if (jquery(`button.${SIA_EXPORT_BUTTON_CLASS}`).length > 0) return;
+function createRequirementsExportButton(anchorButton: JQuery<HTMLElement>, project: SiaProject): boolean {
+  if (jquery(`button.${SIA_EXPORT_BUTTON_CLASS}`).length > 0) return false;
 
   const button = jquery("<button>", {
     text: SIA_EXPORT_BUTTON_TEXT,
@@ -268,11 +272,12 @@ function createRequirementsExportButton(anchorButton: JQuery<HTMLElement>, proje
 
   copyScopedAttributes(button, anchorButton);
   setClasses(button, anchorButton, SIA_EXPORT_BUTTON_CLASS);
-  anchorButton.before(button);
+  anchorButton.after(button);
+  return true;
 }
 
-function createImportButton(anchorButton: JQuery<HTMLElement>): void {
-  if (jquery(`button.${SIA_IMPORT_BUTTON_CLASS}`).length > 0) return;
+function createImportButton(anchorButton: JQuery<HTMLElement>): boolean {
+  if (jquery(`button.${SIA_IMPORT_BUTTON_CLASS}`).length > 0) return false;
 
   const button = jquery("<button>", {
     text: SIA_IMPORT_BUTTON_TEXT,
@@ -288,6 +293,7 @@ function createImportButton(anchorButton: JQuery<HTMLElement>): void {
   copyScopedAttributes(button, anchorButton);
   setClasses(button, anchorButton, SIA_IMPORT_BUTTON_CLASS);
   anchorButton.before(button);
+  return true;
 }
 
 function resolveSiaRoutePath(routePath?: SiaTransferRoutePath): string {
@@ -303,23 +309,26 @@ function resolveSiaRoutePath(routePath?: SiaTransferRoutePath): string {
   return resolvedPath;
 }
 
-export function InitSiaTransfer(routePath?: SiaTransferRoutePath): void {
+export function InitSiaTransfer(routePath?: SiaTransferRoutePath): boolean {
   const path = resolveSiaRoutePath(routePath);
 
   if (path === "/sia") {
     const importAnchor = getGlobalActionAnchorButton();
     if (importAnchor.length > 0) {
-      createImportButton(importAnchor);
+      return createImportButton(importAnchor);
     }
-    return;
+    return false;
   }
 
-  if (path === "/sia/requirements") {
+  if (isSiaDetailRoute(path)) {
     const backButton = getRequirementsBackButton();
     const currentProject = getCurrentSiaProject();
 
     if (backButton.length > 0 && currentProject) {
-      createRequirementsExportButton(backButton, currentProject);
+      return createRequirementsExportButton(backButton, currentProject);
     }
+    return false;
   }
+
+  return false;
 }

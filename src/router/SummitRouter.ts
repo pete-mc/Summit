@@ -269,30 +269,12 @@ export default class SummitRouter {
       case "/oas":
       case "/sia":
       case "/sia/requirements":
-        if (to.path === "/sia" || to.path === "/sia/requirements") {
-          InitSiaTransfer(to.path);
+      case "/sia/review":
+        if (to.path === "/sia" || to.path === "/sia/requirements" || to.path === "/sia/review") {
+          if(!InitSiaTransfer(to.path)) {
+            setTimeout(() => SummitRouter.pageChecks(to), 100);
+          }
         }
-        if (to.path !== "/sia/requirements" && $("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0) {
-          console.log("Fetching achievements");
-          const type =
-            [
-              { route: "/oas", type: "outdoor_adventure_skill" },
-              { route: "/sia", type: "special_interest_area" },
-              { route: "/personal-development", type: "course_reflection" },
-              { route: "/intro-scouting", type: "intro_scouting" },
-              { route: "/intro-section", type: "intro_section" },
-              { route: "/adventurous-journey", type: "adventurous_journey" },
-              { route: "/personal-reflection", type: "personal_reflection" },
-            ].find((type) => type.route === to.path)?.type ?? "outdoor_adventure_skill";
-          const header = to.path.startsWith("/intro-") ? $("hr.BaseList__divider").first() : $("div.AchievementOverview__awarded").first();
-          const list = header.next().children("div.List").first();
-          list.addClass("AwardedList");
-          list.children().each((_index, element) => {
-            fetchAchievements(type).then((awards) => {
-              CheckAward({ name: type, parent: $(element), awardsPrefetched: awards });
-            });
-          });
-        } else if (to.path !== "/sia/requirements") setTimeout(() => SummitRouter.pageChecks(to), 100);
         break;
     }
   }

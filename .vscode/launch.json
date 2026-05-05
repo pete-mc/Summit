@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Chrome (Debug Port 9222)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "https://terrain.scouts.com.au",
+      "runtimeArgs": [
+        "--remote-debugging-port=9222"
+      ],
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-debug-profile"
+    }
+  ]
+}
