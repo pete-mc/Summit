@@ -984,6 +984,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     const isCalendarLoading = this.state.calendarLoadState === "loading";
     const isCalendarEmpty = this.state.calendarLoadState === "empty";
     const hasCalendarError = this.state.calendarLoadState === "error";
+    const isListView = this.state.currentCalendarView.startsWith("list");
 
     const allEvents = this.state.items.map((item) => ({
       id: item.Id,
@@ -1008,38 +1009,40 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           <span id="calendar-error-state" data-active={String(hasCalendarError)} />
         </div>
         <div className="calendar-ux-toolbar">
-          <div className="calendar-agenda-range-controls" data-calendar-range-controls="visible">
-            <span className="calendar-agenda-range-label">Agenda range:</span>
-            <input type="date" className="summit-form-input" value={this.state.agendaRangeStart} onChange={this.handleAgendaRangeStartChange} aria-label="Agenda range start date" />
-            <span className="calendar-agenda-range-separator">to</span>
-            <input type="date" className="summit-form-input" value={this.state.agendaRangeEnd} onChange={this.handleAgendaRangeEndChange} aria-label="Agenda range end date" />
-            <button type="button" className="summit-button summit-button-secondary" onClick={this.applyCustomAgendaRange}>
-              Apply
-            </button>
-            <div className="calendar-agenda-presets" role="group" aria-label="Agenda quick select">
-              <button
-                type="button"
-                className={`summit-button summit-button-secondary ${this.state.agendaRangePreset === "week" ? "calendar-agenda-preset-active" : ""}`}
-                onClick={() => this.handleAgendaPresetSelect("week")}
-              >
-                Week
+          {isListView && (
+            <div className="calendar-agenda-range-controls" data-calendar-range-controls="visible">
+              <span className="calendar-agenda-range-label">List range:</span>
+              <input type="date" className="summit-form-input" value={this.state.agendaRangeStart} onChange={this.handleAgendaRangeStartChange} aria-label="List range start date" />
+              <span className="calendar-agenda-range-separator">to</span>
+              <input type="date" className="summit-form-input" value={this.state.agendaRangeEnd} onChange={this.handleAgendaRangeEndChange} aria-label="List range end date" />
+              <button type="button" className="summit-button summit-button-secondary" onClick={this.applyCustomAgendaRange}>
+                Apply
               </button>
-              <button
-                type="button"
-                className={`summit-button summit-button-secondary ${this.state.agendaRangePreset === "month" ? "calendar-agenda-preset-active" : ""}`}
-                onClick={() => this.handleAgendaPresetSelect("month")}
-              >
-                Month
-              </button>
-              <button
-                type="button"
-                className={`summit-button summit-button-secondary ${this.state.agendaRangePreset === "year" ? "calendar-agenda-preset-active" : ""}`}
-                onClick={() => this.handleAgendaPresetSelect("year")}
-              >
-                Year
-              </button>
+              <div className="calendar-agenda-presets" role="group" aria-label="List quick select">
+                <button
+                  type="button"
+                  className={`summit-button summit-button-secondary ${this.state.agendaRangePreset === "week" ? "calendar-agenda-preset-active" : ""}`}
+                  onClick={() => this.handleAgendaPresetSelect("week")}
+                >
+                  Week
+                </button>
+                <button
+                  type="button"
+                  className={`summit-button summit-button-secondary ${this.state.agendaRangePreset === "month" ? "calendar-agenda-preset-active" : ""}`}
+                  onClick={() => this.handleAgendaPresetSelect("month")}
+                >
+                  Month
+                </button>
+                <button
+                  type="button"
+                  className={`summit-button summit-button-secondary ${this.state.agendaRangePreset === "year" ? "calendar-agenda-preset-active" : ""}`}
+                  onClick={() => this.handleAgendaPresetSelect("year")}
+                >
+                  Year
+                </button>
+              </div>
             </div>
-          </div>
+          )}
           {this.renderCalendarLegend(filteredItems)}
         </div>
         <FullCalendar
@@ -1054,7 +1057,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             dayGridMonth: "Month",
             timeGridWeek: "Week",
             timeGridDay: "Day",
-            listRange: "Agenda",
+            listRange: "List",
           }}
           headerToolbar={{
             left: "prev,next today",
