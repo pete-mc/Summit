@@ -939,7 +939,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         </div>
         <div className="calendar-ux-toolbar">
           {this.state.currentCalendarView === "listWeek" && (
-            <div className="calendar-quick-filters" data-calendar-quick-filters="enabled" role="group" aria-label="Quick calendar filters">
+            <div className="calendar-quick-filters fc" data-calendar-quick-filters="enabled" role="group" aria-label="Quick calendar filters">
               <button
                 type="button"
                 className={`fc-button fc-button-primary ${this.state.calendarQuickFilter === "all" ? "fc-button-active" : ""}`}
