@@ -215,7 +215,7 @@
 }
 
 .calendar-agenda-range-controls .summit-form-input {
-  width: auto;
+  width: 180px;
 }
 
 .calendar-agenda-range-controls .react-datepicker-wrapper,
