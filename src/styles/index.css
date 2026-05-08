@@ -201,30 +201,6 @@
   margin: var(--summit-space-md) 0;
 }
 
-.calendar-quick-filters {
-  display: inline-flex;
-  gap: 8px;
-}
-
-.calendar-quick-filters.fc {
-  display: inline-flex !important;
-  align-items: center !important;
-  flex-wrap: nowrap !important;
-  flex-direction: row !important;
-}
-
-.calendar-quick-filters.fc .fc-button {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: auto !important;
-  min-width: unset !important;
-  white-space: nowrap !important;
-  margin: 0 !important;
-  float: none !important;
-  flex: 0 0 auto !important;
-}
-
 .calendar-range-context {
   font-weight: var(--summit-font-weight-semibold);
   color: var(--summit-color-bg-primary);

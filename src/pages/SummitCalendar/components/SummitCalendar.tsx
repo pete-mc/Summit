@@ -26,7 +26,6 @@ import { DropDownListComponent } from "@/components/SimpleDropdown";
 import { DialogComponent, DialogUtility } from "@/components/DialogComponent";
 
 const SUMMIT_CALENDAR_VIEW_STORAGE_KEY = "summit.calendar.currentView";
-type CalendarQuickFilter = "all" | "next7days" | "thisMonth";
 
 interface SummitCalendarProps {
   items: SummitCalendarItem[];
@@ -52,13 +51,10 @@ interface SummitCalendarState {
   editorValidationErrors: Record<string, string>;
   editorSoftConflictWarnings: string[];
   currentCalendarView: string;
-  calendarQuickFilter: CalendarQuickFilter;
   calendarRangeContextLabel: string;
 }
 
 export class SummitCalendarComponent extends React.Component<SummitCalendarProps, SummitCalendarState> {
-  private calendarRef = React.createRef<FullCalendar>();
-
   constructor(props: SummitCalendarProps) {
     super(props);
     this.state = {
@@ -80,7 +76,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       editorValidationErrors: {},
       editorSoftConflictWarnings: [],
       currentCalendarView: this.loadPersistedCalendarView(),
-      calendarQuickFilter: "all",
       calendarRangeContextLabel: "Current range: loading...",
     };
     this.handleInputChange = this.handleInputChange.bind(this);
@@ -111,28 +106,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     } catch {
       // Non-blocking persistence: ignore storage failures.
     }
-  };
-
-  setCalendarQuickFilter = (calendarQuickFilter: CalendarQuickFilter) => {
-    this.setState({ calendarQuickFilter }, () => {
-      const calendarApi = this.calendarRef.current?.getApi();
-      if (!calendarApi) {
-        return;
-      }
-
-      switch (calendarQuickFilter) {
-        case "next7days":
-          calendarApi.changeView("listWeek", moment().toDate());
-          break;
-        case "thisMonth":
-          calendarApi.changeView("listMonth", moment().startOf("month").toDate());
-          break;
-        case "all":
-        default:
-          calendarApi.changeView("listYear", moment().startOf("year").toDate());
-          break;
-      }
-    });
   };
 
   shouldIgnoreSchedulerShortcut = (event: React.KeyboardEvent<HTMLDivElement>): boolean => {
@@ -271,9 +244,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     const calendarRangeContextLabel = `Current range: ${moment(args.start).format("D MMM YYYY")} - ${moment(args.end).subtract(1, "day").format("D MMM YYYY")}`;
 
     this.persistCalendarView(args.view.type);
-    const preserveListFilter = this.state.currentCalendarView.startsWith("list") && args.view.type.startsWith("list");
-    const calendarQuickFilter = preserveListFilter ? this.state.calendarQuickFilter : "all";
-    this.setState({ currentWindow: { startDate, endDate }, currentCalendarView: args.view.type, calendarRangeContextLabel, calendarQuickFilter }, () => {
+    this.setState({ currentWindow: { startDate, endDate }, currentCalendarView: args.view.type, calendarRangeContextLabel }, () => {
       this.fetchData(startDate, endDate);
     });
   };
@@ -924,7 +895,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         item,
       },
     }));
-    const isListView = this.state.currentCalendarView.startsWith("list");
+
     const filteredItems = this.state.items;
     const events = allEvents;
 
@@ -936,51 +907,25 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           <span id="calendar-error-state" data-active={String(hasCalendarError)} />
         </div>
         <div className="calendar-ux-toolbar">
-          {isListView && (
-            <div className="calendar-quick-filters fc fc-button-group" data-calendar-quick-filters="enabled" role="group" aria-label="Quick calendar filters">
-              <button
-                type="button"
-                className={`fc-button fc-button-primary ${this.state.calendarQuickFilter === "all" ? "fc-button-active" : ""}`}
-                data-calendar-quick-filter="all"
-                aria-pressed={this.state.calendarQuickFilter === "all"}
-                onClick={() => this.setCalendarQuickFilter("all")}
-              >
-                All
-              </button>
-              <button
-                type="button"
-                className={`fc-button fc-button-primary ${this.state.calendarQuickFilter === "next7days" ? "fc-button-active" : ""}`}
-                data-calendar-quick-filter="next7days"
-                aria-pressed={this.state.calendarQuickFilter === "next7days"}
-                onClick={() => this.setCalendarQuickFilter("next7days")}
-              >
-                Week
-              </button>
-              <button
-                type="button"
-                className={`fc-button fc-button-primary ${this.state.calendarQuickFilter === "thisMonth" ? "fc-button-active" : ""}`}
-                data-calendar-quick-filter="thisMonth"
-                aria-pressed={this.state.calendarQuickFilter === "thisMonth"}
-                onClick={() => this.setCalendarQuickFilter("thisMonth")}
-              >
-                Month
-              </button>
-            </div>
-          )}
+
           <div className="calendar-range-context" data-calendar-range-context="visible">
             {this.state.calendarRangeContextLabel}
           </div>
           {this.renderCalendarLegend(filteredItems)}
         </div>
         <FullCalendar
-          ref={this.calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
           // Legacy contract marker: initialView="dayGridMonth"
           initialView={this.state.currentCalendarView}
+          buttonText={{
+            listYear: "Year",
+            listMonth: "Month",
+            listWeek: "Week",
+          }}
           headerToolbar={{
-            left: "prev,next today",
+            left: "prev,next today listYear,listWeek,listMonth",
             center: "title",
-            right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
+            right: "dayGridMonth,timeGridWeek,timeGridDay",
           }}
           events={events}
           selectable={true}
