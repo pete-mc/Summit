@@ -1,5 +1,6 @@
 import React, { FocusEvent } from "react";
 import FullCalendar from "@fullcalendar/react";
+import enAuLocale from "@fullcalendar/core/locales/en-au";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
@@ -1061,6 +1062,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           eventClick={this.handleEventClick}
           datesSet={this.handleDatesSet}
           eventDidMount={this.eventDidMount}
+          locale={enAuLocale}
           height={"auto"}
         />
         <DialogComponent
