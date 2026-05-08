@@ -99,10 +99,8 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       }
 
       const persistedView = window.localStorage.getItem(SUMMIT_CALENDAR_VIEW_STORAGE_KEY);
-      if (persistedView === "listWeek" || persistedView === "listMonth" || persistedView === "listYear") {
-        return "listRange";
-      }
-
+      // listRange is now only used for custom date ranges, not as a persisted view
+      if (persistedView === "listRange") return "listWeek";
       return persistedView || fallbackView;
     } catch {
       return fallbackView;
@@ -264,24 +262,18 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   };
 
   getAgendaRangePreset = (viewType: string, start: Date, endExclusive: Date): AgendaRangePreset => {
-    if (viewType !== "listRange") {
-      return "custom";
-    }
+    if (viewType === "listWeek") return "week";
+    if (viewType === "listMonth") return "month";
+    if (viewType === "listYear") return "year";
+    if (viewType !== "listRange") return "custom";
 
+    // listRange — detect by range length
     const startMoment = moment(start).startOf("day");
     const endMoment = moment(endExclusive).startOf("day");
 
-    if (startMoment.clone().add(7, "days").isSame(endMoment)) {
-      return "week";
-    }
-
-    if (startMoment.date() === 1 && startMoment.clone().add(1, "month").isSame(endMoment)) {
-      return "month";
-    }
-
-    if (startMoment.dayOfYear() === 1 && startMoment.clone().add(1, "year").isSame(endMoment)) {
-      return "year";
-    }
+    if (startMoment.clone().add(7, "days").isSame(endMoment)) return "week";
+    if (startMoment.date() === 1 && startMoment.clone().add(1, "month").isSame(endMoment)) return "month";
+    if (startMoment.dayOfYear() === 1 && startMoment.clone().add(1, "year").isSame(endMoment)) return "year";
 
     return "custom";
   };
@@ -292,28 +284,11 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       return;
     }
 
-    const anchor = this.state.agendaRangeStart ? moment(this.state.agendaRangeStart, "YYYY-MM-DD") : moment();
-    let start = anchor.clone().startOf("week");
-    let endExclusive = start.clone().add(7, "days");
-
-    if (preset === "month") {
-      start = anchor.clone().startOf("month");
-      endExclusive = start.clone().add(1, "month");
-    } else if (preset === "year") {
-      start = anchor.clone().startOf("year");
-      endExclusive = start.clone().add(1, "year");
-    }
-
-    this.setState(
-      {
-        agendaRangeStart: start.format("YYYY-MM-DD"),
-        agendaRangeEnd: endExclusive.clone().subtract(1, "day").format("YYYY-MM-DD"),
-        agendaRangePreset: preset,
-      },
-      () => {
-        calendarApi.changeView("listRange", { start: start.toDate(), end: endExclusive.toDate() });
-      },
-    );
+    // Use built-in list views so prev/next/today navigation works natively.
+    const viewName = preset === "week" ? "listWeek" : preset === "month" ? "listMonth" : "listYear";
+    this.setState({ agendaRangePreset: preset }, () => {
+      calendarApi.changeView(viewName);
+    });
   };
 
   handleListRangePickerChange = (dates: [Date | null, Date | null]) => {
@@ -1073,12 +1048,12 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             dayGridMonth: "Month",
             timeGridWeek: "Week",
             timeGridDay: "Day",
-            listRange: "List",
+            listWeek: "List",
           }}
           headerToolbar={{
             left: "prev,next today",
             center: "title",
-            right: "dayGridMonth,timeGridWeek,timeGridDay,listRange",
+            right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
           }}
           events={events}
           selectable={true}
