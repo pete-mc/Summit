@@ -268,7 +268,9 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     const calendarRangeContextLabel = `Current range: ${moment(args.start).format("D MMM YYYY")} - ${moment(args.end).subtract(1, "day").format("D MMM YYYY")}`;
 
     this.persistCalendarView(args.view.type);
-    this.setState({ currentWindow: { startDate, endDate }, currentCalendarView: args.view.type, calendarRangeContextLabel }, () => {
+    const preserveListFilter = this.state.currentCalendarView === "listWeek" && args.view.type === "listWeek";
+    const calendarQuickFilter = preserveListFilter ? this.state.calendarQuickFilter : "all";
+    this.setState({ currentWindow: { startDate, endDate }, currentCalendarView: args.view.type, calendarRangeContextLabel, calendarQuickFilter }, () => {
       this.fetchData(startDate, endDate);
     });
   };
@@ -938,13 +940,31 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         <div className="calendar-ux-toolbar">
           {this.state.currentCalendarView === "listWeek" && (
             <div className="calendar-quick-filters" data-calendar-quick-filters="enabled" role="group" aria-label="Quick calendar filters">
-              <button type="button" className="summit-button summit-button-secondary" data-calendar-quick-filter="all" onClick={() => this.setCalendarQuickFilter("all")}>
+              <button
+                type="button"
+                className={`summit-button ${this.state.calendarQuickFilter === "all" ? "summit-button-primary" : "summit-button-secondary"}`}
+                data-calendar-quick-filter="all"
+                aria-pressed={this.state.calendarQuickFilter === "all"}
+                onClick={() => this.setCalendarQuickFilter("all")}
+              >
                 All
               </button>
-              <button type="button" className="summit-button summit-button-secondary" data-calendar-quick-filter="next7days" onClick={() => this.setCalendarQuickFilter("next7days")}>
+              <button
+                type="button"
+                className={`summit-button ${this.state.calendarQuickFilter === "next7days" ? "summit-button-primary" : "summit-button-secondary"}`}
+                data-calendar-quick-filter="next7days"
+                aria-pressed={this.state.calendarQuickFilter === "next7days"}
+                onClick={() => this.setCalendarQuickFilter("next7days")}
+              >
                 Next 7 days
               </button>
-              <button type="button" className="summit-button summit-button-secondary" data-calendar-quick-filter="thisMonth" onClick={() => this.setCalendarQuickFilter("thisMonth")}>
+              <button
+                type="button"
+                className={`summit-button ${this.state.calendarQuickFilter === "thisMonth" ? "summit-button-primary" : "summit-button-secondary"}`}
+                data-calendar-quick-filter="thisMonth"
+                aria-pressed={this.state.calendarQuickFilter === "thisMonth"}
+                onClick={() => this.setCalendarQuickFilter("thisMonth")}
+              >
                 This month
               </button>
             </div>
