@@ -206,6 +206,14 @@
   gap: 8px;
 }
 
+.calendar-quick-filters.fc .fc-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  margin: 0;
+}
+
 .calendar-range-context {
   font-weight: var(--summit-font-weight-semibold);
   color: var(--summit-color-bg-primary);
