@@ -214,13 +214,13 @@
   color: var(--summit-color-text-primary);
 }
 
-.calendar-agenda-range-separator {
-  color: var(--summit-color-text-secondary);
-  font-size: var(--summit-font-size-sm);
-}
-
 .calendar-agenda-range-controls .summit-form-input {
   width: auto;
+}
+
+.calendar-agenda-range-controls .react-datepicker-wrapper,
+.calendar-agenda-range-controls .react-datepicker__input-container {
+  display: inline-flex;
 }
 
 .calendar-agenda-presets {

@@ -8,6 +8,8 @@ import { DateSelectArg, DatesSetArg, EventClickArg, EventMountArg } from "@fullc
 import SummitCalendarItem from "../models/SummitCalendarItems";
 import { createNewEvent, deleteEvent, fetchActivity, fetchMemberCalendars, fetchMemberEvents, fetchUnitMembers, updateEvent, updateMemberCalendars } from "@/services";
 import moment from "moment";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { TerrainEvent, TerrainUnitMember, TerrrainCalendarResult } from "@/types/terrainTypes";
 import {
   TerrainState,
@@ -314,30 +316,36 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     );
   };
 
-  handleAgendaRangeStartChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    this.setState({ agendaRangeStart: event.target.value, agendaRangePreset: "custom" });
-  };
+  handleListRangePickerChange = (dates: [Date | null, Date | null]) => {
+    const [startDate, endDate] = dates;
 
-  handleAgendaRangeEndChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    this.setState({ agendaRangeEnd: event.target.value, agendaRangePreset: "custom" });
-  };
+    if (!startDate) {
+      this.setState({ agendaRangeStart: "", agendaRangeEnd: "", agendaRangePreset: "custom" });
+      return;
+    }
 
-  applyCustomAgendaRange = () => {
+    if (!endDate) {
+      this.setState({ agendaRangeStart: moment(startDate).format("YYYY-MM-DD"), agendaRangeEnd: "", agendaRangePreset: "custom" });
+      return;
+    }
+
     const calendarApi = this.calendarRef.current?.getApi();
     if (!calendarApi) {
+      this.setState({ agendaRangeStart: moment(startDate).format("YYYY-MM-DD"), agendaRangeEnd: moment(endDate).format("YYYY-MM-DD"), agendaRangePreset: "custom" });
       return;
     }
 
-    const start = moment(this.state.agendaRangeStart, "YYYY-MM-DD", true);
-    const endInclusive = moment(this.state.agendaRangeEnd, "YYYY-MM-DD", true);
-    if (!start.isValid() || !endInclusive.isValid() || endInclusive.isBefore(start)) {
-      return;
-    }
-
-    const endExclusive = endInclusive.clone().add(1, "day");
-    this.setState({ agendaRangePreset: "custom" }, () => {
-      calendarApi.changeView("listRange", { start: start.toDate(), end: endExclusive.toDate() });
-    });
+    const endExclusive = moment(endDate).add(1, "day");
+    this.setState(
+      {
+        agendaRangeStart: moment(startDate).format("YYYY-MM-DD"),
+        agendaRangeEnd: moment(endDate).format("YYYY-MM-DD"),
+        agendaRangePreset: "custom",
+      },
+      () => {
+        calendarApi.changeView("listRange", { start: startDate, end: endExclusive.toDate() });
+      },
+    );
   };
 
   renderCalendarLegend = (items: SummitCalendarItem[]) => {
@@ -998,6 +1006,9 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       },
     }));
 
+    const listRangeStartDate = moment(this.state.agendaRangeStart, "YYYY-MM-DD", true);
+    const listRangeEndDate = moment(this.state.agendaRangeEnd, "YYYY-MM-DD", true);
+
     const filteredItems = this.state.items;
     const events = allEvents;
 
@@ -1011,13 +1022,18 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         <div className="calendar-ux-toolbar">
           {isListView && (
             <div className="calendar-agenda-range-controls" data-calendar-range-controls="visible">
-              <span className="calendar-agenda-range-label">List range:</span>
-              <input type="date" className="summit-form-input" value={this.state.agendaRangeStart} onChange={this.handleAgendaRangeStartChange} aria-label="List range start date" />
-              <span className="calendar-agenda-range-separator">to</span>
-              <input type="date" className="summit-form-input" value={this.state.agendaRangeEnd} onChange={this.handleAgendaRangeEndChange} aria-label="List range end date" />
-              <button type="button" className="summit-button summit-button-secondary" onClick={this.applyCustomAgendaRange}>
-                Apply
-              </button>
+              <span id="list-range-label" className="calendar-agenda-range-label">List range:</span>
+              <DatePicker
+                selected={listRangeStartDate.isValid() ? listRangeStartDate.toDate() : null}
+                onChange={(dates) => this.handleListRangePickerChange(dates as [Date | null, Date | null])}
+                startDate={listRangeStartDate.isValid() ? listRangeStartDate.toDate() : null}
+                endDate={listRangeEndDate.isValid() ? listRangeEndDate.toDate() : null}
+                selectsRange={true}
+                dateFormat="dd/MM/yyyy"
+                className="summit-form-input"
+                placeholderText="Select date range"
+                ariaLabelledBy="list-range-label"
+              />
               <div className="calendar-agenda-presets" role="group" aria-label="List quick select">
                 <button
                   type="button"
