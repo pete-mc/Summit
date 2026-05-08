@@ -942,7 +942,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             <div className="calendar-quick-filters" data-calendar-quick-filters="enabled" role="group" aria-label="Quick calendar filters">
               <button
                 type="button"
-                className={`summit-button ${this.state.calendarQuickFilter === "all" ? "summit-button-primary" : "summit-button-secondary"}`}
+                className={`fc-button fc-button-primary ${this.state.calendarQuickFilter === "all" ? "fc-button-active" : ""}`}
                 data-calendar-quick-filter="all"
                 aria-pressed={this.state.calendarQuickFilter === "all"}
                 onClick={() => this.setCalendarQuickFilter("all")}
@@ -951,7 +951,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
               </button>
               <button
                 type="button"
-                className={`summit-button ${this.state.calendarQuickFilter === "next7days" ? "summit-button-primary" : "summit-button-secondary"}`}
+                className={`fc-button fc-button-primary ${this.state.calendarQuickFilter === "next7days" ? "fc-button-active" : ""}`}
                 data-calendar-quick-filter="next7days"
                 aria-pressed={this.state.calendarQuickFilter === "next7days"}
                 onClick={() => this.setCalendarQuickFilter("next7days")}
@@ -960,7 +960,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
               </button>
               <button
                 type="button"
-                className={`summit-button ${this.state.calendarQuickFilter === "thisMonth" ? "summit-button-primary" : "summit-button-secondary"}`}
+                className={`fc-button fc-button-primary ${this.state.calendarQuickFilter === "thisMonth" ? "fc-button-active" : ""}`}
                 data-calendar-quick-filter="thisMonth"
                 aria-pressed={this.state.calendarQuickFilter === "thisMonth"}
                 onClick={() => this.setCalendarQuickFilter("thisMonth")}
