@@ -129,29 +129,10 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           break;
         case "all":
         default:
-          if (this.state.currentCalendarView.startsWith("list")) {
-            calendarApi.changeView("listWeek", moment().toDate());
-          }
+          calendarApi.changeView("listYear", moment().startOf("year").toDate());
           break;
       }
     });
-  };
-
-  applyCalendarQuickFilter = (item: SummitCalendarItem): boolean => {
-    const itemStart = moment(item.StartTime);
-
-    switch (this.state.calendarQuickFilter) {
-      case "next7days": {
-        const now = moment();
-        const horizon = moment().add(7, "days").endOf("day");
-        return itemStart.isBetween(now, horizon, undefined, "[]");
-      }
-      case "thisMonth":
-        return itemStart.isSame(moment(), "month");
-      case "all":
-      default:
-        return true;
-    }
   };
 
   shouldIgnoreSchedulerShortcut = (event: React.KeyboardEvent<HTMLDivElement>): boolean => {
@@ -943,14 +924,9 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         item,
       },
     }));
-    // Only apply quick filter when in list view
     const isListView = this.state.currentCalendarView.startsWith("list");
-    const filteredItems = isListView
-      ? this.state.items.filter((item) => this.applyCalendarQuickFilter(item))
-      : this.state.items;
-    const events = isListView
-      ? allEvents.filter((event) => this.applyCalendarQuickFilter(event.extendedProps.item))
-      : allEvents;
+    const filteredItems = this.state.items;
+    const events = allEvents;
 
     return (
       <div id="scheduler" style={{ width: "100%", height: "100%" }} onKeyDown={this.handleSchedulerKeyDown} tabIndex={0} data-calendar-shortcuts="new-event">
