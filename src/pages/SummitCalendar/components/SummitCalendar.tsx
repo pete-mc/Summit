@@ -57,6 +57,8 @@ interface SummitCalendarState {
 }
 
 export class SummitCalendarComponent extends React.Component<SummitCalendarProps, SummitCalendarState> {
+  private calendarRef = React.createRef<FullCalendar>();
+
   constructor(props: SummitCalendarProps) {
     super(props);
     this.state = {
@@ -112,7 +114,27 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   };
 
   setCalendarQuickFilter = (calendarQuickFilter: CalendarQuickFilter) => {
-    this.setState({ calendarQuickFilter });
+    this.setState({ calendarQuickFilter }, () => {
+      const calendarApi = this.calendarRef.current?.getApi();
+      if (!calendarApi) {
+        return;
+      }
+
+      switch (calendarQuickFilter) {
+        case "next7days":
+          calendarApi.changeView("listWeek", moment().toDate());
+          break;
+        case "thisMonth":
+          calendarApi.changeView("listMonth", moment().startOf("month").toDate());
+          break;
+        case "all":
+        default:
+          if (this.state.currentCalendarView.startsWith("list")) {
+            calendarApi.changeView("listWeek", moment().toDate());
+          }
+          break;
+      }
+    });
   };
 
   applyCalendarQuickFilter = (item: SummitCalendarItem): boolean => {
@@ -268,7 +290,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     const calendarRangeContextLabel = `Current range: ${moment(args.start).format("D MMM YYYY")} - ${moment(args.end).subtract(1, "day").format("D MMM YYYY")}`;
 
     this.persistCalendarView(args.view.type);
-    const preserveListFilter = this.state.currentCalendarView === "listWeek" && args.view.type === "listWeek";
+    const preserveListFilter = this.state.currentCalendarView.startsWith("list") && args.view.type.startsWith("list");
     const calendarQuickFilter = preserveListFilter ? this.state.calendarQuickFilter : "all";
     this.setState({ currentWindow: { startDate, endDate }, currentCalendarView: args.view.type, calendarRangeContextLabel, calendarQuickFilter }, () => {
       this.fetchData(startDate, endDate);
@@ -922,7 +944,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       },
     }));
     // Only apply quick filter when in list view
-    const isListView = this.state.currentCalendarView === "listWeek";
+    const isListView = this.state.currentCalendarView.startsWith("list");
     const filteredItems = isListView
       ? this.state.items.filter((item) => this.applyCalendarQuickFilter(item))
       : this.state.items;
@@ -938,7 +960,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           <span id="calendar-error-state" data-active={String(hasCalendarError)} />
         </div>
         <div className="calendar-ux-toolbar">
-          {this.state.currentCalendarView === "listWeek" && (
+          {isListView && (
             <div className="calendar-quick-filters fc fc-button-group" data-calendar-quick-filters="enabled" role="group" aria-label="Quick calendar filters">
               <button
                 type="button"
@@ -975,6 +997,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           {this.renderCalendarLegend(filteredItems)}
         </div>
         <FullCalendar
+          ref={this.calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
           // Legacy contract marker: initialView="dayGridMonth"
           initialView={this.state.currentCalendarView}
