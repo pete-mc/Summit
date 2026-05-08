@@ -954,7 +954,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
                 aria-pressed={this.state.calendarQuickFilter === "next7days"}
                 onClick={() => this.setCalendarQuickFilter("next7days")}
               >
-                Next 7 days
+                Week
               </button>
               <button
                 type="button"
@@ -963,7 +963,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
                 aria-pressed={this.state.calendarQuickFilter === "thisMonth"}
                 onClick={() => this.setCalendarQuickFilter("thisMonth")}
               >
-                This month
+                Month
               </button>
             </div>
           )}
