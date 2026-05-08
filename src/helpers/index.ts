@@ -5,5 +5,6 @@ import { processGuids, reconstructGuids, reconstructGuidsAndDates, processGuidsA
 export { processGuids, reconstructGuids, reconstructGuidsAndDates, processGuidsAndDates };
 export { default as HasPropAtPath } from "./HasPropAtPath";
 export { default as verticalText } from "./VerticleText";
+export { default as downloadBlob } from "./downloadBlob";
 export { applyGroupedMultiSelectChange, buildGroupedMemberOptions, detectSummitCalendarSoftConflicts, validateSummitCalendarActivity } from "./SummitCalendarValidation";
 export { clearSummitCalendarEditorDraft, loadSummitCalendarEditorDraft, saveSummitCalendarEditorDraft } from "./SummitCalendarDraftPersistence";

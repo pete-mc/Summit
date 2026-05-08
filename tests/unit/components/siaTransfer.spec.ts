@@ -1,6 +1,6 @@
 import { InitSiaTransfer } from "@/components/siaTransfer";
 import { createMemberAchievement } from "@/services";
-import { TerrainState } from "@/helpers";
+import { downloadBlob, TerrainState } from "@/helpers";
 
 jest.mock("@/services", () => ({
   createMemberAchievement: jest.fn(),
@@ -10,6 +10,7 @@ jest.mock("@/helpers", () => {
   const actual = jest.requireActual("@/helpers");
   return {
     ...actual,
+    downloadBlob: jest.fn(),
     TerrainState: {
       getToken: jest.fn().mockReturnValue("Bearer test-token"),
     },
@@ -19,6 +20,7 @@ jest.mock("@/helpers", () => {
 describe("InitSiaTransfer", () => {
   const mockedCreateMemberAchievement = createMemberAchievement as jest.MockedFunction<typeof createMemberAchievement>;
   const mockedGetToken = TerrainState.getToken as jest.MockedFunction<typeof TerrainState.getToken>;
+  const mockedDownloadBlob = downloadBlob as jest.MockedFunction<typeof downloadBlob>;
   const originalNuxt = window.$nuxt;
 
   afterEach(() => {
@@ -45,10 +47,11 @@ describe("InitSiaTransfer", () => {
     await Promise.resolve();
   }
 
-  it("injects one Summit Export button next to the Back button on /sia/requirements and mirrors Terrain classes/data-v attributes", () => {
+  it("injects one Summit Export button next to the last Back button on /sia/requirements and mirrors Terrain classes/data-v attributes", () => {
     document.body.innerHTML = `
       <section>
         <div class="Requirements__footer-actions">
+          <button data-cy="BACK" class="v-btn">Back</button>
           <button data-cy="BACK" data-v-abc123 class="v-btn theme--light action-one major">Back</button>
         </div>
       </section>
@@ -77,7 +80,8 @@ describe("InitSiaTransfer", () => {
     const exportButtons = document.querySelectorAll("button.summitSiaExportBtn");
     expect(exportButtons).toHaveLength(1);
 
-    const backButton = document.querySelector('button[data-cy="BACK"]') as HTMLButtonElement | null;
+    const backButtons = document.querySelectorAll('button[data-cy="BACK"]');
+    const backButton = backButtons[1] as HTMLButtonElement | null;
     const exportButton = document.querySelector("button.summitSiaExportBtn") as HTMLButtonElement | null;
 
     expect(exportButton).not.toBeNull();
@@ -86,7 +90,7 @@ describe("InitSiaTransfer", () => {
     expect(exportButton?.classList.contains("action-one")).toBe(true);
     expect(exportButton?.classList.contains("summit-menu-outline")).toBe(true);
     expect(exportButton?.hasAttribute("data-v-abc123")).toBe(true);
-    expect(backButton?.previousElementSibling).toBe(exportButton);
+    expect(backButton?.nextElementSibling).toBe(exportButton);
   });
 
   it("does not inject Summit Export on /sia list page", () => {
@@ -141,7 +145,7 @@ describe("InitSiaTransfer", () => {
     expect(document.querySelectorAll(".summitSiaExportBtn")).toHaveLength(1);
   });
 
-  it("downloads summit-sia-v1 JSON for the clicked card and excludes volatile/system fields/uploads", () => {
+  it("downloads summit-sia-v1 JSON for the clicked card and excludes volatile/system fields/uploads", async () => {
     document.body.innerHTML = `
       <section class="Requirements">
         <div class="Requirements__footer-actions">
@@ -231,24 +235,17 @@ describe("InitSiaTransfer", () => {
 
     InitSiaTransfer("/sia/requirements");
 
-    const appendSpy = jest.spyOn(document.body, "appendChild");
-    const clickSpy = jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
-
     const exportButton = document.querySelector(".summitSiaExportBtn") as HTMLButtonElement;
     exportButton.click();
 
-    expect(clickSpy).toHaveBeenCalledTimes(1);
-    expect(appendSpy).toHaveBeenCalledTimes(1);
+    expect(mockedDownloadBlob).toHaveBeenCalledTimes(1);
+    const [contentArg, fileNameArg, contentTypeArg] = mockedDownloadBlob.mock.calls[0];
 
-    const anchor = appendSpy.mock.calls[0][0] as HTMLAnchorElement;
-    expect(anchor.tagName).toBe("A");
-    expect(anchor.getAttribute("download")).toContain("my-first-project");
-    expect(anchor.getAttribute("download")).toContain(".json");
+    expect(fileNameArg).toContain("my-first-project");
+    expect(fileNameArg).toContain(".json");
+    expect(contentTypeArg).toBe("application/json;charset=utf-8");
 
-    const href = anchor.getAttribute("href") ?? "";
-    expect(href.startsWith("data:text/json;charset=utf-8,")).toBe(true);
-
-    const parsed = JSON.parse(decodeURIComponent(href.replace("data:text/json;charset=utf-8,", ""))) as {
+    const parsed = JSON.parse(contentArg) as {
       contract: string;
       project: Record<string, unknown>;
     };
@@ -278,7 +275,52 @@ describe("InitSiaTransfer", () => {
     expect(parsed.project.uploads).toBeUndefined();
   });
 
-  it("falls back to first siaList project when currentSia is unavailable", () => {
+  it("does not submit parent form when export is clicked on requirements route", () => {
+    document.body.innerHTML = `
+      <section class="Requirements">
+        <form id="sia-requirements-form">
+          <div class="Requirements__footer-actions">
+            <button data-cy="BACK" class="v-btn">Back</button>
+          </div>
+        </form>
+      </section>
+    `;
+
+    window.$nuxt = {
+      $store: {
+        state: {
+          sia: {
+            currentSia: {
+              section: "scout",
+              type: "special_interest_area",
+              answers: {
+                project_name: "Current SIA Project",
+                special_interest_area_selection: "sia_environment",
+              },
+            },
+            siaList: [],
+          },
+        },
+      },
+    } as typeof window.$nuxt;
+
+    const submitSpy = jest.fn((event: SubmitEvent) => {
+      event.preventDefault();
+    });
+    document.getElementById("sia-requirements-form")?.addEventListener("submit", submitSpy);
+
+    InitSiaTransfer("/sia/requirements");
+
+    const exportButton = document.querySelector(".summitSiaExportBtn") as HTMLButtonElement;
+    expect(exportButton.type).toBe("button");
+
+    exportButton.click();
+
+    expect(submitSpy).not.toHaveBeenCalled();
+    expect(mockedDownloadBlob).toHaveBeenCalledTimes(1);
+  });
+
+  it("falls back to first siaList project when currentSia is unavailable", async () => {
     document.body.innerHTML = `
       <section class="Requirements">
         <div class="Requirements__footer-actions">
@@ -315,15 +357,13 @@ describe("InitSiaTransfer", () => {
 
     InitSiaTransfer("/sia/requirements");
 
-    const appendSpy = jest.spyOn(document.body, "appendChild");
-    jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
-
     const exportButton = document.querySelector(".summitSiaExportBtn") as HTMLButtonElement;
     exportButton.click();
 
-    const anchor = appendSpy.mock.calls[0][0] as HTMLAnchorElement;
-    const href = anchor.getAttribute("href") ?? "";
-    const parsed = JSON.parse(decodeURIComponent(href.replace("data:text/json;charset=utf-8,", ""))) as {
+    expect(mockedDownloadBlob).toHaveBeenCalledTimes(1);
+
+    const [contentArg] = mockedDownloadBlob.mock.calls[0];
+    const parsed = JSON.parse(contentArg) as {
       project: {
         answers: {
           project_name: string;
@@ -353,7 +393,7 @@ describe("InitSiaTransfer", () => {
     expect(importButton?.textContent).toBe("Summit Import");
     expect(importButton?.classList.contains("v-btn")).toBe(true);
     expect(importButton?.classList.contains("create-project-btn")).toBe(true);
-    expect(importButton?.classList.contains("major")).toBe(true);
+    expect(importButton?.classList.contains("major")).toBe(false);
     expect(importButton?.classList.contains("summit-menu-outline")).toBe(true);
     expect(importButton?.hasAttribute("data-v-import123")).toBe(true);
     expect(createProjectButton?.previousElementSibling).toBe(importButton);

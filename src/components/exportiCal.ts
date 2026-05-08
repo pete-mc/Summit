@@ -1,8 +1,10 @@
 import { fetchActivity } from "@/services";
+import { downloadBlob } from "@/helpers";
 import $ from "jquery";
 import jquery from "jquery";
 
-export async function ExportiCal(): Promise<void> {
+export async function ExportiCal(event?: Event | JQuery.ClickEvent<HTMLElement>): Promise<void> {
+  const initiatingElement = (event?.currentTarget as HTMLElement | null | undefined) ?? null;
   const activityIdElement = $("p.ActivityPlan__activity-id");
   if (activityIdElement.length === 0) {
     console.error("Activity ID element not found.");
@@ -27,16 +29,7 @@ LOCATION:${eventData.location}
 END:VEVENT
 END:VCALENDAR`;
 
-  const element = $("<a>", {
-    href: "data:text/calendar;charset=utf8," + encodeURIComponent(icsMSG),
-    download: eventData.title + ".ics",
-    css: {
-      display: "none",
-    },
-  }).appendTo("body");
-
-  element[0].click();
-  element.remove();
+  downloadBlob(icsMSG, eventData.title + ".ics", "text/calendar;charset=utf-8", initiatingElement?.parentElement ?? undefined);
 }
 
 export function InitProgrammingExportBtn() {

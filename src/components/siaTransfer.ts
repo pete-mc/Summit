@@ -1,6 +1,6 @@
 import jquery from "jquery";
 import { createMemberAchievement } from "@/services";
-import { TerrainState } from "@/helpers";
+import { downloadBlob, TerrainState } from "@/helpers";
 
 const SIA_EXPORT_BUTTON_CLASS = "summitSiaExportBtn";
 const SIA_EXPORT_BUTTON_TEXT = "Summit Export";
@@ -8,7 +8,6 @@ const SIA_IMPORT_BUTTON_CLASS = "summitSiaImportBtn";
 const SIA_IMPORT_BUTTON_TEXT = "Summit Import";
 const SIA_IMPORT_INPUT_CLASS = "summitSiaImportInput";
 const SIA_EXPORT_CONTRACT = "summit-sia-v1";
-const SIA_EXPORT_DATA_PREFIX = "data:text/json;charset=utf-8,";
 
 type SiaProject = Record<string, unknown>;
 
@@ -103,7 +102,7 @@ function getRequirementsBackButton(): JQuery<HTMLElement> {
         const dataCy = (button.getAttribute("data-cy") ?? "").toLowerCase();
         return text === "back" || text.startsWith("back ") || dataCy.includes("back");
       })
-      .first();
+      .last();
 
     if (backButton.length > 0) {
       return backButton;
@@ -218,19 +217,13 @@ async function importSiaProject(file: File): Promise<void> {
   }
 }
 
-function downloadProject(project: SiaProject, projectIndex: number): void {
+function downloadProject(project: SiaProject, projectIndex: number, downloadContainer?: HTMLElement): void {
   const payload = {
     contract: SIA_EXPORT_CONTRACT,
     project: buildPortableProject(project),
   };
 
-  const data = SIA_EXPORT_DATA_PREFIX + encodeURIComponent(JSON.stringify(payload));
-  const downloadAnchorNode = document.createElement("a");
-  downloadAnchorNode.setAttribute("href", data);
-  downloadAnchorNode.setAttribute("download", getDownloadName(project, projectIndex));
-  document.body.appendChild(downloadAnchorNode);
-  downloadAnchorNode.click();
-  downloadAnchorNode.remove();
+  downloadBlob(JSON.stringify(payload), getDownloadName(project, projectIndex), "application/json;charset=utf-8", downloadContainer);
 }
 
 function exportSiaProject(projectIndex: number): void {
@@ -261,12 +254,16 @@ function createRequirementsExportButton(anchorButton: JQuery<HTMLElement>, proje
   if (jquery(`button.${SIA_EXPORT_BUTTON_CLASS}`).length > 0) return false;
 
   const button = jquery("<button>", {
+    type: "button",
     text: SIA_EXPORT_BUTTON_TEXT,
     class: SIA_EXPORT_BUTTON_CLASS,
     "data-cy": "SUMMIT_EXPORT_SIA",
     "data-summit-sia-project-index": "0",
-    click: () => {
-      downloadProject(project, 0);
+    click: (event: JQuery.ClickEvent<HTMLElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const initiatingElement = event.currentTarget as HTMLElement | null;
+      downloadProject(project, 0, initiatingElement?.parentElement ?? undefined);
     },
   });
 
@@ -280,10 +277,13 @@ function createImportButton(anchorButton: JQuery<HTMLElement>): boolean {
   if (jquery(`button.${SIA_IMPORT_BUTTON_CLASS}`).length > 0) return false;
 
   const button = jquery("<button>", {
+    type: "button",
     text: SIA_IMPORT_BUTTON_TEXT,
     class: SIA_IMPORT_BUTTON_CLASS,
     "data-cy": "SUMMIT_IMPORT_SIA",
-    click: () => {
+    click: (event: JQuery.ClickEvent<HTMLElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
       const input = getImportInput();
       input.value = "";
       input.click();
@@ -292,6 +292,7 @@ function createImportButton(anchorButton: JQuery<HTMLElement>): boolean {
 
   copyScopedAttributes(button, anchorButton);
   setClasses(button, anchorButton, SIA_IMPORT_BUTTON_CLASS);
+  button.removeClass("major");
   anchorButton.before(button);
   return true;
 }

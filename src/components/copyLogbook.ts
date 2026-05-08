@@ -1,4 +1,5 @@
 import { getLogbookData, saveLogbookData } from "@/services";
+import { downloadBlob } from "@/helpers";
 
 function setClasses(classid: string, classes: string) {
   const button = $("." + classid);
@@ -53,15 +54,16 @@ export function InitLogbookRead(): void {
   createLogbookReadButton(printBtn, "copyClipboardBtn", "Copy to Clipboard", () => {
     LoadLogbookData(false);
   });
-  createLogbookReadButton(printBtn, "copyExportBtn", "Export", () => {
-    LoadLogbookData(true);
+  createLogbookReadButton(printBtn, "copyExportBtn", "Export", (event: JQuery.ClickEvent<HTMLElement>) => {
+    const initiatingElement = event.currentTarget as HTMLElement | null;
+    LoadLogbookData(true, initiatingElement?.parentElement ?? undefined);
   });
 
   observe(btn, "copyClipboardBtn");
   observe(btn, "copyExportBtn");
 }
 
-function createLogbookReadButton(printBtn: JQuery<HTMLElement>, id: string, text: string, onClick: () => void): void {
+function createLogbookReadButton(printBtn: JQuery<HTMLElement>, id: string, text: string, onClick: (event: JQuery.ClickEvent<HTMLElement>) => void): void {
   printBtn.before(
     $("<button>", {
       click: onClick,
@@ -81,7 +83,7 @@ function createLogbookReadButton(printBtn: JQuery<HTMLElement>, id: string, text
 
   setClasses(id, printBtn.attr("class") ?? "");
 }
-export async function LoadLogbookData(download?: boolean): Promise<void> {
+export async function LoadLogbookData(download?: boolean, downloadContainer?: HTMLElement): Promise<void> {
   console.debug("Recieved loadLogbook message from Channel");
   const data = await getLogbookData(window.$nuxt.$store._vm["logbook/getRecordId"]);
   if (!data) {
@@ -90,13 +92,7 @@ export async function LoadLogbookData(download?: boolean): Promise<void> {
   }
   delete data.id;
   if (download) {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
-    const downloadAnchorNode = document.createElement("a");
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", data.title + "-logbook.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
+    downloadBlob(JSON.stringify(data), data.title + "-logbook.json", "application/json;charset=utf-8", downloadContainer);
   } else {
     navigator.clipboard.writeText(JSON.stringify(data));
     alert("Event copied");

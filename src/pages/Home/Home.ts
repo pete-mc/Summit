@@ -1,10 +1,13 @@
 import { TerrainRootState } from "@/types/terrainState";
 import { defineComponent } from "vue";
+import manifest from "../../../manifest.json";
+
 export default defineComponent({
   data() {
     return {
       // Local data property to store the message
       first_name: "there",
+      summit_version: manifest.version,
     };
   },
   computed: {
