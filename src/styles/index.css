@@ -230,9 +230,11 @@
 }
 
 .calendar-agenda-preset-active {
-  background: var(--summit-color-bg-primary);
+  background: transparent;
   border-color: var(--summit-color-bg-primary);
-  color: var(--summit-color-text-on-primary);
+  color: inherit;
+  outline: 2px solid var(--summit-color-bg-primary);
+  outline-offset: 1px;
 }
 
 .calendar-legend {
