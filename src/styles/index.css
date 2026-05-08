@@ -215,12 +215,13 @@
 }
 
 .calendar-agenda-range-controls .summit-form-input {
-  width: 180px;
+  width: 210px;
 }
 
 .calendar-agenda-range-controls .react-datepicker-wrapper,
 .calendar-agenda-range-controls .react-datepicker__input-container {
   display: inline-flex;
+  width: auto;
 }
 
 .calendar-agenda-presets {
