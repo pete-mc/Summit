@@ -919,8 +919,14 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         item,
       },
     }));
-    const filteredItems = this.state.items.filter((item) => this.applyCalendarQuickFilter(item));
-    const events = allEvents.filter((event) => this.applyCalendarQuickFilter(event.extendedProps.item));
+    // Only apply quick filter when in list view
+    const isListView = this.state.currentCalendarView === "listWeek";
+    const filteredItems = isListView
+      ? this.state.items.filter((item) => this.applyCalendarQuickFilter(item))
+      : this.state.items;
+    const events = isListView
+      ? allEvents.filter((event) => this.applyCalendarQuickFilter(event.extendedProps.item))
+      : allEvents;
 
     return (
       <div id="scheduler" style={{ width: "100%", height: "100%" }} onKeyDown={this.handleSchedulerKeyDown} tabIndex={0} data-calendar-shortcuts="new-event">
@@ -930,17 +936,19 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           <span id="calendar-error-state" data-active={String(hasCalendarError)} />
         </div>
         <div className="calendar-ux-toolbar">
-          <div className="calendar-quick-filters" data-calendar-quick-filters="enabled" role="group" aria-label="Quick calendar filters">
-            <button type="button" className="summit-button summit-button-secondary" data-calendar-quick-filter="all" onClick={() => this.setCalendarQuickFilter("all")}>
-              All
-            </button>
-            <button type="button" className="summit-button summit-button-secondary" data-calendar-quick-filter="next7days" onClick={() => this.setCalendarQuickFilter("next7days")}>
-              Next 7 days
-            </button>
-            <button type="button" className="summit-button summit-button-secondary" data-calendar-quick-filter="thisMonth" onClick={() => this.setCalendarQuickFilter("thisMonth")}>
-              This month
-            </button>
-          </div>
+          {this.state.currentCalendarView === "listWeek" && (
+            <div className="calendar-quick-filters" data-calendar-quick-filters="enabled" role="group" aria-label="Quick calendar filters">
+              <button type="button" className="summit-button summit-button-secondary" data-calendar-quick-filter="all" onClick={() => this.setCalendarQuickFilter("all")}>
+                All
+              </button>
+              <button type="button" className="summit-button summit-button-secondary" data-calendar-quick-filter="next7days" onClick={() => this.setCalendarQuickFilter("next7days")}>
+                Next 7 days
+              </button>
+              <button type="button" className="summit-button summit-button-secondary" data-calendar-quick-filter="thisMonth" onClick={() => this.setCalendarQuickFilter("thisMonth")}>
+                This month
+              </button>
+            </div>
+          )}
           <div className="calendar-range-context" data-calendar-range-context="visible">
             {this.state.calendarRangeContextLabel}
           </div>
