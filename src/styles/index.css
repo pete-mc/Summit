@@ -207,18 +207,22 @@
 }
 
 .calendar-quick-filters.fc {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: nowrap;
+  display: inline-flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  flex-direction: row !important;
 }
 
 .calendar-quick-filters.fc .fc-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: auto;
-  white-space: nowrap;
-  margin: 0;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: auto !important;
+  min-width: unset !important;
+  white-space: nowrap !important;
+  margin: 0 !important;
+  float: none !important;
+  flex: 0 0 auto !important;
 }
 
 .calendar-range-context {
