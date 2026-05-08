@@ -221,7 +221,7 @@
 .calendar-agenda-range-controls .react-datepicker-wrapper,
 .calendar-agenda-range-controls .react-datepicker__input-container {
   display: inline-flex;
-  width: auto;
+  width: 210px;
 }
 
 .calendar-agenda-presets {
