@@ -201,6 +201,40 @@
   margin: var(--summit-space-md) 0;
 }
 
+.calendar-agenda-range-controls {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--summit-space-sm);
+  align-items: center;
+}
+
+.calendar-agenda-range-label {
+  font-size: var(--summit-font-size-sm);
+  font-weight: var(--summit-font-weight-semibold);
+  color: var(--summit-color-text-primary);
+}
+
+.calendar-agenda-range-separator {
+  color: var(--summit-color-text-secondary);
+  font-size: var(--summit-font-size-sm);
+}
+
+.calendar-agenda-range-controls .summit-form-input {
+  width: auto;
+}
+
+.calendar-agenda-presets {
+  display: inline-flex;
+  gap: var(--summit-space-xs);
+  align-items: center;
+}
+
+.calendar-agenda-preset-active {
+  background: var(--summit-color-bg-primary);
+  border-color: var(--summit-color-bg-primary);
+  color: var(--summit-color-text-on-primary);
+}
+
 .calendar-legend {
   display: inline-flex;
   gap: 10px;

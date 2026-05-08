@@ -26,6 +26,7 @@ import { DropDownListComponent } from "@/components/SimpleDropdown";
 import { DialogComponent, DialogUtility } from "@/components/DialogComponent";
 
 const SUMMIT_CALENDAR_VIEW_STORAGE_KEY = "summit.calendar.currentView";
+type AgendaRangePreset = "week" | "month" | "year" | "custom";
 
 interface SummitCalendarProps {
   items: SummitCalendarItem[];
@@ -51,9 +52,14 @@ interface SummitCalendarState {
   editorValidationErrors: Record<string, string>;
   editorSoftConflictWarnings: string[];
   currentCalendarView: string;
+  agendaRangeStart: string;
+  agendaRangeEnd: string;
+  agendaRangePreset: AgendaRangePreset;
 }
 
 export class SummitCalendarComponent extends React.Component<SummitCalendarProps, SummitCalendarState> {
+  private calendarRef = React.createRef<FullCalendar>();
+
   constructor(props: SummitCalendarProps) {
     super(props);
     this.state = {
@@ -75,6 +81,9 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       editorValidationErrors: {},
       editorSoftConflictWarnings: [],
       currentCalendarView: this.loadPersistedCalendarView(),
+      agendaRangeStart: moment().startOf("week").format("YYYY-MM-DD"),
+      agendaRangeEnd: moment().startOf("week").add(6, "days").format("YYYY-MM-DD"),
+      agendaRangePreset: "week",
     };
     this.handleInputChange = this.handleInputChange.bind(this);
   }
@@ -88,6 +97,10 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       }
 
       const persistedView = window.localStorage.getItem(SUMMIT_CALENDAR_VIEW_STORAGE_KEY);
+      if (persistedView === "listWeek" || persistedView === "listMonth" || persistedView === "listYear") {
+        return "listRange";
+      }
+
       return persistedView || fallbackView;
     } catch {
       return fallbackView;
@@ -239,22 +252,114 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   handleDatesSet = (args: DatesSetArg) => {
     const startDate = moment(args.start).format("YYYY-MM-DDTHH:mm:ss");
     const endDate = moment(args.end).format("YYYY-MM-DDTHH:mm:ss");
+    const agendaRangeStart = moment(args.start).format("YYYY-MM-DD");
+    const agendaRangeEnd = moment(args.end).subtract(1, "day").format("YYYY-MM-DD");
+    const agendaRangePreset = this.getAgendaRangePreset(args.view.type, args.start, args.end);
     this.persistCalendarView(args.view.type);
-    this.setState({ currentWindow: { startDate, endDate }, currentCalendarView: args.view.type }, () => {
+    this.setState({ currentWindow: { startDate, endDate }, currentCalendarView: args.view.type, agendaRangeStart, agendaRangeEnd, agendaRangePreset }, () => {
       this.fetchData(startDate, endDate);
     });
   };
 
+  getAgendaRangePreset = (viewType: string, start: Date, endExclusive: Date): AgendaRangePreset => {
+    if (viewType !== "listRange") {
+      return "custom";
+    }
+
+    const startMoment = moment(start).startOf("day");
+    const endMoment = moment(endExclusive).startOf("day");
+
+    if (startMoment.clone().add(7, "days").isSame(endMoment)) {
+      return "week";
+    }
+
+    if (startMoment.date() === 1 && startMoment.clone().add(1, "month").isSame(endMoment)) {
+      return "month";
+    }
+
+    if (startMoment.dayOfYear() === 1 && startMoment.clone().add(1, "year").isSame(endMoment)) {
+      return "year";
+    }
+
+    return "custom";
+  };
+
+  handleAgendaPresetSelect = (preset: Exclude<AgendaRangePreset, "custom">) => {
+    const calendarApi = this.calendarRef.current?.getApi();
+    if (!calendarApi) {
+      return;
+    }
+
+    const anchor = this.state.agendaRangeStart ? moment(this.state.agendaRangeStart, "YYYY-MM-DD") : moment();
+    let start = anchor.clone().startOf("week");
+    let endExclusive = start.clone().add(7, "days");
+
+    if (preset === "month") {
+      start = anchor.clone().startOf("month");
+      endExclusive = start.clone().add(1, "month");
+    } else if (preset === "year") {
+      start = anchor.clone().startOf("year");
+      endExclusive = start.clone().add(1, "year");
+    }
+
+    this.setState(
+      {
+        agendaRangeStart: start.format("YYYY-MM-DD"),
+        agendaRangeEnd: endExclusive.clone().subtract(1, "day").format("YYYY-MM-DD"),
+        agendaRangePreset: preset,
+      },
+      () => {
+        calendarApi.changeView("listRange", { start: start.toDate(), end: endExclusive.toDate() });
+      },
+    );
+  };
+
+  handleAgendaRangeStartChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({ agendaRangeStart: event.target.value, agendaRangePreset: "custom" });
+  };
+
+  handleAgendaRangeEndChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({ agendaRangeEnd: event.target.value, agendaRangePreset: "custom" });
+  };
+
+  applyCustomAgendaRange = () => {
+    const calendarApi = this.calendarRef.current?.getApi();
+    if (!calendarApi) {
+      return;
+    }
+
+    const start = moment(this.state.agendaRangeStart, "YYYY-MM-DD", true);
+    const endInclusive = moment(this.state.agendaRangeEnd, "YYYY-MM-DD", true);
+    if (!start.isValid() || !endInclusive.isValid() || endInclusive.isBefore(start)) {
+      return;
+    }
+
+    const endExclusive = endInclusive.clone().add(1, "day");
+    this.setState({ agendaRangePreset: "custom" }, () => {
+      calendarApi.changeView("listRange", { start: start.toDate(), end: endExclusive.toDate() });
+    });
+  };
+
   renderCalendarLegend = (items: SummitCalendarItem[]) => {
-    const uniqueColours = Array.from(new Set(items.map((item) => item.color).filter(Boolean)));
+    const seen = new Set<string>();
+    const entries: { color: string; label: string }[] = [];
+    for (const item of items) {
+      if (!item.color) continue;
+      const label = item.event.invitee_name || item.event.section;
+      const key = `${item.color}|${label}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        entries.push({ color: item.color, label });
+      }
+    }
 
     return (
       <div className="calendar-legend" data-calendar-legend="visible" aria-label="Calendar legend">
         <span>Legend:</span>
-        {uniqueColours.map((color, index) => (
-          <span key={`legend-${color}-${index}`} className="calendar-legend-item">
+        {entries.map(({ color, label }) => (
+          <span key={`legend-${color}-${label}`} className="calendar-legend-item">
             <span className="calendar-legend-swatch" style={{ backgroundColor: color }} />
-            <span>Event colour {index + 1}</span>
+            <span>{label}</span>
           </span>
         ))}
       </div>
@@ -903,21 +1008,58 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           <span id="calendar-error-state" data-active={String(hasCalendarError)} />
         </div>
         <div className="calendar-ux-toolbar">
+          <div className="calendar-agenda-range-controls" data-calendar-range-controls="visible">
+            <span className="calendar-agenda-range-label">Agenda range:</span>
+            <input type="date" className="summit-form-input" value={this.state.agendaRangeStart} onChange={this.handleAgendaRangeStartChange} aria-label="Agenda range start date" />
+            <span className="calendar-agenda-range-separator">to</span>
+            <input type="date" className="summit-form-input" value={this.state.agendaRangeEnd} onChange={this.handleAgendaRangeEndChange} aria-label="Agenda range end date" />
+            <button type="button" className="summit-button summit-button-secondary" onClick={this.applyCustomAgendaRange}>
+              Apply
+            </button>
+            <div className="calendar-agenda-presets" role="group" aria-label="Agenda quick select">
+              <button
+                type="button"
+                className={`summit-button summit-button-secondary ${this.state.agendaRangePreset === "week" ? "calendar-agenda-preset-active" : ""}`}
+                onClick={() => this.handleAgendaPresetSelect("week")}
+              >
+                Week
+              </button>
+              <button
+                type="button"
+                className={`summit-button summit-button-secondary ${this.state.agendaRangePreset === "month" ? "calendar-agenda-preset-active" : ""}`}
+                onClick={() => this.handleAgendaPresetSelect("month")}
+              >
+                Month
+              </button>
+              <button
+                type="button"
+                className={`summit-button summit-button-secondary ${this.state.agendaRangePreset === "year" ? "calendar-agenda-preset-active" : ""}`}
+                onClick={() => this.handleAgendaPresetSelect("year")}
+              >
+                Year
+              </button>
+            </div>
+          </div>
           {this.renderCalendarLegend(filteredItems)}
         </div>
         <FullCalendar
+          ref={this.calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
           // Legacy contract marker: initialView="dayGridMonth"
           initialView={this.state.currentCalendarView}
+          views={{
+            listRange: { type: "list", buttonText: "Agenda" },
+          }}
           buttonText={{
-            listYear: "Year",
-            listMonth: "Month",
-            listWeek: "Week",
+            dayGridMonth: "Month",
+            timeGridWeek: "Week",
+            timeGridDay: "Day",
+            listRange: "Agenda",
           }}
           headerToolbar={{
-            left: "prev,next today listYear,listWeek,listMonth",
+            left: "prev,next today",
             center: "title",
-            right: "dayGridMonth,timeGridWeek,timeGridDay",
+            right: "dayGridMonth,timeGridWeek,timeGridDay,listRange",
           }}
           events={events}
           selectable={true}
