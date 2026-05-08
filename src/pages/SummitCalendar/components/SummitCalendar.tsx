@@ -51,7 +51,6 @@ interface SummitCalendarState {
   editorValidationErrors: Record<string, string>;
   editorSoftConflictWarnings: string[];
   currentCalendarView: string;
-  calendarRangeContextLabel: string;
 }
 
 export class SummitCalendarComponent extends React.Component<SummitCalendarProps, SummitCalendarState> {
@@ -76,7 +75,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       editorValidationErrors: {},
       editorSoftConflictWarnings: [],
       currentCalendarView: this.loadPersistedCalendarView(),
-      calendarRangeContextLabel: "Current range: loading...",
     };
     this.handleInputChange = this.handleInputChange.bind(this);
   }
@@ -241,10 +239,8 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   handleDatesSet = (args: DatesSetArg) => {
     const startDate = moment(args.start).format("YYYY-MM-DDTHH:mm:ss");
     const endDate = moment(args.end).format("YYYY-MM-DDTHH:mm:ss");
-    const calendarRangeContextLabel = `Current range: ${moment(args.start).format("D MMM YYYY")} - ${moment(args.end).subtract(1, "day").format("D MMM YYYY")}`;
-
     this.persistCalendarView(args.view.type);
-    this.setState({ currentWindow: { startDate, endDate }, currentCalendarView: args.view.type, calendarRangeContextLabel }, () => {
+    this.setState({ currentWindow: { startDate, endDate }, currentCalendarView: args.view.type }, () => {
       this.fetchData(startDate, endDate);
     });
   };
@@ -907,10 +903,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           <span id="calendar-error-state" data-active={String(hasCalendarError)} />
         </div>
         <div className="calendar-ux-toolbar">
-
-          <div className="calendar-range-context" data-calendar-range-context="visible">
-            {this.state.calendarRangeContextLabel}
-          </div>
           {this.renderCalendarLegend(filteredItems)}
         </div>
         <FullCalendar

@@ -201,11 +201,6 @@
   margin: var(--summit-space-md) 0;
 }
 
-.calendar-range-context {
-  font-weight: var(--summit-font-weight-semibold);
-  color: var(--summit-color-bg-primary);
-}
-
 .calendar-legend {
   display: inline-flex;
   gap: 10px;
