@@ -100,8 +100,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       }
 
       const persistedView = window.localStorage.getItem(SUMMIT_CALENDAR_VIEW_STORAGE_KEY);
-      // listRange is now only used for custom date ranges, not as a persisted view
-      if (persistedView === "listRange") return "listWeek";
       return persistedView || fallbackView;
     } catch {
       return fallbackView;
@@ -112,6 +110,10 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     try {
       if (typeof window === "undefined" || !window.localStorage) {
         return;
+      }
+
+      if (viewType === "listRange") {
+        viewType = "listWeek";
       }
 
       localStorage.setItem(SUMMIT_CALENDAR_VIEW_STORAGE_KEY, viewType);

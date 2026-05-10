@@ -13,9 +13,13 @@ describe("Phase 5 calendar view switching contract", () => {
     expect(source).toContain("@fullcalendar/timegrid");
     expect(source).toContain("@fullcalendar/list");
     expect(source).toContain("@fullcalendar/interaction");
+    expect(source).toContain("@fullcalendar/core/locales/en-au");
 
     expect(source).toContain("headerToolbar");
     expect(source).toContain('initialView="dayGridMonth"');
+    expect(source).toContain("locale={enAuLocale}");
+    expect(source).toContain('listRange: { type: "list", buttonText: "Agenda" }');
+    expect(source).toContain("buttonText={");
     expect(source).toContain("dayGridMonth");
     expect(source).toContain("timeGridWeek");
     expect(source).toContain("timeGridDay");
