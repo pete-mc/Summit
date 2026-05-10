@@ -447,69 +447,70 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
 
   handleDateTimeChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
-    //if name ends with time change name to be datetime and set previous values time but not date if it ends with date change name to be datetime and update the date but not the time of the previous value
-    switch (name) {
-      case "start_date":
-        this.setState(
-          (prevState) => ({
-            activity: {
-              ...prevState.activity,
-              start_datetime: moment(value).utc().format("YYYY-MM-DD") + "T" + moment(prevState.activity.start_datetime).utc().format("HH:mm:ss"),
-            },
-          }),
-          () => {
-            this.clearValidationErrorsFor(["date_range"]);
-            this.persistEditorDraft(this.state.activity);
-            this.setSoftConflictWarnings(this.state.activity);
-          },
-        );
-        break;
-      case "start_time":
-        this.setState(
-          (prevState) => ({
-            activity: {
-              ...prevState.activity,
-              start_datetime: moment(prevState.activity.start_datetime).utc().format("YYYY-MM-DD") + "T" + moment(value).utc().format("HH:mm:ss"),
-            },
-          }),
-          () => {
-            this.clearValidationErrorsFor(["date_range"]);
-            this.persistEditorDraft(this.state.activity);
-            this.setSoftConflictWarnings(this.state.activity);
-          },
-        );
-        break;
-      case "end_date":
-        this.setState(
-          (prevState) => ({
-            activity: {
-              ...prevState.activity,
-              end_datetime: moment(value).utc().format("YYYY-MM-DD") + "T" + moment(prevState.activity.end_datetime).utc().format("HH:mm:ss"),
-            },
-          }),
-          () => {
-            this.clearValidationErrorsFor(["date_range"]);
-            this.persistEditorDraft(this.state.activity);
-            this.setSoftConflictWarnings(this.state.activity);
-          },
-        );
-        break;
-      case "end_time":
-        this.setState(
-          (prevState) => ({
-            activity: {
-              ...prevState.activity,
-              end_datetime: moment(prevState.activity.end_datetime).utc().format("YYYY-MM-DD") + "T" + moment(value).utc().format("HH:mm:ss"),
-            },
-          }),
-          () => {
-            this.clearValidationErrorsFor(["date_range"]);
-            this.persistEditorDraft(this.state.activity);
-            this.setSoftConflictWarnings(this.state.activity);
-          },
-        );
-        break;
+    const isDateField = name.endsWith("_date");
+    const isTimeField = name.endsWith("_time");
+    const targetField: "start_datetime" | "end_datetime" | null = name.startsWith("start_") ? "start_datetime" : name.startsWith("end_") ? "end_datetime" : null;
+
+    if (!targetField || (!isDateField && !isTimeField)) {
+      return;
     }
+
+    this.setState(
+      (prevState) => {
+        const previousDateTime = prevState.activity[targetField];
+        const previousMoment = moment.parseZone(previousDateTime, moment.ISO_8601, true);
+
+        if (!previousMoment.isValid()) {
+          return {
+            activity: {
+              ...prevState.activity,
+              [targetField]: previousDateTime,
+            },
+          };
+        }
+
+        let nextDate = previousMoment.format("YYYY-MM-DD");
+        let nextTime = previousMoment.format("HH:mm");
+
+        if (isDateField) {
+          const parsedDate = moment(value, "YYYY-MM-DD", true);
+          if (!parsedDate.isValid()) {
+            return {
+              activity: {
+                ...prevState.activity,
+                [targetField]: previousDateTime,
+              },
+            };
+          }
+          nextDate = parsedDate.format("YYYY-MM-DD");
+        }
+
+        if (isTimeField) {
+          const parsedTime = moment(value, "HH:mm", true);
+          if (!parsedTime.isValid()) {
+            return {
+              activity: {
+                ...prevState.activity,
+                [targetField]: previousDateTime,
+              },
+            };
+          }
+          nextTime = parsedTime.format("HH:mm");
+        }
+
+        return {
+          activity: {
+            ...prevState.activity,
+            [targetField]: `${nextDate}T${nextTime}:00${previousMoment.format("Z")}`,
+          },
+        };
+      },
+      () => {
+        this.clearValidationErrorsFor(["date_range"]);
+        this.persistEditorDraft(this.state.activity);
+        this.setSoftConflictWarnings(this.state.activity);
+      },
+    );
   };
 
   handleSelectChange = (event: { element: { id: string }; value: string | string[] }) => {
