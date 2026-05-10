@@ -1,0 +1,27 @@
+### Member calendars read (maps to GET /members/{memberId}/calendars)
+GET https://events.terrain.scouts.com.au/members/53ed4450-3a80-46a2-95e5-fa20949cb475/calendars HTTP/1.1
+authority: events.terrain.scouts.com.au
+accept: */*
+Authorization: Bearer {{token}}
+content-type: application/json
+origin: https://terrain.scouts.com.au
+referer: https://terrain.scouts.com.au/
+
+### Member calendars update (maps to PUT /members/{memberId}/calendars)
+PUT https://events.terrain.scouts.com.au/members/53ed4450-3a80-46a2-95e5-fa20949cb475/calendars HTTP/1.1
+authority: events.terrain.scouts.com.au
+accept: */*
+Authorization: Bearer {{token}}
+content-type: application/json
+origin: https://terrain.scouts.com.au
+referer: https://terrain.scouts.com.au/
+
+{
+  "own_calendars": [
+    { "id": "calendar-1", "selected": true },
+    { "id": "calendar-2", "selected": false }
+  ],
+  "other_calendars": [
+    { "id": "group-calendar-1", "selected": true }
+  ]
+}
