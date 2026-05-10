@@ -454,7 +454,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           (prevState) => ({
             activity: {
               ...prevState.activity,
-              start_datetime: moment(value).utc().format("YYYY-MM-DD") + "T" + moment(prevState.activity.start_datetime).utc().format("HH:mm:ss"),
+              start_datetime: moment(value, moment.HTML5_FMT.DATE, true).format("YYYY-MM-DD") + "T" + moment(prevState.activity.start_datetime).format("HH:mm:ss"),
             },
           }),
           () => {
@@ -469,7 +469,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           (prevState) => ({
             activity: {
               ...prevState.activity,
-              start_datetime: moment(prevState.activity.start_datetime).utc().format("YYYY-MM-DD") + "T" + moment(value).utc().format("HH:mm:ss"),
+              start_datetime: moment(prevState.activity.start_datetime).format("YYYY-MM-DD") + "T" + moment(value, moment.HTML5_FMT.TIME, true).format("HH:mm:ss"),
             },
           }),
           () => {
@@ -484,7 +484,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           (prevState) => ({
             activity: {
               ...prevState.activity,
-              end_datetime: moment(value).utc().format("YYYY-MM-DD") + "T" + moment(prevState.activity.end_datetime).utc().format("HH:mm:ss"),
+              end_datetime: moment(value, moment.HTML5_FMT.DATE, true).format("YYYY-MM-DD") + "T" + moment(prevState.activity.end_datetime).format("HH:mm:ss"),
             },
           }),
           () => {
@@ -499,7 +499,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           (prevState) => ({
             activity: {
               ...prevState.activity,
-              end_datetime: moment(prevState.activity.end_datetime).utc().format("YYYY-MM-DD") + "T" + moment(value).utc().format("HH:mm:ss"),
+              end_datetime: moment(prevState.activity.end_datetime).format("YYYY-MM-DD") + "T" + moment(value, moment.HTML5_FMT.TIME, true).format("HH:mm:ss"),
             },
           }),
           () => {
