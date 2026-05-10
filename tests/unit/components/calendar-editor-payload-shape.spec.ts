@@ -13,32 +13,59 @@ jest.mock("@fullcalendar/interaction", () => ({}));
 jest.mock("react-datepicker", () => () => null);
 jest.mock("react-datepicker/dist/react-datepicker.css", () => ({}), { virtual: true });
 
-const initialiseNuxtState = () => {
+type NuxtProfile = {
+  unit: {
+    id: string;
+    section: string;
+  };
+  member: {
+    id: string;
+  };
+};
+
+const initialiseNuxtState = ({
+  profiles = [
+    {
+      unit: {
+        id: "u1",
+        section: "scout",
+      },
+      member: {
+        id: "m0",
+      },
+    },
+  ],
+  profileIndex = 0,
+  memberDetails,
+}: {
+  profiles?: NuxtProfile[];
+  profileIndex?: number;
+  memberDetails?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+  };
+} = {}) => {
+  const activeProfile = profiles[profileIndex] ?? profiles[profiles.length - 1];
+  const resolvedMemberDetails =
+    memberDetails ??
+    ({
+      id: activeProfile.member.id,
+      first_name: "Test",
+      last_name: "Member",
+    } as const);
+
   (window as any).$nuxt = {
     $store: {
       state: {
         user: {
-          profiles: [
-            {
-              unit: {
-                id: "u1",
-                section: "scout",
-              },
-              member: {
-                id: "m0",
-              },
-            },
-          ],
-          profileIndex: 0,
-          memberDetails: {
-            id: "m0",
-            first_name: "Test",
-            last_name: "Member",
-          },
+          profiles,
+          profileIndex,
+          memberDetails: resolvedMemberDetails,
         },
         profile: {
           unit: {
-            id: "u1",
+            id: activeProfile.unit.id,
           },
         },
         auth: {
@@ -55,9 +82,7 @@ const initialiseNuxtState = () => {
   };
 };
 
-const mountHarness = (activity: TerrainEvent) => {
-  initialiseNuxtState();
-
+const mountComponentHarness = () => {
   const component = new SummitCalendarComponent({ items: [], onUpdate: jest.fn() });
 
   (component as any).setState = (updater: any, callback?: () => void) => {
@@ -73,6 +98,14 @@ const mountHarness = (activity: TerrainEvent) => {
   (component as any).clearValidationErrorsFor = jest.fn();
   (component as any).persistEditorDraft = jest.fn();
   (component as any).setSoftConflictWarnings = jest.fn();
+
+  return component;
+};
+
+const mountHarness = (activity: TerrainEvent) => {
+  initialiseNuxtState();
+
+  const component = mountComponentHarness();
 
   (component as any).state = {
     ...component.state,
@@ -95,6 +128,10 @@ const fireDateTimeChange = (component: SummitCalendarComponent, name: string, va
 describe("Phase 4 calendar editor payload shape", () => {
   beforeAll(() => {
     initialiseNuxtState();
+  });
+
+  beforeEach(() => {
+    window.localStorage.removeItem("summit.calendar.editor.draft");
   });
 
   const members = [
@@ -169,5 +206,94 @@ describe("Phase 4 calendar editor payload shape", () => {
     expect(payload.end_datetime).toMatch(/^2026-04-01T00:45:00\.000\+00:00$/);
     expect(payload.start_datetime).not.toContain("Invalid date");
     expect(payload.end_datetime).not.toContain("Invalid date");
+  });
+
+  it("enforces unit owner and current-member organiser defaults for new activity using latest active profile", async () => {
+    const profiles: NuxtProfile[] = [
+      {
+        unit: { id: "unit-old", section: "scout" },
+        member: { id: "member-old" },
+      },
+      {
+        unit: { id: "unit-latest", section: "scout" },
+        member: { id: "member-latest" },
+      },
+    ];
+
+    initialiseNuxtState({
+      profiles,
+      profileIndex: 0,
+      memberDetails: {
+        id: "member-old",
+        first_name: "Old",
+        last_name: "Member",
+      },
+    });
+
+    const component = mountComponentHarness();
+
+    (window as any).$nuxt.$store.state.user.profileIndex = 1;
+    (window as any).$nuxt.$store.state.user.memberDetails = {
+      id: "member-latest",
+      first_name: "Latest",
+      last_name: "Member",
+    };
+
+    await component.newActivity("2026-05-01T08:00:00.000Z", "2026-05-01T09:00:00.000Z");
+
+    const payload = new TerrainEventItem(component.state.activity);
+
+    expect(component.state.activity.owner_type).toBe("unit");
+    expect(component.state.activity.owner_id).toBe("unit-latest");
+    expect(component.state.activity.organisers).toHaveLength(1);
+    const [firstOrganiser] = component.state.activity.organisers as unknown as Array<{ id?: string } | string>;
+    expect(typeof firstOrganiser === "string" ? firstOrganiser : firstOrganiser?.id).toBe("member-latest");
+
+    expect(payload.event_type.type).toBe("unit");
+    expect(payload.event_type.id).toBe("unit-latest");
+    expect(payload.organisers).toEqual(["member-latest"]);
+  });
+
+  it("does not allow saved draft owner or organiser fields to override create defaults", async () => {
+    const profiles: NuxtProfile[] = [
+      {
+        unit: { id: "unit-active", section: "scout" },
+        member: { id: "member-active" },
+      },
+    ];
+
+    initialiseNuxtState({
+      profiles,
+      profileIndex: 0,
+      memberDetails: {
+        id: "member-active",
+        first_name: "Active",
+        last_name: "Member",
+      },
+    });
+
+    window.localStorage.setItem(
+      "summit.calendar.editor.draft",
+      JSON.stringify({
+        owner_type: "patrol",
+        owner_id: "unit-from-draft",
+        organisers: [{ id: "member-from-draft", first_name: "Draft", last_name: "Only" }],
+      }),
+    );
+
+    const component = mountComponentHarness();
+    await component.newActivity("2026-05-03T08:00:00.000Z", "2026-05-03T09:00:00.000Z");
+
+    const payload = new TerrainEventItem(component.state.activity);
+
+    expect(component.state.activity.owner_type).toBe("unit");
+    expect(component.state.activity.owner_id).toBe("unit-active");
+    expect(component.state.activity.organisers).toHaveLength(1);
+    const [firstOrganiser] = component.state.activity.organisers as unknown as Array<{ id?: string } | string>;
+    expect(typeof firstOrganiser === "string" ? firstOrganiser : firstOrganiser?.id).toBe("member-active");
+
+    expect(payload.event_type.type).toBe("unit");
+    expect(payload.event_type.id).toBe("unit-active");
+    expect(payload.organisers).toEqual(["member-active"]);
   });
 });
