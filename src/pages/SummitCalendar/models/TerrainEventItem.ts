@@ -35,13 +35,17 @@ export default class TerrainEventItem {
     this.title = terrainEvent?.title ?? "";
     this.description = terrainEvent?.description ?? "";
     this.justification = terrainEvent?.justification ?? "";
-    this.organisers = terrainEvent?.organisers?.map((o) => o.id) ?? [];
+    if (Array.isArray(terrainEvent?.organisers)) {
+      this.organisers = terrainEvent.organisers.map((organiser) => (typeof organiser === "string" ? organiser : organiser?.id)).filter((organiserID): organiserID is string => Boolean(organiserID));
+    } else {
+      this.organisers = [TerrainState.getMemberID()];
+    }
     this.challenge_area = terrainEvent?.challenge_area ?? "";
     this.start_datetime = moment(terrainEvent?.start_datetime).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
     this.end_datetime = moment(terrainEvent?.end_datetime).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
     this.event_type = {
-      type: terrainEvent?.owner_type ?? "unit",
-      id: terrainEvent?.owner_id ?? TerrainState.getUnitID(),
+      type: "unit",
+      id: TerrainState.getUnitID(),
     };
     this.attendance = {
       leader_member_ids: terrainEvent?.attendance?.leader_members?.map((a) => a.id) ?? [],

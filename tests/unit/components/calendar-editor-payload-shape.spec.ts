@@ -296,4 +296,118 @@ describe("Phase 4 calendar editor payload shape", () => {
     expect(payload.event_type.id).toBe("unit-active");
     expect(payload.organisers).toEqual(["member-active"]);
   });
+
+  it("serializer enforces unit event_type and active unit id even when source owner fields differ", () => {
+    initialiseNuxtState({
+      profiles: [
+        {
+          unit: {
+            id: "unit-active",
+            section: "scout",
+          },
+          member: {
+            id: "member-active",
+          },
+        },
+      ],
+      profileIndex: 0,
+      memberDetails: {
+        id: "member-active",
+        first_name: "Active",
+        last_name: "Member",
+      },
+    });
+
+    const payload = new TerrainEventItem({
+      title: "Unit Event",
+      description: "",
+      justification: "",
+      location: "Hall",
+      challenge_area: "community",
+      start_datetime: "2026-06-01T09:00:00.000Z",
+      end_datetime: "2026-06-01T11:00:00.000Z",
+      organisers: [{ id: "member-x", first_name: "X", last_name: "Y" }],
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "patrol",
+      owner_id: "unit-stale",
+    } as unknown as TerrainEvent);
+
+    expect(payload.event_type.type).toBe("unit");
+    expect(payload.event_type.id).toBe("unit-active");
+  });
+
+  it("serializer emits organisers as string ids and defaults to current member when source organisers missing", () => {
+    initialiseNuxtState({
+      profiles: [
+        {
+          unit: {
+            id: "unit-active",
+            section: "scout",
+          },
+          member: {
+            id: "member-profile",
+          },
+        },
+      ],
+      profileIndex: 0,
+      memberDetails: {
+        id: "member-active",
+        first_name: "Active",
+        last_name: "Member",
+      },
+    });
+
+    const withStringOrganisers = new TerrainEventItem({
+      title: "String Organisers",
+      description: "",
+      justification: "",
+      location: "Camp",
+      challenge_area: "outdoors",
+      start_datetime: "2026-06-02T09:00:00.000Z",
+      end_datetime: "2026-06-02T11:00:00.000Z",
+      organisers: ["m1", "m2"] as unknown as TerrainEvent["organisers"],
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "unit",
+      owner_id: "unit-active",
+    } as unknown as TerrainEvent);
+
+    const withMissingOrganisers = new TerrainEventItem({
+      title: "Missing Organisers",
+      description: "",
+      justification: "",
+      location: "Camp",
+      challenge_area: "outdoors",
+      start_datetime: "2026-06-03T09:00:00.000Z",
+      end_datetime: "2026-06-03T11:00:00.000Z",
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "unit",
+      owner_id: "unit-active",
+    } as unknown as TerrainEvent);
+
+    expect(withStringOrganisers.organisers).toEqual(["m1", "m2"]);
+    expect(withStringOrganisers.organisers.every((id) => typeof id === "string")).toBe(true);
+
+    expect(withMissingOrganisers.organisers).toEqual(["member-active"]);
+  });
 });
