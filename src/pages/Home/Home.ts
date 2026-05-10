@@ -5,6 +5,7 @@ export default defineComponent({
     return {
       // Local data property to store the message
       first_name: "there",
+      summit_version: "",
     };
   },
   computed: {
@@ -22,6 +23,10 @@ export default defineComponent({
   mounted() {
     // Initialize local message from Vuex store
     this.first_name = this.$store.state.user.memberDetails.first_name;
+
+    const summitVersionFromDom = document.documentElement?.getAttribute("data-summit-version");
+    this.summit_version = summitVersionFromDom ?? "";
+
     (window.$nuxt.$store.state as TerrainRootState).global.breadcrumbs = [
       {
         text: "Summit",

@@ -2,6 +2,7 @@
   <div>
     <div>
       <h1>Welcome to Terrain | Summit</h1>
+            <p v-if="summit_version"><strong>Current version:</strong> {{ summit_version }}</p>
 
     <p>Hi {{ first_name }}, in this dedicated space you'll find an array of tailored tools and features, including the custom Summit
         reports, request forms, and the highly efficient bulk calendar entry tool. Each of these has been designed to
