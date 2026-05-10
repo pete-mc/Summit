@@ -760,7 +760,9 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
               />
             )}
           </div>
-          <div className="editor-field-status" />
+          <div className="editor-field-status" data-editor-validation="scout_method_elements" role="status">
+            {editorValidationErrors.scout_method_elements ?? ""}
+          </div>
         </div>
         <div className="editor-field" data-editor-field="organisers">
           <label className="editor-field-label" htmlFor="organisers">
@@ -780,7 +782,9 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
               <input id="organisers" className="summit-form-input" type="text" name="organisers" value={activity?.organisers?.map((i) => i.first_name + " " + i.last_name).join(", ")} disabled={true} />
             )}
           </div>
-          <div className="editor-field-status" />
+          <div className="editor-field-status" data-editor-validation="organisers" role="status">
+            {editorValidationErrors.organisers ?? ""}
+          </div>
         </div>
         <div className="editor-field" data-editor-field="leader_members">
           <label className="editor-field-label" htmlFor="leader_members">
@@ -800,7 +804,11 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
               <input id="leader_members" className="summit-form-input" type="text" name="leads" value={activity?.attendance?.leader_members?.map((i) => i.first_name + " " + i.last_name).join(", ")} disabled={true} />
             )}
           </div>
-          <div className="editor-field-status" />
+          <div>
+            <div className="editor-field-status" data-editor-validation="member_roles" role="status">
+              {editorValidationErrors.member_roles ?? ""}
+            </div>
+          </div>
         </div>
         <div className="editor-field" data-editor-field="assistant_members">
           <label className="editor-field-label" htmlFor="assistant_members">
