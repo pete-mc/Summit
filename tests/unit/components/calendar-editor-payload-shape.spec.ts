@@ -249,8 +249,8 @@ describe("Phase 4 calendar editor payload shape", () => {
     const [firstOrganiser] = component.state.activity.organisers as unknown as Array<{ id?: string } | string>;
     expect(typeof firstOrganiser === "string" ? firstOrganiser : firstOrganiser?.id).toBe("member-latest");
 
-    expect(payload.event_type.type).toBe("unit");
-    expect(payload.event_type.id).toBe("unit-latest");
+    expect(payload.owner_type).toBe("unit");
+    expect(payload.owner_id).toBe("unit-latest");
     expect(payload.organisers).toEqual(["member-latest"]);
   });
 
@@ -292,12 +292,12 @@ describe("Phase 4 calendar editor payload shape", () => {
     const [firstOrganiser] = component.state.activity.organisers as unknown as Array<{ id?: string } | string>;
     expect(typeof firstOrganiser === "string" ? firstOrganiser : firstOrganiser?.id).toBe("member-active");
 
-    expect(payload.event_type.type).toBe("unit");
-    expect(payload.event_type.id).toBe("unit-active");
+    expect(payload.owner_type).toBe("unit");
+    expect(payload.owner_id).toBe("unit-active");
     expect(payload.organisers).toEqual(["member-active"]);
   });
 
-  it("serializer enforces unit event_type and active unit id even when source owner fields differ", () => {
+  it("serializer enforces unit owner_type and active unit owner_id even when source owner fields differ", () => {
     initialiseNuxtState({
       profiles: [
         {
@@ -339,8 +339,8 @@ describe("Phase 4 calendar editor payload shape", () => {
       owner_id: "unit-stale",
     } as unknown as TerrainEvent);
 
-    expect(payload.event_type.type).toBe("unit");
-    expect(payload.event_type.id).toBe("unit-active");
+    expect(payload.owner_type).toBe("unit");
+    expect(payload.owner_id).toBe("unit-active");
   });
 
   it("serializer emits organisers as string ids and defaults to current member when source organisers missing", () => {
