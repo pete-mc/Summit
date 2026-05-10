@@ -52,6 +52,7 @@ interface SummitCalendarState {
   calendars: TerrrainCalendarResult;
   allCalendars: { id: string; name: string; selected: boolean }[];
   currentWindow: { startDate: string; endDate: string } | null;
+  editorSaveErrors: string[];
   editorValidationErrors: Record<string, string>;
   editorSoftConflictWarnings: string[];
   currentCalendarView: string;
@@ -81,6 +82,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       calendars: {},
       allCalendars: [],
       currentWindow: null,
+      editorSaveErrors: [],
       editorValidationErrors: {},
       editorSoftConflictWarnings: [],
       currentCalendarView: this.loadPersistedCalendarView(),
@@ -396,6 +398,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     this.setState({
       isEditorOpen: false,
       editorIsLoading: false,
+      editorSaveErrors: [],
       editorValidationErrors: {},
       editorSoftConflictWarnings: [],
       activity: { start_datetime: moment().utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"), end_datetime: moment().utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ") },
@@ -407,7 +410,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     if (activity) {
       activity.start_datetime = moment(activity.start_datetime).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
       activity.end_datetime = moment(activity.end_datetime).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
-      this.setState({ activity: activity, editorIsLoading: false, isEditorOpen: true, editorValidationErrors: {}, editorSoftConflictWarnings: [] }, () => {
+      this.setState({ activity: activity, editorIsLoading: false, isEditorOpen: true, editorSaveErrors: [], editorValidationErrors: {}, editorSoftConflictWarnings: [] }, () => {
         this.focusTitleInput();
         this.setSoftConflictWarnings(activity);
       });
@@ -423,7 +426,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       end_datetime: moment(endDate).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
       ...createOwnershipDefaults,
     } as TerrainEvent;
-    this.setState({ activity: activity, editorIsLoading: false, isEditorOpen: true, editorValidationErrors: {}, editorSoftConflictWarnings: [] }, () => {
+    this.setState({ activity: activity, editorIsLoading: false, isEditorOpen: true, editorSaveErrors: [], editorValidationErrors: {}, editorSoftConflictWarnings: [] }, () => {
       this.focusTitleInput();
       this.setSoftConflictWarnings(activity);
     });
@@ -646,7 +649,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     }
   };
   editorTemplate = () => {
-    const { activity, currentUnitID, editorValidationErrors, editorSoftConflictWarnings } = this.state;
+    const { activity, currentUnitID, editorSaveErrors, editorValidationErrors, editorSoftConflictWarnings } = this.state;
     const memberGroups = buildGroupedMemberOptions(this.state.unitMembers);
     const scoutMethodGroups = this.getScoutMethodGroups();
     const isEditable = (activity?.status !== "concluded" && currentUnitID === activity?.owner_id) || (activity && activity.id === undefined);
@@ -657,6 +660,15 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     );
     return (
       <div className="editor-container" data-editor-layout="compact">
+        {editorSaveErrors.length > 0 && (
+          <div className="editor-field" data-editor-save-errors="true" role="alert">
+            <div className="editor-field-status">
+              {editorSaveErrors.map((message, index) => (
+                <div key={`editor-save-error-${index}`}>{message}</div>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="editor-field" data-editor-field="title">
           <label className="editor-field-label" htmlFor="title">
             Title {requiredMarker}
@@ -836,23 +848,35 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     console.log(activity);
     const validationResult = validateSummitCalendarActivity(activity);
     if (!validationResult.isValid) {
+      this.setState({ editorSaveErrors: [] });
       this.setEditorValidationErrors(validationResult.errors);
       return;
     }
 
     this.setEditorValidationErrors({});
+    this.setState({ editorSaveErrors: [] });
     const softConflictWarnings = detectSummitCalendarSoftConflicts(activity, this.state.items);
     this.setState({ editorSoftConflictWarnings: softConflictWarnings });
 
     const eventToSave = new TerrainEventItem(activity);
+    const saveResult = eventToSave.id ? await updateEvent(eventToSave.id, JSON.stringify(eventToSave)) : await createNewEvent(JSON.stringify(eventToSave));
+
+    if (!saveResult.ok) {
+      const fieldErrors = Object.fromEntries(Object.entries(saveResult.fieldErrors).map(([fieldId, messages]) => [fieldId, messages.join("\n")]));
+
+      this.setState({
+        editorSaveErrors: saveResult.topLevelMessages,
+      });
+      this.setEditorValidationErrors(fieldErrors);
+      return;
+    }
+
     if (eventToSave.id) {
-      await updateEvent(eventToSave.id, JSON.stringify(eventToSave));
       clearSummitCalendarEditorDraft();
       this.setState({ isEditorOpen: false });
       this.fetchData();
     }
     if (!eventToSave.id) {
-      await createNewEvent(JSON.stringify(eventToSave));
       clearSummitCalendarEditorDraft();
       this.setState({ isEditorOpen: false });
       this.fetchData();
@@ -1028,7 +1052,9 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
         <div className="calendar-ux-toolbar">
           {isListView && (
             <div className="calendar-agenda-range-controls" data-calendar-range-controls="visible">
-              <span id="list-range-label" className="calendar-agenda-range-label">List range:</span>
+              <span id="list-range-label" className="calendar-agenda-range-label">
+                List range:
+              </span>
               <DatePicker
                 selected={listRangeStartDate.isValid() ? listRangeStartDate.toDate() : null}
                 onChange={(dates) => this.handleListRangePickerChange(dates as [Date | null, Date | null])}
@@ -1041,25 +1067,13 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
                 ariaLabelledBy="list-range-label"
               />
               <div className="calendar-agenda-presets" role="group" aria-label="List quick select">
-                <button
-                  type="button"
-                  className={`summit-button summit-button-secondary ${this.state.agendaRangePreset === "week" ? "calendar-agenda-preset-active" : ""}`}
-                  onClick={() => this.handleAgendaPresetSelect("week")}
-                >
+                <button type="button" className={`summit-button summit-button-secondary ${this.state.agendaRangePreset === "week" ? "calendar-agenda-preset-active" : ""}`} onClick={() => this.handleAgendaPresetSelect("week")}>
                   Week
                 </button>
-                <button
-                  type="button"
-                  className={`summit-button summit-button-secondary ${this.state.agendaRangePreset === "month" ? "calendar-agenda-preset-active" : ""}`}
-                  onClick={() => this.handleAgendaPresetSelect("month")}
-                >
+                <button type="button" className={`summit-button summit-button-secondary ${this.state.agendaRangePreset === "month" ? "calendar-agenda-preset-active" : ""}`} onClick={() => this.handleAgendaPresetSelect("month")}>
                   Month
                 </button>
-                <button
-                  type="button"
-                  className={`summit-button summit-button-secondary ${this.state.agendaRangePreset === "year" ? "calendar-agenda-preset-active" : ""}`}
-                  onClick={() => this.handleAgendaPresetSelect("year")}
-                >
+                <button type="button" className={`summit-button summit-button-secondary ${this.state.agendaRangePreset === "year" ? "calendar-agenda-preset-active" : ""}`} onClick={() => this.handleAgendaPresetSelect("year")}>
                   Year
                 </button>
               </div>
@@ -1068,7 +1082,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           {this.renderCalendarLegend(filteredItems)}
         </div>
         <FullCalendar
-          ref={this.calendarRef}
+          ref={this.calendarRef as any}
           plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
           // Legacy contract marker: initialView="dayGridMonth"
           initialView={this.state.currentCalendarView}
