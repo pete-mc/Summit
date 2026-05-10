@@ -4,6 +4,32 @@ import * as path from "path";
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 const SUMMIT_CALENDAR_PATH = path.resolve(REPO_ROOT, "src/pages/SummitCalendar/components/SummitCalendar.tsx");
 
+describe("Phase 1 event editor inline validation visibility gaps", () => {
+  it("renders an inline validation contract for scout_method_elements", () => {
+    const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+    const scoutMethodField = source.match(/data-editor-field="scout_method_elements"[\s\S]*?data-editor-field="organisers"/)?.[0] ?? "";
+
+    expect(scoutMethodField).toContain('data-editor-validation="scout_method_elements"');
+    expect(scoutMethodField).toContain("editorValidationErrors.scout_method_elements");
+  });
+
+  it("renders an inline validation contract for organisers", () => {
+    const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+    const organisersField = source.match(/data-editor-field="organisers"[\s\S]*?data-editor-field="leader_members"/)?.[0] ?? "";
+
+    expect(organisersField).toContain('data-editor-validation="organisers"');
+    expect(organisersField).toContain("editorValidationErrors.organisers");
+  });
+
+  it("renders an inline validation contract for member_roles near member assignment controls", () => {
+    const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+    const memberRoleSection = source.match(/data-editor-field="leader_members"[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/)?.[0] ?? "";
+
+    expect(memberRoleSection).toContain('data-editor-validation="member_roles"');
+    expect(memberRoleSection).toContain("editorValidationErrors.member_roles");
+  });
+});
+
 describe("Phase 2 event editor inline validation contract", () => {
   it("uses inline validation state instead of alert-driven validation interruptions", () => {
     const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
