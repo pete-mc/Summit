@@ -141,11 +141,29 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     }
   };
 
+  getCreateOwnershipDefaults = (): Pick<TerrainEvent, "owner_type" | "owner_id" | "organisers"> => {
+    const memberDetails = window.$nuxt?.$store?.state?.user?.memberDetails;
+    const currentMemberId = TerrainState.getMemberID() || TerrainState.getProfileMemberID();
+
+    return {
+      owner_type: "unit",
+      owner_id: TerrainState.getUnitID(),
+      organisers: currentMemberId
+        ? [
+            {
+              id: currentMemberId,
+              first_name: memberDetails?.first_name ?? "",
+              last_name: memberDetails?.last_name ?? "",
+            },
+          ]
+        : [],
+    };
+  };
+
   buildEditorDefaults = (startDate: string, endDate: string): TerrainEvent => ({
     title: "",
     location: "",
     challenge_area: "",
-    organisers: [],
     review: {
       scout_method_elements: [],
     },
@@ -154,8 +172,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       assistant_members: [],
       attendee_members: [],
     },
-    owner_type: "unit",
-    owner_id: this.state.currentUnitID,
+    ...this.getCreateOwnershipDefaults(),
     start_datetime: moment(startDate).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
     end_datetime: moment(endDate).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
   });
@@ -398,11 +415,13 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   };
 
   newActivity = async (startDate: string, endDate: string) => {
+    const createOwnershipDefaults = this.getCreateOwnershipDefaults();
     const activity = {
       ...this.buildEditorDefaults(startDate, endDate),
       ...(loadSummitCalendarEditorDraft() ?? {}),
       start_datetime: moment(startDate).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
       end_datetime: moment(endDate).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
+      ...createOwnershipDefaults,
     } as TerrainEvent;
     this.setState({ activity: activity, editorIsLoading: false, isEditorOpen: true, editorValidationErrors: {}, editorSoftConflictWarnings: [] }, () => {
       this.focusTitleInput();
