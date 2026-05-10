@@ -195,4 +195,28 @@ describe("Phase 3 save failure visibility", () => {
     expect(component.state.editorSaveErrors).toEqual(["Unable to save event", "Please fix validation and retry"]);
     expect(component.state.editorValidationErrors.date_range).toContain("End must be after start");
   });
+
+  it("preserves every backend field validation message when multiple messages are returned for the same field", async () => {
+    const component = mountHarness(buildValidActivity());
+
+    (createNewEvent as jest.Mock).mockResolvedValue({
+      ok: false,
+      topLevelMessages: ["Validation failed"],
+      fieldErrors: {
+        title: ["Title cannot include /", "Title cannot include ?", "Title cannot include #"],
+        date_range: ["End must be after start", "Duration must be less than 7 days"],
+      },
+    });
+
+    await component.saveActivity();
+
+    expect(component.state.editorValidationErrors.title).toBe("Title cannot include /\nTitle cannot include ?\nTitle cannot include #");
+    expect(component.state.editorValidationErrors.date_range).toBe("End must be after start\nDuration must be less than 7 days");
+
+    expect(component.state.editorValidationErrors.title).toContain("Title cannot include /");
+    expect(component.state.editorValidationErrors.title).toContain("Title cannot include ?");
+    expect(component.state.editorValidationErrors.title).toContain("Title cannot include #");
+    expect(component.state.editorSaveErrors).toEqual(["Validation failed"]);
+    expect(component.state.isEditorOpen).toBe(true);
+  });
 });

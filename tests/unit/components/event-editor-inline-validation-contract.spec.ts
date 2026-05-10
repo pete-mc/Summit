@@ -3,6 +3,7 @@ import * as path from "path";
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 const SUMMIT_CALENDAR_PATH = path.resolve(REPO_ROOT, "src/pages/SummitCalendar/components/SummitCalendar.tsx");
+const VALIDATION_HELPER_PATH = path.resolve(REPO_ROOT, "src/helpers/SummitCalendarValidation.ts");
 
 describe("Phase 1 event editor inline validation visibility gaps", () => {
   it("renders an inline validation contract for scout_method_elements", () => {
@@ -62,5 +63,26 @@ describe("Phase 2 event editor inline validation contract", () => {
     const warningIndex = source.indexOf('data-editor-warning="event-conflicts"');
     expect(warningIndex).toBeGreaterThan(-1);
     expect(source.lastIndexOf('className="editor-field-help"', warningIndex)).toBeGreaterThan(source.lastIndexOf('className="editor-field"', warningIndex));
+  });
+});
+
+describe("Phase 4 validation-key regression hardening", () => {
+  it("maps every validator-emitted key to a rendered editor validation anchor", () => {
+    const componentSource = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+    const validationHelperSource = fs.readFileSync(VALIDATION_HELPER_PATH, "utf8");
+
+    const emittedValidatorKeys = Array.from(validationHelperSource.matchAll(/errors\.([a-z_]+)\s*=/g)).map((match) => match[1]);
+    const renderedAnchorKeys = Array.from(componentSource.matchAll(/data-editor-validation="([a-z_]+)"/g)).map((match) => match[1]);
+
+    const uniqueValidatorKeys = Array.from(new Set(emittedValidatorKeys)).sort();
+    const uniqueAnchorKeys = Array.from(new Set(renderedAnchorKeys)).sort();
+
+    expect(uniqueValidatorKeys).toEqual(["challenge_area", "date_range", "location", "member_roles", "organisers", "scout_method_elements", "title"]);
+    expect(uniqueAnchorKeys).toEqual(uniqueValidatorKeys);
+
+    uniqueValidatorKeys.forEach((key) => {
+      expect(componentSource).toContain(`editorValidationErrors.${key}`);
+      expect(componentSource).toContain(`data-editor-validation="${key}"`);
+    });
   });
 });
