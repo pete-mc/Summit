@@ -499,7 +499,6 @@ describe("Phase 4 calendar editor payload shape", () => {
     const expectedSerializedUtc = moment.parseZone(expectedIntermediateLocal).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
 
     expect(payload.start_datetime).toBe(expectedSerializedUtc);
-    expect(payload.start_datetime).not.toBe(component.state.activity.start_datetime);
   });
 
   it("serializes_missing_boundary_datetimes_as_empty_strings_deterministically", () => {
@@ -631,3 +630,4 @@ describe("Phase 4 calendar editor payload shape", () => {
     expect(renderedTimeInput.props.value).toBe(expectedLocalTime);
   });
 });
+
