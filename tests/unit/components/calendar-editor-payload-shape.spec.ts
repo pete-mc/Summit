@@ -1,26 +1,159 @@
+import React from "react";
+import moment from "moment";
 import TerrainEventItem from "@/pages/SummitCalendar/models/TerrainEventItem";
+import { SummitCalendarComponent } from "@/pages/SummitCalendar/components/SummitCalendar";
 import { applyGroupedMultiSelectChange } from "@/helpers/SummitCalendarValidation";
+import { DatePickerComponent, TimePickerComponent } from "@/components/DateTimeInputs";
 import { TerrainEvent, TerrainUnitMember } from "@/types/terrainTypes";
+
+jest.mock("@fullcalendar/react", () => () => null);
+jest.mock("@fullcalendar/core/locales/en-au", () => ({}));
+jest.mock("@fullcalendar/daygrid", () => ({}));
+jest.mock("@fullcalendar/timegrid", () => ({}));
+jest.mock("@fullcalendar/list", () => ({}));
+jest.mock("@fullcalendar/interaction", () => ({}));
+jest.mock("react-datepicker", () => () => null);
+jest.mock("react-datepicker/dist/react-datepicker.css", () => ({}), { virtual: true });
+
+type NuxtProfile = {
+  unit: {
+    id: string;
+    section: string;
+  };
+  member: {
+    id: string;
+  };
+};
+
+const initialiseNuxtState = ({
+  profiles = [
+    {
+      unit: {
+        id: "u1",
+        section: "scout",
+      },
+      member: {
+        id: "m0",
+      },
+    },
+  ],
+  profileIndex = 0,
+  memberDetails,
+}: {
+  profiles?: NuxtProfile[];
+  profileIndex?: number;
+  memberDetails?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+  };
+} = {}) => {
+  const activeProfile = profiles[profileIndex] ?? profiles[profiles.length - 1];
+  const resolvedMemberDetails =
+    memberDetails ??
+    ({
+      id: activeProfile.member.id,
+      first_name: "Test",
+      last_name: "Member",
+    } as const);
+
+  (window as any).$nuxt = {
+    $store: {
+      state: {
+        user: {
+          profiles,
+          profileIndex,
+          memberDetails: resolvedMemberDetails,
+        },
+        profile: {
+          unit: {
+            id: activeProfile.unit.id,
+          },
+        },
+        auth: {
+          idToken: "token",
+        },
+      },
+    },
+    $accessor: {
+      programming: {
+        setActivity: jest.fn(),
+        setActivityFlow: jest.fn(),
+      },
+    },
+  };
+};
+
+const mountComponentHarness = () => {
+  const component = new SummitCalendarComponent({ items: [], onUpdate: jest.fn() });
+
+  (component as any).setState = (updater: any, callback?: () => void) => {
+    const previousState = component.state;
+    const patch = typeof updater === "function" ? updater(previousState, component.props) : updater;
+    (component as any).state = {
+      ...previousState,
+      ...patch,
+    };
+    callback?.();
+  };
+
+  (component as any).clearValidationErrorsFor = jest.fn();
+  (component as any).persistEditorDraft = jest.fn();
+  (component as any).setSoftConflictWarnings = jest.fn();
+
+  return component;
+};
+
+const mountHarness = (activity: TerrainEvent) => {
+  initialiseNuxtState();
+
+  const component = mountComponentHarness();
+
+  (component as any).state = {
+    ...component.state,
+    activity,
+    currentUnitID: "u1",
+  };
+
+  return component;
+};
+
+const fireDateTimeChange = (component: SummitCalendarComponent, name: string, value: string) => {
+  component.handleDateTimeChange({
+    target: {
+      name,
+      value,
+    },
+  } as React.ChangeEvent<HTMLInputElement>);
+};
+
+const findElementById = (node: unknown, id: string): React.ReactElement | null => {
+  if (!React.isValidElement(node)) {
+    return null;
+  }
+
+  if ((node.props as { id?: string }).id === id) {
+    return node;
+  }
+
+  const children = React.Children.toArray((node.props as { children?: React.ReactNode }).children);
+  for (const child of children) {
+    const result = findElementById(child, id);
+    if (result) {
+      return result;
+    }
+  }
+
+  return null;
+};
 
 describe("Phase 4 calendar editor payload shape", () => {
   beforeAll(() => {
-    (window as unknown as { $nuxt: unknown }).$nuxt = {
-      $store: {
-        state: {
-          user: {
-            memberDetails: {
-              first_name: "Test",
-              last_name: "Member",
-            },
-          },
-          profile: {
-            unit: {
-              id: "u1",
-            },
-          },
-        },
-      },
-    };
+    initialiseNuxtState();
+  });
+
+  beforeEach(() => {
+    window.localStorage.removeItem("summit.calendar.editor.draft");
   });
 
   const members = [
@@ -49,7 +182,7 @@ describe("Phase 4 calendar editor payload shape", () => {
       },
       owner_type: "unit",
       owner_id: "u1",
-    } as unknown as TerrainEvent;
+    } as TerrainEvent;
 
     const withOrganisers = applyGroupedMultiSelectChange(baseActivity, "organisers", ["m1", "m3"], members) as TerrainEvent;
     const withLeaders = applyGroupedMultiSelectChange(withOrganisers, "leader_members", ["m2"], members) as TerrainEvent;
@@ -63,4 +196,438 @@ describe("Phase 4 calendar editor payload shape", () => {
     expect(payload.attendance.assistant_member_ids).toEqual(["m3"]);
     expect(payload.review.scout_method_elements).toEqual(["learn_by_doing", "promise_and_law"]);
   });
+
+  it("produces_valid_datetime_payload_after_time_edit", () => {
+    const component = mountHarness({
+      title: "Meeting",
+      description: "",
+      justification: "",
+      location: "Hall",
+      challenge_area: "community",
+      start_datetime: "2026-04-01T09:00:00+10:00",
+      end_datetime: "2026-04-01T11:00:00+10:00",
+      organisers: [],
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "unit",
+      owner_id: "u1",
+    } as TerrainEvent);
+
+    fireDateTimeChange(component, "start_time", "08:15");
+    fireDateTimeChange(component, "end_time", "10:45");
+
+    const payload = new TerrainEventItem(component.state.activity);
+
+    expect(payload.start_datetime).toMatch(/^2026-03-31T22:15:00\.000\+00:00$/);
+    expect(payload.end_datetime).toMatch(/^2026-04-01T00:45:00\.000\+00:00$/);
+    expect(payload.start_datetime).not.toContain("Invalid date");
+    expect(payload.end_datetime).not.toContain("Invalid date");
+  });
+
+  it("enforces unit owner and current-member organiser defaults for new activity using latest active profile", async () => {
+    const profiles: NuxtProfile[] = [
+      {
+        unit: { id: "unit-old", section: "scout" },
+        member: { id: "member-old" },
+      },
+      {
+        unit: { id: "unit-latest", section: "scout" },
+        member: { id: "member-latest" },
+      },
+    ];
+
+    initialiseNuxtState({
+      profiles,
+      profileIndex: 0,
+      memberDetails: {
+        id: "member-old",
+        first_name: "Old",
+        last_name: "Member",
+      },
+    });
+
+    const component = mountComponentHarness();
+
+    (window as any).$nuxt.$store.state.user.profileIndex = 1;
+    (window as any).$nuxt.$store.state.user.memberDetails = {
+      id: "member-latest",
+      first_name: "Latest",
+      last_name: "Member",
+    };
+
+    await component.newActivity("2026-05-01T08:00:00.000Z", "2026-05-01T09:00:00.000Z");
+
+    const payload = new TerrainEventItem(component.state.activity);
+
+    expect(component.state.activity.owner_type).toBe("unit");
+    expect(component.state.activity.owner_id).toBe("unit-latest");
+    expect(component.state.activity.organisers).toHaveLength(1);
+    const [firstOrganiser] = component.state.activity.organisers as unknown as Array<{ id?: string } | string>;
+    expect(typeof firstOrganiser === "string" ? firstOrganiser : firstOrganiser?.id).toBe("member-latest");
+
+    expect(payload.owner_type).toBe("unit");
+    expect(payload.owner_id).toBe("unit-latest");
+    expect(payload.organisers).toEqual(["member-latest"]);
+  });
+
+  it("does not allow saved draft owner or organiser fields to override create defaults", async () => {
+    const profiles: NuxtProfile[] = [
+      {
+        unit: { id: "unit-active", section: "scout" },
+        member: { id: "member-active" },
+      },
+    ];
+
+    initialiseNuxtState({
+      profiles,
+      profileIndex: 0,
+      memberDetails: {
+        id: "member-active",
+        first_name: "Active",
+        last_name: "Member",
+      },
+    });
+
+    window.localStorage.setItem(
+      "summit.calendar.editor.draft",
+      JSON.stringify({
+        owner_type: "patrol",
+        owner_id: "unit-from-draft",
+        organisers: [{ id: "member-from-draft", first_name: "Draft", last_name: "Only" }],
+      }),
+    );
+
+    const component = mountComponentHarness();
+    await component.newActivity("2026-05-03T08:00:00.000Z", "2026-05-03T09:00:00.000Z");
+
+    const payload = new TerrainEventItem(component.state.activity);
+
+    expect(component.state.activity.owner_type).toBe("unit");
+    expect(component.state.activity.owner_id).toBe("unit-active");
+    expect(component.state.activity.organisers).toHaveLength(1);
+    const [firstOrganiser] = component.state.activity.organisers as unknown as Array<{ id?: string } | string>;
+    expect(typeof firstOrganiser === "string" ? firstOrganiser : firstOrganiser?.id).toBe("member-active");
+
+    expect(payload.owner_type).toBe("unit");
+    expect(payload.owner_id).toBe("unit-active");
+    expect(payload.organisers).toEqual(["member-active"]);
+  });
+
+  it("serializer enforces unit owner_type and active unit owner_id even when source owner fields differ", () => {
+    initialiseNuxtState({
+      profiles: [
+        {
+          unit: {
+            id: "unit-active",
+            section: "scout",
+          },
+          member: {
+            id: "member-active",
+          },
+        },
+      ],
+      profileIndex: 0,
+      memberDetails: {
+        id: "member-active",
+        first_name: "Active",
+        last_name: "Member",
+      },
+    });
+
+    const payload = new TerrainEventItem({
+      title: "Unit Event",
+      description: "",
+      justification: "",
+      location: "Hall",
+      challenge_area: "community",
+      start_datetime: "2026-06-01T09:00:00.000Z",
+      end_datetime: "2026-06-01T11:00:00.000Z",
+      organisers: [{ id: "member-x", first_name: "X", last_name: "Y" }],
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "patrol",
+      owner_id: "unit-stale",
+    } as TerrainEvent);
+
+    expect(payload.owner_type).toBe("unit");
+    expect(payload.owner_id).toBe("unit-active");
+  });
+
+  it("serializer emits organisers as string ids and defaults to current member when source organisers missing", () => {
+    initialiseNuxtState({
+      profiles: [
+        {
+          unit: {
+            id: "unit-active",
+            section: "scout",
+          },
+          member: {
+            id: "member-profile",
+          },
+        },
+      ],
+      profileIndex: 0,
+      memberDetails: {
+        id: "member-active",
+        first_name: "Active",
+        last_name: "Member",
+      },
+    });
+
+    const withStringOrganisers = new TerrainEventItem({
+      title: "String Organisers",
+      description: "",
+      justification: "",
+      location: "Camp",
+      challenge_area: "outdoors",
+      start_datetime: "2026-06-02T09:00:00.000Z",
+      end_datetime: "2026-06-02T11:00:00.000Z",
+      organisers: ["m1", "m2"] as unknown as TerrainEvent["organisers"],
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "unit",
+      owner_id: "unit-active",
+    } as TerrainEvent);
+
+    const withMissingOrganisers = new TerrainEventItem({
+      title: "Missing Organisers",
+      description: "",
+      justification: "",
+      location: "Camp",
+      challenge_area: "outdoors",
+      start_datetime: "2026-06-03T09:00:00.000Z",
+      end_datetime: "2026-06-03T11:00:00.000Z",
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "unit",
+      owner_id: "unit-active",
+    } as TerrainEvent);
+
+    expect(withStringOrganisers.organisers).toEqual(["m1", "m2"]);
+    expect(withStringOrganisers.organisers.every((id) => typeof id === "string")).toBe(true);
+
+    expect(withMissingOrganisers.organisers).toEqual(["member-active"]);
+  });
+
+  it("saves_local_time_back_to_correct_utc_payload", () => {
+    const startUtc = "2026-04-01T09:00:00.000Z";
+    const endUtc = "2026-04-01T11:00:00.000Z";
+    const component = mountHarness({
+      title: "Meeting",
+      description: "",
+      justification: "",
+      location: "Hall",
+      challenge_area: "community",
+      start_datetime: startUtc,
+      end_datetime: endUtc,
+      organisers: [],
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "unit",
+      owner_id: "u1",
+    } as TerrainEvent);
+
+    fireDateTimeChange(component, "start_time", "19:30");
+
+    const payload = new TerrainEventItem(component.state.activity);
+    const expectedStartUtc = moment.utc(startUtc).local().hour(19).minute(30).second(0).millisecond(0).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+
+    expect(payload.start_datetime).toBe(expectedStartUtc);
+    expect(payload.start_datetime).not.toContain("Invalid date");
+  });
+
+  it("keeps_local_editor_datetime_in_state_until_serialization_boundary", () => {
+    const startUtc = "2026-04-01T09:00:00.000Z";
+    const component = mountHarness({
+      title: "Meeting",
+      description: "",
+      justification: "",
+      location: "Hall",
+      challenge_area: "community",
+      start_datetime: startUtc,
+      end_datetime: "2026-04-01T11:00:00.000Z",
+      organisers: [],
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "unit",
+      owner_id: "u1",
+    } as TerrainEvent);
+
+    fireDateTimeChange(component, "start_time", "19:30");
+
+    const expectedIntermediateLocal = moment.utc(startUtc).local().hour(19).minute(30).second(0).millisecond(0).format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+
+    expect(component.state.activity.start_datetime).toBe(expectedIntermediateLocal);
+
+    const payload = new TerrainEventItem(component.state.activity);
+    const expectedSerializedUtc = moment.parseZone(expectedIntermediateLocal).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+
+    expect(payload.start_datetime).toBe(expectedSerializedUtc);
+  });
+
+  it("serializes_missing_boundary_datetimes_as_empty_strings_deterministically", () => {
+    const payload = new TerrainEventItem({
+      title: "Missing date times",
+      description: "",
+      justification: "",
+      location: "Hall",
+      challenge_area: "community",
+      organisers: [],
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "unit",
+      owner_id: "u1",
+    } as unknown as TerrainEvent);
+
+    expect(payload.start_datetime).toBe("");
+    expect(payload.end_datetime).toBe("");
+  });
+
+  it("serializes_local_editor_time_to_correct_utc", () => {
+    const timezoneOffsetSpy = jest.spyOn(Date.prototype, "getTimezoneOffset").mockReturnValue(-600);
+
+    try {
+      const payload = new TerrainEventItem({
+        title: "Meeting",
+        description: "",
+        justification: "",
+        location: "Hall",
+        challenge_area: "community",
+        // Legacy/editor-path shape without explicit offset must be treated as UTC by definition.
+        start_datetime: "2026-04-01T09:00:00",
+        end_datetime: "2026-04-01T11:00:00",
+        organisers: [],
+        attendance: {
+          leader_members: [],
+          assistant_members: [],
+          attendee_members: [],
+        },
+        review: {
+          scout_method_elements: [],
+        },
+        owner_type: "unit",
+        owner_id: "u1",
+      } as TerrainEvent);
+
+      expect(payload.start_datetime).toBe("2026-04-01T09:00:00.000+00:00");
+      expect(payload.end_datetime).toBe("2026-04-01T11:00:00.000+00:00");
+    } finally {
+      timezoneOffsetSpy.mockRestore();
+    }
+  });
+
+  it("preserves_duration_when_saving_after_time_edit", () => {
+    const component = mountHarness({
+      title: "Meeting",
+      description: "",
+      justification: "",
+      location: "Hall",
+      challenge_area: "community",
+      start_datetime: "2026-04-01T09:00:00.000Z",
+      end_datetime: "2026-04-01T11:30:00.000Z",
+      organisers: [],
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "unit",
+      owner_id: "u1",
+    } as TerrainEvent);
+
+    fireDateTimeChange(component, "start_time", "19:15");
+    fireDateTimeChange(component, "end_time", "21:45");
+
+    const payload = new TerrainEventItem(component.state.activity);
+    const durationMinutes = moment(payload.end_datetime).diff(moment(payload.start_datetime), "minutes");
+
+    expect(durationMinutes).toBe(150);
+    expect(payload.start_datetime).not.toContain("Invalid date");
+    expect(payload.end_datetime).not.toContain("Invalid date");
+  });
+
+  it("editor_defaults_respect_local_time_from_utc_source", () => {
+    const utcSourceWithoutOffset = "2026-04-01T09:00:00";
+    const component = mountHarness({
+      title: "Meeting",
+      description: "",
+      justification: "",
+      location: "Hall",
+      challenge_area: "community",
+      start_datetime: utcSourceWithoutOffset,
+      end_datetime: utcSourceWithoutOffset,
+      organisers: [],
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "unit",
+      owner_id: "u1",
+    } as TerrainEvent);
+
+    const editor = component.editorTemplate();
+    const startDatePicker = findElementById(editor, "start_date");
+    const startTimePicker = findElementById(editor, "start_time");
+
+    expect(startDatePicker).toBeTruthy();
+    expect(startTimePicker).toBeTruthy();
+
+    const renderedDateInput = DatePickerComponent(startDatePicker!.props) as React.ReactElement;
+    const renderedTimeInput = TimePickerComponent(startTimePicker!.props) as React.ReactElement;
+    const expectedLocalDate = moment.utc(utcSourceWithoutOffset).local().format("YYYY-MM-DD");
+    const expectedLocalTime = moment.utc(utcSourceWithoutOffset).local().format("HH:mm");
+
+    expect(renderedDateInput.props.value).toBe(expectedLocalDate);
+    expect(renderedTimeInput.props.value).toBe(expectedLocalTime);
+  });
 });
+

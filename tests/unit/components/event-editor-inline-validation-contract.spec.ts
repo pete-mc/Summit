@@ -3,6 +3,33 @@ import * as path from "path";
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 const SUMMIT_CALENDAR_PATH = path.resolve(REPO_ROOT, "src/pages/SummitCalendar/components/SummitCalendar.tsx");
+const VALIDATION_HELPER_PATH = path.resolve(REPO_ROOT, "src/helpers/SummitCalendarValidation.ts");
+
+describe("Phase 1 event editor inline validation visibility gaps", () => {
+  it("renders an inline validation contract for scout_method_elements", () => {
+    const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+    const scoutMethodField = source.match(/data-editor-field="scout_method_elements"[\s\S]*?data-editor-field="organisers"/)?.[0] ?? "";
+
+    expect(scoutMethodField).toContain('data-editor-validation="scout_method_elements"');
+    expect(scoutMethodField).toContain("editorValidationErrors.scout_method_elements");
+  });
+
+  it("renders an inline validation contract for organisers", () => {
+    const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+    const organisersField = source.match(/data-editor-field="organisers"[\s\S]*?data-editor-field="leader_members"/)?.[0] ?? "";
+
+    expect(organisersField).toContain('data-editor-validation="organisers"');
+    expect(organisersField).toContain("editorValidationErrors.organisers");
+  });
+
+  it("renders an inline validation contract for member_roles near member assignment controls", () => {
+    const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+    const memberRoleSection = source.match(/data-editor-field="leader_members"[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/)?.[0] ?? "";
+
+    expect(memberRoleSection).toContain('data-editor-validation="member_roles"');
+    expect(memberRoleSection).toContain("editorValidationErrors.member_roles");
+  });
+});
 
 describe("Phase 2 event editor inline validation contract", () => {
   it("uses inline validation state instead of alert-driven validation interruptions", () => {
@@ -36,5 +63,26 @@ describe("Phase 2 event editor inline validation contract", () => {
     const warningIndex = source.indexOf('data-editor-warning="event-conflicts"');
     expect(warningIndex).toBeGreaterThan(-1);
     expect(source.lastIndexOf('className="editor-field-help"', warningIndex)).toBeGreaterThan(source.lastIndexOf('className="editor-field"', warningIndex));
+  });
+});
+
+describe("Phase 4 validation-key regression hardening", () => {
+  it("maps every validator-emitted key to a rendered editor validation anchor", () => {
+    const componentSource = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+    const validationHelperSource = fs.readFileSync(VALIDATION_HELPER_PATH, "utf8");
+
+    const emittedValidatorKeys = Array.from(validationHelperSource.matchAll(/errors\.([a-z_]+)\s*=/g)).map((match) => match[1]);
+    const renderedAnchorKeys = Array.from(componentSource.matchAll(/data-editor-validation="([a-z_]+)"/g)).map((match) => match[1]);
+
+    const uniqueValidatorKeys = Array.from(new Set(emittedValidatorKeys)).sort();
+    const uniqueAnchorKeys = Array.from(new Set(renderedAnchorKeys)).sort();
+
+    expect(uniqueValidatorKeys).toEqual(["challenge_area", "date_range", "location", "member_roles", "organisers", "scout_method_elements", "title"]);
+    expect(uniqueAnchorKeys).toEqual(uniqueValidatorKeys);
+
+    uniqueValidatorKeys.forEach((key) => {
+      expect(componentSource).toContain(`editorValidationErrors.${key}`);
+      expect(componentSource).toContain(`data-editor-validation="${key}"`);
+    });
   });
 });

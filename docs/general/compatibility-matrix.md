@@ -35,4 +35,4 @@ Security baseline after prior safe remediations:
 3. Bundler plugin chain (`copy-webpack-plugin` / `css-minimizer-webpack-plugin` / `serialize-javascript`)
 4. Dev server chain (`webpack-dev-server` / `sockjs` / `uuid`)
 
-These tracks are sequenced in `plans/breaking-security-upgrades-plan.md`.
+These tracks are sequenced in the breaking security upgrades planning document.
