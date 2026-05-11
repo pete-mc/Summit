@@ -1,4 +1,5 @@
 import React from "react";
+import moment from "moment";
 import TerrainEventItem from "@/pages/SummitCalendar/models/TerrainEventItem";
 import { SummitCalendarComponent } from "@/pages/SummitCalendar/components/SummitCalendar";
 import { applyGroupedMultiSelectChange } from "@/helpers/SummitCalendarValidation";
@@ -409,5 +410,46 @@ describe("Phase 4 calendar editor payload shape", () => {
     expect(withStringOrganisers.organisers.every((id) => typeof id === "string")).toBe(true);
 
     expect(withMissingOrganisers.organisers).toEqual(["member-active"]);
+  });
+
+  it("saves_local_time_back_to_correct_utc_payload", () => {
+    const startUtc = "2026-04-01T09:00:00.000Z";
+    const endUtc = "2026-04-01T11:00:00.000Z";
+    const component = mountHarness({
+      title: "Meeting",
+      description: "",
+      justification: "",
+      location: "Hall",
+      challenge_area: "community",
+      start_datetime: startUtc,
+      end_datetime: endUtc,
+      organisers: [],
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "unit",
+      owner_id: "u1",
+    } as TerrainEvent);
+
+    fireDateTimeChange(component, "start_time", "19:30");
+
+    const payload = new TerrainEventItem(component.state.activity);
+    const expectedStartUtc = moment
+      .utc(startUtc)
+      .local()
+      .hour(19)
+      .minute(30)
+      .second(0)
+      .millisecond(0)
+      .utc()
+      .format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+
+    expect(payload.start_datetime).toBe(expectedStartUtc);
+    expect(payload.start_datetime).not.toContain("Invalid date");
   });
 });

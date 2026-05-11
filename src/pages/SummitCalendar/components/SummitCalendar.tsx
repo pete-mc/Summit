@@ -481,8 +481,10 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       (prevState) => {
         const previousDateTime = prevState.activity[targetField];
         const previousMoment = moment.parseZone(previousDateTime, moment.ISO_8601, true);
+        const hasExplicitUtcOffset = /(?:Z|[+-]00:00)$/i.test(previousDateTime);
+        const editableMoment = hasExplicitUtcOffset ? moment.utc(previousDateTime).local() : previousMoment;
 
-        if (!previousMoment.isValid()) {
+        if (!editableMoment.isValid()) {
           return {
             activity: {
               ...prevState.activity,
@@ -491,8 +493,8 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
           };
         }
 
-        let nextDate = previousMoment.format("YYYY-MM-DD");
-        let nextTime = previousMoment.format("HH:mm");
+        let nextDate = editableMoment.format("YYYY-MM-DD");
+        let nextTime = editableMoment.format("HH:mm");
 
         if (isDateField) {
           const parsedDate = moment(value, "YYYY-MM-DD", true);
@@ -518,6 +520,25 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             };
           }
           nextTime = parsedTime.format("HH:mm");
+        }
+
+        if (hasExplicitUtcOffset) {
+          const composedLocalDateTime = moment(`${nextDate}T${nextTime}`, "YYYY-MM-DDTHH:mm", true);
+          if (!composedLocalDateTime.isValid()) {
+            return {
+              activity: {
+                ...prevState.activity,
+                [targetField]: previousDateTime,
+              },
+            };
+          }
+
+          return {
+            activity: {
+              ...prevState.activity,
+              [targetField]: composedLocalDateTime.format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
+            },
+          };
         }
 
         return {
@@ -720,7 +741,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
                 <div className="editor-date-time-inputs">
                   <DatePickerComponent
                     id="start_date"
-                    value={new Date(activity?.start_datetime || new Date())}
+                    value={activity?.start_datetime}
                     format="dd/MM/yy"
                     onChange={this.handleDateTimeChange}
                     name="start_date"
@@ -728,7 +749,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
                     showClearButton={false}
                     onFocus={this.handleFocus}
                   />
-                  <TimePickerComponent id="start_time" value={new Date(activity?.start_datetime || new Date())} format="hh:mm a" onChange={this.handleDateTimeChange} name="start_time" disabled={!isEditable} showClearButton={false} />
+                  <TimePickerComponent id="start_time" value={activity?.start_datetime} format="hh:mm a" onChange={this.handleDateTimeChange} name="start_time" disabled={!isEditable} showClearButton={false} />
                 </div>
               </div>
               <div className="editor-date-time-group" data-editor-date-time-group="end">
@@ -736,8 +757,8 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
                   End {requiredMarker}
                 </label>
                 <div className="editor-date-time-inputs">
-                  <DatePickerComponent id="end_date" value={new Date(activity?.end_datetime || new Date())} format="dd/MM/yy" onChange={this.handleDateTimeChange} name="end_date" disabled={!isEditable} showClearButton={false} />
-                  <TimePickerComponent id="end_time" value={new Date(activity?.end_datetime || new Date())} format="hh:mm a" onChange={this.handleDateTimeChange} name="end_time" disabled={!isEditable} showClearButton={false} />
+                  <DatePickerComponent id="end_date" value={activity?.end_datetime} format="dd/MM/yy" onChange={this.handleDateTimeChange} name="end_date" disabled={!isEditable} showClearButton={false} />
+                  <TimePickerComponent id="end_time" value={activity?.end_datetime} format="hh:mm a" onChange={this.handleDateTimeChange} name="end_time" disabled={!isEditable} showClearButton={false} />
                 </div>
               </div>
             </div>
