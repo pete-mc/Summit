@@ -182,7 +182,7 @@ describe("Phase 4 calendar editor payload shape", () => {
       },
       owner_type: "unit",
       owner_id: "u1",
-    } as unknown as TerrainEvent;
+    } as TerrainEvent;
 
     const withOrganisers = applyGroupedMultiSelectChange(baseActivity, "organisers", ["m1", "m3"], members) as TerrainEvent;
     const withLeaders = applyGroupedMultiSelectChange(withOrganisers, "leader_members", ["m2"], members) as TerrainEvent;
@@ -359,7 +359,7 @@ describe("Phase 4 calendar editor payload shape", () => {
       },
       owner_type: "patrol",
       owner_id: "unit-stale",
-    } as unknown as TerrainEvent);
+    } as TerrainEvent);
 
     expect(payload.owner_type).toBe("unit");
     expect(payload.owner_id).toBe("unit-active");
@@ -405,7 +405,7 @@ describe("Phase 4 calendar editor payload shape", () => {
       },
       owner_type: "unit",
       owner_id: "unit-active",
-    } as unknown as TerrainEvent);
+    } as TerrainEvent);
 
     const withMissingOrganisers = new TerrainEventItem({
       title: "Missing Organisers",
@@ -425,7 +425,7 @@ describe("Phase 4 calendar editor payload shape", () => {
       },
       owner_type: "unit",
       owner_id: "unit-active",
-    } as unknown as TerrainEvent);
+    } as TerrainEvent);
 
     expect(withStringOrganisers.organisers).toEqual(["m1", "m2"]);
     expect(withStringOrganisers.organisers.every((id) => typeof id === "string")).toBe(true);
@@ -460,18 +460,136 @@ describe("Phase 4 calendar editor payload shape", () => {
     fireDateTimeChange(component, "start_time", "19:30");
 
     const payload = new TerrainEventItem(component.state.activity);
-    const expectedStartUtc = moment
-      .utc(startUtc)
-      .local()
-      .hour(19)
-      .minute(30)
-      .second(0)
-      .millisecond(0)
-      .utc()
-      .format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+    const expectedStartUtc = moment.utc(startUtc).local().hour(19).minute(30).second(0).millisecond(0).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
 
     expect(payload.start_datetime).toBe(expectedStartUtc);
     expect(payload.start_datetime).not.toContain("Invalid date");
+  });
+
+  it("keeps_local_editor_datetime_in_state_until_serialization_boundary", () => {
+    const startUtc = "2026-04-01T09:00:00.000Z";
+    const component = mountHarness({
+      title: "Meeting",
+      description: "",
+      justification: "",
+      location: "Hall",
+      challenge_area: "community",
+      start_datetime: startUtc,
+      end_datetime: "2026-04-01T11:00:00.000Z",
+      organisers: [],
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "unit",
+      owner_id: "u1",
+    } as TerrainEvent);
+
+    fireDateTimeChange(component, "start_time", "19:30");
+
+    const expectedIntermediateLocal = moment.utc(startUtc).local().hour(19).minute(30).second(0).millisecond(0).format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+
+    expect(component.state.activity.start_datetime).toBe(expectedIntermediateLocal);
+
+    const payload = new TerrainEventItem(component.state.activity);
+    const expectedSerializedUtc = moment.parseZone(expectedIntermediateLocal).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+
+    expect(payload.start_datetime).toBe(expectedSerializedUtc);
+    expect(payload.start_datetime).not.toBe(component.state.activity.start_datetime);
+  });
+
+  it("serializes_missing_boundary_datetimes_as_empty_strings_deterministically", () => {
+    const payload = new TerrainEventItem({
+      title: "Missing date times",
+      description: "",
+      justification: "",
+      location: "Hall",
+      challenge_area: "community",
+      organisers: [],
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "unit",
+      owner_id: "u1",
+    } as unknown as TerrainEvent);
+
+    expect(payload.start_datetime).toBe("");
+    expect(payload.end_datetime).toBe("");
+  });
+
+  it("serializes_local_editor_time_to_correct_utc", () => {
+    const timezoneOffsetSpy = jest.spyOn(Date.prototype, "getTimezoneOffset").mockReturnValue(-600);
+
+    try {
+      const payload = new TerrainEventItem({
+        title: "Meeting",
+        description: "",
+        justification: "",
+        location: "Hall",
+        challenge_area: "community",
+        // Legacy/editor-path shape without explicit offset must be treated as UTC by definition.
+        start_datetime: "2026-04-01T09:00:00",
+        end_datetime: "2026-04-01T11:00:00",
+        organisers: [],
+        attendance: {
+          leader_members: [],
+          assistant_members: [],
+          attendee_members: [],
+        },
+        review: {
+          scout_method_elements: [],
+        },
+        owner_type: "unit",
+        owner_id: "u1",
+      } as TerrainEvent);
+
+      expect(payload.start_datetime).toBe("2026-04-01T09:00:00.000+00:00");
+      expect(payload.end_datetime).toBe("2026-04-01T11:00:00.000+00:00");
+    } finally {
+      timezoneOffsetSpy.mockRestore();
+    }
+  });
+
+  it("preserves_duration_when_saving_after_time_edit", () => {
+    const component = mountHarness({
+      title: "Meeting",
+      description: "",
+      justification: "",
+      location: "Hall",
+      challenge_area: "community",
+      start_datetime: "2026-04-01T09:00:00.000Z",
+      end_datetime: "2026-04-01T11:30:00.000Z",
+      organisers: [],
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "unit",
+      owner_id: "u1",
+    } as TerrainEvent);
+
+    fireDateTimeChange(component, "start_time", "19:15");
+    fireDateTimeChange(component, "end_time", "21:45");
+
+    const payload = new TerrainEventItem(component.state.activity);
+    const durationMinutes = moment(payload.end_datetime).diff(moment(payload.start_datetime), "minutes");
+
+    expect(durationMinutes).toBe(150);
+    expect(payload.start_datetime).not.toContain("Invalid date");
+    expect(payload.end_datetime).not.toContain("Invalid date");
   });
 
   it("editor_defaults_respect_local_time_from_utc_source", () => {

@@ -2,6 +2,23 @@ import { TerrainState } from "@/helpers";
 import { TerrainEvent } from "@/types/terrainTypes";
 import moment from "moment";
 
+const UTC_DATE_TIME_FORMAT = "YYYY-MM-DDTHH:mm:ss.SSSZ";
+
+const normalizeBoundaryDateTime = (dateTimeValue: string | undefined): string => {
+  if (!dateTimeValue) {
+    return "";
+  }
+
+  const hasOffset = /(?:Z|[+-]\d{2}:\d{2})$/i.test(dateTimeValue);
+  const parsedDateTime = hasOffset ? moment.parseZone(dateTimeValue, moment.ISO_8601, true).utc() : moment.utc(dateTimeValue, moment.ISO_8601, true);
+
+  if (parsedDateTime.isValid()) {
+    return parsedDateTime.format(UTC_DATE_TIME_FORMAT);
+  }
+
+  return moment(dateTimeValue).utc().format(UTC_DATE_TIME_FORMAT);
+};
+
 export default class TerrainEventItem {
   id?: string;
   title: string;
@@ -42,8 +59,8 @@ export default class TerrainEventItem {
       this.organisers = [TerrainState.getMemberID()];
     }
     this.challenge_area = terrainEvent?.challenge_area ?? "";
-    this.start_datetime = moment(terrainEvent?.start_datetime).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
-    this.end_datetime = moment(terrainEvent?.end_datetime).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+    this.start_datetime = normalizeBoundaryDateTime(terrainEvent?.start_datetime);
+    this.end_datetime = normalizeBoundaryDateTime(terrainEvent?.end_datetime);
     this.owner_type = "unit";
     this.owner_id = TerrainState.getUnitID();
     this.attendance = {
