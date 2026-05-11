@@ -20,10 +20,24 @@ interface TimePickerProps extends BaseDateTimeProps {
   showClearButton?: boolean;
 }
 
+const hasExplicitOffset = (value: string) => /(?:Z|[+-]\d{2}:\d{2})$/i.test(value);
+
+const isExplicitUtcOffset = (value: string) => /(?:Z|[+-]00:00)$/i.test(value);
+
+const toDisplayMoment = (value: string) => {
+  if (!hasExplicitOffset(value) || isExplicitUtcOffset(value)) {
+    const parsedUtc = moment.utc(value, moment.ISO_8601, true);
+    return parsedUtc.isValid() ? parsedUtc.local() : null;
+  }
+
+  const parsedZoned = moment.parseZone(value, moment.ISO_8601, true);
+  return parsedZoned.isValid() ? parsedZoned : null;
+};
+
 const toDateValue = (value?: Date | string) => {
   if (typeof value === "string") {
-    const parsed = moment(value, moment.ISO_8601, true);
-    return parsed.isValid() ? parsed.format("YYYY-MM-DD") : "";
+    const parsed = toDisplayMoment(value);
+    return parsed && parsed.isValid() ? parsed.format("YYYY-MM-DD") : "";
   }
 
   if (!value || Number.isNaN(value.getTime())) {
@@ -38,8 +52,8 @@ const toDateValue = (value?: Date | string) => {
 
 const toTimeValue = (value?: Date | string) => {
   if (typeof value === "string") {
-    const parsed = moment(value, moment.ISO_8601, true);
-    return parsed.isValid() ? parsed.format("HH:mm") : "";
+    const parsed = toDisplayMoment(value);
+    return parsed && parsed.isValid() ? parsed.format("HH:mm") : "";
   }
 
   if (!value || Number.isNaN(value.getTime())) {

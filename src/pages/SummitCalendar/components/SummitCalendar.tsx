@@ -162,6 +162,13 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     };
   };
 
+  normalizeEditorDateTime = (dateTimeValue: string): string => {
+    const hasOffset = /(?:Z|[+-]\d{2}:\d{2})$/i.test(dateTimeValue);
+    const parsedDateTime = hasOffset ? moment.parseZone(dateTimeValue, moment.ISO_8601, true).utc() : moment.utc(dateTimeValue, moment.ISO_8601, true);
+
+    return parsedDateTime.isValid() ? parsedDateTime.format("YYYY-MM-DDTHH:mm:ss.SSSZ") : dateTimeValue;
+  };
+
   buildEditorDefaults = (startDate: string, endDate: string): TerrainEvent => ({
     title: "",
     location: "",
@@ -175,8 +182,8 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       attendee_members: [],
     },
     ...this.getCreateOwnershipDefaults(),
-    start_datetime: moment(startDate).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
-    end_datetime: moment(endDate).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
+    start_datetime: this.normalizeEditorDateTime(startDate),
+    end_datetime: this.normalizeEditorDateTime(endDate),
   });
 
   focusTitleInput = () => {
@@ -408,8 +415,8 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   getActivity = async (id: string) => {
     const activity = await fetchActivity(id);
     if (activity) {
-      activity.start_datetime = moment(activity.start_datetime).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
-      activity.end_datetime = moment(activity.end_datetime).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+      activity.start_datetime = this.normalizeEditorDateTime(activity.start_datetime);
+      activity.end_datetime = this.normalizeEditorDateTime(activity.end_datetime);
       this.setState({ activity: activity, editorIsLoading: false, isEditorOpen: true, editorSaveErrors: [], editorValidationErrors: {}, editorSoftConflictWarnings: [] }, () => {
         this.focusTitleInput();
         this.setSoftConflictWarnings(activity);
@@ -422,8 +429,8 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     const activity = {
       ...this.buildEditorDefaults(startDate, endDate),
       ...(loadSummitCalendarEditorDraft() ?? {}),
-      start_datetime: moment(startDate).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
-      end_datetime: moment(endDate).utc().format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
+      start_datetime: this.normalizeEditorDateTime(startDate),
+      end_datetime: this.normalizeEditorDateTime(endDate),
       ...createOwnershipDefaults,
     } as TerrainEvent;
     this.setState({ activity: activity, editorIsLoading: false, isEditorOpen: true, editorSaveErrors: [], editorValidationErrors: {}, editorSoftConflictWarnings: [] }, () => {

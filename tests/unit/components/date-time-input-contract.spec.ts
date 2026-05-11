@@ -102,4 +102,25 @@ describe("Phase 2 date/time input contracts", () => {
     expect(timeElement.props.value).toBe(expectedLocalTime);
     expect(timeElement.props.value).not.toBe(twelveHourDriftTime);
   });
+
+  it("date_and_time_inputs_render_expected_local_values", () => {
+    const utcSourceWithoutOffset = "2026-04-01T09:00:00";
+    const expectedLocalDate = moment.utc(utcSourceWithoutOffset).local().format("YYYY-MM-DD");
+    const expectedLocalTime = moment.utc(utcSourceWithoutOffset).local().format("HH:mm");
+
+    const dateElement = DatePickerComponent({
+      id: "start_date",
+      name: "start_date",
+      value: utcSourceWithoutOffset,
+    }) as React.ReactElement;
+
+    const timeElement = TimePickerComponent({
+      id: "start_time",
+      name: "start_time",
+      value: utcSourceWithoutOffset,
+    }) as React.ReactElement;
+
+    expect(dateElement.props.value).toBe(expectedLocalDate);
+    expect(timeElement.props.value).toBe(expectedLocalTime);
+  });
 });

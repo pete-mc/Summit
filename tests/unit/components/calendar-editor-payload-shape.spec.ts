@@ -3,6 +3,7 @@ import moment from "moment";
 import TerrainEventItem from "@/pages/SummitCalendar/models/TerrainEventItem";
 import { SummitCalendarComponent } from "@/pages/SummitCalendar/components/SummitCalendar";
 import { applyGroupedMultiSelectChange } from "@/helpers/SummitCalendarValidation";
+import { DatePickerComponent, TimePickerComponent } from "@/components/DateTimeInputs";
 import { TerrainEvent, TerrainUnitMember } from "@/types/terrainTypes";
 
 jest.mock("@fullcalendar/react", () => () => null);
@@ -124,6 +125,26 @@ const fireDateTimeChange = (component: SummitCalendarComponent, name: string, va
       value,
     },
   } as React.ChangeEvent<HTMLInputElement>);
+};
+
+const findElementById = (node: unknown, id: string): React.ReactElement | null => {
+  if (!React.isValidElement(node)) {
+    return null;
+  }
+
+  if ((node.props as { id?: string }).id === id) {
+    return node;
+  }
+
+  const children = React.Children.toArray((node.props as { children?: React.ReactNode }).children);
+  for (const child of children) {
+    const result = findElementById(child, id);
+    if (result) {
+      return result;
+    }
+  }
+
+  return null;
 };
 
 describe("Phase 4 calendar editor payload shape", () => {
@@ -451,5 +472,44 @@ describe("Phase 4 calendar editor payload shape", () => {
 
     expect(payload.start_datetime).toBe(expectedStartUtc);
     expect(payload.start_datetime).not.toContain("Invalid date");
+  });
+
+  it("editor_defaults_respect_local_time_from_utc_source", () => {
+    const utcSourceWithoutOffset = "2026-04-01T09:00:00";
+    const component = mountHarness({
+      title: "Meeting",
+      description: "",
+      justification: "",
+      location: "Hall",
+      challenge_area: "community",
+      start_datetime: utcSourceWithoutOffset,
+      end_datetime: utcSourceWithoutOffset,
+      organisers: [],
+      attendance: {
+        leader_members: [],
+        assistant_members: [],
+        attendee_members: [],
+      },
+      review: {
+        scout_method_elements: [],
+      },
+      owner_type: "unit",
+      owner_id: "u1",
+    } as TerrainEvent);
+
+    const editor = component.editorTemplate();
+    const startDatePicker = findElementById(editor, "start_date");
+    const startTimePicker = findElementById(editor, "start_time");
+
+    expect(startDatePicker).toBeTruthy();
+    expect(startTimePicker).toBeTruthy();
+
+    const renderedDateInput = DatePickerComponent(startDatePicker!.props) as React.ReactElement;
+    const renderedTimeInput = TimePickerComponent(startTimePicker!.props) as React.ReactElement;
+    const expectedLocalDate = moment.utc(utcSourceWithoutOffset).local().format("YYYY-MM-DD");
+    const expectedLocalTime = moment.utc(utcSourceWithoutOffset).local().format("HH:mm");
+
+    expect(renderedDateInput.props.value).toBe(expectedLocalDate);
+    expect(renderedTimeInput.props.value).toBe(expectedLocalTime);
   });
 });
