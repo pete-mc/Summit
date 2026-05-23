@@ -2,7 +2,7 @@ GET https://achievements.terrain.scouts.com.au/units/3603056b-3928-4f66-b12e-421
 authority: achievements.terrain.scouts.com.au
 accept: */*
 accept-language: en-GB,en;q=0.9,en-US;q=0.8
-authorization: {{token}}
+Authorization: Bearer {{token}}
 cache-control: max-age=0
 content-type: application/json
 dnt: 1
