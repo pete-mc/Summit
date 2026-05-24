@@ -290,6 +290,36 @@
   line-height: 1;
 }
 
+#scheduler .fc .fc-daygrid-event,
+#scheduler .fc .fc-daygrid-event .fc-event-time,
+#scheduler .fc .fc-daygrid-event .fc-event-title,
+#scheduler .fc .fc-timegrid-event,
+#scheduler .fc .fc-timegrid-event .fc-event-time,
+#scheduler .fc .fc-timegrid-event .fc-event-title {
+  font-weight: 400;
+}
+
+#scheduler .fc .fc-list-event-title a,
+#scheduler .fc .fc-list-event-time {
+  font-weight: 400;
+}
+
+#scheduler .fc .fc-daygrid-event,
+#scheduler .fc .fc-timegrid-event,
+#scheduler .fc .fc-list-event-title a {
+  color: #ffffff !important;
+}
+
+#scheduler .fc .fc-daygrid-event a,
+#scheduler .fc .fc-timegrid-event a,
+#scheduler .fc .fc-list-event-title a,
+#scheduler .fc .fc-list-event-time,
+#scheduler .fc .fc-event-time,
+#scheduler .fc .fc-event-title {
+  color: #ffffff !important;
+  text-decoration: none !important;
+}
+
 .data-grid-container {
   display: flex;
   flex-direction: column;
