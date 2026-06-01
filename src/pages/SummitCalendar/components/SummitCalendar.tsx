@@ -18,6 +18,7 @@ import {
   buildGroupedMemberOptions,
   clearSummitCalendarEditorDraft,
   detectSummitCalendarSoftConflicts,
+  getContrastTextColor,
   loadSummitCalendarEditorDraft,
   saveSummitCalendarEditorDraft,
   validateSummitCalendarActivity,
@@ -30,6 +31,8 @@ import { DialogComponent, DialogUtility } from "@/components/DialogComponent";
 
 const SUMMIT_CALENDAR_VIEW_STORAGE_KEY = "summit.calendar.currentView";
 type AgendaRangePreset = "week" | "month" | "year" | "custom";
+
+export const resolveEventTextColor = (eventTextColor: string | undefined, itemColor: string): string => eventTextColor || getContrastTextColor(itemColor);
 
 interface SummitCalendarProps {
   items: SummitCalendarItem[];
@@ -383,6 +386,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     if (item?.color) {
       args.el.style.backgroundColor = item.color;
       args.el.style.borderColor = item.color;
+      args.el.style.color = resolveEventTextColor(args.event.textColor, item.color);
     }
   };
 
@@ -1059,6 +1063,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       end: item.EndTime,
       backgroundColor: item.color,
       borderColor: item.color,
+      textColor: getContrastTextColor(item.color),
       extendedProps: {
         item,
       },

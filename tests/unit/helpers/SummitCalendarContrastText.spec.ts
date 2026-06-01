@@ -7,9 +7,9 @@ describe("Phase 1 summit calendar contrast text helper contract", () => {
 
     const getContrastTextColor = contrastSelector as (backgroundColor: string) => string;
 
-    expect(getContrastTextColor("#004c00")).toBe("#ffffff");
-    expect(getContrastTextColor("#9e1b32")).toBe("#ffffff");
-    expect(getContrastTextColor("#ffc82e")).toBe("#000000");
-    expect(getContrastTextColor("#f3f2f1")).toBe("#000000");
+    expect(getContrastTextColor("#004c00")).toBe("#fff");
+    expect(getContrastTextColor("#9e1b32")).toBe("#fff");
+    expect(getContrastTextColor("#ffc82e")).toBe("#000");
+    expect(getContrastTextColor("#f3f2f1")).toBe("#000");
   });
 });
