@@ -30,6 +30,7 @@ import { DropDownListComponent } from "@/components/SimpleDropdown";
 import { DialogComponent, DialogUtility } from "@/components/DialogComponent";
 
 const SUMMIT_CALENDAR_VIEW_STORAGE_KEY = "summit.calendar.currentView";
+const OPEN_TERRAIN_EVENT_QUERY_KEY = "openTerrainEvent";
 type AgendaRangePreset = "week" | "month" | "year" | "custom";
 
 export const resolveEventTextColor = (eventTextColor: string | undefined, itemColor: string): string => eventTextColor || getContrastTextColor(itemColor);
@@ -50,8 +51,6 @@ interface SummitCalendarState {
   members: { value: string; text: string }[];
   currentUnitID: string;
   unitMembers: TerrainUnitMember[];
-  hideDialog: boolean;
-  iframeKey: number;
   calendars: TerrrainCalendarResult;
   allCalendars: { id: string; name: string; selected: boolean }[];
   currentWindow: { startDate: string; endDate: string } | null;
@@ -80,8 +79,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       members: [],
       currentUnitID: TerrainState.getUnitID(),
       unitMembers: [],
-      hideDialog: true,
-      iframeKey: 0,
       calendars: {},
       allCalendars: [],
       currentWindow: null,
@@ -240,7 +237,37 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   componentDidMount() {
     this.fetchCalendars();
     this.fetchData();
+    void this.openTerrainEventFromQuery();
   }
+
+  openTerrainEventFromQuery = async () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const summitUrl = new URL(window.location.href);
+    const eventId = summitUrl.searchParams.get(OPEN_TERRAIN_EVENT_QUERY_KEY);
+    if (!eventId) {
+      return;
+    }
+
+    const event = await fetchActivity(eventId);
+    if (!event || event.id !== eventId) {
+      return;
+    }
+
+    window.$nuxt.$accessor.programming.setActivity(event);
+    window.$nuxt.$accessor.programming.setActivityFlow("view");
+    summitUrl.searchParams.delete(OPEN_TERRAIN_EVENT_QUERY_KEY);
+    window.history.replaceState({}, document.title, `${summitUrl.pathname}${summitUrl.search}${summitUrl.hash}`);
+    await window.$nuxt.$router.push("/programming/view-activity");
+  };
+
+  buildOpenTerrainUrl = (eventId: string): string => {
+    const summitUrl = new URL("/summit/tools/SummitCalendar", window.location.origin);
+    summitUrl.searchParams.set(OPEN_TERRAIN_EVENT_QUERY_KEY, eventId);
+    return summitUrl.toString();
+  };
 
   fetchCalendars = async () => {
     const calendars = await fetchMemberCalendars();
@@ -922,36 +949,12 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     }
   };
 
-  openTerrainDialog = async () => {
+  openTerrainDialog = () => {
     if (!this.state.activity?.id) {
       return;
     }
 
-    const event = await fetchActivity(this.state.activity.id);
-    window.$nuxt.$accessor.programming.setActivity(event);
-    window.$nuxt.$accessor.programming.setActivityFlow("view");
-    this.setState({ hideDialog: false });
-    $("#eventFrame").attr("src", "https://terrain.scouts.com.au/programming/view-activity");
-    $("#eventFrame").on("load", function () {
-      const iframeHead = $(this).contents().find("head");
-      const css =
-        '<style type="text/css">' +
-        `
-      #freshworks-container, header, nav, footer {
-        visibility: hidden; display: none;
-      }
-      main {
-        padding: 0 !important;
-      }
-      .v-application .v-main__wrap .container {
-        margin: 0 !important;
-        max-width: 100% !important;
-        padding: 0 !important;
-    }
-      ` +
-        "</style>";
-      $(iframeHead).append(css);
-    });
+    window.open(this.buildOpenTerrainUrl(this.state.activity.id), "_blank", "noopener,noreferrer");
   };
 
   editorFooterTemplate = () => {
@@ -1022,15 +1025,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       </div>
     );
   };
-
-  dialogButtons = [
-    {
-      click: () => {
-        this.setState({ hideDialog: true });
-      },
-      buttonModel: { content: "Close Event", isPrimary: true, cssClass: "summit-button summit-button-primary" },
-    },
-  ];
 
   handleCalendarChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedCalendars = Array.from(event.target.selectedOptions).map((option) => option.value);
@@ -1177,25 +1171,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             ))}
           </select>
         </div>
-        <DialogComponent
-          id="dialog"
-          isModal={true}
-          visible={!this.state.hideDialog}
-          header="View Event"
-          target="#scheduler"
-          animationSettings={{ effect: "None" }}
-          close={() => {
-            $("#eventFrame").attr("src", "about:blank");
-            this.setState({ hideDialog: true });
-            this.fetchData();
-          }}
-          closeOnEscape={true}
-          showCloseIcon={true}
-          cssClass="summit-dialog-max-size"
-          buttons={this.dialogButtons}
-        >
-          <iframe id="eventFrame" src="about:blank" title="Modal Content" style={{ width: "100%", height: "100%" }} />
-        </DialogComponent>
       </div>
     ) as React.ReactNode;
   }
