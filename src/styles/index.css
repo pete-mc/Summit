@@ -290,6 +290,28 @@
   line-height: 1;
 }
 
+#scheduler .fc .fc-daygrid-event .fc-event-time,
+#scheduler .fc .fc-daygrid-event .fc-event-title,
+#scheduler .fc .fc-timegrid-event .fc-event-time,
+#scheduler .fc .fc-timegrid-event .fc-event-title,
+#scheduler .fc .fc-list-event .fc-list-event-time,
+#scheduler .fc .fc-list-event .fc-list-event-title,
+#scheduler .fc .fc-list-event .fc-list-event-title a,
+#scheduler .fc .fc-list-event .fc-list-event-title a:link,
+#scheduler .fc .fc-list-event .fc-list-event-title a:visited,
+#scheduler .fc .fc-list-event .fc-list-event-title a:hover,
+#scheduler .fc .fc-list-event .fc-list-event-title a:focus,
+#scheduler .fc .fc-list-event .fc-list-event-title a:active,
+#scheduler .fc .fc-event:hover .fc-event-time,
+#scheduler .fc .fc-event:hover .fc-event-title,
+#scheduler .fc .fc-event.fc-event-selected .fc-event-time,
+#scheduler .fc .fc-event.fc-event-selected .fc-event-title,
+#scheduler .fc .fc-list-event.fc-event-selected .fc-list-event-time,
+#scheduler .fc .fc-list-event.fc-event-selected .fc-list-event-title,
+#scheduler .fc .fc-list-event.fc-event-selected .fc-list-event-title a {
+  color: inherit !important;
+}
+
 .data-grid-container {
   display: flex;
   flex-direction: column;
