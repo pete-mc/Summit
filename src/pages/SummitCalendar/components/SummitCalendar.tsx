@@ -995,7 +995,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             </button>
           )}
           {!!activity?.id && (
-            <button id="open-modal" className="summit-button summit-button-secondary" data-editor-action="open-terrain" onClick={this.openTerrainDialog}>
+            <button id="open-modal" className="summit-button summit-button-secondary" data-editor-action="open-terrain" data-editor-open-context="existing-activity" onClick={this.openTerrainDialog}>
               Open in Terrain
             </button>
           )}
@@ -1011,7 +1011,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       <div id="event-footer" className="calendar-editor-footer">
         <div id="right-button" className="calendar-editor-actions">
           {!!activity?.id && (
-            <button id="open-modal" className="summit-button summit-button-secondary" data-editor-action="open-terrain" onClick={this.openTerrainDialog}>
+            <button id="open-modal" className="summit-button summit-button-secondary" data-editor-action="open-terrain" data-editor-open-context="existing-activity" onClick={this.openTerrainDialog}>
               Open in Terrain
             </button>
           )}

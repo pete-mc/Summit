@@ -151,6 +151,24 @@ describe("Phase 3 calendar editor date/time layout spacing contract", () => {
   });
 });
 
+describe("Phase 1 open-in-terrain footer contract", () => {
+  it("renders Open in Terrain only for existing activities in both editable and read-only footer contexts", () => {
+    const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+    const footerTemplate = source.match(/editorFooterTemplate = \(\) => \{[\s\S]*?\n  dialogButtons = \[/)?.[0] ?? "";
+
+    expect(footerTemplate).toContain("{!!activity?.id && (");
+    expect(footerTemplate.match(/data-editor-action=\"open-terrain\"/g)).toHaveLength(2);
+    expect(footerTemplate.match(/data-editor-open-context=\"existing-activity\"/g)).toHaveLength(2);
+  });
+
+  it("keeps Open in Terrain wired to component handler in both footer branches", () => {
+    const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+    const footerTemplate = source.match(/editorFooterTemplate = \(\) => \{[\s\S]*?\n  dialogButtons = \[/)?.[0] ?? "";
+
+    expect(footerTemplate.match(/data-editor-action=\"open-terrain\"[\s\S]*?onClick=\{this\.openTerrainDialog\}/g)).toHaveLength(2);
+  });
+});
+
 describe("Phase 5 calendar editor footer action layout contract", () => {
   it("calendar editor footer and action group expose dedicated flex layout hooks with tokenized wrapping gaps", () => {
     const css = fs.readFileSync(STYLES_PATH, "utf8");
