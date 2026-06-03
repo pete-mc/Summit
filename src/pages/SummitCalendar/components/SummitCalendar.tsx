@@ -50,8 +50,6 @@ interface SummitCalendarState {
   members: { value: string; text: string }[];
   currentUnitID: string;
   unitMembers: TerrainUnitMember[];
-  hideDialog: boolean;
-  iframeKey: number;
   calendars: TerrrainCalendarResult;
   allCalendars: { id: string; name: string; selected: boolean }[];
   currentWindow: { startDate: string; endDate: string } | null;
@@ -80,8 +78,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       members: [],
       currentUnitID: TerrainState.getUnitID(),
       unitMembers: [],
-      hideDialog: true,
-      iframeKey: 0,
       calendars: {},
       allCalendars: [],
       currentWindow: null,
@@ -1002,15 +998,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     );
   };
 
-  dialogButtons = [
-    {
-      click: () => {
-        this.setState({ hideDialog: true });
-      },
-      buttonModel: { content: "Close Event", isPrimary: true, cssClass: "summit-button summit-button-primary" },
-    },
-  ];
-
   handleCalendarChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedCalendars = Array.from(event.target.selectedOptions).map((option) => option.value);
     const calendarUpdate = { ...this.state.calendars };
@@ -1156,25 +1143,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             ))}
           </select>
         </div>
-        <DialogComponent
-          id="dialog"
-          isModal={true}
-          visible={!this.state.hideDialog}
-          header="View Event"
-          target="#scheduler"
-          animationSettings={{ effect: "None" }}
-          close={() => {
-            $("#eventFrame").attr("src", "about:blank");
-            this.setState({ hideDialog: true });
-            this.fetchData();
-          }}
-          closeOnEscape={true}
-          showCloseIcon={true}
-          cssClass="summit-dialog-max-size"
-          buttons={this.dialogButtons}
-        >
-          <iframe id="eventFrame" src="about:blank" title="Modal Content" style={{ width: "100%", height: "100%" }} />
-        </DialogComponent>
       </div>
     ) as React.ReactNode;
   }

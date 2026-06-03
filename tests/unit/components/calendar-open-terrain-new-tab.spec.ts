@@ -1,5 +1,7 @@
 import { SummitCalendarComponent } from "@/pages/SummitCalendar/components/SummitCalendar";
 import { fetchActivity } from "@/services";
+import * as fs from "fs";
+import * as path from "path";
 
 jest.mock("@fullcalendar/react", () => () => null);
 jest.mock("@fullcalendar/core/locales/en-au", () => ({}));
@@ -24,6 +26,9 @@ jest.mock("@/services", () => ({
 type CalendarHarness = SummitCalendarComponent & {
   setState: (updater: unknown, callback?: () => void) => void;
 };
+
+const REPO_ROOT = path.resolve(__dirname, "../../..");
+const SUMMIT_CALENDAR_PATH = path.resolve(REPO_ROOT, "src/pages/SummitCalendar/components/SummitCalendar.tsx");
 
 const initialiseNuxtState = () => {
   (window as any).$nuxt = {
@@ -129,5 +134,17 @@ describe("Phase 2 open in terrain new-tab behavior", () => {
     expect(openSpy).not.toHaveBeenCalled();
 
     openSpy.mockRestore();
+  });
+
+  it("does not keep legacy iframe dialog state or handler remnants", () => {
+    const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
+
+    expect(source).not.toContain("hideDialog:");
+    expect(source).not.toContain("iframeKey:");
+    expect(source).not.toContain("dialogButtons = [");
+    expect(source).not.toContain("id=\"dialog\"");
+    expect(source).not.toContain("id=\"eventFrame\"");
+    expect(source).not.toContain("summit-dialog-max-size");
+    expect(source).not.toContain("$(\"#eventFrame\")");
   });
 });
