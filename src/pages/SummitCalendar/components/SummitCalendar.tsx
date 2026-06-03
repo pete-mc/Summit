@@ -930,28 +930,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     const event = await fetchActivity(this.state.activity.id);
     window.$nuxt.$accessor.programming.setActivity(event);
     window.$nuxt.$accessor.programming.setActivityFlow("view");
-    this.setState({ hideDialog: false });
-    $("#eventFrame").attr("src", "https://terrain.scouts.com.au/programming/view-activity");
-    $("#eventFrame").on("load", function () {
-      const iframeHead = $(this).contents().find("head");
-      const css =
-        '<style type="text/css">' +
-        `
-      #freshworks-container, header, nav, footer {
-        visibility: hidden; display: none;
-      }
-      main {
-        padding: 0 !important;
-      }
-      .v-application .v-main__wrap .container {
-        margin: 0 !important;
-        max-width: 100% !important;
-        padding: 0 !important;
-    }
-      ` +
-        "</style>";
-      $(iframeHead).append(css);
-    });
+    window.open("https://terrain.scouts.com.au/programming/view-activity", "_blank");
   };
 
   editorFooterTemplate = () => {
