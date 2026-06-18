@@ -2,8 +2,9 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  roots: ['<rootDir>/tests/unit'],
-  testMatch: ['**/*.spec.ts'],
+  roots: ['<rootDir>/tests'],
+  testMatch: ['**/*.spec.ts', '**/*.test.ts'],
+  testPathIgnorePatterns: ['<rootDir>/tests/browser/'],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
