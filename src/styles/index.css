@@ -108,13 +108,6 @@
   color: var(--summit-color-bg-primary);
 }
 
-.summit-dialog-max-size {
-  max-height: 100% !important;
-  max-width: 100% !important;
-  height: 100% !important;
-  width: 100% !important;
-}
-
 .button-container {
   position: absolute;
   right: 0;

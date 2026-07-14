@@ -50,8 +50,6 @@ interface SummitCalendarState {
   members: { value: string; text: string }[];
   currentUnitID: string;
   unitMembers: TerrainUnitMember[];
-  hideDialog: boolean;
-  iframeKey: number;
   calendars: TerrrainCalendarResult;
   allCalendars: { id: string; name: string; selected: boolean }[];
   currentWindow: { startDate: string; endDate: string } | null;
@@ -80,8 +78,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       members: [],
       currentUnitID: TerrainState.getUnitID(),
       unitMembers: [],
-      hideDialog: true,
-      iframeKey: 0,
       calendars: {},
       allCalendars: [],
       currentWindow: null,
@@ -930,28 +926,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     const event = await fetchActivity(this.state.activity.id);
     window.$nuxt.$accessor.programming.setActivity(event);
     window.$nuxt.$accessor.programming.setActivityFlow("view");
-    this.setState({ hideDialog: false });
-    $("#eventFrame").attr("src", "https://terrain.scouts.com.au/programming/view-activity");
-    $("#eventFrame").on("load", function () {
-      const iframeHead = $(this).contents().find("head");
-      const css =
-        '<style type="text/css">' +
-        `
-      #freshworks-container, header, nav, footer {
-        visibility: hidden; display: none;
-      }
-      main {
-        padding: 0 !important;
-      }
-      .v-application .v-main__wrap .container {
-        margin: 0 !important;
-        max-width: 100% !important;
-        padding: 0 !important;
-    }
-      ` +
-        "</style>";
-      $(iframeHead).append(css);
-    });
+    window.open("https://terrain.scouts.com.au/programming/view-activity", "_blank");
   };
 
   editorFooterTemplate = () => {
@@ -995,7 +970,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             </button>
           )}
           {!!activity?.id && (
-            <button id="open-modal" className="summit-button summit-button-secondary" data-editor-action="open-terrain" onClick={this.openTerrainDialog}>
+            <button id="open-modal" className="summit-button summit-button-secondary" data-editor-action="open-terrain" data-editor-open-context="existing-activity" onClick={this.openTerrainDialog}>
               Open in Terrain
             </button>
           )}
@@ -1011,7 +986,7 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       <div id="event-footer" className="calendar-editor-footer">
         <div id="right-button" className="calendar-editor-actions">
           {!!activity?.id && (
-            <button id="open-modal" className="summit-button summit-button-secondary" data-editor-action="open-terrain" onClick={this.openTerrainDialog}>
+            <button id="open-modal" className="summit-button summit-button-secondary" data-editor-action="open-terrain" data-editor-open-context="existing-activity" onClick={this.openTerrainDialog}>
               Open in Terrain
             </button>
           )}
@@ -1022,15 +997,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
       </div>
     );
   };
-
-  dialogButtons = [
-    {
-      click: () => {
-        this.setState({ hideDialog: true });
-      },
-      buttonModel: { content: "Close Event", isPrimary: true, cssClass: "summit-button summit-button-primary" },
-    },
-  ];
 
   handleCalendarChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedCalendars = Array.from(event.target.selectedOptions).map((option) => option.value);
@@ -1177,25 +1143,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
             ))}
           </select>
         </div>
-        <DialogComponent
-          id="dialog"
-          isModal={true}
-          visible={!this.state.hideDialog}
-          header="View Event"
-          target="#scheduler"
-          animationSettings={{ effect: "None" }}
-          close={() => {
-            $("#eventFrame").attr("src", "about:blank");
-            this.setState({ hideDialog: true });
-            this.fetchData();
-          }}
-          closeOnEscape={true}
-          showCloseIcon={true}
-          cssClass="summit-dialog-max-size"
-          buttons={this.dialogButtons}
-        >
-          <iframe id="eventFrame" src="about:blank" title="Modal Content" style={{ width: "100%", height: "100%" }} />
-        </DialogComponent>
       </div>
     ) as React.ReactNode;
   }
