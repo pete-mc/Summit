@@ -1,0 +1,21 @@
+### Logbook detail read (maps to GET /members/{memberId}/logbook/{logbookId})
+GET https://achievements.terrain.scouts.com.au/members/53ed4450-3a80-46a2-95e5-fa20949cb475/logbook/8f7fcc9f-1f6a-4a2f-96f0-df0d85f17e91 HTTP/1.1
+authority: achievements.terrain.scouts.com.au
+accept: */*
+Authorization: Bearer {{token}}
+content-type: application/json
+origin: https://terrain.scouts.com.au
+referer: https://terrain.scouts.com.au/
+
+### Logbook write (maps to POST /members/{memberId}/logbook)
+POST https://achievements.terrain.scouts.com.au/members/53ed4450-3a80-46a2-95e5-fa20949cb475/logbook HTTP/1.1
+authority: achievements.terrain.scouts.com.au
+accept: */*
+Authorization: Bearer {{token}}
+content-type: application/json;charset=UTF-8
+origin: https://terrain.scouts.com.au
+referer: https://terrain.scouts.com.au/
+
+{
+  "text": "Completed a 12km overnight hike with map and compass navigation."
+}

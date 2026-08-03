@@ -1,0 +1,8 @@
+### Profiles read (maps to GET /profiles)
+GET https://members.terrain.scouts.com.au/profiles HTTP/1.1
+authority: members.terrain.scouts.com.au
+accept: */*
+Authorization: Bearer {{token}}
+content-type: application/json
+origin: https://terrain.scouts.com.au
+referer: https://terrain.scouts.com.au/
