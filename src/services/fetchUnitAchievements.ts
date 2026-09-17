@@ -1,5 +1,7 @@
-import { TerrainState } from "@/helpers";
+import { TerrainState, createLogger } from "@/helpers";
 import { type TerrainAchievements } from "../types/terrainTypes";
+
+const logger = createLogger("fetchUnitAchievements");
 
 export default async function fetchUnitAchievements(): Promise<TerrainAchievements[]> {
   try {
@@ -22,7 +24,7 @@ export default async function fetchUnitAchievements(): Promise<TerrainAchievemen
     const jsonData = await response.json();
     return jsonData.results;
   } catch (e) {
-    console.log(`Error fetching unit achievements: ${e}`);
+    logger.error(e);
     return [];
   }
 }

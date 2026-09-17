@@ -17,6 +17,7 @@ import {
   applyGroupedMultiSelectChange,
   buildGroupedMemberOptions,
   clearSummitCalendarEditorDraft,
+  createLogger,
   detectSummitCalendarSoftConflicts,
   getContrastTextColor,
   loadSummitCalendarEditorDraft,
@@ -29,6 +30,7 @@ import { DatePickerComponent, TimePickerComponent } from "@/components/DateTimeI
 import { DropDownListComponent } from "@/components/SimpleDropdown";
 import { DialogComponent, DialogUtility } from "@/components/DialogComponent";
 
+const logger = createLogger("SummitCalendar");
 const SUMMIT_CALENDAR_VIEW_STORAGE_KEY = "summit.calendar.currentView";
 type AgendaRangePreset = "week" | "month" | "year" | "custom";
 
@@ -877,7 +879,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
   saveActivity = async (nextWeek?: boolean) => {
     const { activity } = this.state;
     if (!activity) return;
-    console.log(activity);
     const validationResult = validateSummitCalendarActivity(activity);
     if (!validationResult.isValid) {
       this.setState({ editorSaveErrors: [] });
@@ -976,8 +977,12 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
                   width: "300px",
                   okButton: {
                     click: () => {
-                      deleteEvent(this.state.activity?.id || "").then(() => {
+                      deleteEvent(this.state.activity?.id || "").then((didDelete) => {
                         dialogObj.hide();
+                        if (!didDelete) {
+                          this.setState({ editorSaveErrors: ["Failed to delete this event. Please try again."] });
+                          return;
+                        }
                         this.setState({ isEditorOpen: false });
                         this.fetchData();
                       });
@@ -1044,7 +1049,11 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     });
     const allCalendars = this.state.allCalendars.map((c) => ({ ...c, selected: selectedCalendars.includes(c.id) }));
     this.setState({ calendars: calendarUpdate, allCalendars }, () => {
-      updateMemberCalendars(JSON.stringify(calendarUpdate)).then(() => {
+      updateMemberCalendars(JSON.stringify(calendarUpdate)).then((didUpdate) => {
+        if (!didUpdate) {
+          logger.error("failed to update member calendar selection");
+          return;
+        }
         this.fetchData();
       });
     });

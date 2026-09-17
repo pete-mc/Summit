@@ -2,6 +2,8 @@ export { default as createNewEvent } from "./createNewEvent";
 export { default as fetchAchievements } from "./fetchAchievements";
 export { default as fetchActivity } from "./fetchActivity";
 export { default as fetchMemberEvents } from "./fetchMemberEvents";
+export { default as fetchOASTemplate } from "./fetchOASTemplate";
+export { default as fetchOASTree } from "./fetchOASTree";
 export { default as fetchSIATemplate } from "./fetchSIATemplate";
 export { default as fetchUnitAchievements } from "./fetchUnitAchievements";
 export { default as fetchUnitAchievementsFilterd } from "./fetchUnitAchievementsFilterd";

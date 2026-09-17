@@ -11,3 +11,8 @@
 /.vscode/.chrome-*/*
 /plans
 /.playwright-mcp
+.jest-components-results.json
+
+# project scaffolding (local secrets)
+/.claude/DEVENV.local.md
+/.claude/scheduled_tasks.lock

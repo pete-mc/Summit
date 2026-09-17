@@ -2,8 +2,10 @@ import { TerrainEvent, type TerrainAchievements } from "@/types/terrainTypes";
 import { fetchActivity, fetchMemberEvents, fetchUnitAchievements } from "@/services";
 import { type ActionContext, type Module } from "vuex/types/index";
 import { type TerrainRootState } from "@/types/terrainState";
-import { TerrainState, reconstructGuids, reconstructGuidsAndDates } from "@/helpers";
+import { TerrainState, reconstructGuids, reconstructGuidsAndDates, createLogger } from "@/helpers";
 import SummitRouter from "@/router/SummitRouter";
+
+const logger = createLogger("summitModule");
 
 interface State {
   message: string;
@@ -42,7 +44,7 @@ const SummitModule: Module<State, TerrainRootState> = {
         helpButton: state.helpButton,
       };
       localStorage.setItem("SummitState", JSON.stringify(data));
-      console.log("SummitState saved");
+      logger.debug("SummitState saved");
     },
     updateAchievements(state: { achievements: TerrainAchievements[]; achievementsTimestamp: number | null }, payload: { achievements: TerrainAchievements[]; timestamp: number }) {
       state.achievements = payload.achievements;
@@ -97,7 +99,7 @@ const SummitModule: Module<State, TerrainRootState> = {
       this.watch(
         () => context.rootState.user.profileIndex, //profile changed
         () => {
-          console.log("profile changed");
+          logger.debug("profile changed");
           SummitRouter.getInstance().resetMenu();
           context.dispatch("getPresentedAwards");
           context.dispatch("getAchievements");

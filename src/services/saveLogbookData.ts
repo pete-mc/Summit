@@ -1,9 +1,11 @@
-import { TerrainState } from "@/helpers";
+import { TerrainState, createLogger } from "@/helpers";
+
+const logger = createLogger("saveLogbookData");
 
 export default async function saveLogbookData(text: string): Promise<void> {
   try {
     if (!TerrainState.getToken()) return undefined;
-    console.debug("Sending logbook to terrain");
+    logger.debug("Sending logbook to terrain");
     await fetch("https://achievements.terrain.scouts.com.au/members/" + TerrainState.getMemberID() + "/logbook", {
       headers: {
         accept: "application/json, text/plain, */*",
@@ -24,7 +26,7 @@ export default async function saveLogbookData(text: string): Promise<void> {
       mode: "cors",
     });
   } catch (e) {
-    console.log("Error saving logbook: " + e);
+    logger.error(e);
     return undefined;
   }
 }

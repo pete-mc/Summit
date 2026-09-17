@@ -1,0 +1,22 @@
+<!-- @format -->
+
+# Development Environment — Local Values
+
+This file holds this project's **actual** credentials and is gitignored (see
+`code/.gitignore`) — it must never be committed. `SETUP.md` copies this
+example to `DEVENV.local.md` and fills in the blanks during Step 6.
+
+## WIFI
+
+- SSID: `<fill in during SETUP.md Step 4, or leave blank if skipped>`
+- Password: `<fill in during SETUP.md Step 4, or leave blank if skipped>`
+
+## GIT
+
+- Remote origin: `<fill in during SETUP.md Step 5d, or leave blank for local-only>`
+- Branch: `main`
+- Hosting username: `<fill in during SETUP.md Step 5b>`
+- Safe directory exception added: `<yes/no — SETUP.md Step 5c; "no" if project isn't on a network share>`
+
+Note: git identity (`user.name`/`user.email`) is NOT recorded here — it's a
+machine-global `~/.gitconfig` setting, not per-project. See `DEVENV.md`.

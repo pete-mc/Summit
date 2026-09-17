@@ -1,0 +1,203 @@
+import { filterMembersByPatrol, groupMembersByPatrol, collectPatrolNames, sliceStagesToRange, formatStageProgress, sortMembers } from "@/pages/OasProgression/services/filterHeatMapSections";
+import type { HeatMapStage, HeatMapSection, SectionMemberRow } from "@/pages/OasProgression/services/groupRowsForHeatMap";
+
+function makeStage(overrides: Partial<HeatMapStage> = {}): HeatMapStage {
+  return { stage: 1, cells: [], complete: false, ...overrides };
+}
+
+function makeCell(overrides: Partial<HeatMapStage["cells"][number]> = {}) {
+  return { inputId: "a", iStatement: "I can do a thing", inputGroup: "Plan", answered: false, awarded: false, date: null, ...overrides };
+}
+
+function makeMemberRow(overrides: Partial<SectionMemberRow> = {}): SectionMemberRow {
+  return {
+    memberId: "m1",
+    memberName: "Alex Scout",
+    patrolName: null,
+    highestStage: null,
+    stages: [],
+    ...overrides,
+  };
+}
+
+function makeSection(members: SectionMemberRow[], overrides: Partial<HeatMapSection> = {}): HeatMapSection {
+  return { skill: "bushcraft", stream: null, isEmpty: false, members, ...overrides };
+}
+
+describe("filterMembersByPatrol", () => {
+  it("returns all members unchanged when no patrols are selected", () => {
+    const members = [makeMemberRow({ patrolName: "Kookaburras" }), makeMemberRow({ memberId: "m2", patrolName: null })];
+    expect(filterMembersByPatrol(members, [])).toEqual(members);
+  });
+
+  it("keeps only members in a selected patrol", () => {
+    const kooka = makeMemberRow({ memberId: "m1", patrolName: "Kookaburras" });
+    const wombat = makeMemberRow({ memberId: "m2", patrolName: "Wombats" });
+    const noPatrol = makeMemberRow({ memberId: "m3", patrolName: null });
+
+    const result = filterMembersByPatrol([kooka, wombat, noPatrol], ["Kookaburras"]);
+
+    expect(result).toEqual([kooka]);
+  });
+
+  it("excludes members with no patrol when any patrol filter is active", () => {
+    const noPatrol = makeMemberRow({ memberId: "m1", patrolName: null });
+    expect(filterMembersByPatrol([noPatrol], ["Kookaburras"])).toEqual([]);
+  });
+});
+
+describe("groupMembersByPatrol", () => {
+  it("groups members alphabetically by patrol name", () => {
+    const wombat = makeMemberRow({ memberId: "m1", memberName: "Zara", patrolName: "Wombats" });
+    const kooka = makeMemberRow({ memberId: "m2", memberName: "Alex", patrolName: "Kookaburras" });
+
+    const groups = groupMembersByPatrol([wombat, kooka]);
+
+    expect(groups.map((g) => g.patrolName)).toEqual(["Kookaburras", "Wombats"]);
+  });
+
+  it("puts members with no patrol into a trailing Unassigned group", () => {
+    const kooka = makeMemberRow({ memberId: "m1", patrolName: "Kookaburras" });
+    const noPatrol = makeMemberRow({ memberId: "m2", patrolName: null });
+
+    const groups = groupMembersByPatrol([kooka, noPatrol]);
+
+    expect(groups.map((g) => g.patrolName)).toEqual(["Kookaburras", "Unassigned"]);
+    expect(groups[1].members).toEqual([noPatrol]);
+  });
+
+  it("returns a single unlabeled group when no member in the section has any patrol", () => {
+    const members = [makeMemberRow({ memberId: "m1", patrolName: null }), makeMemberRow({ memberId: "m2", patrolName: null })];
+
+    const groups = groupMembersByPatrol(members);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0].patrolName).toBe("");
+    expect(groups[0].members).toEqual(members);
+  });
+});
+
+describe("collectPatrolNames", () => {
+  it("returns distinct, alphabetically sorted patrol names across sections", () => {
+    const sections = [
+      makeSection([makeMemberRow({ memberId: "m1", patrolName: "Wombats" }), makeMemberRow({ memberId: "m2", patrolName: "Kookaburras" })]),
+      makeSection([makeMemberRow({ memberId: "m3", patrolName: "Kookaburras" }), makeMemberRow({ memberId: "m4", patrolName: null })]),
+    ];
+
+    expect(collectPatrolNames(sections)).toEqual(["Kookaburras", "Wombats"]);
+  });
+
+  it("returns an empty array when no member has a patrol", () => {
+    const sections = [makeSection([makeMemberRow({ patrolName: null })])];
+    expect(collectPatrolNames(sections)).toEqual([]);
+  });
+});
+
+describe("sliceStagesToRange", () => {
+  it("keeps only stages within the inclusive range", () => {
+    expect(sliceStagesToRange([1, 2, 3, 4, 5, 6], [3, 5])).toEqual([3, 4, 5]);
+  });
+
+  it("returns an empty array when a stream's stages are entirely below the range", () => {
+    expect(sliceStagesToRange([1, 2, 3], [5, 8])).toEqual([]);
+  });
+
+  it("returns an empty array when a stream's stages are entirely above the range", () => {
+    expect(sliceStagesToRange([6, 7, 8], [1, 3])).toEqual([]);
+  });
+});
+
+describe("formatStageProgress", () => {
+  it("shows a plain dash with no progress when highestStage is null", () => {
+    expect(formatStageProgress(null, [])).toEqual({ stage: "-", nextStageProgress: null });
+  });
+
+  it("shows the plain stage number with no .xx when there is no next stage in this section's stages", () => {
+    const stages = [makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] })];
+    expect(formatStageProgress(5, stages)).toEqual({ stage: "5", nextStageProgress: null });
+  });
+
+  it("shows the plain stage number with no .xx when the next stage has zero progress", () => {
+    const stages = [makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] }), makeStage({ stage: 6, cells: [makeCell({ inputId: "b" }), makeCell({ inputId: "c" })] })];
+    expect(formatStageProgress(5, stages)).toEqual({ stage: "5", nextStageProgress: null });
+  });
+
+  it("counts answered-or-awarded cells in the next stage above highestStage, zero-padded to 2 digits", () => {
+    const stages = [
+      makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] }),
+      makeStage({ stage: 6, cells: [makeCell({ inputId: "b", answered: true }), makeCell({ inputId: "c", awarded: true }), makeCell({ inputId: "d" })] }),
+    ];
+    expect(formatStageProgress(5, stages)).toEqual({ stage: "5", nextStageProgress: "02" });
+  });
+
+  it("pads a double-digit count the same way (still zero-padded to at least 2 digits)", () => {
+    const cells = Array.from({ length: 12 }, (_, i) => makeCell({ inputId: `c${i}`, answered: true }));
+    const stages = [makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] }), makeStage({ stage: 6, cells })];
+    expect(formatStageProgress(5, stages)).toEqual({ stage: "5", nextStageProgress: "12" });
+  });
+});
+
+describe("sortMembers", () => {
+  it("sorts by last name, falling back to first name on a tie", () => {
+    const zara = makeMemberRow({ memberId: "m1", memberName: "Zara Anderson" });
+    const alex = makeMemberRow({ memberId: "m2", memberName: "Alex Baker" });
+    const sam = makeMemberRow({ memberId: "m3", memberName: "Sam Anderson" });
+
+    const result = sortMembers([zara, alex, sam], "lastName");
+
+    expect(result.map((m) => m.memberId)).toEqual(["m3", "m1", "m2"]);
+  });
+
+  it("sorts by first name", () => {
+    const zara = makeMemberRow({ memberId: "m1", memberName: "Zara Anderson" });
+    const alex = makeMemberRow({ memberId: "m2", memberName: "Alex Baker" });
+
+    const result = sortMembers([zara, alex], "firstName");
+
+    expect(result.map((m) => m.memberId)).toEqual(["m2", "m1"]);
+  });
+
+  it("does not mutate the input array", () => {
+    const members = [makeMemberRow({ memberId: "m1", memberName: "Zara" }), makeMemberRow({ memberId: "m2", memberName: "Alex" })];
+    const original = [...members];
+
+    sortMembers(members, "firstName");
+
+    expect(members).toEqual(original);
+  });
+
+  it("sorts by stageProgress: higher highestStage ranks first", () => {
+    const low = makeMemberRow({ memberId: "m1", highestStage: 2 });
+    const high = makeMemberRow({ memberId: "m2", highestStage: 5 });
+
+    const result = sortMembers([low, high], "stageProgress");
+
+    expect(result.map((m) => m.memberId)).toEqual(["m2", "m1"]);
+  });
+
+  it("sorts by stageProgress: within the same highestStage, more next-stage progress ranks first", () => {
+    const fewTicked = makeMemberRow({
+      memberId: "m1",
+      highestStage: 5,
+      stages: [makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] }), makeStage({ stage: 6, cells: [makeCell({ inputId: "b", answered: true }), makeCell({ inputId: "c" })] })],
+    });
+    const manyTicked = makeMemberRow({
+      memberId: "m2",
+      highestStage: 5,
+      stages: [makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] }), makeStage({ stage: 6, cells: [makeCell({ inputId: "b", answered: true }), makeCell({ inputId: "c", awarded: true })] })],
+    });
+
+    const result = sortMembers([fewTicked, manyTicked], "stageProgress");
+
+    expect(result.map((m) => m.memberId)).toEqual(["m2", "m1"]);
+  });
+
+  it("sorts by stageProgress: a null highestStage sorts last", () => {
+    const noProgress = makeMemberRow({ memberId: "m1", highestStage: null });
+    const someProgress = makeMemberRow({ memberId: "m2", highestStage: 1 });
+
+    const result = sortMembers([noProgress, someProgress], "stageProgress");
+
+    expect(result.map((m) => m.memberId)).toEqual(["m2", "m1"]);
+  });
+});

@@ -1,5 +1,7 @@
 import { type TerrainUnitMember } from "../types/terrainTypes";
-import { TerrainState } from "@/helpers";
+import { TerrainState, createLogger } from "@/helpers";
+
+const logger = createLogger("fetchUnitMembers");
 
 export default async function fetchUnitMembers(): Promise<TerrainUnitMember[]> {
   try {
@@ -22,7 +24,7 @@ export default async function fetchUnitMembers(): Promise<TerrainUnitMember[]> {
     const jsonData = await response.json();
     return jsonData.results;
   } catch (e) {
-    console.log("Error fetching unit members: " + e);
+    logger.error(e);
     return [];
   }
 }

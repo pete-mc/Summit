@@ -78,7 +78,6 @@ export default defineComponent({
         }
         return result;
       }, [] as SummitAchievement[]);
-      console.timeStamp(" Got all items");
       this.renderReactComponent(this.items as SummitAchievement[]);
     },
     mountReactComponent() {
@@ -99,7 +98,6 @@ export default defineComponent({
 
     //update process from react component when save button is clicked
     handleUpdate(newItems: SummitAchievement[]) {
-      console.log("Updating items", newItems);
       //get a list of member ids and the awards they have been presented
       const presentedRecordsByMember = [] as { memberid: string; membername: string; awards: { guid: string; date: Date }[] }[];
       newItems.forEach((item) => {
@@ -130,7 +128,6 @@ export default defineComponent({
         });
       });
 
-      console.log("Schedule Items", scheduleItems);
       //create the event object
       const eventToUpload = {
         schedule_items: scheduleItems,

@@ -8,3 +8,5 @@ export { default as verticalText } from "./VerticleText";
 export { applyGroupedMultiSelectChange, buildGroupedMemberOptions, detectSummitCalendarSoftConflicts, validateSummitCalendarActivity } from "./SummitCalendarValidation";
 export { clearSummitCalendarEditorDraft, loadSummitCalendarEditorDraft, saveSummitCalendarEditorDraft } from "./SummitCalendarDraftPersistence";
 export { getContrastTextColor } from "./SummitCalendarContrastText";
+export { clearCache, loadCached, saveCached } from "./OASTemplateCache";
+export { createLogger, setLogLevel } from "./Logger";

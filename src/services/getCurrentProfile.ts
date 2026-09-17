@@ -1,5 +1,7 @@
 import { type TerrainProfile } from "../types/terrainTypes";
-import { TerrainState } from "@/helpers";
+import { TerrainState, createLogger } from "@/helpers";
+
+const logger = createLogger("getCurrentProfile");
 
 export default async function getCurrentProfile(): Promise<TerrainProfile[] | undefined> {
   try {
@@ -22,7 +24,7 @@ export default async function getCurrentProfile(): Promise<TerrainProfile[] | un
     // cache the data for 5 mins
     return data.profiles as TerrainProfile[];
   } catch (e) {
-    console.log("Error fetching current profile: " + e);
+    logger.error(e);
     return undefined;
   }
 }

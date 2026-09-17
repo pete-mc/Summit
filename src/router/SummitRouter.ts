@@ -1,10 +1,13 @@
 import FindComponent from "../helpers/FindComponent";
-import { Home, DisplayOptions, MilestoneReport, OasReport, Topo, SummitCalendar, PeakAward } from "@/pages";
+import { Home, DisplayOptions, MilestoneReport, OasReport, OasProgression, Topo, SummitCalendar, PeakAward } from "@/pages";
 import { NavMenuComponent, NavMenuItem } from "@/types/NavMenu";
 import VueRouter, { Route } from "vue-router";
 import Vue from "vue";
 import { InitLogbookRead, InitLogbookWrite, InitProgrammingExportBtn, CheckAward, AwardObserverRouter } from "@/components";
 import { fetchAchievements } from "@/services";
+import { createLogger } from "@/helpers";
+
+const logger = createLogger("SummitRouter");
 
 export default class SummitRouter {
   private static instance: SummitRouter;
@@ -74,6 +77,10 @@ export default class SummitRouter {
       component: OasReport,
     });
     this.router.addRoute({
+      path: "/summit/reports/oasprogression",
+      component: OasProgression,
+    });
+    this.router.addRoute({
       path: "/summit/reports/peakaward",
       component: PeakAward,
     });
@@ -93,7 +100,7 @@ export default class SummitRouter {
       next();
     });
     this.router.afterEach((to) => {
-      console.log("After each");
+      logger.debug("After each");
       if (this.summitNavMenuItems.length === 0 || SummitRouter.terrainNavMenuItems.length === 0) {
         setTimeout(() => {
           this.resetMenu();
@@ -129,6 +136,13 @@ export default class SummitRouter {
           {
             title: "OAS Summary",
             to: "/summit/reports/oas",
+            items: [],
+            locked: false,
+            roles: [true, false],
+          },
+          {
+            title: "OAS Progression",
+            to: "/summit/reports/oasprogression",
             items: [],
             locked: false,
             roles: [true, false],
@@ -269,7 +283,7 @@ export default class SummitRouter {
       case "/oas":
       case "/sia":
         if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0) {
-          console.log("Fetching achievements");
+          logger.debug("Fetching achievements");
           const type =
             [
               { route: "/oas", type: "outdoor_adventure_skill" },
