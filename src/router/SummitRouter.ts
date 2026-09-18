@@ -1,10 +1,9 @@
 import FindComponent from "../helpers/FindComponent";
-import { Home, DisplayOptions, MilestoneReport, OasReport, OasProgression, Topo, SummitCalendar, PeakAward } from "@/pages";
+import { Home, DisplayOptions, MilestoneReport, OasReport, OasProgression, Topo, SummitCalendar, PeakAward, PresentAwards } from "@/pages";
 import { NavMenuComponent, NavMenuItem } from "@/types/NavMenu";
 import VueRouter, { Route } from "vue-router";
 import Vue from "vue";
-import { InitLogbookRead, InitLogbookWrite, InitProgrammingExportBtn, CheckAward, AwardObserverRouter } from "@/components";
-import { fetchAchievements } from "@/services";
+import { InitLogbookRead, InitLogbookWrite, InitProgrammingExportBtn } from "@/components";
 import { createLogger } from "@/helpers";
 
 const logger = createLogger("SummitRouter");
@@ -64,10 +63,10 @@ export default class SummitRouter {
       path: "/summit/tools/DisplayOptions",
       component: DisplayOptions,
     });
-    // this.router.addRoute({
-    //   path: "/summit/tools/PresentAwards",
-    //   component: PresentAwards,
-    // });
+    this.router.addRoute({
+      path: "/summit/tools/PresentAwards",
+      component: PresentAwards,
+    });
     this.router.addRoute({
       path: "/summit/reports/milestone",
       component: MilestoneReport,
@@ -175,13 +174,13 @@ export default class SummitRouter {
             locked: false,
             roles: [true, false],
           },
-          // {
-          //   title: "Present Awards",
-          //   to: "/summit/tools/PresentAwards",
-          //   items: [],
-          //   locked: false,
-          //   roles: [true, false],
-          // },
+          {
+            title: "Present Awards",
+            to: "/summit/tools/PresentAwards",
+            items: [],
+            locked: false,
+            roles: [true, false],
+          },
           {
             title: "Display Options",
             to: "/summit/tools/DisplayOptions",
@@ -260,49 +259,6 @@ export default class SummitRouter {
       case "/programming/view-activity":
         if (this.checkElements(`//button[@data-cy='PRINT']`, "exportiCalBtn")) InitProgrammingExportBtn();
         else setTimeout(() => SummitRouter.pageChecks(to), 100);
-        break;
-      case "/milestones":
-        if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0 && $("div.ListItem__title:contains(Milestone 1)").length > 0)
-          CheckAward({ name: "milestone", path: "achievement_meta.stage", value: 1 }).then(() => {
-            AwardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", to, this.pageChecks);
-          });
-        if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0 && $("div.ListItem__title:contains(Milestone 2)").length > 0)
-          CheckAward({ name: "milestone", path: "achievement_meta.stage", value: 2 }).then(() => {
-            AwardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", to, this.pageChecks);
-          });
-        if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0 && $("div.ListItem__title:contains(Milestone 3)").length > 0)
-          CheckAward({ name: "milestone", path: "achievement_meta.stage", value: 3 }).then(() => {
-            AwardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", to, this.pageChecks);
-          });
-        break;
-      case "/intro-scouting":
-      case "/intro-section":
-      case "/adventurous-journey":
-      case "/personal-reflection":
-      case "/personal-development":
-      case "/oas":
-      case "/sia":
-        if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0) {
-          logger.debug("Fetching achievements");
-          const type =
-            [
-              { route: "/oas", type: "outdoor_adventure_skill" },
-              { route: "/sia", type: "special_interest_area" },
-              { route: "/personal-development", type: "course_reflection" },
-              { route: "/intro-scouting", type: "intro_scouting" },
-              { route: "/intro-section", type: "intro_section" },
-              { route: "/adventurous-journey", type: "adventurous_journey" },
-              { route: "/personal-reflection", type: "personal_reflection" },
-            ].find((type) => type.route === to.path)?.type ?? "outdoor_adventure_skill";
-          const header = to.path.startsWith("/intro-") ? $("hr.BaseList__divider").first() : $("div.AchievementOverview__awarded").first();
-          const list = header.next().children("div.List").first();
-          list.addClass("AwardedList");
-          list.children().each((_index, element) => {
-            fetchAchievements(type).then((awards) => {
-              CheckAward({ name: type, parent: $(element), awardsPrefetched: awards });
-            });
-          });
-        } else setTimeout(() => SummitRouter.pageChecks(to), 100);
         break;
     }
   }
