@@ -62,7 +62,7 @@ module.exports = {
   performance: {
     hints: false,
   },
-  devtool: isDevelopment ? 'inline-source-map' : false,
+  devtool: isDevelopment ? 'eval-source-map' : false,
   devServer: {
     static: {
       directory: path.join(__dirname, "dist"),
