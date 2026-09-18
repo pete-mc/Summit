@@ -23,8 +23,8 @@
   --summit-focus-ring-width: 2px;
 
   --summit-color-status-unanswered: #edebe9;
-  --summit-color-status-answered: #ffb900;
-  --summit-color-status-awarded: #6bcb3f;
+  --summit-color-status-answered: #7d6694;
+  --summit-color-status-awarded: #b3c9b3;
 }
 
 .editor-container {
@@ -465,6 +465,7 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   flex-direction: column;
   gap: var(--summit-space-md);
   margin-bottom: var(--summit-space-md);
+  padding-top: var(--summit-space-md);
 }
 
 .oas-heatmap-controls {
@@ -497,11 +498,10 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
 .oas-field:not(:last-child)::after {
   content: "";
   position: absolute;
-  top: 50%;
+  top: 5%;
   right: 0;
-  transform: translateY(-50%);
   width: 1px;
-  height: 28px;
+  height: 90%;
   background: var(--summit-color-border-subtle);
 }
 
@@ -549,10 +549,9 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   font-weight: var(--summit-font-weight-semibold);
   background: var(--summit-color-status-unanswered);
   border-bottom: none;
-  position: sticky;
-  left: 0;
-  display: flex;
-  align-items: center;
+  border-left: 1px solid var(--summit-color-border-default);
+  border-right: 1px solid var(--summit-color-border-default);
+  vertical-align: middle;
 }
 
 .oas-heatmap-skill-title {
@@ -579,6 +578,7 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   text-align: center;
   vertical-align: top;
   border-left: 1px solid var(--summit-color-border-default);
+  border-right: 1px solid var(--summit-color-border-default);
 }
 
 .oas-heatmap-stage-progress {
@@ -622,6 +622,18 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
 
 .oas-heatmap-square-group-start {
   margin-left: var(--summit-space-sm);
+  position: relative;
+}
+
+.oas-heatmap-square-group-start::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--summit-space-sm) / -2);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 1px;
+  background: var(--summit-color-border-default);
 }
 
 .oas-heatmap-square-unanswered {
@@ -641,6 +653,10 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   display: flex;
   align-items: center;
   gap: var(--summit-space-md);
+}
+
+.oas-progression-view-row .oas-icon-button {
+  margin-left: auto;
 }
 
 .oas-icon-button {
@@ -803,5 +819,41 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   color: var(--summit-color-text-primary);
   background: var(--summit-color-bg-muted);
   border-bottom: 1px solid var(--summit-color-border-subtle);
+}
+
+.oas-dev-tools-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--summit-space-md);
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--summit-color-bg-surface);
+  border: 1px solid var(--summit-color-border-subtle);
+  border-radius: 6px;
+  padding: var(--summit-space-md);
+}
+
+.oas-dev-tools-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.oas-dev-swatch-row {
+  display: flex;
+  gap: var(--summit-space-xs);
+}
+
+.oas-dev-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.oas-dev-swatch[aria-pressed="true"] {
+  border-color: var(--summit-color-text-primary);
 }
 

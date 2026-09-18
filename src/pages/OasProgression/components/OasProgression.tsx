@@ -1,11 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { DataGrid, DataGridColumn } from "@/components/DataGrid";
+import { exportElementToPdf } from "@/components/gridExport";
 import { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import { OASHeatMap } from "@/pages/OasProgression/components/OASHeatMap";
 import { collectPatrolNames } from "@/pages/OasProgression/services/filterHeatMapSections";
 import { groupRowsForHeatMap } from "@/pages/OasProgression/services/groupRowsForHeatMap";
 import { loadOASProgressionFilters, saveOASProgressionFilters, type OASProgressionFilterState } from "@/pages/OasProgression/services/OASProgressionFilterPersistence";
+import { OASDevTools } from "@/pages/OasProgression/components/OASDevTools";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
+
+/** Developer-only panel for tuning heat map colors. Flip to true locally to use it; leave false when committing. */
+const OAS_DEV_TOOLS_ENABLED = true;
 
 interface OasProgressionTableProps {
   items: OASProgressionRow[];
@@ -40,6 +45,7 @@ const DEFAULT_FILTERS: OASProgressionFilterState = {
   breakByPatrol: false,
   hideEmptyStreams: false,
   hideEmptyTopColumns: false,
+  onlyInProgress: false,
   visibleStreams: OAS_STREAMS,
   stageRange: [1, MAX_STAGE],
   sortBy: "firstName",
@@ -127,6 +133,27 @@ function DropdownMultiSelect({ label, options, selected, onToggle, dataAttr }: D
 export function OasProgressionTable(props: OasProgressionTableProps): React.ReactNode {
   const { items, trunkStageCounts, members, loadingStreams, onReloadAll } = props;
   const [filters, setFilters] = useState<OASProgressionFilterState>(loadInitialFilters);
+  const heatMapExportRef = useRef<HTMLTableElement | null>(null);
+  const [heatMapExportFeedback, setHeatMapExportFeedback] = useState("");
+
+  const handleHeatMapPdfExport = async () => {
+    if (!heatMapExportRef.current) {
+      return;
+    }
+
+    try {
+      await exportElementToPdf({
+        element: heatMapExportRef.current,
+        fileName: "OASProgressionHeatMap.pdf",
+        title: "Terrain | Summit - OAS Progression Heat Map",
+        orientation: "landscape",
+      });
+      setHeatMapExportFeedback("PDF export complete");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      setHeatMapExportFeedback(`PDF export failed: ${message}`);
+    }
+  };
 
   useEffect(() => {
     saveOASProgressionFilters(filters);
@@ -295,12 +322,25 @@ export function OasProgressionTable(props: OasProgressionTableProps): React.Reac
                 <input id="oas-heatmap-hide-empty-top-columns" type="checkbox" data-oas-toggle="hide-empty-top-columns" checked={filters.hideEmptyTopColumns} onChange={(e) => patch({ hideEmptyTopColumns: e.target.checked })} /> Hide empty
                 top columns
               </label>
+              <label className="oas-heatmap-checkbox-label">
+                <input id="oas-heatmap-only-in-progress" type="checkbox" data-oas-toggle="only-in-progress" checked={filters.onlyInProgress} onChange={(e) => patch({ onlyInProgress: e.target.checked })} /> Only show in-progress
+              </label>
             </fieldset>
 
             <button type="button" className="summit-button summit-button-secondary oas-reset-button" data-action="reset-filters" onClick={resetFilters}>
               Reset filters
             </button>
+
+            <button type="button" data-action="pdf-export" className="summit-button summit-button-secondary" onClick={handleHeatMapPdfExport}>
+              PDF Export
+            </button>
           </div>
+
+          {heatMapExportFeedback && (
+            <div data-heatmap-export-feedback="true" role="status" className="data-grid-export-feedback">
+              {heatMapExportFeedback}
+            </div>
+          )}
 
           <OASHeatMap
             items={items}
@@ -313,10 +353,14 @@ export function OasProgressionTable(props: OasProgressionTableProps): React.Reac
             selectedPatrols={filters.selectedPatrols}
             breakByPatrol={filters.breakByPatrol}
             hideEmptyTopColumns={filters.hideEmptyTopColumns}
+            onlyInProgress={filters.onlyInProgress}
             visibleStreams={filters.visibleStreams}
             stageRange={filters.stageRange}
             sortBy={filters.sortBy}
+            exportRef={heatMapExportRef}
           />
+
+          {OAS_DEV_TOOLS_ENABLED && <OASDevTools />}
         </>
       ) : (
         <DataGrid

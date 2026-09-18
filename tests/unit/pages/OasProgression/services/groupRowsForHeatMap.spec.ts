@@ -93,7 +93,7 @@ describe("groupRowsForHeatMap", () => {
     expect(survival?.members[0].stages[0].cells[0].inputId).toBe("s1");
   });
 
-  it("computes highestStage per member across the WHOLE skill, consistent across every section", () => {
+  it("computes highestStage per member SCOPED TO EACH SECTION, not shared across the whole skill", () => {
     const rows = [
       makeRow({ stage: 1, inputId: "a", answered: true, awarded: true, branch: "bushcraft" }),
       makeRow({ stage: 4, branch: "pioneering", inputId: "b", answered: true, awarded: true }),
@@ -103,9 +103,12 @@ describe("groupRowsForHeatMap", () => {
 
     const result = groupRowsForHeatMap(rows, { bushcraft: 1 }, members);
 
-    result.bushcraft.sections.forEach((section) => {
-      expect(section.members[0].highestStage).toBe(4);
-    });
+    const base = result.bushcraft.sections.find((s) => s.stream === null);
+    const pioneering = result.bushcraft.sections.find((s) => s.stream === "pioneering");
+    const survival = result.bushcraft.sections.find((s) => s.stream === "survival-skills");
+    expect(base?.members[0].highestStage).toBe(1);
+    expect(pioneering?.members[0].highestStage).toBe(4);
+    expect(survival?.members[0].highestStage).toBeNull();
   });
 
   it("marks a stage complete only when every cell in it is awarded", () => {
@@ -128,17 +131,16 @@ describe("groupRowsForHeatMap", () => {
     expect(result.bushcraft.sections[0].members[0].highestStage).toBeNull();
   });
 
-  it("does not let an unawarded stage in one forked stream suppress an awarded same-numbered stage in a sibling stream", () => {
+  it("does not let an unawarded stage in one forked stream suppress an awarded same-numbered stage in a sibling stream's own section", () => {
     // Both streams have a "stage 4" — Pioneering's is fully awarded, Survival Skills' is not.
-    // The whole-skill highestStage must still be 4, since it IS awarded somewhere.
+    // Each stream's own section must reflect only its own rows.
     const rows = [makeRow({ stage: 4, branch: "pioneering", inputId: "b", answered: true, awarded: true }), makeRow({ stage: 4, branch: "survival-skills", inputId: "c", answered: false, awarded: false })];
     const members = [makeMember()];
 
     const result = groupRowsForHeatMap(rows, { bushcraft: 1 }, members);
 
-    result.bushcraft.sections.forEach((section) => {
-      expect(section.members[0].highestStage).toBe(4);
-    });
+    expect(result.bushcraft.sections.find((s) => s.stream === "pioneering")?.members[0].highestStage).toBe(4);
+    expect(result.bushcraft.sections.find((s) => s.stream === "survival-skills")?.members[0].highestStage).toBeNull();
   });
 
   it("does NOT count a merely in-progress (answered but not awarded) stage toward highestStage, matching OAS Summary's awarded-only semantics", () => {
@@ -194,5 +196,49 @@ describe("groupRowsForHeatMap", () => {
     const result = groupRowsForHeatMap(rows, { bushcraft: 1 }, members);
 
     expect(result.bushcraft.sections[0].isEmpty).toBe(false);
+  });
+
+  it("carries the skill's trunkStageCount onto every section, including stream sections", () => {
+    const rows = [makeRow({ stage: 1, branch: "bushcraft" }), makeRow({ stage: 4, branch: "pioneering", inputId: "p1" })];
+    const members = [makeMember()];
+
+    const result = groupRowsForHeatMap(rows, { bushcraft: 3 }, members);
+
+    result.bushcraft.sections.forEach((section) => {
+      expect(section.trunkStageCount).toBe(3);
+    });
+  });
+
+  it("marks trunkFullyAwarded true only once every trunk stage is fully awarded for that member", () => {
+    const rows = [
+      makeRow({ memberId: "m1", stage: 1, inputId: "a", awarded: true }),
+      makeRow({ memberId: "m1", stage: 2, inputId: "b", awarded: true }),
+      makeRow({ memberId: "m1", stage: 3, inputId: "c", awarded: true }),
+      makeRow({ memberId: "m2", stage: 1, inputId: "a", awarded: true }),
+      makeRow({ memberId: "m2", stage: 2, inputId: "b", awarded: false }),
+    ];
+    const members = [makeMember({ id: "m1", first_name: "Alex" }), makeMember({ id: "m2", first_name: "Zara" })];
+
+    const result = groupRowsForHeatMap(rows, { bushcraft: 3 }, members);
+
+    const base = result.bushcraft.sections.find((s) => s.stream === null);
+    expect(base?.members.find((m) => m.memberId === "m1")?.trunkFullyAwarded).toBe(true);
+    expect(base?.members.find((m) => m.memberId === "m2")?.trunkFullyAwarded).toBe(false);
+  });
+
+  it("gates trunkFullyAwarded per member on a stream section too, using the same trunk rows regardless of section", () => {
+    const rows = [
+      makeRow({ memberId: "m1", stage: 1, inputId: "a", awarded: true }),
+      makeRow({ memberId: "m1", stage: 2, inputId: "b", awarded: true }),
+      makeRow({ memberId: "m1", stage: 3, inputId: "c", awarded: true }),
+      makeRow({ memberId: "m1", stage: 4, branch: "pioneering", inputId: "p1", awarded: true }),
+    ];
+    const members = [makeMember({ id: "m1", first_name: "Alex" })];
+
+    const result = groupRowsForHeatMap(rows, { bushcraft: 3 }, members);
+
+    const pioneering = result.bushcraft.sections.find((s) => s.stream === "pioneering");
+    expect(pioneering?.members[0].trunkFullyAwarded).toBe(true);
+    expect(pioneering?.members[0].highestStage).toBe(4);
   });
 });

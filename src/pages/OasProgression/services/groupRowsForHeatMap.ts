@@ -21,9 +21,11 @@ export interface SectionMemberRow {
   memberId: string;
   memberName: string;
   patrolName: string | null;
-  /** The member's highest stage across the WHOLE skill (all sections), not just this section — kept consistent across every section of a skill. */
+  /** The member's highest AWARDED stage within THIS section only (base section: trunk stages only; a stream section: that stream's own stages only). */
   highestStage: number | null;
   stages: HeatMapStage[];
+  /** Whether this member has fully awarded every trunk stage of the skill — gates a stream section's displayed progress. Always true/false consistently per member per skill; unused (but still computed) for the base section itself. */
+  trunkFullyAwarded: boolean;
 }
 
 export interface HeatMapSection {
@@ -33,6 +35,8 @@ export interface HeatMapSection {
   /** Whether every member has zero progress across this section's own stages — candidate for hide-by-default. Never true for the base section. */
   isEmpty: boolean;
   members: SectionMemberRow[];
+  /** Number of stages in the skill's trunk before it forks into streams (or the skill's whole stage count if it never forks). Same value across every section of a skill. */
+  trunkStageCount: number;
 }
 
 export interface SkillHeatMapData {
@@ -79,33 +83,6 @@ function highestStageOf(stages: HeatMapStage[]): number | null {
 }
 
 /**
- * Highest AWARDED stage for a member across a whole skill's rows, grouping by (branch, stage)
- * rather than stage alone — two different streams can share a stage number (e.g. both
- * Pioneering and Survival Skills have a "stage 4"), and merging their cells together would
- * wrongly mark a stage incomplete just because a sibling stream hasn't awarded it yet.
- */
-function highestAwardedStageAcrossBranches(rows: OASProgressionRow[]): number | null {
-  const rowsByBranch = new Map<string, OASProgressionRow[]>();
-  rows.forEach((row) => {
-    const existing = rowsByBranch.get(row.branch);
-    if (existing) {
-      existing.push(row);
-    } else {
-      rowsByBranch.set(row.branch, [row]);
-    }
-  });
-
-  let highest: number | null = null;
-  rowsByBranch.forEach((branchRows) => {
-    const branchHighest = highestStageOf(buildStages(branchRows));
-    if (branchHighest !== null && (highest === null || branchHighest > highest)) {
-      highest = branchHighest;
-    }
-  });
-  return highest;
-}
-
-/**
  * Groups tidy progression rows into per-skill heat-map data, laid out as independent
  * "sections": one section per (skill, stream) pair, each listing EVERY member (even those
  * with zero progress in that particular section) so a leader can see the whole roster under
@@ -131,24 +108,24 @@ export function groupRowsForHeatMap(rows: OASProgressionRow[], trunkStageCounts:
   bySkill.forEach((skillRows, skill) => {
     const trunkStageCount = trunkStageCounts[skill] ?? 0;
 
-    // Highest stage is computed per member ACROSS THE WHOLE SKILL (base + every stream),
-    // so the same Stage value is shown consistently in every section of this skill.
-    const rowsByMember = new Map<string, OASProgressionRow[]>();
-    skillRows.forEach((row) => {
-      const existing = rowsByMember.get(row.memberId);
+    const trunkRows = skillRows.filter((r) => r.stage <= trunkStageCount);
+    const forkedRows = skillRows.filter((r) => r.stage > trunkStageCount);
+
+    // Whether each member has fully awarded every trunk stage — gates a stream section's
+    // displayed progress (a stream shows nothing until the base skill's trunk is done).
+    const trunkRowsByMember = new Map<string, OASProgressionRow[]>();
+    trunkRows.forEach((row) => {
+      const existing = trunkRowsByMember.get(row.memberId);
       if (existing) {
         existing.push(row);
       } else {
-        rowsByMember.set(row.memberId, [row]);
+        trunkRowsByMember.set(row.memberId, [row]);
       }
     });
-    const highestStageByMember = new Map<string, number | null>();
-    rowsByMember.forEach((memberRows, memberId) => {
-      highestStageByMember.set(memberId, highestAwardedStageAcrossBranches(memberRows));
+    const trunkFullyAwardedByMember = new Map<string, boolean>();
+    trunkRowsByMember.forEach((memberRows, memberId) => {
+      trunkFullyAwardedByMember.set(memberId, highestStageOf(buildStages(memberRows)) === trunkStageCount);
     });
-
-    const trunkRows = skillRows.filter((r) => r.stage <= trunkStageCount);
-    const forkedRows = skillRows.filter((r) => r.stage > trunkStageCount);
 
     const streamNames = Array.from(new Set(forkedRows.map((r) => r.branch))).sort((a, b) => a.localeCompare(b));
 
@@ -165,18 +142,20 @@ export function groupRowsForHeatMap(rows: OASProgressionRow[], trunkStageCounts:
 
       const sectionMembers: SectionMemberRow[] = memberOrder.map((member) => {
         const memberRows = rowsByMemberId.get(member.id) ?? [];
+        const stages = buildStages(memberRows);
         return {
           memberId: member.id,
           memberName: member.first_name + " " + member.last_name,
           patrolName: member.patrol?.name ?? null,
-          highestStage: highestStageByMember.get(member.id) ?? null,
-          stages: buildStages(memberRows),
+          highestStage: highestStageOf(stages),
+          stages,
+          trunkFullyAwarded: trunkFullyAwardedByMember.get(member.id) ?? false,
         };
       });
 
       const isEmpty = stream !== null && sectionMembers.every((m) => m.stages.every((s) => s.cells.every((c) => !c.answered && !c.awarded)));
 
-      return { skill, stream, isEmpty, members: sectionMembers };
+      return { skill, stream, isEmpty, members: sectionMembers, trunkStageCount };
     }
 
     const sections: HeatMapSection[] = [

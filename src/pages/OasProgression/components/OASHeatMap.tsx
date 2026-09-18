@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, type RefObject } from "react";
 import { groupRowsForHeatMap, type HeatMapStage, type HeatMapSection } from "@/pages/OasProgression/services/groupRowsForHeatMap";
 import { filterMembersByPatrol, groupMembersByPatrol, sliceStagesToRange, formatStageProgress, sortMembers, type PatrolGroup, type MemberSortBy } from "@/pages/OasProgression/services/filterHeatMapSections";
 import { getCodename } from "@/pages/OasProgression/services/getCodename";
@@ -17,9 +17,11 @@ interface OASHeatMapProps {
   selectedPatrols: string[];
   breakByPatrol: boolean;
   hideEmptyTopColumns: boolean;
+  onlyInProgress: boolean;
   visibleStreams: string[];
   stageRange: [number, number];
   sortBy: MemberSortBy;
+  exportRef?: RefObject<HTMLTableElement | null>;
 }
 
 const SKILL_TITLES: Record<string, string> = {
@@ -65,24 +67,33 @@ function displayName(memberName: string, memberId: string, hideLastName: boolean
   return hideLastName ? memberName.split(" ")[0] : memberName;
 }
 
-function StageCell({ stage }: { stage: HeatMapStage | undefined }): React.ReactNode {
+function StageCell({ stage, onlyInProgress }: { stage: HeatMapStage | undefined; onlyInProgress: boolean }): React.ReactNode {
   if (!stage) {
     return null;
   }
 
   if (stage.complete) {
-    return <div className="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete" title={`Stage ${stage.stage} — complete`} />;
+    return onlyInProgress ? null : <div className="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete" title={`Stage ${stage.stage} — complete`} />;
   }
 
   const hasAnyProgress = stage.cells.some((c) => c.answered || c.awarded);
   if (!hasAnyProgress) {
-    return <div className="oas-heatmap-stage-bar oas-heatmap-stage-bar-unstarted" title={`Stage ${stage.stage} — not started`} />;
+    return onlyInProgress ? null : <div className="oas-heatmap-stage-bar oas-heatmap-stage-bar-unstarted" title={`Stage ${stage.stage} — not started`} />;
   }
 
   return (
     <div className="oas-heatmap-squares">
       {stage.cells.map((cell, index) => {
-        const stateClass = cell.awarded ? "oas-heatmap-square-awarded" : cell.answered ? "oas-heatmap-square-answered" : "oas-heatmap-square-unanswered";
+        const inProgressCell = cell.answered && !cell.awarded;
+        const stateClass = onlyInProgress
+          ? inProgressCell
+            ? "oas-heatmap-square-answered"
+            : "oas-heatmap-square-unanswered"
+          : cell.awarded
+            ? "oas-heatmap-square-awarded"
+            : cell.answered
+              ? "oas-heatmap-square-answered"
+              : "oas-heatmap-square-unanswered";
         const isNewGroup = index === 0 || stage.cells[index - 1].inputGroup !== cell.inputGroup;
         const groupClass = isNewGroup && index > 0 ? " oas-heatmap-square-group-start" : "";
         return (
@@ -103,9 +114,25 @@ function matchesText(value: string, needle: string): boolean {
   return value.toLowerCase().includes(needle.trim().toLowerCase());
 }
 
-function MemberRow({ member, allStages, hideLastName, useCodenames }: { member: PatrolGroup["members"][number]; allStages: number[]; hideLastName: boolean; useCodenames: boolean }): React.ReactNode {
+function MemberRow({
+  member,
+  allStages,
+  hideLastName,
+  useCodenames,
+  onlyInProgress,
+  isStreamSection,
+  trunkStageCount,
+}: {
+  member: PatrolGroup["members"][number];
+  allStages: number[];
+  hideLastName: boolean;
+  useCodenames: boolean;
+  onlyInProgress: boolean;
+  isStreamSection: boolean;
+  trunkStageCount: number;
+}): React.ReactNode {
   const stagesByStage = new Map(member.stages.map((s) => [s.stage, s]));
-  const stageProgress = formatStageProgress(member.highestStage, member.stages);
+  const stageProgress = formatStageProgress(member.highestStage, member.stages, isStreamSection, trunkStageCount, member.trunkFullyAwarded);
   return (
     <tr data-oas-member={member.memberId}>
       <td className="oas-heatmap-member-name">{displayName(member.memberName, member.memberId, hideLastName, useCodenames)}</td>
@@ -115,7 +142,7 @@ function MemberRow({ member, allStages, hideLastName, useCodenames }: { member: 
       </td>
       {allStages.map((stage) => (
         <td key={stage} className="oas-heatmap-stage-cell">
-          <StageCell stage={stagesByStage.get(stage)} />
+          <StageCell stage={stagesByStage.get(stage)} onlyInProgress={onlyInProgress} />
         </td>
       ))}
     </tr>
@@ -131,6 +158,7 @@ function SectionRows({
   hideLastName,
   useCodenames,
   sortBy,
+  onlyInProgress,
 }: {
   section: HeatMapSection;
   allStages: number[];
@@ -140,20 +168,33 @@ function SectionRows({
   hideLastName: boolean;
   useCodenames: boolean;
   sortBy: MemberSortBy;
+  onlyInProgress: boolean;
 }): React.ReactNode {
+  const isStreamSection = section.stream !== null;
   const filteredMembers = sortMembers(
     filterMembersByPatrol(
       section.members.filter((member) => !memberFilter.trim() || matchesText(member.memberName, memberFilter)),
       selectedPatrols,
     ),
     sortBy,
+    isStreamSection,
+    section.trunkStageCount,
   );
 
   if (!breakByPatrol) {
     return (
       <>
         {filteredMembers.map((member) => (
-          <MemberRow key={member.memberId} member={member} allStages={allStages} hideLastName={hideLastName} useCodenames={useCodenames} />
+          <MemberRow
+            key={member.memberId}
+            member={member}
+            allStages={allStages}
+            hideLastName={hideLastName}
+            useCodenames={useCodenames}
+            onlyInProgress={onlyInProgress}
+            isStreamSection={isStreamSection}
+            trunkStageCount={section.trunkStageCount}
+          />
         ))}
       </>
     );
@@ -173,7 +214,16 @@ function SectionRows({
             </tr>
           )}
           {group.members.map((member) => (
-            <MemberRow key={member.memberId} member={member} allStages={allStages} hideLastName={hideLastName} useCodenames={useCodenames} />
+            <MemberRow
+              key={member.memberId}
+              member={member}
+              allStages={allStages}
+              hideLastName={hideLastName}
+              useCodenames={useCodenames}
+              onlyInProgress={onlyInProgress}
+              isStreamSection={isStreamSection}
+              trunkStageCount={section.trunkStageCount}
+            />
           ))}
         </React.Fragment>
       ))}
@@ -222,16 +272,24 @@ export function OASHeatMap(props: OASHeatMapProps): React.ReactNode {
   const overallMaxStage = useMemo(() => Math.max(0, ...skills.map((s) => grouped[s].maxStage)), [grouped, skills]);
   const allStagesUntrimmed = useMemo(() => Array.from({ length: overallMaxStage }, (_, i) => i + 1), [overallMaxStage]);
 
+  // Stage range is sliced first (independent of section filtering) so "hide empty streams" can
+  // judge emptiness using only the currently-viewed stage range — otherwise a stream with progress
+  // outside the viewed range would wrongly stay visible when the range is narrowed (e.g. 2-4).
+  const rangeStages = useMemo(() => sliceStagesToRange(allStagesUntrimmed, props.stageRange), [allStagesUntrimmed, props.stageRange]);
+
   const visibleSectionsBySkill = useMemo(() => {
+    const rangeStageSet = new Set(rangeStages);
+    const isEmptyWithinRange = (section: HeatMapSection): boolean => section.stream !== null && section.members.every((m) => m.stages.every((s) => !rangeStageSet.has(s.stage) || s.cells.every((c) => !c.answered && !c.awarded)));
+
     const map = new Map<string, HeatMapSection[]>();
     skills.forEach((skill) => {
       map.set(
         skill,
-        grouped[skill].sections.filter((section) => props.showEmptySections || !section.isEmpty),
+        grouped[skill].sections.filter((section) => props.showEmptySections || !isEmptyWithinRange(section)),
       );
     });
     return map;
-  }, [grouped, skills, props.showEmptySections]);
+  }, [grouped, skills, props.showEmptySections, rangeStages]);
 
   const allStagesTrimmed = useMemo(
     () =>
@@ -244,12 +302,12 @@ export function OASHeatMap(props: OASHeatMapProps): React.ReactNode {
     [allStagesUntrimmed, skills, visibleSectionsBySkill, props.hideEmptyTopColumns],
   );
 
-  const allStages = useMemo(() => sliceStagesToRange(allStagesTrimmed, props.stageRange), [allStagesTrimmed, props.stageRange]);
+  const allStages = useMemo(() => (props.hideEmptyTopColumns ? sliceStagesToRange(allStagesTrimmed, props.stageRange) : rangeStages), [allStagesTrimmed, rangeStages, props.stageRange, props.hideEmptyTopColumns]);
 
   return (
     <div>
       <div className="oas-heatmap-scroll">
-        <table className="oas-heatmap-table">
+        <table className="oas-heatmap-table" ref={props.exportRef}>
           <thead className="oas-heatmap-thead">
             <tr>
               <th className="oas-heatmap-member-header">Member</th>
@@ -281,6 +339,7 @@ export function OASHeatMap(props: OASHeatMapProps): React.ReactNode {
                   hideLastName={props.hideLastName}
                   useCodenames={props.useCodenames}
                   sortBy={props.sortBy}
+                  onlyInProgress={props.onlyInProgress}
                 />
               </tbody>
             ));

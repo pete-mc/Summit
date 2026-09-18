@@ -154,20 +154,74 @@ describe("OASHeatMap render contract", () => {
     expect(titles).toContain("Bushcraft — Survival Skills");
   });
 
-  it("shows the same highest-stage value for a member across every section of a skill", () => {
-    const rows = [
-      makeRow({ stage: 1, inputId: "a", answered: true, awarded: true, branch: "bushcraft" }),
-      makeRow({ stage: 4, branch: "pioneering", inputId: "b", answered: true, awarded: true }),
-      makeRow({ stage: 5, branch: "pioneering", inputId: "c", answered: false, awarded: false }),
-    ];
+  it("shows a DIFFERENT Stage value per section: base section shows trunk-only progress, a stream section shows its own (floored) progress", () => {
+    // Trunk (stage 1, within trunkStageCount=1) is fully awarded. Pioneering's own stage 4 is
+    // also fully awarded, which exceeds the trunk floor, so the stream shows its own stage (4).
+    const rows = [makeRow({ stage: 1, inputId: "a", answered: true, awarded: true, branch: "bushcraft" }), makeRow({ stage: 4, branch: "pioneering", inputId: "b", answered: true, awarded: true })];
     const members = [makeMember()];
 
     act(() => {
       root.render(React.createElement(OASHeatMap, makeProps({ items: rows, trunkStageCounts: { bushcraft: 1 }, members })));
     });
 
-    const highestStages = Array.from(container.querySelectorAll(".oas-heatmap-highest-stage")).map((el) => el.textContent);
-    expect(highestStages.every((v) => v === "4")).toBe(true);
+    const highestStages = Array.from(container.querySelectorAll(".oas-heatmap-highest-stage")).map((el) => el.textContent?.trim());
+    expect(highestStages).toEqual(["1", "4"]);
+  });
+
+  it("shows a dash in a stream section until the base skill's trunk has been fully awarded", () => {
+    // Trunk (stage 1, trunkStageCount=1) is NOT fully awarded, even though Pioneering itself has progress.
+    const rows = [makeRow({ stage: 1, inputId: "a", answered: false, awarded: false, branch: "bushcraft" }), makeRow({ stage: 4, branch: "pioneering", inputId: "b", answered: true, awarded: true })];
+    const members = [makeMember()];
+
+    act(() => {
+      root.render(React.createElement(OASHeatMap, makeProps({ items: rows, trunkStageCounts: { bushcraft: 1 }, members })));
+    });
+
+    const base = container.querySelector("tbody[data-oas-skill]:not([data-oas-stream])");
+    const streamSection = container.querySelector('[data-oas-stream="pioneering"]');
+    expect(base?.querySelector(".oas-heatmap-highest-stage")?.textContent?.trim()).toBe("-");
+    expect(streamSection?.querySelector(".oas-heatmap-highest-stage")?.textContent?.trim()).toBe("-");
+  });
+
+  it("shows the trunk stage count as a FLOOR when no stream stage is awarded yet, with next-stage ticks as .xx", () => {
+    // Trunk (1-3) fully awarded. Pioneering's stage 4 has 2 answered-but-not-awarded cells — no
+    // stream stage is itself awarded yet, so the whole number stays at the trunk floor (3) and
+    // .xx counts progress in stage 4 (the stage right above the floor).
+    const rows = [
+      makeRow({ stage: 1, inputId: "a", answered: true, awarded: true, branch: "bushcraft" }),
+      makeRow({ stage: 2, inputId: "b", answered: true, awarded: true, branch: "bushcraft" }),
+      makeRow({ stage: 3, inputId: "c", answered: true, awarded: true, branch: "bushcraft" }),
+      makeRow({ stage: 4, branch: "pioneering", inputId: "p1", answered: true, awarded: false }),
+      makeRow({ stage: 4, branch: "pioneering", inputId: "p2", answered: true, awarded: false }),
+    ];
+    const members = [makeMember()];
+
+    act(() => {
+      root.render(React.createElement(OASHeatMap, makeProps({ items: rows, trunkStageCounts: { bushcraft: 3 }, members })));
+    });
+
+    const streamSection = container.querySelector('[data-oas-stream="pioneering"]');
+    expect(streamSection?.querySelector(".oas-heatmap-highest-stage")?.textContent?.trim()).toBe("3.02");
+  });
+
+  it("shows the stream's own highest awarded stage once it exceeds the trunk floor", () => {
+    // Trunk (1-3) fully awarded. Survival Skills stages 5 AND 6 both fully awarded, exceeding
+    // the trunk floor (3) — the whole number is the stream's own highest awarded stage (6).
+    const rows = [
+      makeRow({ stage: 1, inputId: "a", answered: true, awarded: true, branch: "bushcraft" }),
+      makeRow({ stage: 2, inputId: "b", answered: true, awarded: true, branch: "bushcraft" }),
+      makeRow({ stage: 3, inputId: "c", answered: true, awarded: true, branch: "bushcraft" }),
+      makeRow({ stage: 5, branch: "survival-skills", inputId: "s1", answered: true, awarded: true }),
+      makeRow({ stage: 6, branch: "survival-skills", inputId: "s2", answered: true, awarded: true }),
+    ];
+    const members = [makeMember()];
+
+    act(() => {
+      root.render(React.createElement(OASHeatMap, makeProps({ items: rows, trunkStageCounts: { bushcraft: 3 }, members })));
+    });
+
+    const streamSection = container.querySelector('[data-oas-stream="survival-skills"]');
+    expect(streamSection?.querySelector(".oas-heatmap-highest-stage")?.textContent?.trim()).toBe("6");
   });
 
   it("renders one square per i-statement for an in-progress stage, matching the cell count", () => {
