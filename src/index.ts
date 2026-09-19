@@ -1,12 +1,22 @@
-// Must be the first import: registers Vuetify against Summit's own Vue before any .vue module
-// (pulled in via SummitRouter below) is evaluated. See src/vuetifySetup.ts for why this ordering
-// matters and can't be achieved by just placing Vue.use(Vuetify) here in source order.
-import "./vuetifySetup";
 import "./styles/index.css";
+import "vuetify/dist/vuetify.css";
+import Vue from "vue";
+import Vuetify from "vuetify";
 import summitModule from "@/modules/summitModule";
 import SummitRouter from "@/router/SummitRouter";
 import $ from "jquery";
 window.$ = $;
+
+/**
+ * Spike: registers Vuetify's components (v-select, v-btn, etc.) on Summit's OWN bundled Vue
+ * module — the one vue-loader compiles Summit's .vue SFCs against — not Terrain's Vue instance.
+ * Reaching Terrain's live $vuetify service (window.$nuxt.$root.$vuetify) alone was proven
+ * insufficient: it gives the theme/service singleton but not usable components, since component
+ * registration and the service instance are separate parts of Vuetify's install process. See the
+ * OAS Progression Vuetify investigation notes for the full reasoning.
+ */
+Vue.use(Vuetify);
+window.summitVuetify = new Vuetify();
 
 $(function () {
   window.$nuxt.$store.registerModule("Summit", summitModule);
