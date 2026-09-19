@@ -12,18 +12,6 @@ import type { TerrainUnitMember } from "@/types/terrainTypes";
 const logger = createLogger("OasProgression");
 const CONCURRENCY = 6;
 
-/**
- * Spike-only typing: reusing Terrain's own live Vuetify instance (window.$nuxt.$root.$vuetify,
- * confirmed live in DevTools), not the real `vuetify` package's types, since that package isn't a
- * Summit dependency — Summit deliberately doesn't bundle its own Vuetify. Loosely typed since only
- * truthiness (is it reachable at all) and passing it straight to <v-select> matter here.
- */
-declare module "vue" {
-  interface ComponentCustomProperties {
-    $vuetify?: unknown;
-  }
-}
-
 const OAS_SKILL_TITLES: Record<string, string> = {
   bushcraft: "Bushcraft",
   bushwalking: "Bushwalking",
@@ -77,11 +65,14 @@ function data() {
 
 export default defineComponent({
   name: "OasProgression",
+  // Registers this component against Summit's OWN Vuetify instance (installed via Vue.use(Vuetify)
+  // in src/index.ts against Summit's own bundled Vue) — needed for `this.$vuetify` and the
+  // <v-select> in OasProgression.vue to resolve to a real, working Vuetify component rather than
+  // an unregistered custom element. See the OAS Progression Vuetify investigation notes: reaching
+  // Terrain's own live $vuetify service alone was proven insufficient for actual components.
+  vuetify: window.summitVuetify,
   data,
   computed: {
-    // Reuses Terrain's own live Vuetify instance (window.$nuxt.$root.$vuetify) rather than
-    // bundling a second one — see the Vuetify investigation notes for why. undefined here just
-    // means Vuetify wasn't reachable (e.g. Terrain markup changes) — the v-select is skipped.
     vuetifyInstance() {
       return this.$vuetify;
     },
