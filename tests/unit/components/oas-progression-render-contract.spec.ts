@@ -4,7 +4,6 @@ import React from "react";
 import { createRoot, Root } from "react-dom/client";
 import { act } from "react-dom/test-utils";
 import { OasProgressionTable } from "@/pages/OasProgression/components/OasProgression";
-import { OAS_SKILLS } from "@/pages/OasProgression/services/filterHeatMapSections";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
 
@@ -87,7 +86,7 @@ describe("OasProgressionTable render contract", () => {
     const members = [makeMember({ id: "member-1", first_name: "Alex", last_name: "Scout" }), makeMember({ id: "member-2", first_name: "Sam", last_name: "Ranger" })];
 
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     expect(container.querySelector(".oas-heatmap-scroll")).toBeTruthy();
@@ -112,7 +111,7 @@ describe("OasProgressionTable render contract", () => {
 
   it("the View toggle is a single switch: any click on it flips between Heat map and Table, regardless of which half is clicked", () => {
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: [], trunkStageCounts: {}, members: [], loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: [], trunkStageCounts: {}, members: [], loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     const toggle = container.querySelector('[role="switch"]') as HTMLButtonElement;
@@ -134,7 +133,7 @@ describe("OasProgressionTable render contract", () => {
 
   it("shows a loading indicator listing streams still loading", () => {
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: [], trunkStageCounts: {}, members: [], loadingStreams: new Set(["bushwalking", "camping"]), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: [], trunkStageCounts: {}, members: [], loadingStreams: new Set(["bushwalking", "camping"]), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     const loading = container.querySelector('[data-oas-progression-loading="true"]');
@@ -144,7 +143,7 @@ describe("OasProgressionTable render contract", () => {
 
   it("hides the loading indicator once no streams are loading", () => {
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: [], trunkStageCounts: {}, members: [], loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: [], trunkStageCounts: {}, members: [], loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     expect(container.querySelector('[data-oas-progression-loading="true"]')).toBeNull();
@@ -154,7 +153,7 @@ describe("OasProgressionTable render contract", () => {
     const onReloadAll = jest.fn();
 
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: [], trunkStageCounts: {}, members: [], loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll, onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: [], trunkStageCounts: {}, members: [], loadingStreams: new Set(), onReloadAll, onReloadStream: jest.fn() }));
     });
 
     const button = container.querySelector('[data-action="reload-all"]') as HTMLButtonElement;
@@ -174,7 +173,7 @@ describe("OasProgressionTable render contract", () => {
     const members = [makeMember()];
 
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     const toggle = container.querySelector('[data-oas-toggle="hide-last-name"]') as HTMLInputElement;
@@ -190,7 +189,7 @@ describe("OasProgressionTable render contract", () => {
     const members = [makeMember()];
 
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     const codenameToggle = container.querySelector('[data-oas-toggle="use-codenames"]') as HTMLInputElement;
@@ -210,7 +209,7 @@ describe("OasProgressionTable render contract", () => {
     const members = [makeMember({ patrol: null })];
 
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     expect(container.querySelector('[data-oas-dropdown="patrol"]')).toBeFalsy();
@@ -225,7 +224,7 @@ describe("OasProgressionTable render contract", () => {
     ];
 
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: { bushwalking: 3 }, members, loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: { bushwalking: 3 }, members, loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     openDropdown(container, "patrol");
@@ -241,36 +240,41 @@ describe("OasProgressionTable render contract", () => {
     expect(container.querySelector('[data-oas-member="member-1"]')).toBeTruthy();
   });
 
-  it("hides a skill entirely when visibleStreams excludes it", () => {
+  it("hides a skill entirely when its Skills dropdown checkbox is unchecked", () => {
     const rows = [makeRow({ stream: "bushwalking" })];
     const members = [makeMember()];
 
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     expect(container.querySelector('[data-oas-skill="bushwalking"]')).toBeTruthy();
 
+    openDropdown(container, "skills");
+    const checkbox = container.querySelector('[data-oas-dropdown-option="skills:bushwalking"]') as HTMLInputElement;
     act(() => {
-      root.render(
-        React.createElement(OasProgressionTable, {
-          items: rows,
-          trunkStageCounts: {},
-          members,
-          loadingStreams: new Set(),
-          visibleStreams: OAS_SKILLS.filter((s) => s !== "bushwalking"),
-          onReloadAll: jest.fn(),
-          onReloadStream: jest.fn(),
-        }),
-      );
+      checkbox.click();
     });
 
     expect(container.querySelector('[data-oas-skill="bushwalking"]')).toBeFalsy();
   });
 
+  it("shows the Skills dropdown collapsed with an 'All skills' summary by default", () => {
+    act(() => {
+      root.render(React.createElement(OasProgressionTable, { items: [], trunkStageCounts: {}, members: [], loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+    });
+
+    expect(container.querySelector('[data-oas-dropdown-list="skills"]')).toBeFalsy();
+    const toggle = container.querySelector('[data-oas-dropdown-toggle="skills"]') as HTMLButtonElement;
+    expect(toggle.textContent).toBe("All skills (9)");
+
+    openDropdown(container, "skills");
+    expect(container.querySelector('[data-oas-dropdown-list="skills"]')).toBeTruthy();
+  });
+
   it("renders a search icon in the Member search field", () => {
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: [], trunkStageCounts: {}, members: [], loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: [], trunkStageCounts: {}, members: [], loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     expect(container.querySelector(".oas-search-icon")).toBeTruthy();
@@ -281,7 +285,7 @@ describe("OasProgressionTable render contract", () => {
     const members = [makeMember()];
 
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: { bushcraft: 1 }, members, loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: { bushcraft: 1 }, members, loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     const toggle = container.querySelector('[data-oas-toggle="hide-empty-streams"]') as HTMLInputElement;
@@ -300,7 +304,7 @@ describe("OasProgressionTable render contract", () => {
     const members = [makeMember()];
 
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     expect(container.querySelector('[data-oas-toggle="hide-empty-streams"]')).toBeFalsy();
@@ -311,7 +315,7 @@ describe("OasProgressionTable render contract", () => {
     const members = [makeMember()];
 
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: { bushwalking: 6 }, members, loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: { bushwalking: 6 }, members, loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     let headerStages = Array.from(container.querySelectorAll(".oas-heatmap-stage-group-header")).map((el) => el.textContent);
@@ -331,7 +335,7 @@ describe("OasProgressionTable render contract", () => {
     const members = [makeMember()];
 
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: { bushwalking: 6 }, members, loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: { bushwalking: 6 }, members, loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     const minSelect = container.querySelector('[data-oas-stage="min"]') as HTMLSelectElement;
@@ -350,7 +354,7 @@ describe("OasProgressionTable render contract", () => {
     const members = [makeMember()];
 
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     act(() => {
@@ -378,7 +382,7 @@ describe("OasProgressionTable render contract", () => {
     const members = [makeMember()];
 
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     const lastNameToggle = container.querySelector('[data-oas-toggle="hide-last-name"]') as HTMLInputElement;
@@ -399,7 +403,7 @@ describe("OasProgressionTable render contract", () => {
     root = createRoot(container);
 
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: {}, members, loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     expect(container.querySelector(".oas-heatmap-member-name")?.textContent).toBe("Alex");
@@ -410,7 +414,7 @@ describe("OasProgressionTable render contract", () => {
     const members = [makeMember({ id: "member-1", first_name: "Alex", last_name: "Zebra" }), makeMember({ id: "member-2", first_name: "Zara", last_name: "Anderson" })];
 
     act(() => {
-      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: { bushwalking: 3 }, members, loadingStreams: new Set(), visibleStreams: OAS_SKILLS, onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
+      root.render(React.createElement(OasProgressionTable, { items: rows, trunkStageCounts: { bushwalking: 3 }, members, loadingStreams: new Set(), onReloadAll: jest.fn(), onReloadStream: jest.fn() }));
     });
 
     const select = container.querySelector('[data-oas-sort-select="true"]') as HTMLSelectElement;
