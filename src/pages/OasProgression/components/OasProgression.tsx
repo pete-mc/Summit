@@ -17,12 +17,22 @@ interface OasProgressionTableProps {
   trunkStageCounts: Record<string, number>;
   members: TerrainUnitMember[];
   loadingStreams: Set<string>;
-  /** Owned by the Vue layer now (a real Vuetify <v-select> in OasProgression.vue) — see OasProgression.ts. */
-  visibleStreams: string[];
   onReloadAll: () => void;
   onReloadStream: (stream: string) => void;
 }
 
+const OAS_STREAMS = ["bushcraft", "bushwalking", "camping", "aquatics", "boating", "paddling", "alpine", "cycling", "vertical"];
+const OAS_STREAM_TITLES: Record<string, string> = {
+  bushcraft: "Bushcraft",
+  bushwalking: "Bushwalking",
+  camping: "Camping",
+  aquatics: "Aquatics",
+  boating: "Boating",
+  paddling: "Paddling",
+  alpine: "Alpine",
+  cycling: "Cycling",
+  vertical: "Vertical",
+};
 const MAX_STAGE = 9;
 const STAGE_OPTIONS = Array.from({ length: MAX_STAGE }, (_, i) => i + 1);
 
@@ -36,6 +46,7 @@ const DEFAULT_FILTERS: OASProgressionFilterState = {
   hideEmptyStreams: false,
   hideEmptyTopColumns: false,
   onlyInProgress: false,
+  visibleStreams: OAS_STREAMS,
   stageRange: [1, MAX_STAGE],
   sortBy: "firstName",
 };
@@ -120,7 +131,7 @@ function DropdownMultiSelect({ label, options, selected, onToggle, dataAttr }: D
 }
 
 export function OasProgressionTable(props: OasProgressionTableProps): React.ReactNode {
-  const { items, trunkStageCounts, members, loadingStreams, visibleStreams, onReloadAll } = props;
+  const { items, trunkStageCounts, members, loadingStreams, onReloadAll } = props;
   const [filters, setFilters] = useState<OASProgressionFilterState>(loadInitialFilters);
   const heatMapExportRef = useRef<HTMLTableElement | null>(null);
   const [heatMapExportFeedback, setHeatMapExportFeedback] = useState("");
@@ -153,6 +164,11 @@ export function OasProgressionTable(props: OasProgressionTableProps): React.Reac
   const grouped = useMemo(() => groupRowsForHeatMap(items, trunkStageCounts, members), [items, trunkStageCounts, members]);
   const availablePatrols = useMemo(() => collectPatrolNames(Object.values(grouped).flatMap((skill) => skill.sections)), [grouped]);
   const hasAnyEmptySections = useMemo(() => Object.values(grouped).some((skill) => skill.sections.some((section) => section.isEmpty)), [grouped]);
+
+  const toggleStream = (stream: string) => {
+    const next = filters.visibleStreams.includes(stream) ? filters.visibleStreams.filter((s) => s !== stream) : [...filters.visibleStreams, stream];
+    patch({ visibleStreams: next });
+  };
 
   // selectedPatrols===[] means "no filter / show all" (see filterMembersByPatrol), so the dropdown
   // is shown as fully checked in that state — toggling off one checkbox must expand from the full
@@ -222,6 +238,8 @@ export function OasProgressionTable(props: OasProgressionTableProps): React.Reac
                 />
               </div>
             </div>
+
+            <DropdownMultiSelect label="Skills" options={OAS_STREAMS.map((stream) => ({ value: stream, label: OAS_STREAM_TITLES[stream] }))} selected={filters.visibleStreams} onToggle={toggleStream} dataAttr="skills" />
 
             {availablePatrols.length > 0 && (
               <DropdownMultiSelect
@@ -336,7 +354,7 @@ export function OasProgressionTable(props: OasProgressionTableProps): React.Reac
             breakByPatrol={filters.breakByPatrol}
             hideEmptyTopColumns={filters.hideEmptyTopColumns}
             onlyInProgress={filters.onlyInProgress}
-            visibleStreams={visibleStreams}
+            visibleStreams={filters.visibleStreams}
             stageRange={filters.stageRange}
             sortBy={filters.sortBy}
             exportRef={heatMapExportRef}
