@@ -105,7 +105,8 @@
     "webpack-dev-server": "^5.2.3"
   },
   "sideEffects": [
-    "*.css"
+    "*.css",
+    "./src/vuetifySetup.ts"
   ],
   "overrides": {
     "uuid": "^14.0.0"
