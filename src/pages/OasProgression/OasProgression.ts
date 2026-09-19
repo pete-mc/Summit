@@ -1,6 +1,6 @@
 import React from "react";
 import { Root, createRoot } from "react-dom/client";
-import Vue, { defineComponent } from "vue";
+import { defineComponent } from "vue";
 import { fetchAllOASProgression, fetchOASProgressionForStream, type OASProgressionRow } from "./services/buildOASProgressionRows";
 import { OasProgressionTable } from "./components/OasProgression";
 import { OAS_SKILLS } from "./services/filterHeatMapSections";
@@ -27,42 +27,11 @@ const OAS_SKILL_TITLES: Record<string, string> = {
 const VISIBLE_STREAMS_KEY = "summit.oasProgression.visibleStreams";
 
 /**
- * Spike: a real Vuetify <v-select>, proving out real Vuetify components in Summit. Earlier
- * attempts tried using <v-select> directly in THIS component's own template (OasProgression.vue)
- * — that can't work: this component is rendered by TERRAIN's own Vue instance/router (registered
- * via window.$nuxt.$router in SummitRouter.ts), so component tags in its template resolve against
- * Terrain's Vue.options.components, which never has Vuetify registered on it (confirmed directly:
- * window.$nuxt.$root.constructor.options.components["v-select"] is undefined, even after
- * Vue.use(Vuetify) succeeds against Summit's own separately-bundled Vue in vuetifySetup.ts).
- *
- * Fix: mount a SECOND, independent Vue 2 instance — built from Summit's own Vue import, which DOES
- * have Vuetify registered — into its own plain <div ref="vuetifyRoot">, the same way React is
- * mounted into reactRoot below. This keeps Terrain's own Vue/router completely untouched.
+ * Spike: this dropdown is deliberately built as a real Vuetify <v-select> in the Vue layer
+ * (rather than a React component) to prove out reusing Terrain's own live $vuetify instance —
+ * see .claude/DESIGN.md and the OAS Progression Vuetify investigation for why. If it proves out,
+ * more filters can follow the same pattern.
  */
-const VuetifySkillsSelect = Vue.extend({
-  vuetify: window.summitVuetify,
-  props: {
-    items: { type: Array as () => Array<{ value: string; label: string }>, required: true },
-    value: { type: Array as () => string[], required: true },
-  },
-  template: `
-    <v-select
-      :items="items"
-      :value="value"
-      item-text="label"
-      item-value="value"
-      label="Skills"
-      multiple
-      chips
-      deletable-chips
-      dense
-      style="max-width: 480px"
-      data-oas-vuetify-skills="true"
-      @change="$emit('change', $event)"
-    ></v-select>
-  `,
-});
-
 function loadVisibleStreams(): string[] {
   try {
     const stored = window.localStorage.getItem(VISIBLE_STREAMS_KEY);
@@ -82,16 +51,10 @@ function saveVisibleStreams(streams: string[]) {
   }
 }
 
-interface VuetifySkillsSelectInstance {
-  value: string[];
-  $destroy(): void;
-}
-
 function data() {
   return {
     items: [] as OASProgressionRow[],
     root: undefined as Root | undefined,
-    vuetifyRootInstance: undefined as VuetifySkillsSelectInstance | undefined,
     loadingStreams: new Set<string>(),
     trunkStageCounts: {} as Record<string, number>,
     members: [] as TerrainUnitMember[],
@@ -102,7 +65,18 @@ function data() {
 
 export default defineComponent({
   name: "OasProgression",
+  // Registers this component against Summit's OWN Vuetify instance (installed via Vue.use(Vuetify)
+  // in src/index.ts against Summit's own bundled Vue) — needed for `this.$vuetify` and the
+  // <v-select> in OasProgression.vue to resolve to a real, working Vuetify component rather than
+  // an unregistered custom element. See the OAS Progression Vuetify investigation notes: reaching
+  // Terrain's own live $vuetify service alone was proven insufficient for actual components.
+  vuetify: window.summitVuetify,
   data,
+  computed: {
+    vuetifyInstance() {
+      return this.$vuetify;
+    },
+  },
   watch: {
     items(newItems: OASProgressionRow[]) {
       this.renderReactComponent(newItems);
@@ -116,15 +90,11 @@ export default defineComponent({
     visibleStreams(newStreams: string[]) {
       saveVisibleStreams(newStreams);
       this.renderReactComponent(this.items);
-      if (this.vuetifyRootInstance) {
-        this.vuetifyRootInstance.value = newStreams;
-      }
     },
   },
   mounted() {
     this.loadOasProgressionData();
     this.mountReactComponent();
-    this.mountVuetifyComponent();
     (window.$nuxt.$store.state as TerrainRootState).global.breadcrumbs = [
       {
         text: "Summit",
@@ -148,7 +118,6 @@ export default defineComponent({
   },
   beforeDestroy() {
     this.unmountReactComponent();
-    this.unmountVuetifyComponent();
   },
   methods: {
     async loadOasProgressionData() {
@@ -218,23 +187,6 @@ export default defineComponent({
     unmountReactComponent() {
       if (this.root) this.root.unmount();
       this.root = undefined;
-    },
-    mountVuetifyComponent() {
-      const instance = new VuetifySkillsSelect({
-        propsData: {
-          items: this.skillOptions,
-          value: this.visibleStreams,
-        },
-      });
-      instance.$on("change", (newValue: string[]) => {
-        this.visibleStreams = newValue;
-      });
-      instance.$mount(this.$refs.vuetifyRoot as HTMLElement);
-      this.vuetifyRootInstance = instance;
-    },
-    unmountVuetifyComponent() {
-      if (this.vuetifyRootInstance) this.vuetifyRootInstance.$destroy();
-      this.vuetifyRootInstance = undefined;
     },
   },
 });
