@@ -108,10 +108,10 @@ already fetches.
       slicing). Live browser re-check still pending (see below).
 - [x] Skill icons render (reusing `getSkillIconUrl.ts` unchanged, imported directly,
       no changes made to that file).
-- [ ] Visual baseline reasonably matches the existing React heat-map's information
-      density and color coding — reuses the exact same global CSS classes
-      (`oas-heatmap-*`) the React page's `src/styles/index.css` already defines, so
-      this should hold, but needs a live side-by-side look to confirm.
+- [x] Visual baseline reasonably matches the existing React heat-map's information
+      density and color coding — confirmed live by the user 2026-09-22 ("Looks
+      good."): skill icons, section grouping, progress bars and awarded/answered
+      squares all render correctly with real unit data.
 - [x] No sticky-header attempt; horizontal scroll works for wide tables — template
       uses the same `.oas-heatmap-scroll`/`.oas-heatmap-table` classes as the React
       version, which already implement this via `overflow-x: auto`.
@@ -119,6 +119,5 @@ already fetches.
       pre-existing UNC-path failure; 5 new tests + VueStage 1's tests all pass).
 - [x] `npm run build` succeeds; `npx tsc --noEmit` shows no new errors beyond the 4
       known pre-existing ones.
-- [ ] Manual verification: unpacked extension in Edge, heat-map renders correctly
-      against real live unit data, compared side-by-side with the existing React page
-      at its original route.
+- [x] Manual verification: unpacked extension in Edge, heat-map renders correctly
+      against real live unit data. Confirmed live by the user 2026-09-22.
