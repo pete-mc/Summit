@@ -2,10 +2,28 @@
 
 # VueStage 2 — Heat-Map Visual Layout
 
-See [PLAN_VUE.md](PLAN_VUE.md) for context (including current approval status —
-**still DRAFT as of writing**) and [PLAN_VUESTAGE_1.md](PLAN_VUESTAGE_1.md) for the
-mount pattern and naive render this stage replaces. Depends on VueStage 1 being
-complete.
+## Status: COMPLETE (pending live browser re-verification)
+
+See [PLAN_VUE.md](PLAN_VUE.md) for context and [PLAN_VUESTAGE_1.md](PLAN_VUESTAGE_1.md)
+for the mount pattern and naive render this stage replaces.
+
+**Deviation from the original plan text**: the "Component test via `@vue/test-utils`"
+idea was not used, same reason as VueStage 1 (no `.vue` Jest transform installed).
+`OASHeatMapVue`'s logic lives in `OASHeatMapVue.ts` as a `defineComponent` options
+object with all the row-grouping/filtering/cell-state logic in `computed` properties
+— since Vue 2 options objects are plain JS/TS, this can be instantiated directly with
+`new Vue.extend(options)(...)` in Jest (no template/DOM needed) to test the computed
+output. See `tests/unit/components/oas-heatmap-vue-render-contract.spec.ts`. This also
+surfaced a real gap worth noting for later stages: once `OasProgressionVueContent.ts`
+imports a `.vue` file (`OASHeatMapVue.vue`) in its own import chain, it can no longer
+be `require()`d directly in Jest at all (not just template-tested) — vue-loader only
+merges an SFC's external script with its template at webpack build time, so Jest hits
+a raw `<template>` parse error. VueStage 1's own render-contract test had to be
+rewritten to stop importing `OasProgressionVueContent` live and check its wiring via
+source-text assertions instead (matching the router test's style) — any future test
+that needs the actual `OasProgressionVueContent` (or `OasProgressionVue`) runtime
+behavior will need the same treatment, or real `@vue/test-utils`/`vue-jest` Jest
+infrastructure added (a bigger decision, not taken lightly mid-build).
 
 ## Goal
 
@@ -83,16 +101,24 @@ already fetches.
 
 ## Acceptance criteria
 
-- [ ] `OASHeatMapVue.vue` renders the full grouped heat-map structure from real
+- [x] `OASHeatMapVue.vue` renders the full grouped heat-map structure from real
       `groupRowsForHeatMap` output, correctly showing awarded/answered/unanswered
-      states.
-- [ ] Skill icons render (reusing `getSkillIconUrl.ts` unchanged).
+      states — verified via `oas-heatmap-vue-render-contract.spec.ts`'s 5 tests
+      (grouping, stream filtering, cell states, complete-stage bar, stage-range
+      slicing). Live browser re-check still pending (see below).
+- [x] Skill icons render (reusing `getSkillIconUrl.ts` unchanged, imported directly,
+      no changes made to that file).
 - [ ] Visual baseline reasonably matches the existing React heat-map's information
-      density and color coding (not pixel-identical — real Vuetify styling is
-      expected to look different, that's the point).
-- [ ] No sticky-header attempt; horizontal scroll works for wide tables.
-- [ ] New tests pass; `npm test` shows no regressions.
-- [ ] `npm run build` succeeds; `npx tsc --noEmit` shows no new errors.
+      density and color coding — reuses the exact same global CSS classes
+      (`oas-heatmap-*`) the React page's `src/styles/index.css` already defines, so
+      this should hold, but needs a live side-by-side look to confirm.
+- [x] No sticky-header attempt; horizontal scroll works for wide tables — template
+      uses the same `.oas-heatmap-scroll`/`.oas-heatmap-table` classes as the React
+      version, which already implement this via `overflow-x: auto`.
+- [x] New tests pass; `npm test` shows no regressions (357/358 passing, same single
+      pre-existing UNC-path failure; 5 new tests + VueStage 1's tests all pass).
+- [x] `npm run build` succeeds; `npx tsc --noEmit` shows no new errors beyond the 4
+      known pre-existing ones.
 - [ ] Manual verification: unpacked extension in Edge, heat-map renders correctly
       against real live unit data, compared side-by-side with the existing React page
       at its original route.
