@@ -46,7 +46,20 @@ function makeMember(overrides: Partial<TerrainUnitMember> = {}): TerrainUnitMemb
   };
 }
 
-function mountLogic(props: { items: OASProgressionRow[]; trunkStageCounts: Record<string, number>; members: TerrainUnitMember[]; visibleStreams: string[]; stageRange: [number, number]; sortBy: "firstName" | "lastName" | "stageProgress" }) {
+interface MountProps {
+  items: OASProgressionRow[];
+  trunkStageCounts: Record<string, number>;
+  members: TerrainUnitMember[];
+  visibleStreams: string[];
+  stageRange: [number, number];
+  sortBy: "firstName" | "lastName" | "stageProgress";
+  useCodenames?: boolean;
+  selectedPatrols?: string[];
+  breakByPatrol?: boolean;
+  onlyInProgress?: boolean;
+}
+
+function mountLogic(props: MountProps) {
   const ComponentClass = Vue.extend(OASHeatMapVueOptions);
   return new ComponentClass({ propsData: props }) as InstanceType<typeof ComponentClass> & Record<string, unknown>;
 }
@@ -65,10 +78,10 @@ describe("OASHeatMapVue render contract", () => {
       sortBy: "firstName",
     });
 
-    const sections = vm.sections as Array<{ skill: string; title: string; members: Array<{ displayName: string }> }>;
+    const sections = vm.sections as Array<{ skill: string; title: string; patrolGroups: Array<{ members: Array<{ displayName: string }> }> }>;
     expect(sections).toHaveLength(1);
     expect(sections[0].skill).toBe("bushcraft");
-    expect(sections[0].members.map((m) => m.displayName)).toEqual(["Alex Scout", "Sam Ranger"]);
+    expect(sections[0].patrolGroups[0].members.map((m) => m.displayName)).toEqual(["Alex Scout", "Sam Ranger"]);
   });
 
   it("filters sections down to visibleStreams", () => {
@@ -101,8 +114,8 @@ describe("OASHeatMapVue render contract", () => {
       sortBy: "firstName",
     });
 
-    const sections = vm.sections as Array<{ members: Array<{ cells: Array<{ kind: string; squares?: Array<{ stateClass: string }> }> }> }>;
-    const cell = sections[0].members[0].cells[0];
+    const sections = vm.sections as Array<{ patrolGroups: Array<{ members: Array<{ cells: Array<{ kind: string; squares?: Array<{ stateClass: string }> }> }> }> }>;
+    const cell = sections[0].patrolGroups[0].members[0].cells[0];
     expect(cell.kind).toBe("squares");
     const stateClasses = (cell.squares ?? []).map((s) => s.stateClass);
     expect(stateClasses).toContain("oas-heatmap-square-awarded");
@@ -123,8 +136,8 @@ describe("OASHeatMapVue render contract", () => {
       sortBy: "firstName",
     });
 
-    const sections = vm.sections as Array<{ members: Array<{ cells: Array<{ kind: string }> }> }>;
-    expect(sections[0].members[0].cells[0].kind).toBe("bar-complete");
+    const sections = vm.sections as Array<{ patrolGroups: Array<{ members: Array<{ cells: Array<{ kind: string }> }> }> }>;
+    expect(sections[0].patrolGroups[0].members[0].cells[0].kind).toBe("bar-complete");
   });
 
   it("slices columns to the requested stageRange", () => {
@@ -141,5 +154,79 @@ describe("OASHeatMapVue render contract", () => {
     });
 
     expect(vm.allStages).toEqual([1, 2]);
+  });
+
+  it("shows a deterministic codename instead of the member's real name when useCodenames is on", () => {
+    const rows = [makeRow()];
+    const members = [makeMember({ id: "member-1", first_name: "Alex", last_name: "Scout" })];
+
+    const vm = mountLogic({
+      items: rows,
+      trunkStageCounts: { bushcraft: 3 },
+      members,
+      visibleStreams: ["bushcraft"],
+      stageRange: [1, 9],
+      sortBy: "firstName",
+      useCodenames: true,
+    });
+
+    const sections = vm.sections as Array<{ patrolGroups: Array<{ members: Array<{ displayName: string }> }> }>;
+    const displayName = sections[0].patrolGroups[0].members[0].displayName;
+    expect(displayName).not.toBe("Alex Scout");
+    expect(displayName).not.toBe("");
+  });
+
+  it("filters members down to selectedPatrols", () => {
+    const rows = [makeRow({ patrolName: "Eagles" }), makeRow({ memberId: "member-2", memberName: "Sam Ranger", patrolName: "Wolves" })];
+    const members = [makeMember({ id: "member-1", patrol: { id: "p1", name: "Eagles" } }), makeMember({ id: "member-2", first_name: "Sam", last_name: "Ranger", patrol: { id: "p2", name: "Wolves" } })];
+
+    const vm = mountLogic({
+      items: rows,
+      trunkStageCounts: { bushcraft: 3 },
+      members,
+      visibleStreams: ["bushcraft"],
+      stageRange: [1, 9],
+      sortBy: "firstName",
+      selectedPatrols: ["Eagles"],
+    });
+
+    const sections = vm.sections as Array<{ patrolGroups: Array<{ members: Array<{ displayName: string }> }> }>;
+    expect(sections[0].patrolGroups[0].members.map((m) => m.displayName)).toEqual(["Alex Scout"]);
+  });
+
+  it("groups members into per-patrol groups when breakByPatrol is on", () => {
+    const rows = [makeRow({ patrolName: "Eagles" }), makeRow({ memberId: "member-2", memberName: "Sam Ranger", patrolName: "Wolves" })];
+    const members = [makeMember({ id: "member-1", patrol: { id: "p1", name: "Eagles" } }), makeMember({ id: "member-2", first_name: "Sam", last_name: "Ranger", patrol: { id: "p2", name: "Wolves" } })];
+
+    const vm = mountLogic({
+      items: rows,
+      trunkStageCounts: { bushcraft: 3 },
+      members,
+      visibleStreams: ["bushcraft"],
+      stageRange: [1, 9],
+      sortBy: "firstName",
+      breakByPatrol: true,
+    });
+
+    const sections = vm.sections as Array<{ patrolGroups: Array<{ patrolName: string; members: Array<{ displayName: string }> }> }>;
+    expect(sections[0].patrolGroups.map((g) => g.patrolName)).toEqual(["Eagles", "Wolves"]);
+  });
+
+  it("hides fully-complete and not-started stage bars (but keeps in-progress squares) when onlyInProgress is on", () => {
+    const rows = [makeRow({ inputId: "a", answered: true, awarded: true }), makeRow({ inputId: "b", answered: true, awarded: true })];
+    const members = [makeMember()];
+
+    const vm = mountLogic({
+      items: rows,
+      trunkStageCounts: { bushcraft: 3 },
+      members,
+      visibleStreams: ["bushcraft"],
+      stageRange: [1, 9],
+      sortBy: "firstName",
+      onlyInProgress: true,
+    });
+
+    const sections = vm.sections as Array<{ patrolGroups: Array<{ members: Array<{ cells: Array<{ kind: string }> }> }> }>;
+    expect(sections[0].patrolGroups[0].members[0].cells[0].kind).toBe("empty");
   });
 });

@@ -2,9 +2,30 @@
 
 # VueStage 3 — Filters and Display Features
 
-See [PLAN_VUE.md](PLAN_VUE.md) for context (including current approval status —
-**still DRAFT as of writing**) and [PLAN_VUESTAGE_2.md](PLAN_VUESTAGE_2.md) for the
-heat-map component these filters control. Depends on VueStage 2 being complete.
+## Status: COMPLETE (pending live browser verification)
+
+See [PLAN_VUE.md](PLAN_VUE.md) for context and [PLAN_VUESTAGE_2.md](PLAN_VUESTAGE_2.md)
+for the heat-map component these filters control.
+
+**Deviation from the original plan text**: the "Component tests via `@vue/test-utils`"
+and "Integration-level test... mount the full `OasProgressionVueContent.vue` tree"
+ideas were not used — same reason as every prior stage (no `.vue` Jest transform
+installed; see PLAN_VUESTAGE_1.md's "Deviations" note). `OASProgressionFiltersVue`'s
+gating/wiring rules are verified via source-text assertions
+(`oas-progression-filters-vue-render-contract.spec.ts`), and the filter-state →
+heat-map wiring is verified the same way in
+`oas-progression-vue-render-contract.spec.ts` (checking `OasProgressionVueContent.vue`
+passes each `filters.*` field through to `OASHeatMapVue`'s props by name). The
+persistence round-trip test WAS written exactly as originally planned
+(`OASProgressionVueFilterPersistence.spec.ts`), since that file has no `.vue`
+dependency and works like any other plain-TS service test.
+
+One open question flagged for live verification: `OASProgressionFiltersVue.vue` uses
+`mdi-magnify`/`mdi-refresh` icon classes, relying on Terrain's own already-loaded MDI
+webfont (per `.claude/DESIGN.md`) rather than installing a separate `@mdi/font`
+package — this is a reasonable bet (Vuetify 2's default icon preset is `'mdi'`, and
+DESIGN.md confirms Terrain's page already loads `materialdesignicons-webfont`
+globally) but has NOT been confirmed to actually render correctly in a live page load.
 
 ## Goal
 
@@ -93,13 +114,23 @@ the existing `OASProgressionFilterPersistence.ts` — see above):
 
 ## Acceptance criteria
 
-- [ ] All filters/toggles listed above implemented with real Vuetify controls.
-- [ ] Filter state persists to localStorage (separate key from the React page) and
-      restores on reload.
-- [ ] All gating/interaction rules from the original page ported correctly (codenames
-      supersedes hide-last-name, patrol controls only shown when patrols exist, etc.).
-- [ ] Reset filters works.
-- [ ] New tests pass; `npm test` shows no regressions.
-- [ ] `npm run build` succeeds; `npx tsc --noEmit` shows no new errors.
+- [x] All filters/toggles listed above implemented with real Vuetify controls
+      (`v-text-field`, `v-select` ×4, `v-checkbox` ×6, `v-btn`).
+- [x] Filter state persists to localStorage (separate key
+      `summit.oasProgressionVue.filters`, confirmed distinct from the React page's
+      `summit.oasProgression.filters`) and restores on reload — verified by
+      `OASProgressionVueFilterPersistence.spec.ts`'s 7 tests.
+- [x] All gating/interaction rules from the original page ported correctly (codenames
+      supersedes hide-last-name, patrol controls only shown when patrols exist, hide
+      empty streams only shown when relevant) — verified via source-text assertions
+      in `oas-progression-filters-vue-render-contract.spec.ts`.
+- [x] Reset filters works — `OASProgressionFiltersVue` emits `reset`,
+      `OasProgressionVueContent.onResetFilters` restores `DEFAULT_FILTERS`.
+- [x] New tests pass; `npm test` shows no regressions (376/377 passing, same single
+      pre-existing UNC-path failure; 29 new/updated tests across 4 files all pass).
+- [x] `npm run build` succeeds; `npx tsc --noEmit` shows no new errors beyond the 4
+      known pre-existing ones.
 - [ ] Manual verification: unpacked extension in Edge, every filter tested
-      individually and in combination against real live unit data.
+      individually and in combination against real live unit data. Also confirm the
+      `mdi-*` icons (search field, refresh button) actually render — see the open
+      question above.

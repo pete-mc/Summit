@@ -2,8 +2,10 @@ import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import { groupRowsForHeatMap } from "@/pages/OasProgression/services/groupRowsForHeatMap";
 import type { HeatMapSection, HeatMapStage, SectionMemberRow } from "@/pages/OasProgression/services/groupRowsForHeatMap";
-import { sliceStagesToRange, formatStageProgress, sortMembers } from "@/pages/OasProgression/services/filterHeatMapSections";
+import { filterMembersByPatrol, groupMembersByPatrol, sliceStagesToRange, formatStageProgress, sortMembers } from "@/pages/OasProgression/services/filterHeatMapSections";
+import type { PatrolGroup } from "@/pages/OasProgression/services/filterHeatMapSections";
 import { getSkillIconUrl } from "@/pages/OasProgression/services/getSkillIconUrl";
+import { getCodename } from "@/pages/OasProgression/services/getCodename";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
 
@@ -53,7 +55,10 @@ function orderSkills(skills: string[]): string[] {
   return [...core, ...rest];
 }
 
-function displayName(memberName: string, hideLastName: boolean): string {
+function displayName(memberName: string, memberId: string, hideLastName: boolean, useCodenames: boolean): string {
+  if (useCodenames) {
+    return getCodename(memberId);
+  }
   return hideLastName ? memberName.split(" ")[0] : memberName;
 }
 
@@ -95,19 +100,28 @@ interface StageCellView {
   }>;
 }
 
-function buildStageCellView(stage: HeatMapStage | undefined): StageCellView {
+function buildStageCellView(stage: HeatMapStage | undefined, onlyInProgress: boolean): StageCellView {
   if (!stage) {
     return { kind: "empty" };
   }
   if (stage.complete) {
-    return { kind: "bar-complete", title: `Stage ${stage.stage} — complete` };
+    return onlyInProgress ? { kind: "empty" } : { kind: "bar-complete", title: `Stage ${stage.stage} — complete` };
   }
   const hasAnyProgress = stage.cells.some((c) => c.answered || c.awarded);
   if (!hasAnyProgress) {
-    return { kind: "bar-unstarted", title: `Stage ${stage.stage} — not started` };
+    return onlyInProgress ? { kind: "empty" } : { kind: "bar-unstarted", title: `Stage ${stage.stage} — not started` };
   }
   const squares = stage.cells.map((cell, index) => {
-    const stateClass = cell.awarded ? "oas-heatmap-square-awarded" : cell.answered ? "oas-heatmap-square-answered" : "oas-heatmap-square-unanswered";
+    const inProgressCell = cell.answered && !cell.awarded;
+    const stateClass = onlyInProgress
+      ? inProgressCell
+        ? "oas-heatmap-square-answered"
+        : "oas-heatmap-square-unanswered"
+      : cell.awarded
+        ? "oas-heatmap-square-awarded"
+        : cell.answered
+          ? "oas-heatmap-square-answered"
+          : "oas-heatmap-square-unanswered";
     const isNewGroup = index === 0 || stage.cells[index - 1].inputGroup !== cell.inputGroup;
     const groupClass = isNewGroup && index > 0 ? "oas-heatmap-square-group-start" : "";
     return {
@@ -130,16 +144,21 @@ interface MemberRowView {
   cells: StageCellView[];
 }
 
-function buildMemberRowView(member: SectionMemberRow, allStages: number[], hideLastName: boolean, isStreamSection: boolean, trunkStageCount: number): MemberRowView {
+function buildMemberRowView(member: SectionMemberRow, allStages: number[], hideLastName: boolean, useCodenames: boolean, onlyInProgress: boolean, isStreamSection: boolean, trunkStageCount: number): MemberRowView {
   const stagesByStage = new Map(member.stages.map((s) => [s.stage, s]));
   const stageProgress = formatStageProgress(member.highestStage, member.stages, isStreamSection, trunkStageCount, member.trunkFullyAwarded);
   return {
     memberId: member.memberId,
-    displayName: displayName(member.memberName, hideLastName),
+    displayName: displayName(member.memberName, member.memberId, hideLastName, useCodenames),
     stageDisplay: stageProgress.stage,
     nextStageProgress: stageProgress.nextStageProgress,
-    cells: allStages.map((stage) => buildStageCellView(stagesByStage.get(stage))),
+    cells: allStages.map((stage) => buildStageCellView(stagesByStage.get(stage), onlyInProgress)),
   };
+}
+
+interface PatrolGroupView {
+  patrolName: string;
+  members: MemberRowView[];
 }
 
 interface SectionView {
@@ -147,7 +166,9 @@ interface SectionView {
   skill: string;
   iconUrl: string | null;
   title: string;
-  members: MemberRowView[];
+  /** Grouped by patrol only when breakByPatrol is on — a single unlabeled group otherwise, so
+   * the template can always iterate patrolGroups rather than branching on breakByPatrol itself. */
+  patrolGroups: PatrolGroupView[];
 }
 
 export default defineComponent({
@@ -162,7 +183,11 @@ export default defineComponent({
     showEmptySections: { type: Boolean, default: false },
     memberFilter: { type: String, default: "" },
     hideLastName: { type: Boolean, default: false },
+    useCodenames: { type: Boolean, default: false },
+    selectedPatrols: { type: Array as PropType<string[]>, default: () => [] },
+    breakByPatrol: { type: Boolean, default: false },
     hideEmptyTopColumns: { type: Boolean, default: false },
+    onlyInProgress: { type: Boolean, default: false },
   },
   computed: {
     grouped(): Record<string, ReturnType<typeof groupRowsForHeatMap>[string]> {
@@ -211,18 +236,22 @@ export default defineComponent({
         const iconUrl = getSkillIconUrl(skill);
         sections.forEach((section: HeatMapSection) => {
           const isStreamSection = section.stream !== null;
-          const filteredMembers = sortMembers(
-            section.members.filter((member: SectionMemberRow) => !this.memberFilter.trim() || member.memberName.toLowerCase().includes(this.memberFilter.trim().toLowerCase())),
-            this.sortBy,
-            isStreamSection,
-            section.trunkStageCount,
-          );
+          const nameFiltered = section.members.filter((member: SectionMemberRow) => !this.memberFilter.trim() || member.memberName.toLowerCase().includes(this.memberFilter.trim().toLowerCase()));
+          const patrolFiltered = filterMembersByPatrol(nameFiltered, this.selectedPatrols);
+          const filteredMembers = sortMembers(patrolFiltered, this.sortBy, isStreamSection, section.trunkStageCount);
+
+          const toRowView = (member: SectionMemberRow) => buildMemberRowView(member, this.allStages, this.hideLastName, this.useCodenames, this.onlyInProgress, isStreamSection, section.trunkStageCount);
+
+          const patrolGroups: PatrolGroupView[] = this.breakByPatrol
+            ? groupMembersByPatrol(filteredMembers).map((group: PatrolGroup) => ({ patrolName: group.patrolName, members: group.members.map(toRowView) }))
+            : [{ patrolName: "", members: filteredMembers.map(toRowView) }];
+
           result.push({
             key: skill + "::" + (section.stream ?? ""),
             skill,
             iconUrl,
             title: sectionTitle(section),
-            members: filteredMembers.map((member: SectionMemberRow) => buildMemberRowView(member, this.allStages, this.hideLastName, isStreamSection, section.trunkStageCount)),
+            patrolGroups,
           });
         });
       });

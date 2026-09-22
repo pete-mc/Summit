@@ -63,6 +63,31 @@ describe("OasProgressionVueContent render contract", () => {
     expect(source).toContain(':items="items"');
   });
 
+  it("renders OASProgressionFiltersVue (VueStage 3's filter bar) and wires its filter state into OASHeatMapVue's props", () => {
+    const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
+    expect(source).toContain("<OASProgressionFiltersVue");
+    expect(source).toContain('@update:filters="onFiltersUpdate"');
+    expect(source).toContain('@reset="onResetFilters"');
+    [
+      ':visible-streams="filters.visibleStreams"',
+      ':stage-range="filters.stageRange"',
+      ':sort-by="filters.sortBy"',
+      ':member-filter="filters.memberFilter"',
+      ':use-codenames="filters.useCodenames"',
+      ':break-by-patrol="filters.breakByPatrol"',
+      ':only-in-progress="filters.onlyInProgress"',
+    ].forEach((binding) => {
+      expect(source).toContain(binding);
+    });
+  });
+
+  it("persists filter changes via the Vue-specific persistence service (separate localStorage key from the React page)", () => {
+    const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
+    expect(source).toContain("saveOASProgressionVueFilters");
+    expect(source).toContain("loadOASProgressionVueFilters");
+    expect(source).toContain("@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence");
+  });
+
   it("accepts real fixture data shaped like the existing React page's own props", () => {
     const rows = [makeRow(), makeRow({ memberId: "member-2", memberName: "Sam Ranger", inputId: "def456", iStatement: "I can navigate using a map and compass", answered: false, date: null })];
     const members = [makeMember({ id: "member-1", first_name: "Alex", last_name: "Scout" }), makeMember({ id: "member-2", first_name: "Sam", last_name: "Ranger" })];
