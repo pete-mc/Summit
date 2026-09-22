@@ -1,6 +1,6 @@
 <template>
   <div class="oas-heatmap-scroll">
-    <table class="oas-heatmap-table">
+    <table ref="exportTable" class="oas-heatmap-table">
       <thead class="oas-heatmap-thead">
         <tr>
           <th class="oas-heatmap-member-header">Member</th>

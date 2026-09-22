@@ -117,4 +117,33 @@ describe("OasProgressionVueContent render contract", () => {
     expect(source).toContain('ref="vuetifyRoot"');
     expect(source).not.toMatch(/<v-[a-z]/);
   });
+
+  it("VueStage 4: PDF export reuses the shared gridExport service against OASHeatMapVue's own table ref, matching the React page's approach", () => {
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
+    expect(tsSource).toContain('from "@/components/gridExport"');
+    expect(tsSource).toContain("exportElementToPdf");
+    expect(tsSource).toContain("heatMap?.$refs.exportTable");
+
+    const heatMapSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASHeatMapVue.vue"), "utf8");
+    expect(heatMapSource).toContain('ref="exportTable"');
+
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
+    expect(templateSource).toContain('ref="heatMap"');
+    expect(templateSource).toContain("onPdfExportClick");
+  });
+
+  it("VueStage 4: the reload button shows a loading state while reloading, matching the plan's nicer-than-original affordance", () => {
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
+    expect(tsSource).toContain("isReloading");
+    expect(tsSource).toContain("onReloadAllClick");
+
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
+    expect(templateSource).toContain(':loading="isReloading"');
+  });
+
+  it("VueStage 1: OasProgressionVue.ts sets breadcrumbs reading 'OAS Progression (Vue)' at its own route", () => {
+    const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/OasProgressionVue.ts"), "utf8");
+    expect(source).toContain("OAS Progression (Vue)");
+    expect(source).toContain("/summit/reports/oasprogression-vue");
+  });
 });

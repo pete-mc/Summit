@@ -2,10 +2,12 @@
   <v-app>
     <div class="oas-vue-content oas-progression-panel">
       <div class="oas-progression-view-row">
-        <v-progress-circular v-if="loadingStreams.size > 0" indeterminate color="primary" size="20" width="2"></v-progress-circular>
         <span v-if="loadingStreams.size > 0">Loading {{ loadingStreams.size }} stream(s)...</span>
-        <v-btn icon title="Refresh data" @click="onReloadAll"><v-icon>mdi-refresh</v-icon></v-btn>
+        <v-btn icon title="Refresh data" :loading="isReloading" :disabled="isReloading" @click="onReloadAllClick"><v-icon>mdi-refresh</v-icon></v-btn>
+        <v-btn text color="primary" @click="onPdfExportClick">PDF Export</v-btn>
       </div>
+
+      <div v-if="pdfExportFeedback" role="status" class="data-grid-export-feedback">{{ pdfExportFeedback }}</div>
 
       <OASProgressionFiltersVue
         :filters="filters"
@@ -16,6 +18,7 @@
       />
 
       <OASHeatMapVue
+        ref="heatMap"
         :items="items"
         :trunk-stage-counts="trunkStageCounts"
         :members="members"

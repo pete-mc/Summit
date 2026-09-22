@@ -5,8 +5,16 @@ import OASProgressionFiltersVue from "./OASProgressionFiltersVue.vue";
 import { groupRowsForHeatMap } from "@/pages/OasProgression/services/groupRowsForHeatMap";
 import { collectPatrolNames, OAS_SKILLS } from "@/pages/OasProgression/services/filterHeatMapSections";
 import { loadOASProgressionVueFilters, saveOASProgressionVueFilters, type OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
+import { exportElementToPdf } from "@/components/gridExport";
+import { createLogger } from "@/helpers";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
+
+const logger = createLogger("OasProgressionVueContent");
+
+interface HeatMapVueInstance {
+  $refs: { exportTable?: HTMLTableElement };
+}
 
 const MAX_STAGE = 9;
 
@@ -46,6 +54,8 @@ export default defineComponent({
   data() {
     return {
       filters: loadInitialFilters() as OASProgressionVueFilterState,
+      isReloading: false,
+      pdfExportFeedback: "",
     };
   },
   computed: {
@@ -73,6 +83,35 @@ export default defineComponent({
     },
     onResetFilters() {
       this.filters = { ...DEFAULT_FILTERS };
+    },
+    async onReloadAllClick() {
+      this.isReloading = true;
+      try {
+        await this.onReloadAll();
+      } finally {
+        this.isReloading = false;
+      }
+    },
+    async onPdfExportClick() {
+      const heatMap = this.$refs.heatMap as unknown as HeatMapVueInstance | undefined;
+      const table = heatMap?.$refs.exportTable;
+      if (!table) {
+        return;
+      }
+
+      try {
+        await exportElementToPdf({
+          element: table,
+          fileName: "OASProgressionHeatMapVue.pdf",
+          title: "Terrain | Summit - OAS Progression Heat Map (Vue)",
+          orientation: "landscape",
+        });
+        this.pdfExportFeedback = "PDF export complete";
+      } catch (e) {
+        logger.error("PDF export failed:", e);
+        const message = e instanceof Error ? e.message : "Unknown error";
+        this.pdfExportFeedback = `PDF export failed: ${message}`;
+      }
     },
   },
 });

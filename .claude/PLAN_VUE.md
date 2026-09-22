@@ -54,7 +54,7 @@ Decisions already confirmed with the user:
 - [x] [PLAN_VUESTAGE_1.md](PLAN_VUESTAGE_1.md) — Scaffolding: new route, nav entry, Vue-instance mount pattern (avoiding Terrain's router for content), naive unstyled render of the data.
 - [x] [PLAN_VUESTAGE_2.md](PLAN_VUESTAGE_2.md) — Real heat-map visual layout in Vuetify (table structure, skill/stage grouping, color-coded cells, skill icons).
 - [x] [PLAN_VUESTAGE_3.md](PLAN_VUESTAGE_3.md) — Filters/display features (Member search, Skills/Patrol multi-select, Stage range, Sort by, Display toggles) using Vuetify form controls. Live browser verification still pending.
-- [ ] [PLAN_VUESTAGE_4.md](PLAN_VUESTAGE_4.md) — Polish, PDF export parity, and end-to-end manual verification against the live site.
+- [ ] [PLAN_VUESTAGE_4.md](PLAN_VUESTAGE_4.md) — Polish, PDF export parity, and end-to-end manual verification against the live site. Build complete; live verification (PDF export, reload state, cross-page CSS check) still pending.
 
 Each stage is independently checkable — see its own file for detail, acceptance
 criteria, and tests. Work through them in order; later stages depend on earlier ones.
