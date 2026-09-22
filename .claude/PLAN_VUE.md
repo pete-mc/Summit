@@ -2,14 +2,10 @@
 
 # Plan Index: Vue+Vuetify OAS Progression Rebuild
 
-## Status: DRAFT — not yet approved by user
+## Status: APPROVED — implementation in progress
 
-This plan was drafted via plan mode but the user has not yet approved it (the
-ExitPlanMode approval call was declined, then the user stepped away before
-re-engaging). **Do not start implementation work until the user explicitly approves
-this plan or asks to proceed with it.** Written to disk now so nothing is lost if
-session memory resets — see `.claude/DEV_NOTES.md` for a running log of this
-session's other decisions/state.
+Approved by the user ("Lets start with the new work documented in PLAN_VUE.md").
+VueStage 1 is complete (see [PLAN_VUESTAGE_1.md](PLAN_VUESTAGE_1.md)'s own status).
 
 ## Context
 
@@ -55,7 +51,7 @@ Decisions already confirmed with the user:
 
 ## Stages
 
-- [ ] [PLAN_VUESTAGE_1.md](PLAN_VUESTAGE_1.md) — Scaffolding: new route, nav entry, Vue-instance mount pattern (avoiding Terrain's router for content), naive unstyled render of the data.
+- [x] [PLAN_VUESTAGE_1.md](PLAN_VUESTAGE_1.md) — Scaffolding: new route, nav entry, Vue-instance mount pattern (avoiding Terrain's router for content), naive unstyled render of the data.
 - [ ] [PLAN_VUESTAGE_2.md](PLAN_VUESTAGE_2.md) — Real heat-map visual layout in Vuetify (table structure, skill/stage grouping, color-coded cells, skill icons).
 - [ ] [PLAN_VUESTAGE_3.md](PLAN_VUESTAGE_3.md) — Filters/display features (Member search, Skills/Patrol multi-select, Stage range, Sort by, Display toggles) using Vuetify form controls.
 - [ ] [PLAN_VUESTAGE_4.md](PLAN_VUESTAGE_4.md) — Polish, PDF export parity, and end-to-end manual verification against the live site.

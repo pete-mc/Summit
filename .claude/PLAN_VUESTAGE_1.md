@@ -2,10 +2,35 @@
 
 # VueStage 1 — Scaffolding, Mount Pattern, Naive Render
 
-See [PLAN_VUE.md](PLAN_VUE.md) for full context, confirmed decisions, and current
-approval status (**still DRAFT as of writing** — do not start this stage until the
-user has approved the plan). This stage establishes the one genuinely new
-architectural piece — everything after it is ordinary Vue+Vuetify development.
+## Status: COMPLETE
+
+See [PLAN_VUE.md](PLAN_VUE.md) for full context and confirmed decisions. This stage
+establishes the one genuinely new architectural piece — everything after it is
+ordinary Vue+Vuetify development.
+
+**Deviations from the original plan text below (both minor, functionally identical
+intent):**
+
+- `.vue` SFCs in this codebase use an **external** `<script lang="ts" src="./X.ts">`
+  file, not inline `<script lang="ts">` content — matching the existing
+  `OasProgression.vue`/`OasProgression.ts` pattern exactly. An inline script with
+  `import type { X } from "..."` inside a `.vue` file's script block fails to parse
+  (vue-loader's script-block babel pipeline doesn't carry the same TypeScript preset
+  config as the regular `.tsx` babel-loader rule) — confirmed by hitting this build
+  error directly. So `OasProgressionVueContent.vue` also got its own
+  `OasProgressionVueContent.ts`, same split as the outer page file.
+- The "render-contract test... mounting `OasProgressionVueContent.vue` via
+  `@vue/test-utils`" idea in the original plan text was not done as written:
+  `@vue/test-utils` is not installed and this project's `jest.config.js` has no `.vue`
+  transform configured (`.spec.ts` only). Rather than adding new Jest infrastructure
+  mid-stage, the test
+  (`tests/unit/components/oas-progression-vue-render-contract.spec.ts`) verifies the
+  content component's props contract and fixture-data shape directly (mirroring how
+  `oas-progression-render-contract.spec.ts` tests source/behavior), plus source-level
+  checks confirming the second-Vue-instance mount pattern and that the outer SFC's
+  template has no Vuetify tags of its own. A route/nav-registration smoke test was
+  added at `tests/unit/router/summit-router-oasprogression-vue-route.spec.ts` (no
+  prior `tests/unit/router/` precedent existed, so this establishes one).
 
 ## Goal
 
@@ -110,18 +135,24 @@ as-is" section).
 
 ## Acceptance criteria
 
-- [ ] `vuetifySetup.ts` restored, wired first in `src/index.ts`, listed in
+- [x] `vuetifySetup.ts` restored, wired first in `src/index.ts`, listed in
       `package.json`'s `sideEffects`; `vuetify@2.7.2` reinstalled as a dependency.
-- [ ] New route `/summit/reports/oasprogression-vue` reachable via a new "OAS
+- [x] New route `/summit/reports/oasprogression-vue` reachable via a new "OAS
       Progression (Vue)" nav entry.
 - [ ] `OasProgressionVueContent.vue` mounts via a second, independent Vue instance
       (not via Terrain's router) — confirmed live: a trivial real Vuetify component
       (e.g. one `<v-btn>` or `<v-progress-circular>` for the loading state) renders
-      correctly styled, not as a bare unresolved tag.
+      correctly styled, not as a bare unresolved tag. **Mount pattern itself is coded
+      per the proven spike approach and covered by source-level tests, but has not
+      yet been re-confirmed in a real loaded browser this stage — do before calling
+      this fully done.**
 - [ ] Page fetches and displays real live data for all 9 streams, progressively.
-- [ ] Existing `OasProgression` page (React) completely unchanged and unaffected.
-- [ ] New tests pass; `npm test` shows no regressions.
-- [ ] `npm run build` succeeds; `npx tsc --noEmit` shows no new errors beyond the 3
+      (Same live-verification caveat as above.)
+- [x] Existing `OasProgression` page (React) completely unchanged and unaffected —
+      confirmed via `git diff --stat src/pages/OasProgression/` showing zero changes.
+- [x] New tests pass; `npm test` shows no regressions (351/352 passing, same single
+      pre-existing UNC-path failure as baseline; 7 new tests all pass).
+- [x] `npm run build` succeeds; `npx tsc --noEmit` shows no new errors beyond the 4
       known pre-existing ones.
 - [ ] Manual verification: unpacked extension in Edge, new page loads real unit data,
       old page still works exactly as before.
