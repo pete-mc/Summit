@@ -20,7 +20,7 @@ const STAGE_OPTIONS = Array.from({ length: MAX_STAGE }, (_, i) => i + 1);
 const SORT_OPTIONS: Array<{ value: OASProgressionVueFilterState["sortBy"]; text: string }> = [
   { value: "firstName", text: "First Name" },
   { value: "lastName", text: "Last Name" },
-  { value: "stageProgress", text: "Progression" },
+  { value: "stageProgress", text: "Stage" },
 ];
 
 /**

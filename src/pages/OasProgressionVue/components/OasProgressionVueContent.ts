@@ -47,7 +47,10 @@ export default defineComponent({
     items: { type: Array as PropType<OASProgressionRow[]>, required: true },
     trunkStageCounts: { type: Object as PropType<Record<string, number>>, required: true },
     members: { type: Array as PropType<TerrainUnitMember[]>, required: true },
-    loadingStreams: { type: Object as PropType<Set<string>>, required: true },
+    // Vue 2 has no built-in constructor check for Set (only Object/Array/etc.), so `type` is
+    // omitted here rather than declared as Object — a Set fails that check at runtime and logs
+    // a spurious "[Vue warn]: Invalid prop" despite being exactly the value passed in.
+    loadingStreams: { type: null as unknown as PropType<Set<string>>, required: true },
     onReloadAll: { type: Function as PropType<() => void>, required: true },
     onReloadStream: { type: Function as PropType<(stream: string) => void>, required: true },
   },
