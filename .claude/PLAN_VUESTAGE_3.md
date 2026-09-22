@@ -130,7 +130,20 @@ the existing `OASProgressionFilterPersistence.ts` — see above):
       pre-existing UNC-path failure; 29 new/updated tests across 4 files all pass).
 - [x] `npm run build` succeeds; `npx tsc --noEmit` shows no new errors beyond the 4
       known pre-existing ones.
-- [ ] Manual verification: unpacked extension in Edge, every filter tested
-      individually and in combination against real live unit data. Also confirm the
-      `mdi-*` icons (search field, refresh button) actually render — see the open
-      question above.
+- [x] Manual verification: unpacked extension in Edge, every filter tested
+      individually and in combination against real live unit data. Confirmed live by
+      the user 2026-09-22/23 ("All filters working"), including `mdi-*` icons
+      rendering correctly (resolving the open question above — Terrain's own MDI
+      webfont bet paid off, no separate `@mdi/font` package needed).
+
+## Post-verification polish (from live review)
+
+Two layout issues found and fixed after the above verification (commit `4d7ac52`):
+- The Skills/Patrol `v-select`s rendered their `chips` inside the cramped select box
+  itself, wrapping awkwardly. Switched to a compact "N selected" summary inside the
+  select, with the actually-selected Skills shown as deletable `v-chip`s in their own
+  row below the filter controls, above "Display" — per the user's suggested layout.
+- The Stage range fields used the React page's own `.oas-heatmap-filter-label` CSS
+  class as a plain `<label>`, visually inconsistent with every other field's native
+  Vuetify floating label. Replaced with two proper `v-select`s ("Stage from"/"Stage
+  to"), matching the rest of the filter bar's look.
