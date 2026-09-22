@@ -139,20 +139,19 @@ as-is" section).
       `package.json`'s `sideEffects`; `vuetify@2.7.2` reinstalled as a dependency.
 - [x] New route `/summit/reports/oasprogression-vue` reachable via a new "OAS
       Progression (Vue)" nav entry.
-- [ ] `OasProgressionVueContent.vue` mounts via a second, independent Vue instance
-      (not via Terrain's router) — confirmed live: a trivial real Vuetify component
-      (e.g. one `<v-btn>` or `<v-progress-circular>` for the loading state) renders
-      correctly styled, not as a bare unresolved tag. **Mount pattern itself is coded
-      per the proven spike approach and covered by source-level tests, but has not
-      yet been re-confirmed in a real loaded browser this stage — do before calling
-      this fully done.**
-- [ ] Page fetches and displays real live data for all 9 streams, progressively.
-      (Same live-verification caveat as above.)
+- [x] `OasProgressionVueContent.vue` mounts via a second, independent Vue instance
+      (not via Terrain's router) — confirmed live by the user: the `v-simple-table`
+      renders fully styled (real Vuetify borders/spacing/typography), not as bare
+      unresolved tags.
+- [x] Page fetches and displays real live data for all 9 streams, progressively —
+      confirmed live by the user against a real unit (screenshot showed bushcraft
+      stage 1 rows with real member names/i-statements/dates loaded).
 - [x] Existing `OasProgression` page (React) completely unchanged and unaffected —
       confirmed via `git diff --stat src/pages/OasProgression/` showing zero changes.
 - [x] New tests pass; `npm test` shows no regressions (351/352 passing, same single
       pre-existing UNC-path failure as baseline; 7 new tests all pass).
 - [x] `npm run build` succeeds; `npx tsc --noEmit` shows no new errors beyond the 4
       known pre-existing ones.
-- [ ] Manual verification: unpacked extension in Edge, new page loads real unit data,
-      old page still works exactly as before.
+- [x] Manual verification: unpacked extension in Edge — new page reachable via nav
+      ("OAS Progression (Vue)" under Reports), breadcrumbs correct, real unit data
+      loads and renders. Confirmed live by the user 2026-09-22.
