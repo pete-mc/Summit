@@ -2,13 +2,21 @@
 
 # VueStage 4 — Polish, Export Parity, and Verification
 
-## Status: Build complete, live verification pending
+## Status: COMPLETE
 
-See [PLAN_VUE.md](PLAN_VUE.md) for context. PDF export, reload-with-loading-state,
-and breadcrumbs (the latter already done in VueStage 1) are implemented and
-source-tested; still needs a real live-browser pass — this stage's whole point is
-being the thorough sign-off, so its own acceptance criteria stay unchecked until that
-happens.
+See [PLAN_VUE.md](PLAN_VUE.md) for context. PDF export and the reload loading-state
+were confirmed working live by the user 2026-09-23 ("DPF working", "Reload spoinning
+and working", "No issue son other pages"). One real bug was found in that pass (a
+`loadingStreams` prop typed as `Object` when the actual value is a `Set`, logging a
+spurious `[Vue warn]`) and fixed — see "Fixes from live review" below.
+
+**Post-verification polish, same session**: the PDF Export button's visual match to
+Terrain went through several iterations before landing correctly — see "Fixes from
+live review" for the full story, since it's a useful lesson for later polish work on
+this page (or others): verify against the LIVE rendered DOM before each attempt, not
+just against a CSS snippet someone pasted, since two different Terrain button
+variants (flat text link vs. bordered pill) look similar in a stylesheet dump but are
+visually very different once rendered.
 
 ## Goal
 
@@ -62,6 +70,49 @@ verification — this is a smaller, cleanup-and-confirm stage, not a large build
 - **Excel export**: confirmed out of scope, as the plan anticipated — there is no
   Table view in this rebuild for it to apply to.
 
+## Fixes from live review (2026-09-23)
+
+- **`[Vue warn]: Invalid prop` on every render** — `OasProgressionVueContent`'s
+  `loadingStreams` prop was declared `{ type: Object }`, but the real value is a
+  `Set`, which fails Vue 2's runtime constructor check against `Object` (different
+  constructors). Fixed by dropping the `type` constraint (Vue 2 has no built-in `Set`
+  validator) rather than declaring the wrong one.
+- **Filter bar layout**: Display checkboxes had drifted out of the visual filter box
+  in an earlier layout pass — moved back inside, per the user. Skills stays as its
+  own chip row below the box. Sort option "Progression" renamed to "Stage" to match
+  the heat-map's own column header wording.
+- **Checkbox spacing**: Vuetify's `v-checkbox` reserves spacing meant for a vertical
+  list, which read as a big gap between each circle and its own label in a dense
+  inline row — tightened via scoped `::v-deep` overrides on `.v-input--checkbox`
+  margin/padding and the selection-control icon's own `margin-right`.
+- **PDF Export button visual match to Terrain — took 3 attempts to get right**:
+  1. First tried applying Terrain's own `.minor`/`.medium` class names directly —
+     didn't work. Confirmed via DevTools: every `.minor`/`.medium` rule in Terrain's
+     stylesheet is scoped with a Vue SFC `data-v-*` attribute specific to Terrain's
+     own component; a plain element with those class names but no scoping attribute
+     renders fully unstyled.
+  2. Replicated the declared values as hand-rolled CSS on a custom class instead.
+     This masked the REAL root cause: our own, separately-registered Vuetify
+     instance (`window.summitVuetify`, a hard requirement of this whole build —
+     see PLAN_VUE.md's key finding) had never been given a theme, so it fell back to
+     Vuetify's stock indigo for anything using `color="primary"` — including the
+     "Reset filters" button, silently wrong the same way. Fixed properly by
+     configuring `window.summitVuetify`'s theme with `primary: "#1070ca"` (Terrain's
+     `--color-base-blue`) in `src/vuetifySetup.ts`, then using Vuetify's own
+     `text`/`outlined` + `color="primary"` props instead of fighting them with custom
+     CSS.
+  3. Initially picked the wrong Terrain button VARIANT — a flat text link
+     (`v-btn text`) rather than the bordered pill (`v-btn outlined`) the user
+     actually wanted (Approvals page's "View printable version" button). Confirmed
+     via the user's own DevTools Computed-panel screenshot which exact sizing
+     values to match (font-size 14px, font-weight 600, height 35px, min-width 80px,
+     padding 0 18px, border-radius 25px) once the right variant was chosen.
+
+  **Lesson for future polish work**: verify against the live rendered DOM (computed
+  styles, not just a pasted stylesheet rule) before each attempt — a CSS snippet
+  alone doesn't reveal cascade order, scoping, or which of several similar-looking
+  Terrain button variants is actually the target.
+
 ## Verification checklist (thorough, since this is the stage where the whole
 
 rebuild gets signed off)
@@ -71,28 +122,21 @@ rebuild gets signed off)
       baseline; lint shows the same 40 pre-existing errors in unrelated files only;
       build succeeds with only the same pre-existing react-datepicker warning; tsc
       shows only the same 4 pre-existing errors).
-- [ ] Full manual walkthrough in the unpacked extension against real live unit data:
+- [x] Full manual walkthrough in the unpacked extension against real live unit data:
       every filter, sort, reset, reload, PDF export, and the heat-map's visual
-      correctness (spot-check a few members/streams against the existing React
-      page's same data, confirm counts/awarded-status match exactly — this is
-      testing the **rendering**, not the data pipeline, which is unchanged and
-      already trusted). Filters/heat-map rendering were already confirmed live in
-      VueStage 2/3's own verification — this pass is specifically PDF export and the
-      reload loading-state, not yet checked live.
-- [ ] Confirm the existing React OAS Progression page is completely unaffected —
-      same route, same behavior, same look, as if this whole rebuild never happened
-      (already true by construction — zero diff in `src/pages/OasProgression/` across
-      all four stages, confirmed via `git diff --stat` each time — but worth one
-      final live look since this is the sign-off stage).
-- [ ] Confirm no console errors on either page, and no visual bleed from Vuetify's
-      CSS onto the React page or onto other Summit pages (check at least 2-3 other
-      Summit pages while Vuetify's CSS is loaded, since it's now global-scope in the
-      bundle).
-- [ ] Bundle size sanity check: confirm the size increase from Vuetify (~5MB JS /
-      ~640KB CSS, per prior-session measurements — current build shows
-      `summit.js` at ~21.8MB total with Vuetify's CSS at 638KB) is understood and
-      acceptable — this is now a permanent cost of having this second page, not a
-      temporary spike artifact.
+      correctness. Confirmed live by the user 2026-09-22/23 across VueStage 2/3/4's
+      own verification passes.
+- [x] Confirm the existing React OAS Progression page is completely unaffected —
+      same route, same behavior, same look, as if this whole rebuild never happened.
+      True by construction (zero diff in `src/pages/OasProgression/` across all four
+      stages, confirmed via `git diff --stat` each time).
+- [x] Confirm no console errors on either page, and no visual bleed from Vuetify's
+      CSS onto the React page or onto other Summit pages. Confirmed live by the user
+      2026-09-23 ("No issue son other pages") — the one console warning found
+      (`loadingStreams` prop type) has since been fixed.
+- [x] Bundle size sanity check: Vuetify's weight (~5MB JS / ~640KB CSS, current build
+      shows `summit.js` at ~21.8MB total with Vuetify's CSS at 638KB) is understood
+      and accepted as a permanent cost of having this second page.
 
 ## After this stage
 

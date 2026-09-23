@@ -2,10 +2,13 @@
 
 # Plan Index: Vue+Vuetify OAS Progression Rebuild
 
-## Status: APPROVED — implementation in progress
+## Status: COMPLETE — all 4 stages built and live-verified
 
-Approved by the user ("Lets start with the new work documented in PLAN_VUE.md").
-VueStage 1 is complete (see [PLAN_VUESTAGE_1.md](PLAN_VUESTAGE_1.md)'s own status).
+Approved by the user ("Lets start with the new work documented in PLAN_VUE.md") and
+built through all four stages in one continuous session (2026-09-22/23). Every stage
+was verified live in the unpacked extension by the user, not just via automated
+tests. See "After this stage" below for what comes next — this plan's own scope is
+done.
 
 ## Context
 
@@ -53,8 +56,8 @@ Decisions already confirmed with the user:
 
 - [x] [PLAN_VUESTAGE_1.md](PLAN_VUESTAGE_1.md) — Scaffolding: new route, nav entry, Vue-instance mount pattern (avoiding Terrain's router for content), naive unstyled render of the data.
 - [x] [PLAN_VUESTAGE_2.md](PLAN_VUESTAGE_2.md) — Real heat-map visual layout in Vuetify (table structure, skill/stage grouping, color-coded cells, skill icons).
-- [x] [PLAN_VUESTAGE_3.md](PLAN_VUESTAGE_3.md) — Filters/display features (Member search, Skills/Patrol multi-select, Stage range, Sort by, Display toggles) using Vuetify form controls. Live browser verification still pending.
-- [ ] [PLAN_VUESTAGE_4.md](PLAN_VUESTAGE_4.md) — Polish, PDF export parity, and end-to-end manual verification against the live site. Build complete; live verification (PDF export, reload state, cross-page CSS check) still pending.
+- [x] [PLAN_VUESTAGE_3.md](PLAN_VUESTAGE_3.md) — Filters/display features (Member search, Skills/Patrol multi-select, Stage range, Sort by, Display toggles) using Vuetify form controls.
+- [x] [PLAN_VUESTAGE_4.md](PLAN_VUESTAGE_4.md) — Polish, PDF export parity, and end-to-end manual verification against the live site.
 
 Each stage is independently checkable — see its own file for detail, acceptance
 criteria, and tests. Work through them in order; later stages depend on earlier ones.
@@ -106,3 +109,19 @@ All of the existing page's data/service layer is pure, framework-agnostic TypeSc
   reachable from its nav entry, renders real live unit data correctly, and that the
   **existing** OAS Progression page is completely unaffected (still pure React, still
   at its original route).
+
+## After this stage — open question, not yet decided
+
+Per this plan's own framing (see "Context" above), this rebuild was always meant as
+the real, larger test of whether Vuetify is worth adopting more broadly across
+Summit — that decision is still open. Two concrete follow-ups came up during the
+build, neither started:
+
+- **Table view (flat, sortable rows)** — the React page has one via `DataGrid.tsx`
+  (`@tanstack/react-table`); this Vue page deliberately does not, since
+  `@tanstack/vue-table` requires Vue 3 and Vuetify's own `v-data-table` is a real,
+  separate feature build (sorting, pagination, column defs, its own export wiring),
+  not a quick port. Would need its own staged plan if picked up.
+- **Whether to keep both pages long-term, retire the React one, or use this as the
+  template for converting further Summit pages** — genuinely undecided; not a call to
+  make without the user weighing in.
