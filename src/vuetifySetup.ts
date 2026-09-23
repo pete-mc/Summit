@@ -20,6 +20,20 @@ import Vuetify from "vuetify";
  *
  * Also: this file must be listed in package.json's "sideEffects" array. It has zero exports, so
  * without that entry webpack tree-shakes the whole module out of the production bundle.
+ *
+ * Theme: primary is set to Terrain's own --color-base-blue (#1070ca), confirmed via DevTools
+ * against Terrain's own Vuetify-themed buttons (e.g. its "text" variant renders
+ * color: var(--color-base-blue) !important). Without this, our separately-registered Vuetify
+ * instance falls back to its stock indigo default, visibly mismatched from Terrain's own
+ * Vuetify components elsewhere on the same page.
  */
 Vue.use(Vuetify);
-window.summitVuetify = new Vuetify();
+window.summitVuetify = new Vuetify({
+  theme: {
+    themes: {
+      light: {
+        primary: "#1070ca",
+      },
+    },
+  },
+});
