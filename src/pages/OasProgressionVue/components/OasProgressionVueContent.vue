@@ -55,6 +55,11 @@
  * unstyled). Terrain's --color-white/--color-base-blue CSS custom properties ARE set globally
  * (confirmed via getComputedStyle(document.documentElement)), so those are reused directly
  * rather than hardcoding Terrain's hex values, keeping this in sync if Terrain's theme changes.
+ *
+ * Terrain's stylesheet also has a plain `button[data-v-ac713568] { border: none }` rule that
+ * would otherwise conflict with `.minor`'s `border: 1px solid var(--color-base-blue)` — per the
+ * user (who checked live), `.minor`'s border is what actually renders, so it's kept here as the
+ * 1px blue border, not overridden to none.
  */
 .oas-vue-terrain-btn-minor.v-btn {
   background-color: var(--color-white, #fff);
