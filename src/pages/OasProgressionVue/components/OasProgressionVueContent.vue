@@ -4,7 +4,8 @@
       <div class="oas-progression-view-row">
         <span v-if="loadingStreams.size > 0">Loading {{ loadingStreams.size }} stream(s)...</span>
         <v-btn icon title="Refresh data" :loading="isReloading" :disabled="isReloading" @click="onReloadAllClick"><v-icon>mdi-refresh</v-icon></v-btn>
-        <v-btn text color="primary" @click="onPdfExportClick">PDF Export</v-btn>
+        <v-spacer></v-spacer>
+        <v-btn text class="medium minor" @click="onPdfExportClick">PDF Export</v-btn>
       </div>
 
       <div v-if="pdfExportFeedback" role="status" class="data-grid-export-feedback">{{ pdfExportFeedback }}</div>

@@ -121,4 +121,26 @@
 .oas-vue-skill-chip {
   margin: 0;
 }
+
+.oas-heatmap-display-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 20px;
+  row-gap: 4px;
+}
+
+/* Vuetify's v-checkbox reserves generous default spacing around each control (a 16px top
+   margin plus its own click-ripple padding) meant for a vertical list of checkboxes, not a
+   dense inline row — tighten both here so the label sits close to its own circle rather than
+   drifting toward the next one. */
+.oas-heatmap-display-group ::v-deep .v-input--checkbox {
+  margin-top: 0;
+  padding-top: 0;
+  flex: 0 0 auto;
+}
+
+.oas-heatmap-display-group ::v-deep .v-input--selection-controls__input {
+  margin-right: 4px;
+}
 </style>
