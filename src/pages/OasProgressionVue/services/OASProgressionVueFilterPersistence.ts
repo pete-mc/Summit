@@ -1,4 +1,5 @@
 export interface OASProgressionVueFilterState {
+  viewMode: "heatmap" | "table";
   memberFilter: string;
   hideLastName: boolean;
   useCodenames: boolean;
@@ -15,7 +16,6 @@ export interface OASProgressionVueFilterState {
 /**
  * Separate localStorage key from the React page's OASProgressionFilterPersistence.ts — the two
  * pages are independent experiments a user might configure differently, per PLAN_VUESTAGE_3.md.
- * No viewMode field: this Vue page is heat-map-only (no Table view), unlike the React version.
  */
 const OAS_PROGRESSION_VUE_FILTERS_KEY = "summit.oasProgressionVue.filters";
 

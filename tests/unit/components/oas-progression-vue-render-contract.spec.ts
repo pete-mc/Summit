@@ -141,6 +141,79 @@ describe("OasProgressionVueContent render contract", () => {
     expect(templateSource).toContain(':loading="isReloading"');
   });
 
+  it("VueStage 5: a single 'Show Table'/'Show Heatmap' button toggles viewMode, and shows OASProgressionTableVue when viewMode is 'table'", () => {
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
+    expect(templateSource).toContain("<OASProgressionTableVue");
+    expect(templateSource).toContain("onToggleViewModeClick");
+    expect(templateSource).toContain("Show Table");
+    expect(templateSource).toContain("Show Heatmap");
+    // The earlier v-btn-toggle-based control (and its styling saga, see PLAN_VUESTAGE_5.md) was
+    // deliberately dropped in favor of this single plain button — simpler, and it sidesteps the
+    // whole "matching Vuetify's active-state class + a conflicting external CSS rule" problem.
+    expect(templateSource).not.toContain("<v-btn-toggle");
+
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
+    expect(tsSource).toContain("onToggleViewModeClick");
+    expect(tsSource).toContain("OASProgressionTableVue");
+  });
+
+  it("VueStage 5: resetting filters preserves the current viewMode (a display choice, not a filter)", () => {
+    const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
+    expect(source).toContain("viewMode: this.filters.viewMode");
+  });
+
+  it("VueStage 5 fixes: header row gets PDF + Excel export buttons for the Table view", () => {
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
+    expect(templateSource).toContain("onTablePdfExportClick");
+    expect(templateSource).toContain("onTableExcelExportClick");
+    expect(templateSource).toContain("Excel Export");
+
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
+    expect(tsSource).toContain("exportGridToExcel");
+    expect(tsSource).toContain("exportGridToPdf");
+    expect(tsSource).toContain("onTablePdfExportClick");
+    expect(tsSource).toContain("onTableExcelExportClick");
+  });
+
+  it("VueStage 5 fixes: header row buttons keep a consistent left-to-right order — [Excel Export,] PDF Export, Show xxx, Refresh — so each button's position doesn't shift when Excel Export appears/disappears between views", () => {
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
+    const headerRow = templateSource.slice(templateSource.indexOf('<div class="oas-progression-view-row">'), templateSource.indexOf("</div>", templateSource.indexOf('<div class="oas-progression-view-row">')));
+
+    const toggleIndex = headerRow.indexOf("onToggleViewModeClick");
+    const excelIndex = headerRow.indexOf("onTableExcelExportClick");
+    const heatmapPdfIndex = headerRow.indexOf("onPdfExportClick");
+    const tablePdfIndex = headerRow.indexOf("onTablePdfExportClick");
+    const refreshIndex = headerRow.indexOf("onReloadAllClick");
+
+    expect(toggleIndex).toBeGreaterThan(-1);
+    expect(refreshIndex).toBeGreaterThan(-1);
+    // Left to right: [Excel Export,] PDF Export, Show xxx (view toggle), Refresh (rightmost).
+    expect(excelIndex).toBeLessThan(tablePdfIndex);
+    expect(heatmapPdfIndex).toBeLessThan(toggleIndex);
+    expect(tablePdfIndex).toBeLessThan(toggleIndex);
+    expect(toggleIndex).toBeLessThan(refreshIndex);
+  });
+
+  it("VueStage 5 fixes: the view-mode button reuses the same .oas-vue-pill-btn Terrain-matching style as PDF/Excel Export, with no bespoke toggle styling", () => {
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
+    expect(templateSource).toMatch(/<v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onToggleViewModeClick"/);
+    // No leftover CSS from the abandoned v-btn-toggle approach.
+    expect(templateSource).not.toContain("oas-vue-view-toggle");
+    expect(templateSource).not.toContain("oas-vue-toggle-active");
+  });
+
+  it("VueStage 5 fixes: Table view PDF/Excel export uses only the currently column-filtered rows, not every row", () => {
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
+    expect(tsSource).toContain("filterOASProgressionRows");
+    expect(tsSource).toContain("tableFilteredItems");
+    expect(tsSource).toContain("rows: this.tableFilteredItems");
+    expect(tsSource).toContain("tableColumnFilters");
+
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
+    expect(templateSource).toContain(':column-filters.sync="tableColumnFilters"');
+    expect(templateSource).not.toContain(":search.sync=");
+  });
+
   it("VueStage 1: OasProgressionVue.ts sets breadcrumbs reading 'OAS Progression (Vue)' at its own route", () => {
     const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/OasProgressionVue.ts"), "utf8");
     expect(source).toContain("OAS Progression (Vue)");

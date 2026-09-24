@@ -5,6 +5,7 @@ const REACT_PAGE_STORAGE_KEY = "summit.oasProgression.filters";
 
 function makeFilters(overrides: Partial<OASProgressionVueFilterState> = {}): OASProgressionVueFilterState {
   return {
+    viewMode: "heatmap",
     memberFilter: "",
     hideLastName: false,
     useCodenames: false,

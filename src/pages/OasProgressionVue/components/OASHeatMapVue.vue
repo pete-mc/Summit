@@ -47,3 +47,28 @@
 
 <script lang="ts" src="./OASHeatMapVue.ts">
 </script>
+
+<style scoped>
+/*
+ * Pinned explicitly, via the shared body scale (--oas-vue-font-size-body/--oas-vue-font-family,
+ * defined once on .oas-vue-content in OasProgressionVueContent.vue), so the heat-map's own text
+ * matches the Table view's data cells and both views' filter boxes rather than each table
+ * inheriting whatever ambient font Vuetify/Terrain's page-level CSS happens to resolve to here.
+ */
+.oas-heatmap-table {
+  font-size: var(--oas-vue-font-size-body);
+  font-family: var(--oas-vue-font-family);
+}
+
+/*
+ * .oas-heatmap-member-name is a class SHARED with the original React heat-map page (defined once
+ * in src/styles/index.css, not per-page) and sets its own explicit font-size: var(--summit-font-
+ * size-lg) (16px) on the <td> itself — a direct rule on the element beats the inherited body size
+ * from .oas-heatmap-table above regardless of scoping, since inheritance always loses to any rule
+ * that targets the element directly. Overriding it here, scoped to just this Vue page, rather than
+ * editing the shared index.css rule (which would also change the React page's heat-map).
+ */
+.oas-heatmap-member-name {
+  font-size: var(--oas-vue-font-size-body);
+}
+</style>
