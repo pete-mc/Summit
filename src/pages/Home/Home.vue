@@ -30,6 +30,11 @@
 
     <div><br>Visit our Github page to let us know what other features you would like to see or to report any issues:
         <a href="https://github.com/pete-mc/Summit/issues"> Terrain | Summit Github</a> </div>
+
+    <h3>Development tools</h3>
+    <ul>
+        <li><router-link to="/summit/reports/oasprogression-legacy">OAS Progression (legacy)</router-link> &mdash; the original version of the OAS Progression report, kept for reference.</li>
+    </ul>
     </div>
   </div>
 </template>

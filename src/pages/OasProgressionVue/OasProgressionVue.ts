@@ -74,9 +74,9 @@ export default defineComponent({
         exact: true,
       },
       {
-        text: "OAS Progression (Vue)",
+        text: "OAS Progression",
         disabled: true,
-        to: "/summit/reports/oasprogression-vue",
+        to: "/summit/reports/oasprogression",
         exact: true,
       },
     ];

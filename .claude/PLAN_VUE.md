@@ -2,13 +2,30 @@
 
 # Plan Index: Vue+Vuetify OAS Progression Rebuild
 
-## Status: COMPLETE — all 4 stages built and live-verified
+## Status: promoted to the primary OAS Progression page
+
+All 5 stages complete and verified live. Following the successful build-out, the user
+decided (2026-09-24) to promote this Vue+Vuetify page to be the one and only OAS
+Progression page rather than keeping it side-by-side with the React original:
+
+- Vue page took over the short route (`/summit/reports/oasprogression`) and dropped
+  the "(Vue)" suffix from its nav label/breadcrumb — it's now just "OAS Progression".
+- The original React page was archived, not deleted: moved to
+  `/summit/reports/oasprogression-legacy`, removed from the main nav menu, given a
+  small in-page banner noting it's the retired reference version, and linked from the
+  Home page under a new "Development tools" heading.
+
+Everything below this point documents the original build (written while both pages
+existed side-by-side as "the new Vue version" vs. "the existing React one") — read
+route/label mentions of `oasprogression-vue` / "OAS Progression (Vue)" as historical.
 
 Approved by the user ("Lets start with the new work documented in PLAN_VUE.md") and
 built through all four stages in one continuous session (2026-09-22/23). Every stage
 was verified live in the unpacked extension by the user, not just via automated
-tests. See "After this stage" below for what comes next — this plan's own scope is
-done.
+tests. The plan's original 4-stage scope is done; VueStage 5 picks up one of the two
+follow-ups noted below (the flat Table view), triggered by the user attaching a live
+extract of Terrain's own `v-data-table` markup and asking for column sorting + a
+global search filter.
 
 ## Context
 
@@ -58,6 +75,7 @@ Decisions already confirmed with the user:
 - [x] [PLAN_VUESTAGE_2.md](PLAN_VUESTAGE_2.md) — Real heat-map visual layout in Vuetify (table structure, skill/stage grouping, color-coded cells, skill icons).
 - [x] [PLAN_VUESTAGE_3.md](PLAN_VUESTAGE_3.md) — Filters/display features (Member search, Skills/Patrol multi-select, Stage range, Sort by, Display toggles) using Vuetify form controls.
 - [x] [PLAN_VUESTAGE_4.md](PLAN_VUESTAGE_4.md) — Polish, PDF export parity, and end-to-end manual verification against the live site.
+- [ ] [PLAN_VUESTAGE_5.md](PLAN_VUESTAGE_5.md) — Table view: Vuetify `v-data-table` with column sorting and a global search filter, as a second view mode alongside the heat-map.
 
 Each stage is independently checkable — see its own file for detail, acceptance
 criteria, and tests. Work through them in order; later stages depend on earlier ones.
@@ -98,6 +116,19 @@ All of the existing page's data/service layer is pure, framework-agnostic TypeSc
   `getSkillIconUrl.ts` already does — don't add a new direct `chrome.*` call.
 - **`web_accessible_resources` in `manifest.json`** already exposes
   `images/oas-skills/*` — no manifest change needed unless new assets are added.
+- **`.vue` `<style scoped>` blocks were never actually bundled into `summit.css`,
+  project-wide, until fixed in VueStage 5's later follow-up work** — root cause:
+  `package.json`'s `sideEffects` array only listed `"*.css"`, which doesn't match a
+  `.vue` file's style-block virtual module (its resource path ends in `.vue`, not
+  `.css` — `lang=css` is a query param), so webpack's tree-shaking (`usedExports:
+  true`) silently dropped every `.vue` component's scoped CSS from the final build
+  with no error. Fixed by adding `"*.vue"` to `sideEffects`. This went unnoticed
+  through VueStage 1–4 because every pre-existing `.vue` file in this codebase had
+  an empty `<style scoped>` block (all real styling lived in the shared
+  `src/styles/index.css`) — this Vue OAS Progression page's own `<style scoped>`
+  blocks were the first real content ever put there, which is what surfaced the
+  bug. See PLAN_VUESTAGE_5.md's "Real build-tooling bug found and fixed" section
+  for the full investigation trail.
 
 ## Verification (applies to every stage)
 
@@ -117,11 +148,10 @@ the real, larger test of whether Vuetify is worth adopting more broadly across
 Summit — that decision is still open. Two concrete follow-ups came up during the
 build, neither started:
 
-- **Table view (flat, sortable rows)** — the React page has one via `DataGrid.tsx`
-  (`@tanstack/react-table`); this Vue page deliberately does not, since
-  `@tanstack/vue-table` requires Vue 3 and Vuetify's own `v-data-table` is a real,
-  separate feature build (sorting, pagination, column defs, its own export wiring),
-  not a quick port. Would need its own staged plan if picked up.
+- **Table view (flat, sortable rows)** — now underway, see
+  [PLAN_VUESTAGE_5.md](PLAN_VUESTAGE_5.md). Using Vuetify's own `v-data-table`
+  (built-in sorting + a `search` prop for global filtering) rather than porting
+  `DataGrid.tsx`/`@tanstack/react-table`, since `@tanstack/vue-table` requires Vue 3.
 - **Whether to keep both pages long-term, retire the React one, or use this as the
   template for converting further Summit pages** — genuinely undecided; not a call to
   make without the user weighing in.

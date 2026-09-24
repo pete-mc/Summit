@@ -1,7 +1,7 @@
 <template>
   <div>
-    <h2>OAS Progression (Vue)</h2>
-    A Vue+Vuetify build of the same heat-map view, for direct comparison with the React version.<br>
+    <h2>OAS Progression</h2>
+    A heat-map view of each member's progress through the Outdoor Adventure Skill streams, down to individual i-statement detail.<br>
     <div ref="vuetifyRoot"></div>
   </div>
 </template>

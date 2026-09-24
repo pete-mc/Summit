@@ -52,9 +52,9 @@ export default defineComponent({
         exact: true,
       },
       {
-        text: "OAS Progression",
+        text: "OAS Progression (legacy)",
         disabled: true,
-        to: "/summit/reports/oasprogression",
+        to: "/summit/reports/oasprogression-legacy",
         exact: true,
       },
     ];

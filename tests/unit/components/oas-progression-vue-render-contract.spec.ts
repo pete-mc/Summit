@@ -214,9 +214,9 @@ describe("OasProgressionVueContent render contract", () => {
     expect(templateSource).not.toContain(":search.sync=");
   });
 
-  it("VueStage 1: OasProgressionVue.ts sets breadcrumbs reading 'OAS Progression (Vue)' at its own route", () => {
+  it("OasProgressionVue.ts sets breadcrumbs reading 'OAS Progression' at its own route (the page took over the short route/label once the legacy React page was archived)", () => {
     const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/OasProgressionVue.ts"), "utf8");
-    expect(source).toContain("OAS Progression (Vue)");
-    expect(source).toContain("/summit/reports/oasprogression-vue");
+    expect(source).toContain("OAS Progression");
+    expect(source).toContain("/summit/reports/oasprogression");
   });
 });

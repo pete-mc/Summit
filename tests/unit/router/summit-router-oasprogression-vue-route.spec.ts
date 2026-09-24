@@ -3,22 +3,23 @@ import * as path from "path";
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 
-describe("SummitRouter registers the OAS Progression (Vue) route and nav entry", () => {
+describe("SummitRouter routes OAS Progression to the Vue page and archives the legacy React page", () => {
   const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/router/SummitRouter.ts"), "utf8");
 
-  it("adds the new route alongside the existing OAS Progression route", () => {
-    expect(source).toContain('path: "/summit/reports/oasprogression-vue"');
+  it("routes the primary OAS Progression path to the Vue component", () => {
+    expect(source).toContain('path: "/summit/reports/oasprogression"');
     expect(source).toContain("component: OasProgressionVue");
   });
 
-  it("adds a nav menu entry for it under Reports", () => {
-    expect(source).toContain('title: "OAS Progression (Vue)"');
-    expect(source).toContain('to: "/summit/reports/oasprogression-vue"');
+  it("adds a single 'OAS Progression' nav menu entry pointing at the primary route", () => {
+    expect(source).toContain('title: "OAS Progression"');
+    expect(source).toContain('to: "/summit/reports/oasprogression"');
+    expect(source).not.toContain("OAS Progression (Vue)");
   });
 
-  it("leaves the existing React OAS Progression route and nav entry unchanged", () => {
-    expect(source).toContain('path: "/summit/reports/oasprogression"');
-    expect(source).toContain('title: "OAS Progression"');
+  it("keeps the legacy React OAS Progression page routable at a separate, unlinked path", () => {
+    expect(source).toContain('path: "/summit/reports/oasprogression-legacy"');
     expect(source).toContain("component: OasProgression,");
+    expect(source).not.toContain('to: "/summit/reports/oasprogression-legacy"');
   });
 });

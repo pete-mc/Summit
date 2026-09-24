@@ -76,11 +76,11 @@ export default class SummitRouter {
       component: OasReport,
     });
     this.router.addRoute({
-      path: "/summit/reports/oasprogression",
+      path: "/summit/reports/oasprogression-legacy",
       component: OasProgression,
     });
     this.router.addRoute({
-      path: "/summit/reports/oasprogression-vue",
+      path: "/summit/reports/oasprogression",
       component: OasProgressionVue,
     });
     this.router.addRoute({
@@ -146,13 +146,6 @@ export default class SummitRouter {
           {
             title: "OAS Progression",
             to: "/summit/reports/oasprogression",
-            items: [],
-            locked: false,
-            roles: [true, false],
-          },
-          {
-            title: "OAS Progression (Vue)",
-            to: "/summit/reports/oasprogression-vue",
             items: [],
             locked: false,
             roles: [true, false],

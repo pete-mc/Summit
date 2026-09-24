@@ -77,6 +77,59 @@ left nav. Don't introduce a second "primary" brand color; extend the palette wit
   `oas-heatmap-square-awarded`, `calendar-legend-swatch`. Keep this when adding
   classes for a new feature area.
 
+## OasProgressionVue's type scale
+
+`src/pages/OasProgressionVue/` is a deliberate exception to "Summit doesn't use a
+component library" above — built on real Vuetify 2 components (see
+`.claude/PLAN_VUE.md`) as an evaluation of whether Vuetify is worth adopting more
+broadly. It proved out well enough to become the primary OAS Progression page (route
+`/summit/reports/oasprogression`); the original React version lives on unlinked at
+`/summit/reports/oasprogression-legacy` as a reference. It does not use Summit's
+`--summit-*` tokens; it has its own small type scale, defined once as CSS custom
+properties on `.oas-vue-content` in
+[`OasProgressionVueContent.vue`](../src/pages/OasProgressionVue/components/OasProgressionVueContent.vue):
+
+```css
+--oas-vue-font-size-heading: 18px;   /* filter labels: Member, Skills, Display, etc. */
+--oas-vue-font-size-body: 14px;      /* table cells, filter/select input text */
+--oas-vue-font-family: NunitoSans-regular, arial, sans-serif;
+```
+
+Custom properties inherit through the DOM regardless of Vue's scoped-CSS component
+boundaries, so `OASProgressionFiltersVue.vue`, `OASProgressionTableVue.vue`, and
+`OASHeatMapVue.vue` all reference these (`var(--oas-vue-font-size-body)`, etc.)
+instead of each hardcoding its own copy of a pixel value.
+
+**Use this scale for any new text on this page.** Headings (filter row labels) use
+`--oas-vue-font-size-heading`; everything else — table cells, filter inputs, select
+values — uses `--oas-vue-font-size-body`. Don't introduce a third size without a
+concrete reason; the whole reason this scale exists is that the page previously
+didn't have one (see "How these values were determined" below) and near-identical
+elements silently drifted out of sync as a result.
+
+**Deliberately left outside the scale** (not oversights — each has an independent
+reason to differ): `.oas-vue-pill-btn` (the PDF/Excel/Show-Table/Refresh buttons)
+matches Terrain's own distinct button component, which happens to also be 14px but
+for unrelated reasons (`font-weight: 600`, different semantics); Vuetify icon sizes
+(`.v-icon`) are a separate concern from text sizing.
+
+**How these values were determined, and how to add a new one:** every value in this
+scale was read directly from Terrain's live DevTools Computed panel — Terrain's own
+page-level CSS overrides so much of Vuetify's defaults that no static source (not
+Vuetify's own defaults, not the captured snapshot in `docs/terrain.scouts.com.au/`)
+reliably predicts what a given component actually renders at. If you need a size this
+scale doesn't cover (e.g. a new kind of element that isn't a heading or body text),
+find Terrain's own closest equivalent element live on the real site, read its
+Computed panel, and match that explicitly — don't guess or reuse a nearby number.
+
+This scale was added after several rounds of exactly that guessing produced
+mismatched text that looked consistent on paper (same stated font-size) but rendered
+differently — in one case because the actual cause was a layout bug (a `<legend>`
+inheriting `width: 100%` from a rule written for the React page's different layout),
+not a font-size problem at all, which was only found because there was finally one
+shared value to check against instead of independently-set numbers with nothing to
+compare.
+
 ## Terrain's own styling (the host site Summit runs inside)
 
 Terrain (`https://terrain.scouts.com.au`) is a separate Nuxt.js (Vue 2) app built on
