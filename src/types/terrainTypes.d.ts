@@ -384,8 +384,14 @@ export interface TerrainEventSummary {
 
 export interface SIATemplate {
   template: string;
+  meta?: SIATemplateMeta;
   version: number;
   document: Document[];
+}
+
+export interface SIATemplateMeta {
+  stage: number;
+  stream: string;
 }
 
 export interface Document {
@@ -398,12 +404,15 @@ export interface InputGroup {
   inputs: Input[];
 }
 
+export type InputType = "verifiable_checkbox" | "checkbox" | "file_uploader" | string;
+
 export interface Input {
   id: string;
-  type: string;
+  type: InputType;
   rules?: string;
   multi_select?: boolean;
   label: string;
+  dialog_text?: string;
   selections?: Selection[];
   alt?: string;
   links?: Link[];
