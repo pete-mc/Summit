@@ -113,30 +113,26 @@ function buildStageCellView(stage: HeatMapStage | undefined, onlyInProgress: boo
   }
 
   /*
-   * "Hide answered" drops answered-but-not-yet-awarded squares outright (rather than greying them
-   * like onlyInProgress does), leaving only outstanding work plus the awarded squares kept as
-   * context. Filtering here — before the group-start borders are computed below — means those
-   * borders are derived from the squares actually rendered, so a group separator never survives
-   * onto a square whose group-mate was just removed.
-   *
-   * It hides squares and nothing else: the complete/not-started bars above are left to
-   * onlyInProgress, and a stage whose squares all disappear still renders as a (now empty)
-   * squares cell rather than collapsing to a bar or a blank.
+   * "Hide answered" makes answered-but-not-yet-awarded squares invisible in place rather than
+   * removing them, so the remaining squares keep their positions and rows stay aligned between
+   * members. It affects squares and nothing else — suppressing the complete/not-started bars
+   * above is onlyInProgress's job.
    */
-  const visibleCells = hideAnswered ? stage.cells.filter((cell) => cell.awarded || !cell.answered) : stage.cells;
-
-  const squares = visibleCells.map((cell, index) => {
+  const squares = stage.cells.map((cell, index) => {
     const inProgressCell = cell.answered && !cell.awarded;
-    const stateClass = onlyInProgress
-      ? inProgressCell
-        ? "oas-heatmap-square-answered"
-        : "oas-heatmap-square-unanswered"
-      : cell.awarded
-        ? "oas-heatmap-square-awarded"
-        : cell.answered
-          ? "oas-heatmap-square-answered"
-          : "oas-heatmap-square-unanswered";
-    const isNewGroup = index === 0 || visibleCells[index - 1].inputGroup !== cell.inputGroup;
+    const stateClass =
+      hideAnswered && inProgressCell
+        ? "oas-heatmap-square-hidden"
+        : onlyInProgress
+          ? inProgressCell
+            ? "oas-heatmap-square-answered"
+            : "oas-heatmap-square-unanswered"
+          : cell.awarded
+            ? "oas-heatmap-square-awarded"
+            : cell.answered
+              ? "oas-heatmap-square-answered"
+              : "oas-heatmap-square-unanswered";
+    const isNewGroup = index === 0 || stage.cells[index - 1].inputGroup !== cell.inputGroup;
     const groupClass = isNewGroup && index > 0 ? "oas-heatmap-square-group-start" : "";
     return {
       inputId: cell.inputId,

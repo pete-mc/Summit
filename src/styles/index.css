@@ -649,6 +649,17 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   border-color: transparent;
 }
 
+/*
+ * "Hide answered" state: the square keeps its size and position so the unanswered squares stay
+ * put and rows stay aligned between members. `visibility: hidden` rather than `display: none`
+ * for exactly that reason; the border is cleared too, or an empty outline would remain visible.
+ */
+.oas-heatmap-square-hidden {
+  background: transparent;
+  border-color: transparent;
+  visibility: hidden;
+}
+
 .oas-progression-view-row {
   display: flex;
   align-items: center;

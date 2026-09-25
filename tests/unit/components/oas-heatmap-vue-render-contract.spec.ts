@@ -244,30 +244,33 @@ describe("OASHeatMapVue render contract", () => {
 
     const baseProps = { trunkStageCounts: { bushcraft: 3 }, members: [makeMember()], visibleStreams: ["bushcraft"], stageRange: [1, 9] as [number, number], sortBy: "firstName" as const };
 
-    it("drops answered-but-unawarded squares while keeping awarded and untouched ones", () => {
+    it("hides answered-but-unawarded squares in place, leaving awarded and untouched ones visible", () => {
       const rows = [makeRow({ inputId: "awarded", answered: true, awarded: true }), makeRow({ inputId: "answered", answered: true, awarded: false }), makeRow({ inputId: "untouched", answered: false, awarded: false })];
 
       const cell = firstCell({ ...baseProps, items: rows, hideAnswered: true });
 
       expect(cell.kind).toBe("squares");
-      expect((cell.squares ?? []).map((s) => s.inputId)).toEqual(["awarded", "untouched"]);
+      // Every square survives — only the answered one's state class changes, so the visible
+      // squares keep the positions they had with the filter off.
+      expect((cell.squares ?? []).map((s) => s.inputId)).toEqual(["awarded", "answered", "untouched"]);
+      expect((cell.squares ?? []).map((s) => s.stateClass)).toEqual(["oas-heatmap-square-awarded", "oas-heatmap-square-hidden", "oas-heatmap-square-unanswered"]);
     });
 
-    it("leaves every square in place when off", () => {
+    it("leaves every square visible when off", () => {
       const rows = [makeRow({ inputId: "awarded", answered: true, awarded: true }), makeRow({ inputId: "answered", answered: true, awarded: false }), makeRow({ inputId: "untouched", answered: false, awarded: false })];
 
       const cell = firstCell({ ...baseProps, items: rows, hideAnswered: false });
 
-      expect((cell.squares ?? []).map((s) => s.inputId)).toEqual(["awarded", "answered", "untouched"]);
+      expect((cell.squares ?? []).map((s) => s.stateClass)).toEqual(["oas-heatmap-square-awarded", "oas-heatmap-square-answered", "oas-heatmap-square-unanswered"]);
     });
 
-    it("empties, but does not collapse, a stage whose every square is answered-but-unawarded", () => {
+    it("keeps a stage's full square count even when every one of them is hidden", () => {
       const rows = [makeRow({ inputId: "a", answered: true, awarded: false }), makeRow({ inputId: "b", answered: true, awarded: false })];
 
       const cell = firstCell({ ...baseProps, items: rows, hideAnswered: true });
 
       expect(cell.kind).toBe("squares");
-      expect(cell.squares).toEqual([]);
+      expect((cell.squares ?? []).map((s) => s.stateClass)).toEqual(["oas-heatmap-square-hidden", "oas-heatmap-square-hidden"]);
     });
 
     it("leaves the complete bar alone — hiding answered squares must not touch the bars", () => {
@@ -282,21 +285,19 @@ describe("OASHeatMapVue render contract", () => {
       expect(firstCell({ ...baseProps, items: rows, hideAnswered: true }).kind).toBe("bar-unstarted");
     });
 
-    it("recomputes group-start borders from the surviving squares, not the original list", () => {
-      // "plan-b" is the only remaining Plan square, so it must become the group start that the
-      // removed "plan-a" used to be; "do-a" stays a group start as the first Do square.
+    it("leaves group-start borders exactly where they are when squares are hidden", () => {
+      // Hiding is purely visual, so the group layout must not shift: "do-a" stays the group start
+      // even though the Plan square before it is now invisible.
       const rows = [
         makeRow({ inputId: "plan-a", inputGroup: "Plan", answered: true, awarded: false }),
         makeRow({ inputId: "plan-b", inputGroup: "Plan", answered: false, awarded: false }),
         makeRow({ inputId: "do-a", inputGroup: "Do", answered: false, awarded: false }),
       ];
 
-      const squares = firstCell({ ...baseProps, items: rows, hideAnswered: true }).squares ?? [];
+      const groupClassesWith = (hideAnswered: boolean) => (firstCell({ ...baseProps, items: rows, hideAnswered }).squares ?? []).map((s) => s.groupClass);
 
-      expect(squares.map((s) => s.inputId)).toEqual(["plan-b", "do-a"]);
-      // index 0 never gets the border regardless of group; index 1 starts a new group.
-      expect(squares[0].groupClass).toBe("");
-      expect(squares[1].groupClass).toBe("oas-heatmap-square-group-start");
+      expect(groupClassesWith(true)).toEqual(["", "", "oas-heatmap-square-group-start"]);
+      expect(groupClassesWith(true)).toEqual(groupClassesWith(false));
     });
   });
 });
