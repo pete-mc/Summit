@@ -18,6 +18,8 @@ Progression page rather than keeping it side-by-side with the React original:
 Everything below this point documents the original build (written while both pages
 existed side-by-side as "the new Vue version" vs. "the existing React one") — read
 route/label mentions of `oasprogression-vue` / "OAS Progression (Vue)" as historical.
+The Display toggles have since changed; see "Display-toggle revisions" below, which
+supersedes VueStage 3's description of them.
 
 Approved by the user ("Lets start with the new work documented in PLAN_VUE.md") and
 built through all four stages in one continuous session (2026-09-22/23). Every stage
@@ -26,6 +28,87 @@ tests. The plan's original 4-stage scope is done; VueStage 5 picks up one of the
 follow-ups noted below (the flat Table view), triggered by the user attaching a live
 extract of Terrain's own `v-data-table` markup and asking for column sorting + a
 global search filter.
+
+## Display-toggle revisions (2026-09-25)
+
+A round of changes driven by the user actually using the page, rather than by a
+stage plan. Supersedes VueStage 3's description of the Display group. The heat map's
+Display toggles are now:
+
+| Label                       | State key             | What it does                                                             |
+| --------------------------- | --------------------- | ------------------------------------------------------------------------ |
+| Use codenames               | `useCodenames`        | unchanged                                                                  |
+| Hide last name              | `hideLastName`        | unchanged (disabled while codenames is on)                                 |
+| Break by patrol             | `breakByPatrol`       | unchanged (only shown when patrols exist)                                  |
+| **Hide empty skills**       | `hideEmptyStreams`    | hides any skill+stream with no progress, **trunk sections included**       |
+| **Hide empty top stages**   | `hideEmptyTopColumns` | trims empty trailing stage columns, **down to a floor of stage 2**         |
+| **Hide complete/not started** | `onlyInProgress`    | hides the complete / not-started stage bars (behaviour unchanged, relabelled) |
+| **Hide answered** (new)     | `hideAnswered`        | makes answered-but-unawarded squares invisible in place                    |
+
+**Labels changed; state keys deliberately did not.** The keys are the persisted
+localStorage shape (`summit.oasProgressionVue.filters`), so renaming them would
+silently reset saved toggles for anyone who had set them. The mismatch between label
+and key is the lesser cost, and is noted at each site.
+
+### "Hide answered" — three iterations, and why it ended where it did
+
+Worth recording because the end state contradicts the first two rounds of explicit
+user choices. The user picked each of these deliberately, then revised after seeing
+it live:
+
+1. **Remove the squares entirely**, hiding answered *and* leaving awarded visible, and
+   blank a stage cell once nothing was left in it.
+2. **Narrowed to the squares alone** — the "blank the whole stage" part was dropped.
+   With both this and `onlyInProgress` able to blank a stage cell, it was unclear
+   which toggle was acting.
+3. **Hide in place rather than remove.** Removing squares re-flowed each stage, so
+   the remaining boxes shifted left as the filter went on and rows stopped lining up
+   between members — which defeats the point of comparing who has what outstanding.
+
+The end state: a `.oas-heatmap-square-hidden` class (`visibility: hidden`, border
+cleared so no empty outline remains) applied in place of the normal state class. Two
+things fell out of that:
+
+- **Group-start borders no longer need recomputing.** The removal version had to
+  derive them from the surviving squares, or a separator could strand itself on a
+  square whose group-mate had just gone. Nothing leaves the array now, so the layout
+  is stable by construction. The test that pinned the recomputation now pins that
+  stability instead.
+- **Hidden squares can't be hovered.** `visibility: hidden` takes an element out of
+  hit-testing, so the tooltip is unreachable without special-casing the title.
+
+Awarded squares stay visible throughout, by explicit choice — "to be done" reads as
+the grey gaps plus the green history, not a stripped-down list.
+
+### Divergence from the legacy React page
+
+The two hide-empty filters now behave differently on the two pages. This is
+deliberate, and commented at both sites:
+
+| Behaviour            | Vue page (primary)              | React page (`oasprogression-legacy`) |
+| -------------------- | ------------------------------- | ------------------------------------ |
+| Stage-trimming floor | `MIN_VISIBLE_STAGE = 2`         | `MIN_VISIBLE_STAGE = 4`              |
+| Empty-section rule   | every section, trunk included   | forked streams only (`stream !== null`) |
+| Checkbox gating      | always shown                    | gated on `hasAnyEmptySections`       |
+
+The change was made in the Vue page's own `isEmptyWithinRange`, **not** in the shared
+`groupRowsForHeatMap.ts` service (whose `isEmpty` field the React page also reads), so
+the legacy page is untouched. `hasAnyEmptySections` is now unused on the Vue side and
+was removed along with its wiring through three files.
+
+Consequence of including trunk sections: a skill with no progress anywhere now
+disappears entirely, heading and all. `sections` builds one `SectionView` per
+surviving section, so a skill with none contributes no `<tbody>` — no stray empty
+heading is left behind.
+
+### A real bug this surfaced
+
+Five existing tests broke when trunk sections became hideable. The cause was not the
+tests: `showEmptySections` declared `default: false`, while the page always binds
+`!filters.hideEmptyStreams`, which defaults to `true`. The mismatch had been harmless
+only because an empty trunk section could never be hidden before; once it could, an
+omitted prop would have silently hidden whole skills. Fixed by correcting the default
+to `true` — "show everything" is the right default for an omitted display filter.
 
 ## Context
 

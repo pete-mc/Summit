@@ -7,6 +7,12 @@
 See [PLAN_VUE.md](PLAN_VUE.md) for context and [PLAN_VUESTAGE_2.md](PLAN_VUESTAGE_2.md)
 for the heat-map component these filters control.
 
+> **Superseded in part (2026-09-25).** The Display toggles described below have since
+> been relabelled, widened, and added to — including a new "Hide answered" toggle, and
+> the removal of the `hasAnyEmptySections` gating this file specifies. This file records
+> the stage as originally built; see **"Display-toggle revisions"** in
+> [PLAN_VUE.md](PLAN_VUE.md) for what they do now.
+
 **Deviation from the original plan text**: the "Component tests via `@vue/test-utils`"
 and "Integration-level test... mount the full `OasProgressionVueContent.vue` tree"
 ideas were not used — same reason as every prior stage (no `.vue` Jest transform

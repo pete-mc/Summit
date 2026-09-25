@@ -59,6 +59,14 @@ buttons, the heat-map header row, and Summit's own entries injected into Terrain
 left nav. Don't introduce a second "primary" brand color; extend the palette with new
 `--summit-color-*` tokens in the same naming style if a new semantic color is needed.
 
+The three `--summit-color-status-*` tokens above are the heat-map square's colour
+states. There is a fourth state class, `.oas-heatmap-square-hidden` (the OAS
+Progression page's "Hide answered" filter), which correctly has **no** token: it sets
+`visibility: hidden` and clears the border so the square holds its slot while showing
+nothing. Note that `.oas-heatmap-square` carries the border independently of the state
+classes, so any future "invisible" state must clear `border-color` too — setting only a
+transparent background leaves an empty outline behind.
+
 ## Component conventions
 
 - Functional components, typed props via `interface` + `React.FC<Props>`. See
