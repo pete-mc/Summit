@@ -89,6 +89,7 @@
         <v-checkbox v-if="hasAnyEmptySections" :input-value="filters.hideEmptyStreams" label="Hide empty streams" dense hide-details @change="patch({ hideEmptyStreams: $event })"></v-checkbox>
         <v-checkbox :input-value="filters.hideEmptyTopColumns" label="Hide empty top columns" dense hide-details @change="patch({ hideEmptyTopColumns: $event })"></v-checkbox>
         <v-checkbox :input-value="filters.onlyInProgress" label="Only show in-progress" dense hide-details @change="patch({ onlyInProgress: $event })"></v-checkbox>
+        <v-checkbox :input-value="filters.hideAnswered" label="Hide answered" dense hide-details @change="patch({ hideAnswered: $event })"></v-checkbox>
       </fieldset>
 
       <v-btn text color="primary" @click="resetFilters">Reset filters</v-btn>

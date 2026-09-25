@@ -100,18 +100,32 @@ interface StageCellView {
   }>;
 }
 
-function buildStageCellView(stage: HeatMapStage | undefined, onlyInProgress: boolean): StageCellView {
+function buildStageCellView(stage: HeatMapStage | undefined, onlyInProgress: boolean, hideAnswered: boolean): StageCellView {
   if (!stage) {
     return { kind: "empty" };
   }
   if (stage.complete) {
-    return onlyInProgress ? { kind: "empty" } : { kind: "bar-complete", title: `Stage ${stage.stage} — complete` };
+    // A complete stage is entirely awarded, so hideAnswered leaves nothing of it to show.
+    return onlyInProgress || hideAnswered ? { kind: "empty" } : { kind: "bar-complete", title: `Stage ${stage.stage} — complete` };
   }
   const hasAnyProgress = stage.cells.some((c) => c.answered || c.awarded);
   if (!hasAnyProgress) {
     return onlyInProgress ? { kind: "empty" } : { kind: "bar-unstarted", title: `Stage ${stage.stage} — not started` };
   }
-  const squares = stage.cells.map((cell, index) => {
+
+  /*
+   * "Hide answered" drops answered-but-not-yet-awarded squares outright (rather than greying them
+   * like onlyInProgress does), leaving only outstanding work plus the awarded squares kept as
+   * context. Filtering here — before the group-start borders are computed below — means those
+   * borders are derived from the squares actually rendered, so a group separator never survives
+   * onto a square whose group-mate was just removed.
+   */
+  const visibleCells = hideAnswered ? stage.cells.filter((cell) => cell.awarded || !cell.answered) : stage.cells;
+  if (visibleCells.length === 0) {
+    return { kind: "empty" };
+  }
+
+  const squares = visibleCells.map((cell, index) => {
     const inProgressCell = cell.answered && !cell.awarded;
     const stateClass = onlyInProgress
       ? inProgressCell
@@ -122,7 +136,7 @@ function buildStageCellView(stage: HeatMapStage | undefined, onlyInProgress: boo
         : cell.answered
           ? "oas-heatmap-square-answered"
           : "oas-heatmap-square-unanswered";
-    const isNewGroup = index === 0 || stage.cells[index - 1].inputGroup !== cell.inputGroup;
+    const isNewGroup = index === 0 || visibleCells[index - 1].inputGroup !== cell.inputGroup;
     const groupClass = isNewGroup && index > 0 ? "oas-heatmap-square-group-start" : "";
     return {
       inputId: cell.inputId,
@@ -144,7 +158,7 @@ interface MemberRowView {
   cells: StageCellView[];
 }
 
-function buildMemberRowView(member: SectionMemberRow, allStages: number[], hideLastName: boolean, useCodenames: boolean, onlyInProgress: boolean, isStreamSection: boolean, trunkStageCount: number): MemberRowView {
+function buildMemberRowView(member: SectionMemberRow, allStages: number[], hideLastName: boolean, useCodenames: boolean, onlyInProgress: boolean, hideAnswered: boolean, isStreamSection: boolean, trunkStageCount: number): MemberRowView {
   const stagesByStage = new Map(member.stages.map((s) => [s.stage, s]));
   const stageProgress = formatStageProgress(member.highestStage, member.stages, isStreamSection, trunkStageCount, member.trunkFullyAwarded);
   return {
@@ -152,7 +166,7 @@ function buildMemberRowView(member: SectionMemberRow, allStages: number[], hideL
     displayName: displayName(member.memberName, member.memberId, hideLastName, useCodenames),
     stageDisplay: stageProgress.stage,
     nextStageProgress: stageProgress.nextStageProgress,
-    cells: allStages.map((stage) => buildStageCellView(stagesByStage.get(stage), onlyInProgress)),
+    cells: allStages.map((stage) => buildStageCellView(stagesByStage.get(stage), onlyInProgress, hideAnswered)),
   };
 }
 
@@ -188,6 +202,7 @@ export default defineComponent({
     breakByPatrol: { type: Boolean, default: false },
     hideEmptyTopColumns: { type: Boolean, default: false },
     onlyInProgress: { type: Boolean, default: false },
+    hideAnswered: { type: Boolean, default: false },
   },
   computed: {
     grouped(): Record<string, ReturnType<typeof groupRowsForHeatMap>[string]> {
@@ -240,7 +255,7 @@ export default defineComponent({
           const patrolFiltered = filterMembersByPatrol(nameFiltered, this.selectedPatrols);
           const filteredMembers = sortMembers(patrolFiltered, this.sortBy, isStreamSection, section.trunkStageCount);
 
-          const toRowView = (member: SectionMemberRow) => buildMemberRowView(member, this.allStages, this.hideLastName, this.useCodenames, this.onlyInProgress, isStreamSection, section.trunkStageCount);
+          const toRowView = (member: SectionMemberRow) => buildMemberRowView(member, this.allStages, this.hideLastName, this.useCodenames, this.onlyInProgress, this.hideAnswered, isStreamSection, section.trunkStageCount);
 
           const patrolGroups: PatrolGroupView[] = this.breakByPatrol
             ? groupMembersByPatrol(filteredMembers).map((group: PatrolGroup) => ({ patrolName: group.patrolName, members: group.members.map(toRowView) }))

@@ -44,6 +44,7 @@ const DEFAULT_FILTERS: OASProgressionVueFilterState = {
   hideEmptyStreams: false,
   hideEmptyTopColumns: false,
   onlyInProgress: false,
+  hideAnswered: false,
   visibleStreams: OAS_SKILLS,
   stageRange: [1, MAX_STAGE],
   sortBy: "firstName",

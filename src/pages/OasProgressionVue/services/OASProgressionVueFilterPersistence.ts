@@ -8,6 +8,7 @@ export interface OASProgressionVueFilterState {
   hideEmptyStreams: boolean;
   hideEmptyTopColumns: boolean;
   onlyInProgress: boolean;
+  hideAnswered: boolean;
   visibleStreams: string[];
   stageRange: [number, number];
   sortBy: "lastName" | "firstName" | "stageProgress";

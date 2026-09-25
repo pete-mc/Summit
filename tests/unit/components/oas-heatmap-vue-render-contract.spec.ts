@@ -57,6 +57,7 @@ interface MountProps {
   selectedPatrols?: string[];
   breakByPatrol?: boolean;
   onlyInProgress?: boolean;
+  hideAnswered?: boolean;
 }
 
 function mountLogic(props: MountProps) {
@@ -228,5 +229,70 @@ describe("OASHeatMapVue render contract", () => {
 
     const sections = vm.sections as Array<{ patrolGroups: Array<{ members: Array<{ cells: Array<{ kind: string }> }> }> }>;
     expect(sections[0].patrolGroups[0].members[0].cells[0].kind).toBe("empty");
+  });
+
+  describe("hideAnswered", () => {
+    type CellShape = { kind: string; squares?: Array<{ inputId: string; stateClass: string; groupClass: string }> };
+
+    function firstCell(props: MountProps): CellShape {
+      const vm = mountLogic(props);
+      const sections = vm.sections as Array<{ patrolGroups: Array<{ members: Array<{ cells: CellShape[] }> }> }>;
+      return sections[0].patrolGroups[0].members[0].cells[0];
+    }
+
+    const baseProps = { trunkStageCounts: { bushcraft: 3 }, members: [makeMember()], visibleStreams: ["bushcraft"], stageRange: [1, 9] as [number, number], sortBy: "firstName" as const };
+
+    it("drops answered-but-unawarded squares while keeping awarded and untouched ones", () => {
+      const rows = [makeRow({ inputId: "awarded", answered: true, awarded: true }), makeRow({ inputId: "answered", answered: true, awarded: false }), makeRow({ inputId: "untouched", answered: false, awarded: false })];
+
+      const cell = firstCell({ ...baseProps, items: rows, hideAnswered: true });
+
+      expect(cell.kind).toBe("squares");
+      expect((cell.squares ?? []).map((s) => s.inputId)).toEqual(["awarded", "untouched"]);
+    });
+
+    it("leaves every square in place when off", () => {
+      const rows = [makeRow({ inputId: "awarded", answered: true, awarded: true }), makeRow({ inputId: "answered", answered: true, awarded: false }), makeRow({ inputId: "untouched", answered: false, awarded: false })];
+
+      const cell = firstCell({ ...baseProps, items: rows, hideAnswered: false });
+
+      expect((cell.squares ?? []).map((s) => s.inputId)).toEqual(["awarded", "answered", "untouched"]);
+    });
+
+    it("blanks a stage whose every square is answered-but-unawarded", () => {
+      const rows = [makeRow({ inputId: "a", answered: true, awarded: false }), makeRow({ inputId: "b", answered: true, awarded: false })];
+
+      expect(firstCell({ ...baseProps, items: rows, hideAnswered: true }).kind).toBe("empty");
+    });
+
+    it("blanks a fully-awarded stage, which would otherwise render its complete bar", () => {
+      const rows = [makeRow({ inputId: "a", answered: true, awarded: true }), makeRow({ inputId: "b", answered: true, awarded: true })];
+
+      expect(firstCell({ ...baseProps, items: rows, hideAnswered: false }).kind).toBe("bar-complete");
+      expect(firstCell({ ...baseProps, items: rows, hideAnswered: true }).kind).toBe("empty");
+    });
+
+    it("still shows the not-started bar, since nothing in that stage is answered", () => {
+      const rows = [makeRow({ inputId: "a", answered: false, awarded: false })];
+
+      expect(firstCell({ ...baseProps, items: rows, hideAnswered: true }).kind).toBe("bar-unstarted");
+    });
+
+    it("recomputes group-start borders from the surviving squares, not the original list", () => {
+      // "plan-b" is the only remaining Plan square, so it must become the group start that the
+      // removed "plan-a" used to be; "do-a" stays a group start as the first Do square.
+      const rows = [
+        makeRow({ inputId: "plan-a", inputGroup: "Plan", answered: true, awarded: false }),
+        makeRow({ inputId: "plan-b", inputGroup: "Plan", answered: false, awarded: false }),
+        makeRow({ inputId: "do-a", inputGroup: "Do", answered: false, awarded: false }),
+      ];
+
+      const squares = firstCell({ ...baseProps, items: rows, hideAnswered: true }).squares ?? [];
+
+      expect(squares.map((s) => s.inputId)).toEqual(["plan-b", "do-a"]);
+      // index 0 never gets the border regardless of group; index 1 starts a new group.
+      expect(squares[0].groupClass).toBe("");
+      expect(squares[1].groupClass).toBe("oas-heatmap-square-group-start");
+    });
   });
 });
