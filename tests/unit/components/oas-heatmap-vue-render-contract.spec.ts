@@ -213,6 +213,8 @@ describe("OASHeatMapVue render contract", () => {
     expect(sections[0].patrolGroups.map((g) => g.patrolName)).toEqual(["Eagles", "Wolves"]);
   });
 
+  // Surfaced in the UI as "Hide complete/not started"; the state key keeps its original name so
+  // the persisted localStorage filters stay readable.
   it("hides fully-complete and not-started stage bars (but keeps in-progress squares) when onlyInProgress is on", () => {
     const rows = [makeRow({ inputId: "a", answered: true, awarded: true }), makeRow({ inputId: "b", answered: true, awarded: true })];
     const members = [makeMember()];
@@ -259,20 +261,22 @@ describe("OASHeatMapVue render contract", () => {
       expect((cell.squares ?? []).map((s) => s.inputId)).toEqual(["awarded", "answered", "untouched"]);
     });
 
-    it("blanks a stage whose every square is answered-but-unawarded", () => {
+    it("empties, but does not collapse, a stage whose every square is answered-but-unawarded", () => {
       const rows = [makeRow({ inputId: "a", answered: true, awarded: false }), makeRow({ inputId: "b", answered: true, awarded: false })];
 
-      expect(firstCell({ ...baseProps, items: rows, hideAnswered: true }).kind).toBe("empty");
+      const cell = firstCell({ ...baseProps, items: rows, hideAnswered: true });
+
+      expect(cell.kind).toBe("squares");
+      expect(cell.squares).toEqual([]);
     });
 
-    it("blanks a fully-awarded stage, which would otherwise render its complete bar", () => {
+    it("leaves the complete bar alone — hiding answered squares must not touch the bars", () => {
       const rows = [makeRow({ inputId: "a", answered: true, awarded: true }), makeRow({ inputId: "b", answered: true, awarded: true })];
 
-      expect(firstCell({ ...baseProps, items: rows, hideAnswered: false }).kind).toBe("bar-complete");
-      expect(firstCell({ ...baseProps, items: rows, hideAnswered: true }).kind).toBe("empty");
+      expect(firstCell({ ...baseProps, items: rows, hideAnswered: true }).kind).toBe("bar-complete");
     });
 
-    it("still shows the not-started bar, since nothing in that stage is answered", () => {
+    it("leaves the not-started bar alone", () => {
       const rows = [makeRow({ inputId: "a", answered: false, awarded: false })];
 
       expect(firstCell({ ...baseProps, items: rows, hideAnswered: true }).kind).toBe("bar-unstarted");

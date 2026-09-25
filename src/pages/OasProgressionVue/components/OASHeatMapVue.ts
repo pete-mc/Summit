@@ -105,8 +105,7 @@ function buildStageCellView(stage: HeatMapStage | undefined, onlyInProgress: boo
     return { kind: "empty" };
   }
   if (stage.complete) {
-    // A complete stage is entirely awarded, so hideAnswered leaves nothing of it to show.
-    return onlyInProgress || hideAnswered ? { kind: "empty" } : { kind: "bar-complete", title: `Stage ${stage.stage} — complete` };
+    return onlyInProgress ? { kind: "empty" } : { kind: "bar-complete", title: `Stage ${stage.stage} — complete` };
   }
   const hasAnyProgress = stage.cells.some((c) => c.answered || c.awarded);
   if (!hasAnyProgress) {
@@ -119,11 +118,12 @@ function buildStageCellView(stage: HeatMapStage | undefined, onlyInProgress: boo
    * context. Filtering here — before the group-start borders are computed below — means those
    * borders are derived from the squares actually rendered, so a group separator never survives
    * onto a square whose group-mate was just removed.
+   *
+   * It hides squares and nothing else: the complete/not-started bars above are left to
+   * onlyInProgress, and a stage whose squares all disappear still renders as a (now empty)
+   * squares cell rather than collapsing to a bar or a blank.
    */
   const visibleCells = hideAnswered ? stage.cells.filter((cell) => cell.awarded || !cell.answered) : stage.cells;
-  if (visibleCells.length === 0) {
-    return { kind: "empty" };
-  }
 
   const squares = visibleCells.map((cell, index) => {
     const inProgressCell = cell.answered && !cell.awarded;
