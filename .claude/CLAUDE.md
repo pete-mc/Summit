@@ -3,7 +3,7 @@
 This is a project to expand the capability of Summit, an extension used with the Scoust Terrain site. It uses a failry standard TS/React extension stack.
 
 The user should be prompted to describe what they want, in a chat or through a specification md file.
-Coding agent firms up requirements via collaborative dialog, writes PLAN.md or multiple PLAN_STAGE_X.md files for each stage or component.
+Coding agent firms up requirements via collaborative dialog, writes PLAN.md or multiple PLAN_STAGE_X.md files for each stage or component. Plans are grouped per feature in a subfolder under `.claude/` (e.g. `.claude/OASProgression/`, `.claude/I_Statement/`).
 Coding agent then writes code against plan.
 You can update these instructions based on the specific project.
 

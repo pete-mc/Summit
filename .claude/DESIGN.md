@@ -81,7 +81,7 @@ left nav. Don't introduce a second "primary" brand color; extend the palette wit
 
 `src/pages/OasProgressionVue/` is a deliberate exception to "Summit doesn't use a
 component library" above — built on real Vuetify 2 components (see
-`.claude/PLAN_VUE.md`) as an evaluation of whether Vuetify is worth adopting more
+`.claude/OASProgression/PLAN_VUE.md`) as an evaluation of whether Vuetify is worth adopting more
 broadly. It proved out well enough to become the primary OAS Progression page (route
 `/summit/reports/oasprogression`); the original React version lives on unlinked at
 `/summit/reports/oasprogression-legacy` as a reference. It does not use Summit's
