@@ -82,13 +82,37 @@ architecture exists, and `.claude/DESIGN.md` for the styling rules.
 
 ## Stages
 
-| Stage | File | Scope |
-| ----- | ---- | ----- |
-| 1 | [PLAN_STAGE_1.md](PLAN_STAGE_1.md) | Data layer — tree/template crawl, normalisation, matrix build. Pure functions + unit tests, no UI. |
-| 2 | [PLAN_STAGE_2.md](PLAN_STAGE_2.md) | Page shell, route, nav entry, loading/progress UX. |
-| 3 | [PLAN_STAGE_3.md](PLAN_STAGE_3.md) | The heat-map table itself — grouped headers, purple squares. |
-| 4 | [PLAN_STAGE_4.md](PLAN_STAGE_4.md) | Filters + persistence + hide-empty logic. |
-| 5 | [PLAN_STAGE_5.md](PLAN_STAGE_5.md) | Verification in the live browser, and docs. |
+| Stage | File | Scope | Status |
+| ----- | ---- | ----- | ------ |
+| 1 | [PLAN_STAGE_1.md](PLAN_STAGE_1.md) | Data layer — tree/template crawl, normalisation, matrix build. Pure functions + unit tests, no UI. | Complete |
+| 2 | [PLAN_STAGE_2.md](PLAN_STAGE_2.md) | Page shell, route, nav entry, loading/progress UX. | Complete |
+| 3 | [PLAN_STAGE_3.md](PLAN_STAGE_3.md) | The heat-map table itself — grouped headers, purple squares. | Complete |
+| 4 | [PLAN_STAGE_4.md](PLAN_STAGE_4.md) | Filters + persistence + hide-empty logic. | Complete |
+| 5 | [PLAN_STAGE_5.md](PLAN_STAGE_5.md) | Verification in the live browser, and docs. | Docs done; merge audit outstanding |
+
+## Decisions that changed during implementation
+
+Recorded here because they contradict what the stage plans originally said:
+
+- **Administrative inputs are excluded by id, not by `type`.** Stage 1 proposed
+  filtering to `type === "verifiable_checkbox"`. Real data killed that:
+  `logbook_up_to_date` appears as `"checkbox"` in live templates but `"text"` in the
+  OAS page's own test fixture, so `type` is not a reliable discriminator. The page
+  now excludes the ids `logbook_up_to_date` and `file_uploader`, matching how
+  `applyAnswersToMemberRows` in the OAS service already special-cases that id.
+- **De-duplication within a template.** A statement repeated across input groups in
+  one template yields one square, not several — not anticipated in the plan.
+- **Defaults narrowed to stages 1–5 with empty statements hidden.** The full 1–9 grid
+  across all skills is ~180 columns × ~500 rows; usable, but slow to render and hard
+  to read as an opening view.
+- **Render shape changed for performance.** Rows carry a `boolean[]` aligned to a
+  shared column list, frozen so Vue 2 skips installing reactive getters on ~90k cells
+  rebuilt wholesale on every filter change. The original per-cell-object approach was
+  measurably slow (3–8s per filter change).
+- **Merged rows are badged in the UI.** Stage 5 called for a throwaway console dump to
+  audit normalisation. Instead the row label carries a small count badge whose tooltip
+  lists every raw wording merged into it — same audit value, but permanent, so an
+  over-merge stays visible rather than being a one-off check.
 
 Each stage is independently buildable and verifiable. Stage 1 has no UI; stages
 2–4 each end with something visible in the browser.

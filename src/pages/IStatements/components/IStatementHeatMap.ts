@@ -12,6 +12,8 @@ interface RenderedRow {
   key: string;
   displayText: string;
   present: boolean[];
+  variantCount: number;
+  variantTitle: string;
 }
 
 export default defineComponent({
@@ -55,10 +57,16 @@ export default defineComponent({
         const present = new Set<string>();
         row.cells.forEach((cell) => present.add(cellLookupKey(cell.skill, cell.branch, cell.stage)));
 
+        // Rows built from more than one raw wording are marked so an over-merge is visible
+        // in the UI rather than silently presented as a single statement.
+        const variants = Array.from(row.variants.keys());
+
         return Object.freeze({
           key: row.key,
           displayText: row.displayText,
           present: columnKeys.map((key) => present.has(key)),
+          variantCount: variants.length,
+          variantTitle: variants.length > 1 ? "Merged from " + variants.length + " wordings:\n• " + variants.join("\n• ") : "",
         });
       });
 

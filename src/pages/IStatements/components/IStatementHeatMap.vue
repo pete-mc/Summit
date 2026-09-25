@@ -22,7 +22,9 @@
       </thead>
       <tbody>
         <tr v-for="row in renderedRows" :key="row.key">
-          <td class="istatement-label-cell">{{ row.displayText }}</td>
+          <td class="istatement-label-cell">
+            {{ row.displayText }}<span v-if="row.variantCount > 1" class="istatement-variant-badge" :title="row.variantTitle">{{ row.variantCount }}</span>
+          </td>
           <td
             v-for="(column, columnIndex) in columns"
             :key="column.key"
@@ -129,6 +131,23 @@
   margin: 0 auto;
   border-radius: 2px;
   background-color: var(--summit-color-status-answered);
+}
+
+/*
+ * Marks a row whose wordings were merged by normalisation. Hovering lists the raw variants,
+ * so an over-merge (two genuinely different statements collapsed into one row) is findable
+ * rather than invisible.
+ */
+.istatement-variant-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--summit-color-bg-muted);
+  border: 1px solid var(--summit-color-border-default);
+  color: var(--summit-color-text-primary);
+  font-size: var(--summit-font-size-sm);
+  cursor: help;
 }
 
 .istatement-empty {

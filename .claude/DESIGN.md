@@ -77,7 +77,7 @@ left nav. Don't introduce a second "primary" brand color; extend the palette wit
   `oas-heatmap-square-awarded`, `calendar-legend-swatch`. Keep this when adding
   classes for a new feature area.
 
-## OasProgressionVue's type scale
+## The `--oas-vue-*` type scale (Vuetify pages)
 
 `src/pages/OasProgressionVue/` is a deliberate exception to "Summit doesn't use a
 component library" above — built on real Vuetify 2 components (see
@@ -100,7 +100,23 @@ boundaries, so `OASProgressionFiltersVue.vue`, `OASProgressionTableVue.vue`, and
 `OASHeatMapVue.vue` all reference these (`var(--oas-vue-font-size-body)`, etc.)
 instead of each hardcoding its own copy of a pixel value.
 
-**Use this scale for any new text on this page.** Headings (filter row labels) use
+**`src/pages/IStatements/` shares this same scale**, redeclaring the identical three
+properties on its own `.oas-vue-content` root in `IStatementsContent.vue` (route
+`/summit/reports/istatements`, plan in `.claude/I_Statement/`). That is deliberate
+rather than a copy-paste oversight: the two pages are visual siblings — both Vuetify,
+both a filter row above a heat-map table — and giving the second one its own
+`--istatement-*` scale would reintroduce exactly the drift this scale exists to
+prevent. A change to one page's sizes should be a considered decision about both.
+
+The I Statements heat-map does use Summit's `--summit-*` tokens for colour (unlike the
+OAS Vue page, which leans on Vuetify's theme): its purple square reuses
+`--summit-color-status-answered`, the same purple as the OAS heat-map's in-progress
+state, rather than introducing a second near-identical purple. Its header/border
+colours likewise come from the `--summit-color-*` palette. Note that its stage-number
+header sets `color` explicitly — without that, the numbers inherit a pale grey from
+Terrain's own table CSS and are effectively invisible against the muted background.
+
+**Use this scale for any new text on these pages.** Headings (filter row labels) use
 `--oas-vue-font-size-heading`; everything else — table cells, filter inputs, select
 values — uses `--oas-vue-font-size-body`. Don't introduce a third size without a
 concrete reason; the whole reason this scale exists is that the page previously
