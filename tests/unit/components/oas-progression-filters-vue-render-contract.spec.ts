@@ -32,8 +32,12 @@ describe("OASProgressionFiltersVue wiring and gating rules", () => {
     expect(templateSource).toContain(':disabled="filters.useCodenames"');
   });
 
-  it("gates Hide-empty-streams on hasAnyEmptySections, matching the React page's rule", () => {
-    expect(templateSource).toContain('v-if="hasAnyEmptySections"');
+  // Diverges from the React page, which gates this on hasAnyEmptySections. Now that the filter
+  // also hides empty trunk sections, it is always shown so its position in the Display group
+  // doesn't shift as data loads.
+  it("shows Hide-empty-skills unconditionally, unlike the React page's gated version", () => {
+    expect(templateSource).toContain('label="Hide empty skills"');
+    expect(templateSource).not.toContain('v-if="hasAnyEmptySections"');
   });
 
   it("uses real Vuetify form controls, not hand-rolled equivalents", () => {

@@ -86,8 +86,8 @@
         <v-checkbox :input-value="filters.useCodenames" label="Use codenames" dense hide-details @change="onUseCodenamesChange"></v-checkbox>
         <v-checkbox :input-value="filters.hideLastName" :disabled="filters.useCodenames" label="Hide last name" dense hide-details @change="patch({ hideLastName: $event })"></v-checkbox>
         <v-checkbox v-if="availablePatrols.length > 0" :input-value="filters.breakByPatrol" label="Break by patrol" dense hide-details @change="patch({ breakByPatrol: $event })"></v-checkbox>
-        <v-checkbox v-if="hasAnyEmptySections" :input-value="filters.hideEmptyStreams" label="Hide empty streams" dense hide-details @change="patch({ hideEmptyStreams: $event })"></v-checkbox>
-        <v-checkbox :input-value="filters.hideEmptyTopColumns" label="Hide empty top columns" dense hide-details @change="patch({ hideEmptyTopColumns: $event })"></v-checkbox>
+        <v-checkbox :input-value="filters.hideEmptyStreams" label="Hide empty skills" dense hide-details @change="patch({ hideEmptyStreams: $event })"></v-checkbox>
+        <v-checkbox :input-value="filters.hideEmptyTopColumns" label="Hide empty top stages" dense hide-details @change="patch({ hideEmptyTopColumns: $event })"></v-checkbox>
         <v-checkbox :input-value="filters.onlyInProgress" label="Hide complete/not started" dense hide-details @change="patch({ onlyInProgress: $event })"></v-checkbox>
         <v-checkbox :input-value="filters.hideAnswered" label="Hide answered" dense hide-details @change="patch({ hideAnswered: $event })"></v-checkbox>
       </fieldset>

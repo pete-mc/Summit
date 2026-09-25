@@ -87,9 +87,6 @@ export default defineComponent({
     availablePatrols(): string[] {
       return collectPatrolNames(Object.values(this.grouped).flatMap((skill) => skill.sections));
     },
-    hasAnyEmptySections(): boolean {
-      return Object.values(this.grouped).some((skill) => skill.sections.some((section) => section.isEmpty));
-    },
     // Reuses the same filterOASProgressionRows the table itself filters with, so the Table
     // view's export always matches what's currently on screen rather than every row.
     tableFilteredItems(): OASProgressionRow[] {

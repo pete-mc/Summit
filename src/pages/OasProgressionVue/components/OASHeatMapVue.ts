@@ -31,7 +31,12 @@ const SKILL_TITLES: Record<string, string> = {
 };
 
 const CORE_SKILLS = ["bushwalking", "bushcraft", "camping"];
-const MIN_VISIBLE_STAGE = 4;
+/**
+ * Floor for "Hide empty top stages": trimming stops here, so stages 1 and 2 always stay on screen
+ * even with no progress in them. The React page keeps its own (higher) floor of 4 — this page
+ * trims further on purpose.
+ */
+const MIN_VISIBLE_STAGE = 2;
 
 function skillTitle(skill: string): string {
   return SKILL_TITLES[skill] ?? skill;
@@ -62,7 +67,7 @@ function displayName(memberName: string, memberId: string, hideLastName: boolean
   return hideLastName ? memberName.split(" ")[0] : memberName;
 }
 
-/** Trims trailing empty stage columns from the top down (never below MIN_VISIBLE_STAGE) — see OASHeatMap.tsx's identical function for the full rationale. */
+/** Trims trailing empty stage columns from the top down (never below MIN_VISIBLE_STAGE) — see OASHeatMap.tsx's equivalent function for the full rationale; this page differs only in its lower floor. */
 function trimEmptyTrailingStages(allStages: number[], sections: HeatMapSection[]): number[] {
   const stageHasProgress = new Map<number, boolean>();
   allStages.forEach((stage) => stageHasProgress.set(stage, false));
@@ -190,7 +195,10 @@ export default defineComponent({
     visibleStreams: { type: Array as PropType<string[]>, required: true },
     stageRange: { type: Array as unknown as PropType<[number, number]>, required: true },
     sortBy: { type: String as PropType<"firstName" | "lastName" | "stageProgress">, required: true },
-    showEmptySections: { type: Boolean, default: false },
+    // Defaults to showing everything, matching the page's own default (the binding is
+    // `!filters.hideEmptyStreams`, and that filter starts off). Now that an empty trunk section can
+    // be hidden too, a `false` default would mean an omitted prop silently hides whole skills.
+    showEmptySections: { type: Boolean, default: true },
     memberFilter: { type: String, default: "" },
     hideLastName: { type: Boolean, default: false },
     useCodenames: { type: Boolean, default: false },
@@ -219,7 +227,13 @@ export default defineComponent({
     },
     visibleSectionsBySkill(): Map<string, HeatMapSection[]> {
       const rangeStageSet = new Set(this.rangeStages);
-      const isEmptyWithinRange = (section: HeatMapSection): boolean => section.stream !== null && section.members.every((m) => m.stages.every((s) => !rangeStageSet.has(s.stage) || s.cells.every((c) => !c.answered && !c.awarded)));
+      /*
+       * "Hide empty skills" covers every skill+stream combination, trunk sections included — unlike
+       * the React page's equivalent, which exempts the trunk via `section.stream !== null`. A skill
+       * with no progress anywhere therefore disappears entirely, heading and all, rather than
+       * leaving an empty heading behind.
+       */
+      const isEmptyWithinRange = (section: HeatMapSection): boolean => section.members.every((m) => m.stages.every((s) => !rangeStageSet.has(s.stage) || s.cells.every((c) => !c.answered && !c.awarded)));
 
       const map = new Map<string, HeatMapSection[]>();
       this.skills.forEach((skill) => {

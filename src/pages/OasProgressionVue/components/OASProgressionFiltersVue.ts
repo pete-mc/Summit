@@ -37,7 +37,6 @@ export default defineComponent({
   props: {
     filters: { type: Object as PropType<OASProgressionVueFilterState>, required: true },
     availablePatrols: { type: Array as PropType<string[]>, required: true },
-    hasAnyEmptySections: { type: Boolean, required: true },
   },
   data() {
     return {

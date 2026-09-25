@@ -19,7 +19,6 @@
         <OASProgressionFiltersVue
           :filters="filters"
           :available-patrols="availablePatrols"
-          :has-any-empty-sections="hasAnyEmptySections"
           @update:filters="onFiltersUpdate"
           @reset="onResetFilters"
         />

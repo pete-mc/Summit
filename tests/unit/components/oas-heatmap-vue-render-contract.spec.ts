@@ -58,6 +58,8 @@ interface MountProps {
   breakByPatrol?: boolean;
   onlyInProgress?: boolean;
   hideAnswered?: boolean;
+  hideEmptyTopColumns?: boolean;
+  showEmptySections?: boolean;
 }
 
 function mountLogic(props: MountProps) {
@@ -298,6 +300,81 @@ describe("OASHeatMapVue render contract", () => {
 
       expect(groupClassesWith(true)).toEqual(["", "", "oas-heatmap-square-group-start"]);
       expect(groupClassesWith(true)).toEqual(groupClassesWith(false));
+    });
+  });
+
+  // Surfaced in the UI as "Hide empty top stages".
+  describe("hideEmptyTopColumns", () => {
+    function stagesFor(rows: OASProgressionRow[], hideEmptyTopColumns: boolean): number[] {
+      const vm = mountLogic({ items: rows, trunkStageCounts: { bushcraft: 9 }, members: [makeMember()], visibleStreams: ["bushcraft"], stageRange: [1, 9], sortBy: "firstName", hideEmptyTopColumns });
+      return vm.allStages as number[];
+    }
+
+    it("trims empty top stages down to 2, keeping stages 1 and 2 on screen", () => {
+      // Progress only in stage 1, so stages 3-9 are all trimmable; 2 survives as the floor.
+      const rows = [makeRow({ stage: 1, inputId: "s1", answered: true }), ...[2, 3, 4, 5, 6, 7, 8, 9].map((stage) => makeRow({ stage, inputId: "s" + stage }))];
+
+      expect(stagesFor(rows, true)).toEqual([1, 2]);
+    });
+
+    it("stops trimming at the highest stage with progress", () => {
+      const rows = [makeRow({ stage: 1, inputId: "s1", answered: true }), makeRow({ stage: 5, inputId: "s5", answered: true }), ...[2, 3, 4, 6, 7, 8, 9].map((stage) => makeRow({ stage, inputId: "s" + stage }))];
+
+      expect(stagesFor(rows, true)).toEqual([1, 2, 3, 4, 5]);
+    });
+
+    it("leaves every stage in place when off", () => {
+      const rows = [makeRow({ stage: 1, inputId: "s1", answered: true }), ...[2, 3, 4, 5, 6, 7, 8, 9].map((stage) => makeRow({ stage, inputId: "s" + stage }))];
+
+      expect(stagesFor(rows, false)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    });
+  });
+
+  // Surfaced in the UI as "Hide empty skills"; driven by showEmptySections (its inverse).
+  describe("hideEmptyStreams", () => {
+    // Paddling forks into Canoeing/Kayaking after its trunk; bushcraft never forks.
+    const forkedRows = [
+      makeRow({ stream: "paddling", branch: "paddling", stage: 1, inputId: "trunk" }),
+      makeRow({ stream: "paddling", branch: "canoeing", stage: 4, inputId: "canoe" }),
+      makeRow({ stream: "paddling", branch: "kayaking", stage: 4, inputId: "kayak", answered: true }),
+    ];
+
+    function sectionTitlesFor(rows: OASProgressionRow[], visibleStreams: string[], trunkStageCounts: Record<string, number>, showEmptySections: boolean): string[] {
+      const vm = mountLogic({ items: rows, trunkStageCounts, members: [makeMember()], visibleStreams, stageRange: [1, 9], sortBy: "firstName", showEmptySections });
+      return (vm.sections as Array<{ title: string }>).map((s) => s.title);
+    }
+
+    it("hides an empty stream while keeping one with progress", () => {
+      const titles = sectionTitlesFor(forkedRows, ["paddling"], { paddling: 3 }, false);
+
+      expect(titles).toContain("Paddling — Kayaking");
+      expect(titles).not.toContain("Paddling — Canoeing");
+    });
+
+    it("hides an entirely empty skill, trunk section included", () => {
+      // bushcraft has no progress anywhere, so nothing of it should survive -- the trunk section
+      // is no longer exempt the way the React page leaves it.
+      const rows = [makeRow({ stream: "bushcraft", branch: "bushcraft", stage: 1, inputId: "bc" }), makeRow({ stream: "camping", branch: "camping", stage: 1, inputId: "cp", answered: true })];
+
+      const titles = sectionTitlesFor(rows, ["bushcraft", "camping"], { bushcraft: 3, camping: 3 }, false);
+
+      expect(titles).toEqual(["Camping"]);
+    });
+
+    it("keeps an empty skill's trunk when the filter is off", () => {
+      const rows = [makeRow({ stream: "bushcraft", branch: "bushcraft", stage: 1, inputId: "bc" }), makeRow({ stream: "camping", branch: "camping", stage: 1, inputId: "cp", answered: true })];
+
+      const titles = sectionTitlesFor(rows, ["bushcraft", "camping"], { bushcraft: 3, camping: 3 }, true);
+
+      expect(titles).toEqual(["Bushcraft", "Camping"]);
+    });
+
+    it("keeps a skill whose trunk is empty but whose stream has progress", () => {
+      // The trunk itself is empty here, but the skill must not vanish -- Kayaking has progress.
+      const titles = sectionTitlesFor(forkedRows, ["paddling"], { paddling: 3 }, false);
+
+      expect(titles.length).toBeGreaterThan(0);
+      expect(titles).toContain("Paddling — Kayaking");
     });
   });
 });
