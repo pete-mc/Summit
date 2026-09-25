@@ -254,7 +254,7 @@ export async function getCachedOASTree(stream: string): Promise<OASTree | undefi
   return fetched;
 }
 
-async function getCachedOASTemplate(templateLink: string): Promise<OASTemplate | undefined> {
+export async function getCachedOASTemplate(templateLink: string): Promise<OASTemplate | undefined> {
   const cacheKey = "template." + templateLink;
   const cached = loadCached<OASTemplate>(cacheKey, ONE_DAY_MS);
   if (cached) {
@@ -311,7 +311,7 @@ export async function fetchOASProgressionForStream(unitId: string, stream: strin
   return { rows: rowsPerStage.flat(), trunkStageCount: getTrunkStageCount(tree) };
 }
 
-const OAS_STREAMS = ["bushcraft", "bushwalking", "camping", "aquatics", "boating", "paddling", "alpine", "cycling", "vertical"];
+export const OAS_STREAMS = ["bushcraft", "bushwalking", "camping", "aquatics", "boating", "paddling", "alpine", "cycling", "vertical"];
 
 export async function fetchAllOASProgression(unitId: string, members: TerrainUnitMember[], concurrency: number, onStreamComplete: (stream: string, result: StreamProgressionResult) => void): Promise<void> {
   const queue = [...OAS_STREAMS];

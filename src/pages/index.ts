@@ -8,4 +8,5 @@ import OasProgressionVue from "./OasProgressionVue/OasProgressionVue.vue";
 import PresentAwards from "./PresentAwards/PresentAwards.vue";
 import SummitCalendar from "./SummitCalendar/SummitCalendar.vue";
 import PeakAward from "./PeakAward/PeakAward.vue";
-export { MilestoneReport, Topo, Home, DisplayOptions, OasReport, OasProgression, OasProgressionVue, PresentAwards, SummitCalendar, PeakAward };
+import IStatements from "./IStatements/IStatements.vue";
+export { MilestoneReport, Topo, Home, DisplayOptions, OasReport, OasProgression, OasProgressionVue, PresentAwards, SummitCalendar, PeakAward, IStatements };
