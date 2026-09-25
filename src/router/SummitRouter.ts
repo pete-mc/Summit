@@ -1,5 +1,5 @@
 import FindComponent from "../helpers/FindComponent";
-import { Home, DisplayOptions, MilestoneReport, OasReport, OasProgression, OasProgressionVue, Topo, SummitCalendar, PeakAward, PresentAwards, IStatements } from "@/pages";
+import { Home, DisplayOptions, MilestoneReport, OasReport, OasProgression, OasProgressionVue, Topo, SummitCalendar, PeakAward, PresentAwards, PresentAwardsVue, IStatements } from "@/pages";
 import { NavMenuComponent, NavMenuItem } from "@/types/NavMenu";
 import VueRouter, { Route } from "vue-router";
 import Vue from "vue";
@@ -66,6 +66,10 @@ export default class SummitRouter {
     this.router.addRoute({
       path: "/summit/tools/PresentAwards",
       component: PresentAwards,
+    });
+    this.router.addRoute({
+      path: "/summit/tools/presentawards-vue",
+      component: PresentAwardsVue,
     });
     this.router.addRoute({
       path: "/summit/reports/milestone",
@@ -192,6 +196,13 @@ export default class SummitRouter {
           {
             title: "Present Awards",
             to: "/summit/tools/PresentAwards",
+            items: [],
+            locked: false,
+            roles: [true, false],
+          },
+          {
+            title: "Present Awards (Vue)",
+            to: "/summit/tools/presentawards-vue",
             items: [],
             locked: false,
             roles: [true, false],
