@@ -1,6 +1,7 @@
 # Present Awards (Vue) — overview plan
 
-**Status:** approved 2026-09-26. Build proceeds stage by stage.
+**Status:** Stages 1–4 complete and verified live, 2026-09-26. Grouping by member added on top.
+Stage 5 (CSS polish pass) not yet run. See **Outcome** at the foot of this file.
 
 ## Context
 
@@ -100,6 +101,64 @@ the next stage starts.
   `tests/unit/smoke/lint_stack_loads.spec.ts` is expected on this network drive
 - `npm run lint` — ~40 pre-existing upstream errors; don't fix them here, don't add to them
 - Manual: load `dist/` unpacked in Edge against real live unit data
+
+## Outcome (2026-09-26)
+
+Stages 1–4 shipped and were verified live against real unit data in Edge. Member grouping was
+then asked for directly and added on top. Stage 5's CSS polish pass has **not** been run — the
+three hard-won CSS mechanics it covers were pulled forward into Stage 3, so what remains is a
+comparison pass against the OAS table plus the render-contract tests, most of which also already
+exist.
+
+**Commits:** `9707038` (extraction), `c527162` (scaffold), `bc2dde1` (editing), `7e0f6cd`
+(filters), `c275164` (export/refresh/persistence), `eb2f7d6` (grouping).
+
+**Test count:** 562 unit tests, 561 passing — the one failure is the pre-existing UNC-path
+`lint_stack_loads.spec.ts`, unchanged from the project baseline. 91 of those tests are new.
+
+### Divergences from the React page, all deliberate
+
+| Behaviour | React page | Vue page | Why |
+|---|---|---|---|
+| Date sorting | Lexical — 01/12/2025 sorts before 02/01/2024 | Chronological | The columns hold `DD/MM/YYYY` strings; `compareDisplayDates` parses before comparing |
+| Date format at the picker | `DD/MM/YY` while the save path parses `DD/MM/YYYY` | `DD/MM/YYYY` throughout | The original only works because moment is lenient about 2-digit years |
+| Failed save | Silent — the promise is never held | Reports the failure | `savePresentedAwards` awaits and returns its `SaveEventResult` |
+| After saving | No reload; `previouslyPresented` goes stale | Reloads | Closes the gap the commented-out block at `PresentAwards.ts:177-182` left |
+| Export scope | Everything visible; ignores column filters | Only the filtered rows | Matches the OAS Vue table |
+| Export values | The stored value | The on-screen value | Exporting before saving otherwise disagrees with the screen |
+| Grouping | Flat | Grouped by member, toggleable | `DEV_NOTES.md` wish, asked for directly |
+
+### Bugs found during the build, and what they cost
+
+1. **Unticking left a stale date.** Unticking clears the pending date, after which the display
+   fell back to `item.presented` and reported the very date just cleared. Invisible on screen
+   (the checkbox drives what you see) but the export and the Presented filter both read it.
+   Fixed by making the selection the source of truth in both `presentedValue` (table) and
+   `presentedValueFor` (content). Caught by a test, not by eye.
+2. **Persisting from a Vue watcher loses writes.** Watchers fire on the next tick, so setting a
+   filter and immediately navigating away dropped it. Now persisted synchronously from each
+   handler. A test pins this.
+3. **A test fixture that lied.** `makeItem` ignored its `name` option, so two "different" members
+   both rendered as "Alex Scout" and a filter assertion passed for the wrong reason. Worth noting
+   as a class of problem: the fixture, not the code, was wrong.
+
+### Things deliberately NOT done
+
+- **Concurrent-save clobbering is unchanged.** The save still replaces the whole `schedule_items`
+  list, so two leaders saving at once still means last-write-wins. `DEV_NOTES.md` records the
+  wish for a checksum; it is a storage-format change and was out of scope here.
+- **The React page's UX is untouched.** It still saves fire-and-forget. Fixing that there would
+  have been a behaviour change beyond the service extraction.
+- **No Playwright coverage**, consistent with the OAS Vue pages.
+- **The "Badger" badge-icon wish** from `DEV_NOTES.md`.
+
+### Open question for the user
+
+Whether the Vue page should take over `/summit/tools/PresentAwards` with the React page archived
+to `-legacy` — the same promotion OAS Progression went through (nav entry removed, in-page
+retired banner, linked from Home under "Development tools"). Both pages read and write the same
+storage format, so they can run side by side indefinitely; this is a decision to make after using
+the Vue one for a while, not a pending task.
 
 ## Key references
 

@@ -108,13 +108,25 @@ boundaries, so `OASProgressionFiltersVue.vue`, `OASProgressionTableVue.vue`, and
 `OASHeatMapVue.vue` all reference these (`var(--oas-vue-font-size-body)`, etc.)
 instead of each hardcoding its own copy of a pixel value.
 
-**`src/pages/IStatements/` shares this same scale**, redeclaring the identical three
-properties on its own `.oas-vue-content` root in `IStatementsContent.vue` (route
-`/summit/reports/istatements`, plan in `.claude/I_Statement/`). That is deliberate
-rather than a copy-paste oversight: the two pages are visual siblings — both Vuetify,
-both a filter row above a heat-map table — and giving the second one its own
-`--istatement-*` scale would reintroduce exactly the drift this scale exists to
-prevent. A change to one page's sizes should be a considered decision about both.
+**`src/pages/IStatements/` and `src/pages/PresentAwardsVue/` share this same scale**, each
+redeclaring the identical three properties on its own `.oas-vue-content` root — in
+`IStatementsContent.vue` (route `/summit/reports/istatements`, plan in `.claude/I_Statement/`)
+and `PresentAwardsVueContent.vue` (route `/summit/tools/presentawards-vue`, plan in
+`.claude/PresentAwardsVue/`). That is deliberate rather than a copy-paste oversight: the
+three pages are visual siblings — all Vuetify, all a filter row above a table — and
+giving each its own `--istatement-*` / `--present-awards-*` scale would reintroduce
+exactly the drift this scale exists to prevent. A change to one page's sizes should be
+a considered decision about all three.
+
+`PresentAwardsVue` is the **editable** one of the three, and the only place in the codebase
+with an editable `v-data-table`. Two extra conventions come from it, both in
+`PresentAwardsTableVue.vue`:
+
+- An in-cell control that opens something (its date activator) is styled as text with a
+  dotted underline and `cursor: pointer`, sized from `--oas-vue-font-size-body` — not as a
+  `v-btn`, whose min-height stretches a `dense` row.
+- Group header rows use `--summit-color-bg-muted` for the tint and
+  `--summit-font-weight-semibold` for the label, rather than a border or a heavier rule.
 
 The I Statements heat-map does use Summit's `--summit-*` tokens for colour (unlike the
 OAS Vue page, which leans on Vuetify's theme): its purple square reuses
