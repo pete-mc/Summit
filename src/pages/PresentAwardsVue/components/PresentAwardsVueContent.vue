@@ -5,9 +5,12 @@
         <span v-if="loadState === 'loading'">Loading awards...</span>
         <span v-else-if="loadState === 'error'">Could not load awards. Try reloading the page.</span>
         <v-spacer></v-spacer>
+        <v-btn outlined color="primary" class="oas-vue-pill-btn" :loading="isSaving" :disabled="isSaving" @click="onSaveClick">Save Changes</v-btn>
       </div>
 
-      <PresentAwardsTableVue :items="items" />
+      <div v-if="feedback" role="status" class="data-grid-export-feedback">{{ feedback }}</div>
+
+      <PresentAwardsTableVue :items="items" :selected-ids="selectedIds" :presented-dates="presentedDates" @toggle-present="onTogglePresent" @update-date="onUpdateDate" />
     </div>
   </v-app>
 </template>
