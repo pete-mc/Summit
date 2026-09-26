@@ -25,7 +25,7 @@ function makeMember(id: string, firstName: string): TerrainUnitMember {
   };
 }
 
-function makeItem(id: string, options: { memberId?: string; awardedOn?: string; presentedOn?: string } = {}): SummitAchievement {
+function makeItem(id: string, options: { memberId?: string; awardedOn?: string; presentedOn?: string; alreadyStored?: boolean } = {}): SummitAchievement {
   const achievement = {
     id,
     member_id: options.memberId ?? "member-1",
@@ -35,7 +35,10 @@ function makeItem(id: string, options: { memberId?: string; awardedOn?: string; 
     status_updated: options.awardedOn ?? "2026-03-05T00:00:00.000Z",
   } as TerrainAchievements;
 
-  const item = new SummitAchievement(achievement, makeMember(options.memberId ?? "member-1", "Alex"), []);
+  // Passing the achievement's own id as an existing presentation is what marks a row as
+  // previously presented, exactly as a loaded storage event would.
+  const existing = options.alreadyStored ? [{ guid: id, date: new Date("2026-02-01T00:00:00.000Z") }] : [];
+  const item = new SummitAchievement(achievement, makeMember(options.memberId ?? "member-1", "Alex"), existing);
   if (options.presentedOn) item.updatePresented(options.presentedOn);
   return item;
 }
@@ -112,6 +115,68 @@ describe("PresentAwardsVueContent — edit state", () => {
     content.items = [second, first];
 
     expect(content.selectedIds.has("a")).toBe(true);
+  });
+});
+
+describe("PresentAwardsVueContent — previously presented visibility", () => {
+  it("hides previously presented awards by default, matching the React page", () => {
+    const content = mountContent([makeItem("a", { alreadyStored: true }), makeItem("b")]);
+
+    expect(content.showPreviouslyPresented).toBe(false);
+    expect(content.visibleItems.map((item: SummitAchievement) => item.id)).toEqual(["b"]);
+  });
+
+  it("shows them once toggled on", () => {
+    const content = mountContent([makeItem("a", { alreadyStored: true }), makeItem("b")]);
+
+    content.onToggleShowPreviouslyPresented();
+
+    expect(content.showPreviouslyPresented).toBe(true);
+    expect(content.visibleItems.map((item: SummitAchievement) => item.id)).toEqual(["a", "b"]);
+  });
+
+  it("toggles back off", () => {
+    const content = mountContent([makeItem("a", { alreadyStored: true })]);
+
+    content.onToggleShowPreviouslyPresented();
+    content.onToggleShowPreviouslyPresented();
+
+    expect(content.visibleItems).toEqual([]);
+  });
+
+  it("still saves a hidden award that remains ticked", async () => {
+    // Hiding a row must not silently drop it from the next save — the storage event is a full
+    // replace, so an omitted row would be erased.
+    const onSave = jest.fn().mockResolvedValue(null);
+    const content = mountContent([makeItem("a", { alreadyStored: true, presentedOn: "01/02/2026" })], onSave);
+
+    expect(content.visibleItems).toEqual([]);
+    await content.onSaveClick();
+
+    expect((onSave.mock.calls[0][0] as SummitAchievement[]).map((entry) => entry.id)).toEqual(["a"]);
+  });
+});
+
+describe("PresentAwardsVueContent — column filters", () => {
+  it("starts with no filters", () => {
+    expect(mountContent([makeItem("a")]).columnFilters).toEqual({});
+  });
+
+  it("accepts a filter update from the table", () => {
+    const content = mountContent([makeItem("a")]);
+
+    content.onColumnFiltersUpdate({ member: "Alex" });
+
+    expect(content.columnFilters).toEqual({ member: "Alex" });
+  });
+
+  it("clears all filters when the table emits an empty map", () => {
+    const content = mountContent([makeItem("a")]);
+
+    content.onColumnFiltersUpdate({ member: "Alex" });
+    content.onColumnFiltersUpdate({});
+
+    expect(content.columnFilters).toEqual({});
   });
 });
 

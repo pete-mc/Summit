@@ -42,6 +42,10 @@ export default defineComponent({
       isSaving: false,
       feedback: "",
       feedbackTimer: undefined as ReturnType<typeof setTimeout> | undefined,
+      /** Per-column filter values, lifted here so the parent can reuse the filtered set. */
+      columnFilters: {} as Record<string, string>,
+      /** Matches the React page's default: already-presented awards are hidden until asked for. */
+      showPreviouslyPresented: false,
     };
   },
   watch: {
@@ -58,6 +62,15 @@ export default defineComponent({
     if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
   },
   computed: {
+    /**
+     * The hide-previously-presented toggle runs UPSTREAM of the column filters, so the Type
+     * dropdown's options (derived from what the table is given) only ever offer values that could
+     * actually match something currently in scope.
+     */
+    visibleItems(): SummitAchievement[] {
+      if (this.showPreviouslyPresented) return this.items;
+      return this.items.filter((item) => !item.previouslyPresented);
+    },
     hasUnsavedEdits(): boolean {
       const stored = this.items.filter((item) => item.presented !== "No");
       if (stored.length !== this.selectedIds.size) return true;
@@ -98,6 +111,12 @@ export default defineComponent({
     },
     onUpdateDate(item: SummitAchievement, displayDate: string) {
       this.presentedDates = { ...this.presentedDates, [item.id]: displayDate };
+    },
+    onColumnFiltersUpdate(columnFilters: Record<string, string>) {
+      this.columnFilters = columnFilters;
+    },
+    onToggleShowPreviouslyPresented() {
+      this.showPreviouslyPresented = !this.showPreviouslyPresented;
     },
     showFeedback(message: string) {
       if (this.feedbackTimer) clearTimeout(this.feedbackTimer);

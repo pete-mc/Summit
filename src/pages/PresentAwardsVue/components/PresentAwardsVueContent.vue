@@ -5,12 +5,21 @@
         <span v-if="loadState === 'loading'">Loading awards...</span>
         <span v-else-if="loadState === 'error'">Could not load awards. Try reloading the page.</span>
         <v-spacer></v-spacer>
+        <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onToggleShowPreviouslyPresented">{{ showPreviouslyPresented ? "Hide Previously Presented" : "Show Previously Presented" }}</v-btn>
         <v-btn outlined color="primary" class="oas-vue-pill-btn" :loading="isSaving" :disabled="isSaving" @click="onSaveClick">Save Changes</v-btn>
       </div>
 
       <div v-if="feedback" role="status" class="data-grid-export-feedback">{{ feedback }}</div>
 
-      <PresentAwardsTableVue :items="items" :selected-ids="selectedIds" :presented-dates="presentedDates" @toggle-present="onTogglePresent" @update-date="onUpdateDate" />
+      <PresentAwardsTableVue
+        :items="visibleItems"
+        :selected-ids="selectedIds"
+        :presented-dates="presentedDates"
+        :column-filters="columnFilters"
+        @toggle-present="onTogglePresent"
+        @update-date="onUpdateDate"
+        @update:columnFilters="onColumnFiltersUpdate"
+      />
     </div>
   </v-app>
 </template>

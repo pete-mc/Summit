@@ -8,6 +8,10 @@ export interface DataTableHeader {
   value: string;
   sortable?: boolean;
   sort?: (a: unknown, b: unknown) => number;
+  /** Defaults to "text" — a plain filter box. "select" renders a dropdown instead. */
+  filterType?: "text" | "select";
+  /** Columns with no underlying data (the checkbox) opt out of filtering entirely. */
+  filterable?: boolean;
 }
 
 /** What the rest of the page (and the storage event) speaks. */
@@ -56,12 +60,65 @@ export function toDisplayDate(pickerDate: string): string {
 
 const HEADERS: DataTableHeader[] = [
   { text: "Name", value: "member" },
-  { text: "Type", value: "type" },
+  // Only ~10 achievement types exist and SummitAchievement already normalises them for display,
+  // so a dropdown is both short and exhaustive. Award is deliberately left as a text box: there
+  // is one distinct value per badge, which would make an unusable dropdown.
+  { text: "Type", value: "type", filterType: "select" },
   { text: "Award", value: "achievementName" },
   { text: "Date", value: "dateAwarded", sort: compareDisplayDates },
-  { text: "Presented", value: "presented", sort: compareDisplayDates },
-  { text: "Present", value: "present", sortable: false },
+  { text: "Presented", value: "presented", sort: compareDisplayDates, filterType: "select" },
+  { text: "Present", value: "present", sortable: false, filterable: false },
 ];
+
+/** Values stored in columnFilters.presented — not substrings of the underlying data. */
+export const PRESENTED_FILTER_YES = "presented";
+export const PRESENTED_FILTER_NO = "no";
+
+const PRESENTED_OPTIONS = [
+  { text: "Yes", value: PRESENTED_FILTER_YES },
+  { text: "No", value: PRESENTED_FILTER_NO },
+];
+
+function toFilterValue(value: unknown): string {
+  return String(value ?? "").toLowerCase();
+}
+
+/**
+ * ANDs every non-empty column filter together; empty entries mean "no filter on that column".
+ * Matches filterOASProgressionRows' semantics, with one special case.
+ *
+ * `presented` is not a plain value like the other columns — it is either the literal "No" or a
+ * DD/MM/YYYY date. Substring matching cannot express "any date", and matching "no" as a substring
+ * would also hit award names containing "no". So this column is matched on meaning rather than
+ * text. (The OAS table hit the same class of bug with its Answered/Awarded columns, where typing
+ * "yes" matched nothing because the raw value stringified to "true".)
+ *
+ * `resolvePresented` lets the caller supply the value currently ON SCREEN for a row, so that
+ * filtering agrees with the visible state even when an edit has not been saved yet.
+ */
+export function filterPresentAwardRows(
+  items: SummitAchievement[],
+  columnFilters: Record<string, string> = {},
+  resolvePresented: (item: SummitAchievement) => string = (item) => (item.presented !== NOT_PRESENTED ? item.presented : ""),
+): SummitAchievement[] {
+  const activeFilters = Object.entries(columnFilters).filter(([, value]) => value.trim().length > 0);
+  if (activeFilters.length === 0) {
+    return items;
+  }
+
+  return items.filter((row) =>
+    activeFilters.every(([field, value]) => {
+      const needle = value.trim().toLowerCase();
+
+      if (field === "presented") {
+        const isPresented = resolvePresented(row).length > 0;
+        return needle === PRESENTED_FILTER_YES ? isPresented : !isPresented;
+      }
+
+      return toFilterValue((row as unknown as Record<string, unknown>)[field]).includes(needle);
+    }),
+  );
+}
 
 /**
  * Flat, sortable table of the unit's awarded achievements — built on Vuetify's v-data-table to
@@ -81,6 +138,7 @@ export default defineComponent({
     // loadingStreams.
     selectedIds: { type: null as unknown as PropType<Set<string>>, required: true },
     presentedDates: { type: Object as PropType<Record<string, string>>, default: () => ({}) },
+    columnFilters: { type: Object as PropType<Record<string, string>>, default: () => ({}) },
   },
   data() {
     return {
@@ -88,6 +146,27 @@ export default defineComponent({
       /** Per-row open state for the date-picker menus, keyed by achievement id. */
       openDateMenus: {} as Record<string, boolean>,
     };
+  },
+  computed: {
+    filteredItems(): SummitAchievement[] {
+      return filterPresentAwardRows(this.items, this.columnFilters, (item) => this.presentedValue(item));
+    },
+    hasActiveColumnFilters(): boolean {
+      return Object.values(this.columnFilters).some((value) => value.trim() !== "");
+    },
+    /**
+     * Dropdown options keyed by header value. Type's options come from every row this table was
+     * given — deliberately NOT from filteredItems, so choosing one filter never shrinks another
+     * column's own option list out from under the user.
+     */
+    columnFilterOptions(): Record<string, Array<{ text: string; value: string }>> {
+      return {
+        type: Array.from(new Set(this.items.map((item) => item.type)))
+          .sort()
+          .map((value) => ({ text: value, value })),
+        presented: PRESENTED_OPTIONS,
+      };
+    },
   },
   methods: {
     isSelected(item: SummitAchievement): boolean {
@@ -114,6 +193,12 @@ export default defineComponent({
     onDateInput(item: SummitAchievement, pickerDate: string) {
       this.$emit("update-date", item, toDisplayDate(pickerDate));
       this.setDateMenuOpen(item, false);
+    },
+    onColumnFilterInput(field: string, value: string) {
+      this.$emit("update:columnFilters", { ...this.columnFilters, [field]: value });
+    },
+    onClearFiltersClick() {
+      this.$emit("update:columnFilters", {});
     },
   },
 });
