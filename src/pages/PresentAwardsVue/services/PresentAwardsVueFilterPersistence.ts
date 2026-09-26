@@ -1,6 +1,7 @@
 export interface PresentAwardsVueFilterState {
   columnFilters: Record<string, string>;
   showPreviouslyPresented: boolean;
+  groupByMember: boolean;
 }
 
 /**
@@ -17,6 +18,8 @@ export const DEFAULT_FILTERS: PresentAwardsVueFilterState = {
   columnFilters: {},
   // Matches the React page's default.
   showPreviouslyPresented: false,
+  // Grouped on a first visit: the page's main job is handing badges to one member at a time.
+  groupByMember: true,
 };
 
 export const savePresentAwardsVueFilters = (filters: PresentAwardsVueFilterState) => {

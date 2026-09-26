@@ -139,6 +139,7 @@ export default defineComponent({
     selectedIds: { type: null as unknown as PropType<Set<string>>, required: true },
     presentedDates: { type: Object as PropType<Record<string, string>>, default: () => ({}) },
     columnFilters: { type: Object as PropType<Record<string, string>>, default: () => ({}) },
+    groupByMember: { type: Boolean, default: true },
   },
   data() {
     return {
@@ -150,6 +151,14 @@ export default defineComponent({
   computed: {
     filteredItems(): SummitAchievement[] {
       return filterPresentAwardRows(this.items, this.columnFilters, (item) => this.presentedValue(item));
+    },
+    /**
+     * v-data-table takes groupBy as an array of field names; an empty array means "don't group".
+     * Grouping by `member` (the display name) rather than memberid keeps the group headers
+     * readable and sorts them alphabetically for free.
+     */
+    groupBy(): string[] {
+      return this.groupByMember ? ["member"] : [];
     },
     hasActiveColumnFilters(): boolean {
       return Object.values(this.columnFilters).some((value) => value.trim() !== "");
@@ -184,6 +193,17 @@ export default defineComponent({
     },
     pickerValue(item: SummitAchievement): string | undefined {
       return toPickerDate(this.presentedValue(item));
+    },
+    /**
+     * Group header label, e.g. "Alex Scout (2 not presented)".
+     *
+     * Counts what is still to hand over rather than the member's total, so the number answers the
+     * question actually being asked at a meeting — and it ticks down as rows are checked off.
+     * Reads the on-screen value, so it reflects unsaved ticks immediately.
+     */
+    groupLabel(groupName: string, groupItems: SummitAchievement[]): string {
+      const outstanding = groupItems.filter((item) => !this.presentedValue(item)).length;
+      return outstanding === 0 ? `${groupName} (all presented)` : `${groupName} (${outstanding} not presented)`;
     },
     isDateMenuOpen(item: SummitAchievement): boolean {
       return this.openDateMenus[item.id] === true;

@@ -330,7 +330,7 @@ describe("PresentAwardsVueContent — filter persistence", () => {
 
     content.onColumnFiltersUpdate({ member: "Alex" });
 
-    expect(JSON.parse(window.localStorage.getItem("summit.presentAwardsVue.filters") as string)).toEqual({ columnFilters: { member: "Alex" }, showPreviouslyPresented: false });
+    expect(JSON.parse(window.localStorage.getItem("summit.presentAwardsVue.filters") as string)).toEqual({ columnFilters: { member: "Alex" }, showPreviouslyPresented: false, groupByMember: true });
   });
 
   it("saves the previously-presented toggle", () => {
@@ -367,7 +367,25 @@ describe("PresentAwardsVueContent — filter persistence", () => {
     content.onColumnFiltersUpdate({ member: "Alex" });
 
     const stored = JSON.parse(window.localStorage.getItem("summit.presentAwardsVue.filters") as string);
-    expect(Object.keys(stored).sort()).toEqual(["columnFilters", "showPreviouslyPresented"]);
+    expect(Object.keys(stored).sort()).toEqual(["columnFilters", "groupByMember", "showPreviouslyPresented"]);
+  });
+
+  it("saves the group-by-member toggle", () => {
+    const content = mountContent([makeItem("a")]);
+
+    content.onToggleGroupByMember();
+
+    expect(JSON.parse(window.localStorage.getItem("summit.presentAwardsVue.filters") as string).groupByMember).toBe(false);
+  });
+
+  it("groups by member on a first visit", () => {
+    expect(mountContent([makeItem("a")]).groupByMember).toBe(true);
+  });
+
+  it("restores a saved ungrouped preference", () => {
+    window.localStorage.setItem("summit.presentAwardsVue.filters", JSON.stringify({ groupByMember: false }));
+
+    expect(mountContent([makeItem("a")]).groupByMember).toBe(false);
   });
 });
 

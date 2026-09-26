@@ -5,6 +5,7 @@ const STORAGE_KEY = "summit.presentAwardsVue.filters";
 const sampleState: PresentAwardsVueFilterState = {
   columnFilters: { member: "Alex", presented: "no" },
   showPreviouslyPresented: true,
+  groupByMember: false,
 };
 
 describe("PresentAwardsVueFilterPersistence", () => {
@@ -61,16 +62,21 @@ describe("PresentAwardsVueFilterPersistence", () => {
   });
 
   it("merges a partial state over the defaults, so an older saved shape still loads", () => {
-    // A build that predates showPreviouslyPresented would have saved only columnFilters.
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ columnFilters: { member: "Sam" } }));
+    // A build that predates groupByMember would have saved only the other two keys — the merge
+    // must fill in the missing one rather than leaving it undefined.
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ columnFilters: { member: "Sam" }, showPreviouslyPresented: true }));
 
     const merged = { ...DEFAULT_FILTERS, ...(loadPresentAwardsVueFilters() ?? {}) };
 
-    expect(merged).toEqual({ columnFilters: { member: "Sam" }, showPreviouslyPresented: false });
+    expect(merged).toEqual({ columnFilters: { member: "Sam" }, showPreviouslyPresented: true, groupByMember: true });
   });
 
   it("defaults to hiding previously presented awards, matching the React page", () => {
     expect(DEFAULT_FILTERS.showPreviouslyPresented).toBe(false);
     expect(DEFAULT_FILTERS.columnFilters).toEqual({});
+  });
+
+  it("defaults to grouping by member", () => {
+    expect(DEFAULT_FILTERS.groupByMember).toBe(true);
   });
 });

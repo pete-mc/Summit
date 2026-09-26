@@ -73,6 +73,7 @@ export default defineComponent({
       columnFilters: initialFilters.columnFilters,
       /** Matches the React page's default: already-presented awards are hidden until asked for. */
       showPreviouslyPresented: initialFilters.showPreviouslyPresented,
+      groupByMember: initialFilters.groupByMember,
       isReloading: false,
     };
   },
@@ -167,6 +168,7 @@ export default defineComponent({
       savePresentAwardsVueFilters({
         columnFilters: this.columnFilters,
         showPreviouslyPresented: this.showPreviouslyPresented,
+        groupByMember: this.groupByMember,
       });
     },
     onColumnFiltersUpdate(columnFilters: Record<string, string>) {
@@ -175,6 +177,10 @@ export default defineComponent({
     },
     onToggleShowPreviouslyPresented() {
       this.showPreviouslyPresented = !this.showPreviouslyPresented;
+      this.persistFilters();
+    },
+    onToggleGroupByMember() {
+      this.groupByMember = !this.groupByMember;
       this.persistFilters();
     },
     showFeedback(message: string) {

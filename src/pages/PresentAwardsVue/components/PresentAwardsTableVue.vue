@@ -4,7 +4,15 @@
       <v-btn v-if="hasActiveColumnFilters" text small color="primary" class="oas-vue-clear-filters-btn" @click="onClearFiltersClick">Clear filters</v-btn>
     </div>
 
-    <v-data-table :headers="headers" :items="filteredItems" dense :items-per-page="25" :footer-props="{ itemsPerPageOptions: [10, 25, 50, 100, -1] }" class="present-awards-data-table">
+    <v-data-table
+      :headers="headers"
+      :items="filteredItems"
+      :group-by="groupBy"
+      dense
+      :items-per-page="25"
+      :footer-props="{ itemsPerPageOptions: [10, 25, 50, 100, -1] }"
+      class="present-awards-data-table"
+    >
       <!--
         The filter row goes in #body.prepend, not a header slot: header.<value> slots only
         customize a cell WITHIN the existing header <tr> and cannot emit a sibling row.
@@ -46,6 +54,20 @@
             </template>
           </th>
         </tr>
+      </template>
+
+      <!--
+        Custom group header: Vuetify's default one includes a "remove grouping" button that would
+        silently drop grouping with no way to get it back, since the toggle lives in the page
+        header. This keeps the collapse toggle and drops that.
+      -->
+      <template #group.header="{ group, items: groupItems, isOpen, toggle }">
+        <td :colspan="headers.length" class="present-awards-group-header">
+          <v-btn icon small class="ma-0" :aria-label="isOpen ? `Collapse ${group}` : `Expand ${group}`" @click="toggle">
+            <v-icon>{{ isOpen ? "mdi-minus" : "mdi-plus" }}</v-icon>
+          </v-btn>
+          <span class="present-awards-group-label">{{ groupLabel(group, groupItems) }}</span>
+        </td>
       </template>
 
       <template #item.presented="{ item }">
@@ -156,6 +178,21 @@
  */
 .oas-vue-column-filter-input.v-input--is-dirty ::v-deep .v-input__icon--clear {
   opacity: 1 !important;
+}
+
+/*
+ * Group header rows. A tinted background and a semibold label separate each member's block from
+ * the rows beneath without needing a heavier rule or border.
+ */
+.present-awards-group-header {
+  background-color: var(--summit-color-bg-muted, #f3f2f1);
+}
+
+.present-awards-group-label {
+  font-size: var(--oas-vue-font-size-body);
+  font-family: var(--oas-vue-font-family);
+  font-weight: var(--summit-font-weight-semibold, 600);
+  margin-left: var(--summit-space-xs, 4px);
 }
 
 /*

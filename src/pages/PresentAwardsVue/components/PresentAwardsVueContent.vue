@@ -7,6 +7,7 @@
         <v-spacer></v-spacer>
         <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onExcelExportClick">Excel Export</v-btn>
         <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onPdfExportClick">PDF Export</v-btn>
+        <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onToggleGroupByMember">{{ groupByMember ? "Ungroup" : "Group by Member" }}</v-btn>
         <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onToggleShowPreviouslyPresented">{{ showPreviouslyPresented ? "Hide Previously Presented" : "Show Previously Presented" }}</v-btn>
         <v-btn outlined color="primary" class="oas-vue-pill-btn" :loading="isSaving" :disabled="isSaving" @click="onSaveClick">Save Changes</v-btn>
         <v-btn icon title="Refresh data" :loading="isReloading" :disabled="isReloading" @click="onReloadClick"><v-icon>mdi-refresh</v-icon></v-btn>
@@ -19,6 +20,7 @@
         :selected-ids="selectedIds"
         :presented-dates="presentedDates"
         :column-filters="columnFilters"
+        :group-by-member="groupByMember"
         @toggle-present="onTogglePresent"
         @update-date="onUpdateDate"
         @update:columnFilters="onColumnFiltersUpdate"
@@ -53,6 +55,15 @@
  * text/border from our Vuetify theme (see src/vuetifySetup.ts); this overrides only the
  * sizing/shape Vuetify's outlined variant doesn't match by default.
  */
+/*
+ * Six buttons is more than the shared .oas-progression-view-row was built for, so let them wrap
+ * rather than overflow on a narrow window. The gap keeps the spacing even once they do.
+ */
+.oas-progression-view-row {
+  flex-wrap: wrap;
+  gap: var(--summit-space-sm, 8px);
+}
+
 .oas-vue-pill-btn.v-btn {
   font-size: 14px;
   font-weight: 600;
