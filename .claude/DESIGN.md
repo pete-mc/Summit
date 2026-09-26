@@ -206,9 +206,38 @@ tokens, spacing scale) for a specific integration point, check live via DevTools
 Application/Elements tab → inspect `:root` CSS custom properties on the Terrain page
 itself (Vuetify typically exposes theme colors as `--v-primary-base` etc.).
 
+## Summit's CSS loses cascade ties — never rely on inheriting a Vuetify rule
+
+`manifest.json` injects `summit.css` as a **content-script stylesheet**. Chrome places
+those in a lower-precedence cascade origin than the page's own stylesheets, so where
+Summit's CSS and Terrain's CSS have equal specificity, **Terrain wins**.
+
+The practical consequence: any Vuetify styling Summit relies on *inheriting* rather than
+*stating* can lose on a cold load. This produced a real bug on both Vue data tables —
+Vuetify's own `padding: 0 16px` for table cells lost to Terrain's ambient CSS, leaving
+the first column flush against the table edge.
+
+The symptom is distinctive and worth recognising:
+
+> Correct when navigating in from another Summit page, **wrong on a hard refresh**
+> straight onto the page.
+
+That is a load-order race, not a wrong value. Arriving from elsewhere only looks right
+because the styles had already settled. **Suspect this before adjusting any numbers** —
+changing the value will appear to fix it in one navigation path and not the other.
+
+The fix is to state the rule yourself, scoped to your component and reaching through
+`::v-deep` where it targets Vuetify-rendered elements, so the layout no longer depends
+on which stylesheet won. Both `PresentAwardsTableVue.vue` and `OASProgressionTableVue.vue`
+now restate their cell padding this way.
+
 ## Verification
 
 No build step needed to check this file — it's documentation. When adding new shared
 styles, sanity-check by running `npm run build` and loading `dist/` as an unpacked
 extension (see `.claude/DEVENV.md`) to confirm the new classes render as expected
 against the real Terrain page.
+
+**Test a Vuetify page with a hard refresh directly onto its own URL**, not just by
+navigating to it from Summit home — see the cascade section above for why those two
+paths can render differently.

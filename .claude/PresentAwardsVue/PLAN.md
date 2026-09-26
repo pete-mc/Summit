@@ -1,7 +1,9 @@
 # Present Awards (Vue) — overview plan
 
-**Status:** Stages 1–4 complete and verified live, 2026-09-26. Grouping by member added on top.
-Stage 5 (CSS polish pass) not yet run. See **Outcome** at the foot of this file.
+**Status:** Complete and promoted, 2026-09-26. The Vue page now owns
+`/summit/tools/PresentAwards`; the React original is archived at
+`/summit/tools/presentawards-legacy`. Grouping by member and a badge-icon column were added on
+top of the planned five stages. See **Outcome** at the foot of this file.
 
 ## Context
 
@@ -104,17 +106,29 @@ the next stage starts.
 
 ## Outcome (2026-09-26)
 
-Stages 1–4 shipped and were verified live against real unit data in Edge. Member grouping was
-then asked for directly and added on top. Stage 5's CSS polish pass has **not** been run — the
-three hard-won CSS mechanics it covers were pulled forward into Stage 3, so what remains is a
-comparison pass against the OAS table plus the render-contract tests, most of which also already
-exist.
+Stages 1–4 shipped and were verified live against real unit data in Edge. Member grouping, a
+badge-icon column, and a round of layout fixes were then asked for directly and added on top.
+The page has since been **promoted** to the primary route. Stage 5's CSS polish pass was never
+run as a discrete stage — its three hard-won CSS mechanics were pulled forward into Stage 3, and
+the live-verification pass it describes happened piecemeal as each change landed.
 
 **Commits:** `9707038` (extraction), `c527162` (scaffold), `bc2dde1` (editing), `7e0f6cd`
-(filters), `c275164` (export/refresh/persistence), `eb2f7d6` (grouping).
+(filters), `c275164` (export/refresh/persistence), `eb2f7d6` (grouping), `4e06bda` (badge column,
+filter-box toggles, group-count fix), `ec03b43` (promotion, alignment and padding fixes).
 
-**Test count:** 562 unit tests, 561 passing — the one failure is the pre-existing UNC-path
-`lint_stack_loads.spec.ts`, unchanged from the project baseline. 91 of those tests are new.
+**Test count:** 579 unit tests, 578 passing — the one failure is the pre-existing UNC-path
+`lint_stack_loads.spec.ts`, unchanged from the project baseline. 108 of those tests are new.
+
+### Routes after promotion
+
+| Route | Page | In nav? |
+|---|---|---|
+| `/summit/tools/PresentAwards` | Vue rebuild | Yes, under Tools |
+| `/summit/tools/presentawards-legacy` | React original | No — linked from Home under "Development tools" |
+
+The Vue page deliberately took over the **original** URL so existing bookmarks land on it, the
+same as the OAS Progression promotion (`16c4ada`). Both pages read and write the same storage
+event, so switching between them is safe and the legacy banner says so.
 
 ### Divergences from the React page, all deliberate
 
@@ -141,6 +155,35 @@ exist.
 3. **A test fixture that lied.** `makeItem` ignored its `name` option, so two "different" members
    both rendered as "Alex Scout" and a filter assertion passed for the wrong reason. Worth noting
    as a class of problem: the fixture, not the code, was wrong.
+4. **The group count only counted the current page.** `VData` paginates *before* it groups
+   (`computedItems` slices, then `groupedItems` groups the slice — `VData.js:156-164`), so the
+   `group.header` slot's own `items` is only that page's share of a member's awards: 30
+   outstanding on a 25-row page read "25 not presented". The count now comes from a
+   component-level tally over every filtered row, and `groupLabel` takes only the group *name* so
+   it cannot regress to the paginated items. Reported by the user, not caught by a test.
+5. **The filter row was one cell too wide while grouped.** Vuetify removes the grouped column
+   from its own header row (`computedHeaders` filters it out — `VDataTable.js:126`), but the
+   `#body.prepend` filter row iterated the raw `headers`, so every filter box sat one column left
+   of its header. Both the filter row and the group header's `colspan` now derive from a
+   `renderedHeaders` computed that mirrors Vuetify's own filtering. Reported with a screenshot.
+
+### The CSS cascade finding (applies beyond this page)
+
+Table cell padding was correct when navigating in from Summit home but wrong on a hard refresh —
+first column flush against the table edge. Not a padding value problem at all.
+
+Vuetify does supply `padding: 0 16px` for its table cells, but our copy of that rule ships inside
+`summit.css`, which `manifest.json` injects as a **content-script stylesheet**. Chrome places
+those in a lower-precedence cascade origin than the page's own stylesheets, so on a cold load
+Terrain's ambient CSS can win. Arriving from another Summit page only looked correct because the
+styles had already settled — the classic signature of a load-order race rather than a wrong value.
+
+Both Vue data tables now restate the padding themselves, scoped and reaching through `::v-deep`,
+so the layout no longer depends on which stylesheet won.
+
+**This is not specific to padding.** Any Vuetify styling Summit relies on *inheriting* rather than
+stating is exposed to the same race. Layout that is right sometimes and wrong on a cold load
+should be suspected as this before anyone starts adjusting values.
 
 ### Things deliberately NOT done
 
@@ -150,15 +193,36 @@ exist.
 - **The React page's UX is untouched.** It still saves fire-and-forget. Fixing that there would
   have been a behaviour change beyond the service extraction.
 - **No Playwright coverage**, consistent with the OAS Vue pages.
-- **The "Badger" badge-icon wish** from `DEV_NOTES.md`.
 
-### Open question for the user
+### Badge artwork — current state
 
-Whether the Vue page should take over `/summit/tools/PresentAwards` with the React page archived
-to `-legacy` — the same promotion OAS Progression went through (nav entry removed, in-page
-retired banner, linked from Home under "Development tools"). Both pages read and write the same
-storage format, so they can run side by side indefinitely; this is a decision to make after using
-the Vue one for a while, not a pending task.
+The badge column ships with the **nine existing OAS skill PNGs** wired up; every other award type
+renders a neutral dashed placeholder. `SummitAchievement.badgeKey` resolves to the OAS *branch*
+for OAS awards (artwork is per skill) and to the achievement type otherwise.
+
+To add artwork: drop a file into `src/images/badges/` and add one line to
+`BADGE_ICON_FILENAMES` in `src/pages/PresentAwardsVue/services/getBadgeIconUrl.ts`. Nothing else
+needs to change — `manifest.json` already exposes the image directories.
+
+**Terrain's own SVG icons were evaluated and rejected** (e.g.
+`_nuxt/img/icon--oas-bushwalking.--329572d.svg`). Three reasons, all verified against the
+captured bundle in `docs/terrain.scouts.com.au/`:
+
+- **The hashes move.** The live URL carries `--329572d`; the captured copy is `--5455e66`. Those
+  are Nuxt cache-busting fingerprints, regenerated on every deploy — a hard-coded URL silently
+  404s the next time Terrain ships.
+- **The set is incomplete.** Terrain exposes 6 OAS icons; the page needs 9 (no camping, cycling
+  or vertical). One is even named `oas-padding--unselected`, a typo in their own asset name.
+- **It is not a public API.** These are internal build artifacts with no stability contract.
+
+SVG *is* the better format, so the upgrade worth making is **local SVGs** — same reliability as
+today, sharper rendering. That would only change if Terrain turns out to serve a stable unhashed
+path.
+
+### Still open
+
+- **Concurrent-save clobbering.** Options were requested and have not yet been written up. See
+  the entry in `.claude/DEV_NOTES.md`.
 
 ## Key references
 
