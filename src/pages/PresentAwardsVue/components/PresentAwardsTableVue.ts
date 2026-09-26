@@ -2,6 +2,7 @@ import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import moment from "moment";
 import SummitAchievement from "@/pages/PresentAwards/models/SummitAchievement";
+import { getBadgeIconUrl } from "../services/getBadgeIconUrl";
 
 export interface DataTableHeader {
   text: string;
@@ -65,6 +66,9 @@ const HEADERS: DataTableHeader[] = [
   // is one distinct value per badge, which would make an unusable dropdown.
   { text: "Type", value: "type", filterType: "select" },
   { text: "Award", value: "achievementName" },
+  // Artwork only — nothing to sort or filter on, and no header text (the images speak for
+  // themselves and a label would widen the column past the icons).
+  { text: "", value: "badge", sortable: false, filterable: false },
   { text: "Date", value: "dateAwarded", sort: compareDisplayDates },
   { text: "Presented", value: "presented", sort: compareDisplayDates, filterType: "select" },
   { text: "Present", value: "present", sortable: false, filterable: false },
@@ -164,6 +168,25 @@ export default defineComponent({
       return Object.values(this.columnFilters).some((value) => value.trim() !== "");
     },
     /**
+     * Outstanding award count per member name, across ALL filtered rows.
+     *
+     * Computed here rather than from the group.header slot's own `items`, because VData paginates
+     * before it groups (`computedItems` slices, then `groupedItems` groups the slice — see
+     * VData.js:156-164). The slot therefore only ever sees the current page's share of a member's
+     * awards, so a member with 30 outstanding awards on a 25-row page reported the wrong number.
+     */
+    outstandingByMember(): Record<string, number> {
+      return this.filteredItems.reduce(
+        (counts, item) => {
+          if (!this.presentedValue(item)) {
+            counts[item.member] = (counts[item.member] ?? 0) + 1;
+          }
+          return counts;
+        },
+        {} as Record<string, number>,
+      );
+    },
+    /**
      * Dropdown options keyed by header value. Type's options come from every row this table was
      * given — deliberately NOT from filteredItems, so choosing one filter never shrinks another
      * column's own option list out from under the user.
@@ -200,10 +223,17 @@ export default defineComponent({
      * Counts what is still to hand over rather than the member's total, so the number answers the
      * question actually being asked at a meeting — and it ticks down as rows are checked off.
      * Reads the on-screen value, so it reflects unsaved ticks immediately.
+     *
+     * Deliberately takes only the group NAME: the count comes from outstandingByMember, which
+     * spans every filtered row, not from the slot's own paginated `items`.
      */
-    groupLabel(groupName: string, groupItems: SummitAchievement[]): string {
-      const outstanding = groupItems.filter((item) => !this.presentedValue(item)).length;
+    groupLabel(groupName: string): string {
+      const outstanding = this.outstandingByMember[groupName] ?? 0;
       return outstanding === 0 ? `${groupName} (all presented)` : `${groupName} (${outstanding} not presented)`;
+    },
+    /** Artwork URL for a row's badge, or null when only a placeholder is available. */
+    badgeIconUrl(item: SummitAchievement): string | null {
+      return getBadgeIconUrl(item.badgeKey);
     },
     isDateMenuOpen(item: SummitAchievement): boolean {
       return this.openDateMenus[item.id] === true;

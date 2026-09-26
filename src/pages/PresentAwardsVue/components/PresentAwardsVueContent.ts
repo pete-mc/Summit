@@ -2,6 +2,8 @@ import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import SummitAchievement from "@/pages/PresentAwards/models/SummitAchievement";
 import PresentAwardsTableVue from "./PresentAwardsTableVue.vue";
+import PresentAwardsFiltersVue from "./PresentAwardsFiltersVue.vue";
+import type { PresentAwardsDisplayFilters } from "./PresentAwardsFiltersVue";
 import { filterPresentAwardRows, NOT_PRESENTED } from "./PresentAwardsTableVue";
 import { DEFAULT_FILTERS, loadPresentAwardsVueFilters, savePresentAwardsVueFilters, type PresentAwardsVueFilterState } from "../services/PresentAwardsVueFilterPersistence";
 import { exportGridToExcel, exportGridToPdf, type GridExportColumn, type GridExportRow } from "@/components/gridExport";
@@ -45,7 +47,7 @@ function loadInitialFilters(): PresentAwardsVueFilterState {
  */
 export default defineComponent({
   name: "PresentAwardsVueContent",
-  components: { PresentAwardsTableVue },
+  components: { PresentAwardsTableVue, PresentAwardsFiltersVue },
   props: {
     items: { type: Array as PropType<SummitAchievement[]>, default: () => [] },
     loadState: { type: String, default: "loading" },
@@ -96,6 +98,10 @@ export default defineComponent({
      * dropdown's options (derived from what the table is given) only ever offer values that could
      * actually match something currently in scope.
      */
+    /** Bundled for the filters component, which takes the whole display-filter object as a prop. */
+    displayFilters(): PresentAwardsDisplayFilters {
+      return { showPreviouslyPresented: this.showPreviouslyPresented, groupByMember: this.groupByMember };
+    },
     visibleItems(): SummitAchievement[] {
       if (this.showPreviouslyPresented) return this.items;
       return this.items.filter((item) => !item.previouslyPresented);
@@ -175,12 +181,9 @@ export default defineComponent({
       this.columnFilters = columnFilters;
       this.persistFilters();
     },
-    onToggleShowPreviouslyPresented() {
-      this.showPreviouslyPresented = !this.showPreviouslyPresented;
-      this.persistFilters();
-    },
-    onToggleGroupByMember() {
-      this.groupByMember = !this.groupByMember;
+    onDisplayFiltersUpdate(filters: PresentAwardsDisplayFilters) {
+      this.showPreviouslyPresented = filters.showPreviouslyPresented;
+      this.groupByMember = filters.groupByMember;
       this.persistFilters();
     },
     showFeedback(message: string) {

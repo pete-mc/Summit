@@ -61,13 +61,23 @@
         silently drop grouping with no way to get it back, since the toggle lives in the page
         header. This keeps the collapse toggle and drops that.
       -->
-      <template #group.header="{ group, items: groupItems, isOpen, toggle }">
+      <template #group.header="{ group, isOpen, toggle }">
         <td :colspan="headers.length" class="present-awards-group-header">
           <v-btn icon small class="ma-0" :aria-label="isOpen ? `Collapse ${group}` : `Expand ${group}`" @click="toggle">
             <v-icon>{{ isOpen ? "mdi-minus" : "mdi-plus" }}</v-icon>
           </v-btn>
-          <span class="present-awards-group-label">{{ groupLabel(group, groupItems) }}</span>
+          <span class="present-awards-group-label">{{ groupLabel(group) }}</span>
         </td>
+      </template>
+
+      <!--
+        Badge artwork. Award types without artwork yet show a neutral placeholder so the column
+        stays aligned and scannable rather than gappy. The title carries the award name, since the
+        icon alone is ambiguous for anyone who does not recognise the artwork.
+      -->
+      <template #item.badge="{ item }">
+        <img v-if="badgeIconUrl(item)" :src="badgeIconUrl(item)" :alt="item.achievementName" :title="item.achievementName" class="present-awards-badge-icon" />
+        <span v-else class="present-awards-badge-placeholder" :title="item.achievementName" aria-hidden="true"></span>
       </template>
 
       <template #item.presented="{ item }">
@@ -178,6 +188,28 @@
  */
 .oas-vue-column-filter-input.v-input--is-dirty ::v-deep .v-input__icon--clear {
   opacity: 1 !important;
+}
+
+/*
+ * Badge artwork column. Fixed 28px so every row is the same height whether its badge has artwork
+ * or a placeholder, and so a dense row doesn't grow to fit the image.
+ */
+.present-awards-badge-icon,
+.present-awards-badge-placeholder {
+  display: block;
+  width: 28px;
+  height: 28px;
+}
+
+.present-awards-badge-icon {
+  object-fit: contain;
+}
+
+/* Neutral dashed outline: reads as "artwork not loaded yet" rather than as a real badge. */
+.present-awards-badge-placeholder {
+  border: 1px dashed var(--summit-color-border-default, #c8c6c4);
+  border-radius: 50%;
+  background: var(--summit-color-bg-muted, #f3f2f1);
 }
 
 /*

@@ -12,7 +12,6 @@ Needs border left and right = 0
 - Coonsider adding checksum in calendar to avoid "if two Leaders have the Present Awards page open at the same time, whichever one saves last wins and silently discards the other's changes — there's no merge, just a full replace." If you try and save with wrong version it would reload and merge remote and local changes, with warning.
 
 - Consider better grid:
-  - Grouping by Member.
   - Badge icon for "Badger".
 
 Notes from Terrain help:

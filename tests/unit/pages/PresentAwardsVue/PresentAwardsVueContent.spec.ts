@@ -7,6 +7,7 @@ import type { TerrainAchievements, TerrainUnitMember } from "@/types/terrainType
 // (vue-loader only merges template + external script at webpack build time). Stub it so the
 // options object under test can be required — the table is covered by its own logic tests.
 jest.mock("@/pages/PresentAwardsVue/components/PresentAwardsTableVue.vue", () => ({ __esModule: true, default: { name: "PresentAwardsTableVue", render: () => null } }), { virtual: true });
+jest.mock("@/pages/PresentAwardsVue/components/PresentAwardsFiltersVue.vue", () => ({ __esModule: true, default: { name: "PresentAwardsFiltersVue", render: () => null } }), { virtual: true });
 
 // gridExport's top-level jsPDF/xlsx imports are ESM that Jest cannot parse, so it is mocked here
 // as the other grid tests do. Mocking it also lets these assert what reaches the exporters.
@@ -145,7 +146,7 @@ describe("PresentAwardsVueContent — previously presented visibility", () => {
   it("shows them once toggled on", () => {
     const content = mountContent([makeItem("a", { alreadyStored: true }), makeItem("b")]);
 
-    content.onToggleShowPreviouslyPresented();
+    content.onDisplayFiltersUpdate({ ...content.displayFilters, showPreviouslyPresented: !content.showPreviouslyPresented });
 
     expect(content.showPreviouslyPresented).toBe(true);
     expect(content.visibleItems.map((item: SummitAchievement) => item.id)).toEqual(["a", "b"]);
@@ -154,8 +155,8 @@ describe("PresentAwardsVueContent — previously presented visibility", () => {
   it("toggles back off", () => {
     const content = mountContent([makeItem("a", { alreadyStored: true })]);
 
-    content.onToggleShowPreviouslyPresented();
-    content.onToggleShowPreviouslyPresented();
+    content.onDisplayFiltersUpdate({ ...content.displayFilters, showPreviouslyPresented: !content.showPreviouslyPresented });
+    content.onDisplayFiltersUpdate({ ...content.displayFilters, showPreviouslyPresented: !content.showPreviouslyPresented });
 
     expect(content.visibleItems).toEqual([]);
   });
@@ -210,7 +211,7 @@ describe("PresentAwardsVueContent — export", () => {
 
     expect(content.exportRows()).toHaveLength(1);
 
-    content.onToggleShowPreviouslyPresented();
+    content.onDisplayFiltersUpdate({ ...content.displayFilters, showPreviouslyPresented: !content.showPreviouslyPresented });
 
     expect(content.exportRows()).toHaveLength(2);
   });
@@ -336,7 +337,7 @@ describe("PresentAwardsVueContent — filter persistence", () => {
   it("saves the previously-presented toggle", () => {
     const content = mountContent([makeItem("a")]);
 
-    content.onToggleShowPreviouslyPresented();
+    content.onDisplayFiltersUpdate({ ...content.displayFilters, showPreviouslyPresented: !content.showPreviouslyPresented });
 
     expect(JSON.parse(window.localStorage.getItem("summit.presentAwardsVue.filters") as string).showPreviouslyPresented).toBe(true);
   });
@@ -373,7 +374,7 @@ describe("PresentAwardsVueContent — filter persistence", () => {
   it("saves the group-by-member toggle", () => {
     const content = mountContent([makeItem("a")]);
 
-    content.onToggleGroupByMember();
+    content.onDisplayFiltersUpdate({ ...content.displayFilters, groupByMember: !content.groupByMember });
 
     expect(JSON.parse(window.localStorage.getItem("summit.presentAwardsVue.filters") as string).groupByMember).toBe(false);
   });

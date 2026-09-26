@@ -54,6 +54,37 @@ describe("SummitAchievement", () => {
     expect(item.previouslyPresented).toBe(false);
   });
 
+  it("derives an OAS award's badge key from its branch, not its type", () => {
+    // Badge artwork is per skill (Bushwalking.png etc.), so the branch is what identifies it.
+    const achievement = makeAchievement({
+      type: TerrainAchievementsType.OutdoorAdventureSkill as TerrainAchievements["type"],
+      achievement_meta: { branch: "bushwalking", stage: 2 },
+    } as Partial<TerrainAchievements>);
+
+    expect(new SummitAchievement(achievement, makeMember(), []).badgeKey).toBe("bushwalking");
+  });
+
+  it("normalises a hyphenated OAS branch to the icon key form", () => {
+    const achievement = makeAchievement({
+      type: TerrainAchievementsType.OutdoorAdventureSkill as TerrainAchievements["type"],
+      achievement_meta: { branch: "Vertical-Climbing", stage: 1 },
+    } as Partial<TerrainAchievements>);
+
+    expect(new SummitAchievement(achievement, makeMember(), []).badgeKey).toBe("vertical_climbing");
+  });
+
+  it("falls back to the achievement type as the badge key for non-OAS awards", () => {
+    expect(new SummitAchievement(makeAchievement(), makeMember(), []).badgeKey).toBe("special_interest_area");
+  });
+
+  it("falls back to the type when an OAS award has no branch recorded", () => {
+    const achievement = makeAchievement({
+      type: TerrainAchievementsType.OutdoorAdventureSkill as TerrainAchievements["type"],
+    } as Partial<TerrainAchievements>);
+
+    expect(new SummitAchievement(achievement, makeMember(), []).badgeKey).toBe("outdoor_adventure_skill");
+  });
+
   it("uses presentation date when available and supports updatePresented", () => {
     const achievement = makeAchievement();
     const item = new SummitAchievement(achievement, makeMember(), [{ guid: "achv-1", date: new Date("2026-03-12T00:00:00.000Z") }]);

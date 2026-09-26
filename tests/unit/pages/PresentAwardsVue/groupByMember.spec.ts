@@ -68,35 +68,64 @@ describe("PresentAwardsTableVue — group header label", () => {
     const items = [makeItem("a", "Alex"), makeItem("b", "Alex"), makeItem("c", "Alex", "01/02/2026")];
     const table = mountTable(items, new Set(["c"]));
 
-    expect(table.groupLabel("Alex Scout", items)).toBe("Alex Scout (2 not presented)");
+    expect(table.groupLabel("Alex Scout")).toBe("Alex Scout (2 not presented)");
   });
 
   it("says so when a member has nothing outstanding", () => {
     const items = [makeItem("a", "Alex", "01/02/2026")];
     const table = mountTable(items, new Set(["a"]));
 
-    expect(table.groupLabel("Alex Scout", items)).toBe("Alex Scout (all presented)");
+    expect(table.groupLabel("Alex Scout")).toBe("Alex Scout (all presented)");
   });
 
   it("uses the singular count wording for one outstanding award", () => {
     const items = [makeItem("a", "Alex")];
 
-    expect(mountTable(items, new Set()).groupLabel("Alex Scout", items)).toBe("Alex Scout (1 not presented)");
+    expect(mountTable(items, new Set()).groupLabel("Alex Scout")).toBe("Alex Scout (1 not presented)");
   });
 
   it("counts down as rows are ticked, before saving", () => {
     // The label reads the on-screen value, so ticking a row updates it immediately.
     const items = [makeItem("a", "Alex"), makeItem("b", "Alex")];
 
-    expect(mountTable(items, new Set()).groupLabel("Alex Scout", items)).toBe("Alex Scout (2 not presented)");
-    expect(mountTable(items, new Set(["a"])).groupLabel("Alex Scout", items)).toBe("Alex Scout (1 not presented)");
-    expect(mountTable(items, new Set(["a", "b"])).groupLabel("Alex Scout", items)).toBe("Alex Scout (all presented)");
+    expect(mountTable(items, new Set()).groupLabel("Alex Scout")).toBe("Alex Scout (2 not presented)");
+    expect(mountTable(items, new Set(["a"])).groupLabel("Alex Scout")).toBe("Alex Scout (1 not presented)");
+    expect(mountTable(items, new Set(["a", "b"])).groupLabel("Alex Scout")).toBe("Alex Scout (all presented)");
+  });
+
+  it("counts every filtered row, not just the current page", () => {
+    // VData paginates before it groups (computedItems slices, then groupedItems groups the slice
+    // — VData.js:156-164), so the group.header slot's own `items` only ever holds the current
+    // page's share of a member's awards. With 30 awards and a 25-row page the slot would report
+    // 25. The count must come from the full filtered set.
+    const items = Array.from({ length: 30 }, (_, index) => makeItem(`a${index}`, "Alex"));
+    const table = mountTable(items, new Set());
+
+    expect(table.groupLabel("Alex Scout")).toBe("Alex Scout (30 not presented)");
+  });
+
+  it("counts each member separately", () => {
+    const items = [makeItem("a", "Alex"), makeItem("b", "Alex"), makeItem("c", "Sam")];
+    const table = mountTable(items, new Set());
+
+    expect(table.groupLabel("Alex Scout")).toBe("Alex Scout (2 not presented)");
+    expect(table.groupLabel("Sam Scout")).toBe("Sam Scout (1 not presented)");
+  });
+
+  it("counts only rows surviving the column filters", () => {
+    const items = [makeItem("a", "Alex"), makeItem("b", "Alex")];
+    const table = mountTable(items, new Set());
+
+    // Filtering to the presented rows leaves this member with nothing outstanding in view.
+    table.columnFilters = { presented: "presented" };
+
+    expect(table.groupLabel("Alex Scout")).toBe("Alex Scout (all presented)");
   });
 
   it("counts a stored-but-unticked award as outstanding", () => {
     // Unticking a previously presented award means it is to be handed over again.
     const items = [makeItem("a", "Alex", "01/02/2026")];
 
-    expect(mountTable(items, new Set()).groupLabel("Alex Scout", items)).toBe("Alex Scout (1 not presented)");
+    expect(mountTable(items, new Set()).groupLabel("Alex Scout")).toBe("Alex Scout (1 not presented)");
   });
 });

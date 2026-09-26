@@ -11,6 +11,12 @@ export default class SummitAchievement {
   dateAwarded: string;
   presented: string;
   previouslyPresented: boolean;
+  /**
+   * Lower-case key identifying which badge artwork this award should show, e.g. "bushwalking" for
+   * an OAS award or "milestone" for a milestone. Consumed by getBadgeIconUrl(); award types with
+   * no artwork yet fall back to a placeholder rather than rendering nothing.
+   */
+  badgeKey: string;
 
   constructor(
     achievement: TerrainAchievements,
@@ -29,6 +35,23 @@ export default class SummitAchievement {
     const presentation = existingPresentation.find((g) => g.guid === achievement.id);
     this.presented = presentation && presentation.date ? moment(presentation.date).format("DD/MM/YYYY") : presentation ? moment(achievement.status_updated).format("DD/MM/YYYY") : "No";
     this.previouslyPresented = presentation ? true : false;
+    this.badgeKey = SummitAchievement.getBadgeKey(achievement);
+  }
+
+  /**
+   * Which badge artwork identifies this award.
+   *
+   * OAS awards resolve to their branch ("bushwalking", "canoeing", …), which is what the existing
+   * skill icons in src/images/oas-skills/ are named after. Every other award type resolves to its
+   * own achievement type, so artwork can be dropped in per type later without touching this code.
+   */
+  private static getBadgeKey(achievement: TerrainAchievements): string {
+    if (achievement.type === TerrainAchievementsType.OutdoorAdventureSkill) {
+      // The branch is the specific skill; the stream is the broader grouping. Icons are per skill.
+      const branch = achievement.achievement_meta?.branch;
+      if (branch) return branch.replace(/-/g, "_").toLowerCase();
+    }
+    return String(achievement.type ?? "").toLowerCase();
   }
 
   public updatePresented(newValue: string) {

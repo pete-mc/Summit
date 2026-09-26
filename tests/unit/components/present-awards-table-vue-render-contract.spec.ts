@@ -59,6 +59,21 @@ describe("PresentAwardsTableVue render contract", () => {
     expect(TEMPLATE).toContain("opacity: 1 !important");
   });
 
+  it("renders a badge icon with a placeholder fallback", () => {
+    // A missing icon must still occupy the cell, or the column goes gappy and stops being
+    // scannable — which is the entire point of it.
+    expect(TEMPLATE).toContain("#item.badge");
+    expect(TEMPLATE).toContain("present-awards-badge-icon");
+    expect(TEMPLATE).toContain("present-awards-badge-placeholder");
+  });
+
+  it("takes the group count from the component, not the slot's paginated items", () => {
+    // VData paginates before grouping, so the slot's own `items` is only the current page's
+    // share of a member's awards — groupLabel must not be handed them.
+    expect(TEMPLATE).toContain("groupLabel(group)");
+    expect(TEMPLATE).not.toContain("groupLabel(group,");
+  });
+
   it("labels both interactive cells for screen readers", () => {
     expect(TEMPLATE).toContain("aria-label");
     expect(TEMPLATE).toContain("Mark ${item.achievementName} as presented");
