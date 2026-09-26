@@ -88,6 +88,21 @@
 }
 
 /*
+ * Cell padding, set explicitly rather than inherited from Vuetify's own rule.
+ *
+ * Vuetify supplies `padding: 0 16px` for these cells, but our copy of it arrives in summit.css —
+ * which manifest.json injects as a CONTENT SCRIPT stylesheet. Chrome places those in a
+ * lower-precedence cascade origin than the page's own stylesheets, so on a cold load (hard
+ * refresh straight onto the page) Terrain's ambient table CSS can win and the first column ends
+ * up flush against the table edge. Navigating in from another Summit page made it look correct
+ * only because the styles had already settled by then — a load-order race, not a wrong value.
+ */
+.oas-vue-data-table ::v-deep > .v-data-table__wrapper > table > tbody > tr > td,
+.oas-vue-data-table ::v-deep > .v-data-table__wrapper > table > thead > tr > th {
+  padding: 0 16px;
+}
+
+/*
  * v-data-table applies its own row-hover highlight to any <tr> in <tbody> — confirmed via live
  * DevTools: `.theme--light.v-data-table > .v-data-table__wrapper > table > tbody >
  * tr:hover:not(.v-data-table__expanded__content):not(.v-data-table__empty-wrapper) { background:

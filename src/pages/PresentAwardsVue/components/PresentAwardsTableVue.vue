@@ -19,7 +19,7 @@
       -->
       <template #body.prepend>
         <tr class="oas-vue-column-filter-row">
-          <th v-for="header in headers" :key="header.value">
+          <th v-for="header in renderedHeaders" :key="header.value">
             <template v-if="header.filterable !== false">
               <v-select
                 v-if="header.filterType === 'select'"
@@ -62,9 +62,9 @@
         header. This keeps the collapse toggle and drops that.
       -->
       <template #group.header="{ group, isOpen, toggle }">
-        <td :colspan="headers.length" class="present-awards-group-header">
-          <v-btn icon small class="ma-0" :aria-label="isOpen ? `Collapse ${group}` : `Expand ${group}`" @click="toggle">
-            <v-icon>{{ isOpen ? "mdi-minus" : "mdi-plus" }}</v-icon>
+        <td :colspan="renderedHeaders.length" class="present-awards-group-header">
+          <v-btn icon small class="present-awards-group-toggle" :aria-label="isOpen ? `Collapse ${group}` : `Expand ${group}`" @click="toggle">
+            <v-icon small>{{ isOpen ? "mdi-chevron-down" : "mdi-chevron-right" }}</v-icon>
           </v-btn>
           <span class="present-awards-group-label">{{ groupLabel(group) }}</span>
         </td>
@@ -117,6 +117,25 @@
 .present-awards-data-table ::v-deep tbody td {
   font-size: var(--oas-vue-font-size-body);
   font-family: var(--oas-vue-font-family);
+}
+
+/*
+ * Cell padding, set explicitly rather than inherited from Vuetify's own rule.
+ *
+ * Vuetify supplies `padding: 0 16px` for these cells, but our copy of it arrives in
+ * summit.css — which manifest.json injects as a CONTENT SCRIPT stylesheet. Chrome places those
+ * in a lower-precedence cascade origin than the page's own stylesheets, so on a cold load
+ * (hard refresh straight onto the page) Terrain's ambient table CSS can win and the first
+ * column ends up flush against the table edge. Navigating in from another Summit page made it
+ * look correct only because the styles had already settled by then — the classic symptom of a
+ * load-order race rather than a wrong value.
+ *
+ * Restating the padding here, scoped to this component and reaching through ::v-deep, means the
+ * layout no longer depends on which stylesheet won.
+ */
+.present-awards-data-table ::v-deep > .v-data-table__wrapper > table > tbody > tr > td,
+.present-awards-data-table ::v-deep > .v-data-table__wrapper > table > thead > tr > th {
+  padding: 0 16px;
 }
 
 /* Fixed height so the table doesn't jump as "Clear filters" appears and disappears. */
@@ -225,6 +244,13 @@
   font-family: var(--oas-vue-font-family);
   font-weight: var(--summit-font-weight-semibold, 600);
   margin-left: var(--summit-space-xs, 4px);
+}
+
+/* Chevron sits tight against the name rather than carrying v-btn's default icon-button width. */
+.present-awards-group-toggle.v-btn {
+  width: 20px;
+  height: 20px;
+  margin: 0;
 }
 
 /*

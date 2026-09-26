@@ -67,6 +67,16 @@ describe("PresentAwardsTableVue render contract", () => {
     expect(TEMPLATE).toContain("present-awards-badge-placeholder");
   });
 
+  it("builds the filter row and group colspan from the rendered headers, not the raw ones", () => {
+    // Vuetify drops the grouped column from its own header row (computedHeaders filters it out —
+    // VDataTable.js:126), so iterating the raw `headers` emits one <th> too many and shifts every
+    // filter box left of its column while grouping is on.
+    expect(TEMPLATE).toContain('v-for="header in renderedHeaders"');
+    expect(TEMPLATE).toContain(':colspan="renderedHeaders.length"');
+    expect(TEMPLATE).not.toContain('v-for="header in headers"');
+    expect(TEMPLATE).not.toContain(':colspan="headers.length"');
+  });
+
   it("takes the group count from the component, not the slot's paginated items", () => {
     // VData paginates before grouping, so the slot's own `items` is only the current page's
     // share of a member's awards — groupLabel must not be handed them.

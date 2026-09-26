@@ -7,7 +7,7 @@
         <v-spacer></v-spacer>
         <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onExcelExportClick">Excel Export</v-btn>
         <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onPdfExportClick">PDF Export</v-btn>
-        <v-btn outlined color="primary" class="oas-vue-pill-btn" :loading="isSaving" :disabled="isSaving" @click="onSaveClick">Save Changes</v-btn>
+        <v-btn depressed class="oas-vue-pill-btn present-awards-save-btn" :loading="isSaving" :disabled="isSaving" @click="onSaveClick">Save Changes</v-btn>
         <v-btn icon title="Refresh data" :loading="isReloading" :disabled="isReloading" @click="onReloadClick"><v-icon>mdi-refresh</v-icon></v-btn>
       </div>
 
@@ -56,12 +56,35 @@
  * sizing/shape Vuetify's outlined variant doesn't match by default.
  */
 /*
- * Six buttons is more than the shared .oas-progression-view-row was built for, so let them wrap
- * rather than overflow on a narrow window. The gap keeps the spacing even once they do.
+ * Let the action buttons wrap rather than overflow on a narrow window, and separate them from the
+ * Display filter box below — without the bottom margin the export buttons sit directly on the
+ * filter panel's top edge.
  */
 .oas-progression-view-row {
   flex-wrap: wrap;
   gap: var(--summit-space-sm, 8px);
+  margin-bottom: var(--summit-space-lg, 16px);
+}
+
+/*
+ * Save is the page's one committing action, so it gets a filled button rather than an outlined
+ * one — matching the Summit Calendar editor's own primary save button
+ * (.summit-button-primary, which fills with --summit-color-bg-primary). Vuetify's `color` prop
+ * would pull from the theme instead, which is Terrain's blue, so the fill is set here against
+ * Summit's own brand token.
+ */
+.present-awards-save-btn.v-btn {
+  background-color: var(--summit-color-bg-primary, #004c00) !important;
+  color: var(--summit-color-text-on-primary, #ffffff) !important;
+}
+
+.present-awards-save-btn.v-btn:hover {
+  background-color: var(--summit-color-bg-primary-hover, #006600) !important;
+}
+
+/* Vuetify dims a disabled button's own background; keep the brand fill visible while saving. */
+.present-awards-save-btn.v-btn--disabled {
+  opacity: 0.6;
 }
 
 .oas-vue-pill-btn.v-btn {

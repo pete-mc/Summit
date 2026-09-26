@@ -164,6 +164,18 @@ export default defineComponent({
     groupBy(): string[] {
       return this.groupByMember ? ["member"] : [];
     },
+    /**
+     * The headers v-data-table actually renders, which the #body.prepend filter row must mirror
+     * cell for cell.
+     *
+     * When grouping is on, Vuetify drops the grouped column from its own header row
+     * (`computedHeaders` filters it out — VDataTable.js:126), since the value is shown in the
+     * group header instead. Iterating the raw `headers` here emitted one <th> too many, shifting
+     * every filter box left of its column.
+     */
+    renderedHeaders(): DataTableHeader[] {
+      return this.headers.filter((header) => !this.groupBy.includes(header.value));
+    },
     hasActiveColumnFilters(): boolean {
       return Object.values(this.columnFilters).some((value) => value.trim() !== "");
     },

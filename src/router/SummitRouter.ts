@@ -64,11 +64,11 @@ export default class SummitRouter {
       component: DisplayOptions,
     });
     this.router.addRoute({
-      path: "/summit/tools/PresentAwards",
+      path: "/summit/tools/presentawards-legacy",
       component: PresentAwards,
     });
     this.router.addRoute({
-      path: "/summit/tools/presentawards-vue",
+      path: "/summit/tools/PresentAwards",
       component: PresentAwardsVue,
     });
     this.router.addRoute({
@@ -196,13 +196,6 @@ export default class SummitRouter {
           {
             title: "Present Awards",
             to: "/summit/tools/PresentAwards",
-            items: [],
-            locked: false,
-            roles: [true, false],
-          },
-          {
-            title: "Present Awards (Vue)",
-            to: "/summit/tools/presentawards-vue",
             items: [],
             locked: false,
             roles: [true, false],

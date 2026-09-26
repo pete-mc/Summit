@@ -40,9 +40,9 @@ export default defineComponent({
         exact: true,
       },
       {
-        text: "Present Awards",
+        text: "Present Awards (legacy)",
         disabled: true,
-        to: "/summit/tools/presentawards",
+        to: "/summit/tools/presentawards-legacy",
         exact: true,
       },
     ];

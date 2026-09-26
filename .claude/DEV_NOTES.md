@@ -4,8 +4,12 @@
 
 ## GUI
 
-.oas-heatmap-skill-title-row td
-Needs border left and right = 0
+- Needs border left and right = 0
+  .oas-heatmap-skill-title-row td
+
+## Table Layout
+
+- On the OAS Progression and Present Award pages the table layout, particularly the padding/margins need fixing. eg The member names are up against the far left edge of the table. But if I visit the Summit home page first then they appear correct. A hard refresh causes the error to reappear.
 
 ## Present Award
 
@@ -26,3 +30,9 @@ The first tab has all program items that have been submitted to the Unit Council
 The second tab has a historical view of all items that have been approved or rejected by the Unit Council.
 
 The system can’t record that a youth member has had the achievement awarded to them, just that it’s been approved.
+
+## OAS Progression
+
+- Add ability to switch between Group by Skill or Member
+  - Skill keeps icon
+  - Name has no icon. Sortby still works.

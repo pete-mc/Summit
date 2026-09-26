@@ -50,7 +50,7 @@ export default defineComponent({
     (window.$nuxt.$store.state as TerrainRootState).global.breadcrumbs = [
       { text: "Summit", disabled: false, to: "/summit/home", exact: true },
       { text: "Tools", disabled: true, to: "/summit/tools", exact: true },
-      { text: "Present Awards (Vue)", disabled: true, to: "/summit/tools/presentawards-vue", exact: true },
+      { text: "Present Awards", disabled: true, to: "/summit/tools/PresentAwards", exact: true },
     ];
   },
   beforeDestroy() {
