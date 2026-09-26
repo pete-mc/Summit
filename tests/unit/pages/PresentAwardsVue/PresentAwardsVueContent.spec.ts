@@ -8,7 +8,17 @@ import type { TerrainAchievements, TerrainUnitMember } from "@/types/terrainType
 // options object under test can be required — the table is covered by its own logic tests.
 jest.mock("@/pages/PresentAwardsVue/components/PresentAwardsTableVue.vue", () => ({ __esModule: true, default: { name: "PresentAwardsTableVue", render: () => null } }), { virtual: true });
 
-import PresentAwardsVueContent, { NOTHING_SELECTED_MESSAGE, SAVED_MESSAGE } from "@/pages/PresentAwardsVue/components/PresentAwardsVueContent";
+// gridExport's top-level jsPDF/xlsx imports are ESM that Jest cannot parse, so it is mocked here
+// as the other grid tests do. Mocking it also lets these assert what reaches the exporters.
+jest.mock("@/components/gridExport", () => ({
+  __esModule: true,
+  exportGridToExcel: jest.fn(),
+  exportGridToPdf: jest.fn(),
+}));
+
+import { exportGridToExcel, exportGridToPdf } from "@/components/gridExport";
+
+import PresentAwardsVueContent, { DISCARD_EDITS_PROMPT, NOTHING_SELECTED_MESSAGE, SAVED_MESSAGE } from "@/pages/PresentAwardsVue/components/PresentAwardsVueContent";
 
 function makeMember(id: string, firstName: string): TerrainUnitMember {
   return {
@@ -25,7 +35,7 @@ function makeMember(id: string, firstName: string): TerrainUnitMember {
   };
 }
 
-function makeItem(id: string, options: { memberId?: string; awardedOn?: string; presentedOn?: string; alreadyStored?: boolean } = {}): SummitAchievement {
+function makeItem(id: string, options: { memberId?: string; name?: string; awardedOn?: string; presentedOn?: string; alreadyStored?: boolean } = {}): SummitAchievement {
   const achievement = {
     id,
     member_id: options.memberId ?? "member-1",
@@ -38,7 +48,7 @@ function makeItem(id: string, options: { memberId?: string; awardedOn?: string; 
   // Passing the achievement's own id as an existing presentation is what marks a row as
   // previously presented, exactly as a loaded storage event would.
   const existing = options.alreadyStored ? [{ guid: id, date: new Date("2026-02-01T00:00:00.000Z") }] : [];
-  const item = new SummitAchievement(achievement, makeMember(options.memberId ?? "member-1", "Alex"), existing);
+  const item = new SummitAchievement(achievement, makeMember(options.memberId ?? "member-1", options.name ?? "Alex"), existing);
   if (options.presentedOn) item.updatePresented(options.presentedOn);
   return item;
 }
@@ -49,11 +59,17 @@ function makeItem(id: string, options: { memberId?: string; awardedOn?: string; 
  * project, since Jest here cannot import .vue files.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mountContent(items: SummitAchievement[], onSave?: (presented: SummitAchievement[]) => Promise<string | null>): any {
+function mountContent(items: SummitAchievement[], onSave?: (presented: SummitAchievement[]) => Promise<string | null>, onReload?: () => Promise<void>): any {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const Ctor: any = Vue.extend(PresentAwardsVueContent as any);
-  return new Ctor({ propsData: { items, loadState: "ready", onSave } });
+  return new Ctor({ propsData: { items, loadState: "ready", onSave, onReload } });
 }
+
+// The component restores saved filters on construction, so each test starts from a clean slate.
+beforeEach(() => {
+  window.localStorage.clear();
+  jest.clearAllMocks();
+});
 
 describe("PresentAwardsVueContent — edit state", () => {
   it("seeds the selection from awards that are already presented", () => {
@@ -177,6 +193,181 @@ describe("PresentAwardsVueContent — column filters", () => {
     content.onColumnFiltersUpdate({});
 
     expect(content.columnFilters).toEqual({});
+  });
+});
+
+describe("PresentAwardsVueContent — export", () => {
+  it("exports only the rows currently on screen", () => {
+    const content = mountContent([makeItem("a", { name: "Alex" }), makeItem("b", { name: "Sam" })]);
+
+    content.onColumnFiltersUpdate({ member: "Alex" });
+
+    expect(content.exportRows().map((row: Record<string, unknown>) => row.member)).toEqual(["Alex Scout"]);
+  });
+
+  it("respects the previously-presented toggle", () => {
+    const content = mountContent([makeItem("a", { alreadyStored: true }), makeItem("b")]);
+
+    expect(content.exportRows()).toHaveLength(1);
+
+    content.onToggleShowPreviouslyPresented();
+
+    expect(content.exportRows()).toHaveLength(2);
+  });
+
+  it("exports the edited presented date, not the value last loaded", () => {
+    // Exporting before saving must not produce a file that disagrees with the screen.
+    const item = makeItem("a", { presentedOn: "01/02/2026" });
+    const content = mountContent([item]);
+
+    content.onUpdateDate(item, "09/09/2026");
+
+    expect(content.exportRows()[0].presented).toBe("09/09/2026");
+  });
+
+  it("exports an unticked award as No", () => {
+    const item = makeItem("a", { presentedOn: "01/02/2026" });
+    const content = mountContent([item]);
+
+    content.onTogglePresent(item, false);
+
+    expect(content.exportRows()[0].presented).toBe("No");
+  });
+
+  it("exports the five data columns without the checkbox", () => {
+    const content = mountContent([makeItem("a")]);
+
+    expect(Object.keys(content.exportRows()[0]).sort()).toEqual(["achievementName", "dateAwarded", "member", "presented", "type"]);
+  });
+
+  it("sends the filtered rows and the React page's file name to the Excel exporter", () => {
+    const content = mountContent([makeItem("a", { name: "Alex" }), makeItem("b", { name: "Sam" })]);
+
+    content.onColumnFiltersUpdate({ member: "Alex" });
+    content.onExcelExportClick();
+
+    expect(exportGridToExcel).toHaveBeenCalledTimes(1);
+    const options = (exportGridToExcel as jest.Mock).mock.calls[0][0];
+    expect(options.fileName).toBe("Awards.xlsx");
+    expect(options.rows).toHaveLength(1);
+    expect(options.columns.map((column: { header: string }) => column.header)).toEqual(["Name", "Type", "Award", "Date", "Presented"]);
+    expect(content.feedback).toBe("Excel export complete");
+  });
+
+  it("sends the filtered rows and the React page's title to the PDF exporter", () => {
+    const content = mountContent([makeItem("a")]);
+
+    content.onPdfExportClick();
+
+    const options = (exportGridToPdf as jest.Mock).mock.calls[0][0];
+    expect(options.fileName).toBe("Awards.pdf");
+    expect(options.title).toBe("Terrain | Summit - Awards Completed");
+    expect(content.feedback).toBe("PDF export complete");
+  });
+
+  it("reports an export failure rather than failing silently", () => {
+    (exportGridToExcel as jest.Mock).mockImplementationOnce(() => {
+      throw new Error("disk full");
+    });
+    const content = mountContent([makeItem("a")]);
+
+    content.onExcelExportClick();
+
+    expect(content.feedback).toBe("Excel export failed: disk full");
+  });
+});
+
+describe("PresentAwardsVueContent — refresh", () => {
+  it("reloads without confirming when there is nothing unsaved", async () => {
+    const onReload = jest.fn().mockResolvedValue(undefined);
+    const confirmSpy = jest.spyOn(window, "confirm");
+    const content = mountContent([makeItem("a")], undefined, onReload);
+
+    await content.onReloadClick();
+
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(onReload).toHaveBeenCalledTimes(1);
+  });
+
+  it("confirms before discarding unsaved edits", async () => {
+    const onReload = jest.fn().mockResolvedValue(undefined);
+    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true);
+    const item = makeItem("a");
+    const content = mountContent([item], undefined, onReload);
+
+    content.onTogglePresent(item, true);
+    await content.onReloadClick();
+
+    expect(confirmSpy).toHaveBeenCalledWith(DISCARD_EDITS_PROMPT);
+    expect(onReload).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the edits when the confirmation is cancelled", async () => {
+    const onReload = jest.fn().mockResolvedValue(undefined);
+    jest.spyOn(window, "confirm").mockReturnValue(false);
+    const item = makeItem("a");
+    const content = mountContent([item], undefined, onReload);
+
+    content.onTogglePresent(item, true);
+    await content.onReloadClick();
+
+    expect(onReload).not.toHaveBeenCalled();
+    expect(content.selectedIds.has("a")).toBe(true);
+  });
+
+  it("clears the reloading flag even when the reload fails", async () => {
+    const onReload = jest.fn().mockRejectedValue(new Error("network down"));
+    const content = mountContent([makeItem("a")], undefined, onReload);
+
+    await expect(content.onReloadClick()).rejects.toThrow("network down");
+    expect(content.isReloading).toBe(false);
+  });
+});
+
+describe("PresentAwardsVueContent — filter persistence", () => {
+  it("saves filters as they change", () => {
+    const content = mountContent([makeItem("a")]);
+
+    content.onColumnFiltersUpdate({ member: "Alex" });
+
+    expect(JSON.parse(window.localStorage.getItem("summit.presentAwardsVue.filters") as string)).toEqual({ columnFilters: { member: "Alex" }, showPreviouslyPresented: false });
+  });
+
+  it("saves the previously-presented toggle", () => {
+    const content = mountContent([makeItem("a")]);
+
+    content.onToggleShowPreviouslyPresented();
+
+    expect(JSON.parse(window.localStorage.getItem("summit.presentAwardsVue.filters") as string).showPreviouslyPresented).toBe(true);
+  });
+
+  it("persists synchronously, so navigating away immediately does not lose the change", () => {
+    // Vue 2 watchers fire on the next tick; persisting from one would drop this write.
+    const content = mountContent([makeItem("a")]);
+
+    content.onColumnFiltersUpdate({ member: "Alex" });
+
+    expect(window.localStorage.getItem("summit.presentAwardsVue.filters")).not.toBeNull();
+  });
+
+  it("restores saved filters on construction", () => {
+    window.localStorage.setItem("summit.presentAwardsVue.filters", JSON.stringify({ columnFilters: { member: "Sam" }, showPreviouslyPresented: true }));
+
+    const content = mountContent([makeItem("a")]);
+
+    expect(content.columnFilters).toEqual({ member: "Sam" });
+    expect(content.showPreviouslyPresented).toBe(true);
+  });
+
+  it("never persists unsaved edit state", () => {
+    const item = makeItem("a");
+    const content = mountContent([item]);
+
+    content.onTogglePresent(item, true);
+    content.onColumnFiltersUpdate({ member: "Alex" });
+
+    const stored = JSON.parse(window.localStorage.getItem("summit.presentAwardsVue.filters") as string);
+    expect(Object.keys(stored).sort()).toEqual(["columnFilters", "showPreviouslyPresented"]);
   });
 });
 

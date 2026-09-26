@@ -98,6 +98,15 @@ describe("filterPresentAwardRows — the Presented column", () => {
     expect(filterPresentAwardRows(items, { presented: PRESENTED_FILTER_NO }, resolve)).toEqual([]);
   });
 
+  it("treats a just-unticked row as not presented", () => {
+    // Unticking clears the pending date; the resolver must not fall back to the stored value,
+    // or the row would still count as presented until saved.
+    const resolve = (item: SummitAchievement) => (item.id === presented.id ? "" : item.presented !== "No" ? item.presented : "");
+
+    expect(filterPresentAwardRows(items, { presented: PRESENTED_FILTER_YES }, resolve)).toEqual([]);
+    expect(filterPresentAwardRows(items, { presented: PRESENTED_FILTER_NO }, resolve)).toEqual(items);
+  });
+
   it("combines with another column filter", () => {
     expect(filterPresentAwardRows(items, { presented: PRESENTED_FILTER_YES, member: "Sam" })).toEqual([]);
     expect(filterPresentAwardRows(items, { presented: PRESENTED_FILTER_YES, member: "Alex" })).toEqual([presented]);

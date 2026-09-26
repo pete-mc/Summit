@@ -103,6 +103,7 @@ export default defineComponent({
           items: this.items,
           loadState: this.loadState,
           onSave: this.saveAwards,
+          onReload: this.loadAwards,
         },
       }) as ContentInstance;
       this.contentInstance.$mount(this.$refs.vuetifyRoot as HTMLElement);

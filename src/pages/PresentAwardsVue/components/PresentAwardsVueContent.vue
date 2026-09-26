@@ -5,8 +5,11 @@
         <span v-if="loadState === 'loading'">Loading awards...</span>
         <span v-else-if="loadState === 'error'">Could not load awards. Try reloading the page.</span>
         <v-spacer></v-spacer>
+        <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onExcelExportClick">Excel Export</v-btn>
+        <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onPdfExportClick">PDF Export</v-btn>
         <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onToggleShowPreviouslyPresented">{{ showPreviouslyPresented ? "Hide Previously Presented" : "Show Previously Presented" }}</v-btn>
         <v-btn outlined color="primary" class="oas-vue-pill-btn" :loading="isSaving" :disabled="isSaving" @click="onSaveClick">Save Changes</v-btn>
+        <v-btn icon title="Refresh data" :loading="isReloading" :disabled="isReloading" @click="onReloadClick"><v-icon>mdi-refresh</v-icon></v-btn>
       </div>
 
       <div v-if="feedback" role="status" class="data-grid-export-feedback">{{ feedback }}</div>

@@ -2,11 +2,36 @@ import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import SummitAchievement from "@/pages/PresentAwards/models/SummitAchievement";
 import PresentAwardsTableVue from "./PresentAwardsTableVue.vue";
+import { filterPresentAwardRows, NOT_PRESENTED } from "./PresentAwardsTableVue";
+import { DEFAULT_FILTERS, loadPresentAwardsVueFilters, savePresentAwardsVueFilters, type PresentAwardsVueFilterState } from "../services/PresentAwardsVueFilterPersistence";
+import { exportGridToExcel, exportGridToPdf, type GridExportColumn, type GridExportRow } from "@/components/gridExport";
+import { createLogger } from "@/helpers";
+
+const logger = createLogger("PresentAwardsVueContent");
 
 const FEEDBACK_TIMEOUT_MS = 4000;
 
 export const NOTHING_SELECTED_MESSAGE = "No new awards were selected as presented.";
 export const SAVED_MESSAGE = "Saved.";
+export const DISCARD_EDITS_PROMPT = "Refreshing will discard your unsaved changes. Continue?";
+
+/**
+ * The five columns the React page exports — the Present checkbox is not data, so it stays out.
+ * File names and titles match the React page's too, so the two pages produce interchangeable files.
+ */
+const TABLE_EXPORT_COLUMNS: GridExportColumn[] = [
+  { key: "member", header: "Name" },
+  { key: "type", header: "Type" },
+  { key: "achievementName", header: "Award" },
+  { key: "dateAwarded", header: "Date" },
+  { key: "presented", header: "Presented" },
+];
+
+function loadInitialFilters(): PresentAwardsVueFilterState {
+  // Merged OVER the defaults, so state saved by an older build that lacks a newer key still
+  // produces a complete object.
+  return { ...DEFAULT_FILTERS, ...(loadPresentAwardsVueFilters() ?? {}) };
+}
 
 /**
  * Root of the second (Vuetify-registered) Vue instance for the Present Awards page — see
@@ -25,8 +50,10 @@ export default defineComponent({
     items: { type: Array as PropType<SummitAchievement[]>, default: () => [] },
     loadState: { type: String, default: "loading" },
     onSave: { type: Function as PropType<(presentedItems: SummitAchievement[]) => Promise<string | null>>, default: undefined },
+    onReload: { type: Function as PropType<() => Promise<void>>, default: undefined },
   },
   data() {
+    const initialFilters = loadInitialFilters();
     return {
       /**
        * Ticked achievement ids. Vue 2 cannot observe Set mutations (no .add()/.delete()
@@ -42,10 +69,11 @@ export default defineComponent({
       isSaving: false,
       feedback: "",
       feedbackTimer: undefined as ReturnType<typeof setTimeout> | undefined,
-      /** Per-column filter values, lifted here so the parent can reuse the filtered set. */
-      columnFilters: {} as Record<string, string>,
+      /** Per-column filter values, lifted here so this component can reuse the filtered set. */
+      columnFilters: initialFilters.columnFilters,
       /** Matches the React page's default: already-presented awards are hidden until asked for. */
-      showPreviouslyPresented: false,
+      showPreviouslyPresented: initialFilters.showPreviouslyPresented,
+      isReloading: false,
     };
   },
   watch: {
@@ -70,6 +98,14 @@ export default defineComponent({
     visibleItems(): SummitAchievement[] {
       if (this.showPreviouslyPresented) return this.items;
       return this.items.filter((item) => !item.previouslyPresented);
+    },
+    /**
+     * The rows actually on screen. Computed here as well as in the table because there is no way
+     * to ask a live v-data-table which rows it is currently showing — and export must match what
+     * the user can see.
+     */
+    filteredItems(): SummitAchievement[] {
+      return filterPresentAwardRows(this.visibleItems, this.columnFilters, (item) => this.presentedValueFor(item));
     },
     hasUnsavedEdits(): boolean {
       const stored = this.items.filter((item) => item.presented !== "No");
@@ -112,11 +148,34 @@ export default defineComponent({
     onUpdateDate(item: SummitAchievement, displayDate: string) {
       this.presentedDates = { ...this.presentedDates, [item.id]: displayDate };
     },
+    /**
+     * What the row currently shows.
+     *
+     * The selection is the source of truth, not the stored value: unticking a row clears its
+     * pending date, and falling back to `item.presented` at that point would report a date for a
+     * row the user has just marked as not presented.
+     */
+    presentedValueFor(item: SummitAchievement): string {
+      if (!this.selectedIds.has(item.id)) return "";
+      return this.presentedDates[item.id] ?? (item.presented !== NOT_PRESENTED ? item.presented : "");
+    },
+    /**
+     * Called directly from each handler rather than from a watcher: Vue 2 watchers fire on the
+     * next tick, so a filter change followed immediately by navigating away could lose the write.
+     */
+    persistFilters() {
+      savePresentAwardsVueFilters({
+        columnFilters: this.columnFilters,
+        showPreviouslyPresented: this.showPreviouslyPresented,
+      });
+    },
     onColumnFiltersUpdate(columnFilters: Record<string, string>) {
       this.columnFilters = columnFilters;
+      this.persistFilters();
     },
     onToggleShowPreviouslyPresented() {
       this.showPreviouslyPresented = !this.showPreviouslyPresented;
+      this.persistFilters();
     },
     showFeedback(message: string) {
       if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
@@ -124,6 +183,63 @@ export default defineComponent({
       this.feedbackTimer = setTimeout(() => {
         this.feedback = "";
       }, FEEDBACK_TIMEOUT_MS);
+    },
+    /**
+     * Export rows carry the value currently ON SCREEN for the Presented column, not the value
+     * loaded from the storage event — otherwise exporting before saving produces a file that
+     * disagrees with what the user is looking at.
+     */
+    exportRows(): GridExportRow[] {
+      return this.filteredItems.map((item) => ({
+        member: item.member,
+        type: item.type,
+        achievementName: item.achievementName,
+        dateAwarded: item.dateAwarded,
+        presented: this.presentedValueFor(item) || NOT_PRESENTED,
+      }));
+    },
+    onExcelExportClick() {
+      try {
+        exportGridToExcel({
+          fileName: "Awards.xlsx",
+          title: "Awards Completed",
+          rows: this.exportRows(),
+          columns: TABLE_EXPORT_COLUMNS,
+        });
+        this.showFeedback("Excel export complete");
+      } catch (e) {
+        logger.error("Excel export failed:", e);
+        this.showFeedback(`Excel export failed: ${e instanceof Error ? e.message : "Unknown error"}`);
+      }
+    },
+    onPdfExportClick() {
+      try {
+        exportGridToPdf({
+          fileName: "Awards.pdf",
+          title: "Terrain | Summit - Awards Completed",
+          rows: this.exportRows(),
+          columns: TABLE_EXPORT_COLUMNS,
+          orientation: "landscape",
+        });
+        this.showFeedback("PDF export complete");
+      } catch (e) {
+        logger.error("PDF export failed:", e);
+        this.showFeedback(`PDF export failed: ${e instanceof Error ? e.message : "Unknown error"}`);
+      }
+    },
+    async onReloadClick() {
+      // Reloading re-seeds the selection and dates from fresh data, so any unsaved ticks would
+      // vanish. Silent data loss behind a button labelled "Refresh" is worth one confirmation.
+      if (this.hasUnsavedEdits && !window.confirm(DISCARD_EDITS_PROMPT)) {
+        return;
+      }
+
+      this.isReloading = true;
+      try {
+        if (this.onReload) await this.onReload();
+      } finally {
+        this.isReloading = false;
+      }
     },
     async onSaveClick() {
       if (this.selectedIds.size === 0) {

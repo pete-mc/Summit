@@ -172,8 +172,14 @@ export default defineComponent({
     isSelected(item: SummitAchievement): boolean {
       return this.selectedIds.has(item.id);
     },
-    /** The date to show for a row: a pending edit if there is one, otherwise what was loaded. */
+    /**
+     * The date to show for a row: a pending edit if there is one, otherwise what was loaded.
+     *
+     * An unticked row shows nothing regardless of what is stored — unticking clears the pending
+     * date, so falling through to `item.presented` would redisplay the very date just cleared.
+     */
     presentedValue(item: SummitAchievement): string {
+      if (!this.selectedIds.has(item.id)) return "";
       return this.presentedDates[item.id] ?? (item.presented !== NOT_PRESENTED ? item.presented : "");
     },
     pickerValue(item: SummitAchievement): string | undefined {
