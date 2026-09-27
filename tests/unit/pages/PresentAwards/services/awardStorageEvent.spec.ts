@@ -13,7 +13,17 @@ jest.mock("@/helpers/TerrainState", () => ({
   },
 }));
 
-import { buildStorageEventPayload, checkNotAnAccidentalWipe, readPresentedGuids, STORAGE_EVENT_DATA_VERSION, STORAGE_EVENT_TITLE } from "@/pages/PresentAwards/services/awardStorageEvent";
+import {
+  buildStorageEventPayload,
+  buildStorageEventPayloadFromRecords,
+  checkNotAnAccidentalWipe,
+  hashStorageEvent,
+  lastWrittenAt,
+  readPresentedGuids,
+  readPresentedRecords,
+  STORAGE_EVENT_DATA_VERSION,
+  STORAGE_EVENT_TITLE,
+} from "@/pages/PresentAwards/services/awardStorageEvent";
 
 const GUID_A = "11111111-2222-3333-4444-555555555555";
 const GUID_B = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
@@ -99,6 +109,109 @@ describe("awardStorageEvent — buildStorageEventPayload", () => {
 
   it("produces an empty schedule item list when nothing is presented", () => {
     expect(buildStorageEventPayload([]).schedule_items).toEqual([]);
+  });
+});
+
+describe("awardStorageEvent — hashStorageEvent", () => {
+  function eventWith(items: SummitAchievement[]): TerrainEvent {
+    return { equipment_notes: STORAGE_EVENT_DATA_VERSION, schedule_items: buildStorageEventPayload(items).schedule_items } as TerrainEvent;
+  }
+
+  it("is stable for identical content", () => {
+    const items = [makePresentedItem(GUID_A, "member-1", "Alex", "05/03/2026")];
+
+    expect(hashStorageEvent(eventWith(items))).toBe(hashStorageEvent(eventWith(items)));
+  });
+
+  it("changes when an award is added", () => {
+    const before = eventWith([makePresentedItem(GUID_A, "member-1", "Alex", "05/03/2026")]);
+    const after = eventWith([makePresentedItem(GUID_A, "member-1", "Alex", "05/03/2026"), makePresentedItem(GUID_B, "member-2", "Sam", "06/03/2026")]);
+
+    expect(hashStorageEvent(after)).not.toBe(hashStorageEvent(before));
+  });
+
+  it("changes when a presentation date changes", () => {
+    const before = eventWith([makePresentedItem(GUID_A, "member-1", "Alex", "05/03/2026")]);
+    const after = eventWith([makePresentedItem(GUID_A, "member-1", "Alex", "09/09/2026")]);
+
+    expect(hashStorageEvent(after)).not.toBe(hashStorageEvent(before));
+  });
+
+  it("ignores the order schedule items happen to arrive in", () => {
+    // Two members produce one item each; which order the server returns them in is not a change.
+    const forward = eventWith([makePresentedItem(GUID_A, "member-1", "Alex", "05/03/2026"), makePresentedItem(GUID_B, "member-2", "Sam", "06/03/2026")]);
+    const reversed = { ...forward, schedule_items: [...(forward.schedule_items ?? [])].reverse() } as TerrainEvent;
+
+    expect(hashStorageEvent(reversed)).toBe(hashStorageEvent(forward));
+  });
+
+  it("handles an event with no schedule items, and an absent event", () => {
+    expect(hashStorageEvent({ schedule_items: [] } as unknown as TerrainEvent)).toBe(hashStorageEvent(undefined));
+  });
+});
+
+describe("awardStorageEvent — readPresentedRecords", () => {
+  it("keeps each award's member attribution", () => {
+    const storeEvent = {
+      equipment_notes: STORAGE_EVENT_DATA_VERSION,
+      schedule_items: buildStorageEventPayload([makePresentedItem(GUID_A, "member-1", "Alex", "05/03/2026"), makePresentedItem(GUID_B, "member-2", "Sam", "06/03/2026")]).schedule_items,
+    } as TerrainEvent;
+
+    const records = readPresentedRecords(storeEvent);
+
+    expect(records).toHaveLength(2);
+    expect(records.find((r) => r.guid === GUID_A)?.membername).toBe("Alex Scout");
+    expect(records.find((r) => r.guid === GUID_B)?.memberid).toBe("member-2");
+  });
+
+  it("round-trips through a rebuilt payload without losing anything", () => {
+    const original = [makePresentedItem(GUID_A, "member-1", "Alex", "05/03/2026"), makePresentedItem(GUID_B, "member-2", "Sam", "06/03/2026")];
+    const storeEvent = { equipment_notes: STORAGE_EVENT_DATA_VERSION, schedule_items: buildStorageEventPayload(original).schedule_items } as TerrainEvent;
+
+    const rebuilt = { equipment_notes: STORAGE_EVENT_DATA_VERSION, schedule_items: buildStorageEventPayloadFromRecords(readPresentedRecords(storeEvent)).schedule_items } as TerrainEvent;
+
+    expect(hashStorageEvent(rebuilt)).toBe(hashStorageEvent(storeEvent));
+  });
+
+  it("gives a v1 award a fallback date rather than dropping it", () => {
+    const legacyEvent = {
+      equipment_notes: "1",
+      schedule_items: [{ description: processGuids([GUID_A])[0], start_datetime: "2026-09-27T09:41:09+10:00", leader_notes: "member-1", assistant_notes: "Alex Scout" } as TerrainEventScheduleItem],
+    } as TerrainEvent;
+
+    const records = readPresentedRecords(legacyEvent);
+
+    expect(records).toHaveLength(1);
+    expect(records[0].guid).toBe(GUID_A);
+    expect(records[0].date).toBeInstanceOf(Date);
+  });
+
+  it("returns nothing for an absent event", () => {
+    expect(readPresentedRecords(undefined)).toEqual([]);
+  });
+});
+
+describe("awardStorageEvent — lastWrittenAt", () => {
+  it("reports the most recent schedule item timestamp", () => {
+    const storeEvent = {
+      schedule_items: [
+        { description: "x", start_datetime: "2026-09-27T09:41:09+10:00" },
+        { description: "y", start_datetime: "2026-09-27T11:15:00+10:00" },
+      ] as TerrainEventScheduleItem[],
+    } as TerrainEvent;
+
+    expect(lastWrittenAt(storeEvent)?.toISOString()).toBe(new Date("2026-09-27T11:15:00+10:00").toISOString());
+  });
+
+  it("returns null when there is nothing to read", () => {
+    expect(lastWrittenAt(undefined)).toBeNull();
+    expect(lastWrittenAt({ schedule_items: [] } as unknown as TerrainEvent)).toBeNull();
+  });
+
+  it("ignores unparseable timestamps rather than returning an invalid date", () => {
+    const storeEvent = { schedule_items: [{ description: "x", start_datetime: "not a date" }] as TerrainEventScheduleItem[] } as TerrainEvent;
+
+    expect(lastWrittenAt(storeEvent)).toBeNull();
   });
 });
 

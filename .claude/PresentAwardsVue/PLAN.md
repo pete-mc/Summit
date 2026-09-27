@@ -219,10 +219,20 @@ SVG *is* the better format, so the upgrade worth making is **local SVGs** — sa
 today, sharper rendering. That would only change if Terrain turns out to serve a stable unhashed
 path.
 
+### Concurrent saves — resolved
+
+Built 2026-09-27, see `PLAN_STAGE_8_CONCURRENT_SAVE.md`. Saves now re-read immediately before
+writing, detect another leader's changes via a content hash, and merge rather than overwrite —
+comparing each save against the base that user loaded, so only their deliberate changes apply.
+
+This **narrows** the loss window from minutes to a single round trip; it does not close it, since
+Terrain offers no conditional write. Two leaders saving within the same few hundred milliseconds,
+on the same award, in opposite directions, still resolves last-write-wins. Do not describe this
+as making concurrent saves safe.
+
 ### Still open
 
-- **Concurrent-save clobbering.** Options were requested and have not yet been written up. See
-  the entry in `.claude/DEV_NOTES.md`.
+- Nothing outstanding on this page.
 
 ## Key references
 

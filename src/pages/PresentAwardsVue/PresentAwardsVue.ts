@@ -22,6 +22,15 @@ interface ContentInstance {
   $destroy(): void;
 }
 
+/**
+ * What a save turned out to be: a failure, an ordinary success, or a success that had to merge
+ * with someone else's concurrent changes.
+ */
+export interface PresentAwardsSaveOutcome {
+  error?: string;
+  mergeNotice?: string;
+}
+
 function data() {
   return {
     items: [] as SummitAchievement[],
@@ -72,24 +81,31 @@ export default defineComponent({
     /**
      * Writes the presented awards back to the storage event.
      *
-     * Returns null on success, or a message describing the failure — the content component turns
-     * that into the on-screen feedback. The React page cannot report either outcome, because it
-     * never holds the promise (see awardStorageEvent.ts).
+     * Returns an error message, a merge notice, or null for an ordinary save — the content
+     * component turns that into the on-screen feedback. The React page cannot report any of
+     * these, because it never holds the promise (see awardStorageEvent.ts).
      */
-    async saveAwards(presentedItems: SummitAchievement[]): Promise<string | null> {
+    async saveAwards(presentedItems: SummitAchievement[]): Promise<PresentAwardsSaveOutcome> {
       try {
         const result = await savePresentedAwards(this.storeEvent, presentedItems);
         if (!result.ok) {
           logger.error("failed to save presented awards:", result.rawMessage);
-          return result.topLevelMessages.join(" ");
+          return { error: result.topLevelMessages.join(" ") };
         }
         // Reload so previouslyPresented, and the edit state seeded from it, reflect what is now
         // actually stored rather than what was on screen when Save was pressed.
         await this.loadAwards();
-        return null;
+
+        // A merge means the screen the user was looking at was not the whole picture, so say so
+        // rather than reporting a plain "Saved."
+        if (result.mergedWith !== undefined) {
+          const at = result.mergedWith ? ` at ${result.mergedWith.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : "";
+          return { mergeNotice: `Saved. Someone else had also made changes${at}; both sets have been kept.` };
+        }
+        return {};
       } catch (e) {
         logger.error("failed to save presented awards:", e);
-        return e instanceof Error ? e.message : String(e);
+        return { error: e instanceof Error ? e.message : String(e) };
       }
     },
     mountContentComponent() {

@@ -60,7 +60,7 @@ function makeItem(id: string, options: { memberId?: string; name?: string; award
  * project, since Jest here cannot import .vue files.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mountContent(items: SummitAchievement[], onSave?: (presented: SummitAchievement[]) => Promise<string | null>, onReload?: () => Promise<void>): any {
+function mountContent(items: SummitAchievement[], onSave?: (presented: SummitAchievement[]) => Promise<{ error?: string; mergeNotice?: string }>, onReload?: () => Promise<void>): any {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const Ctor: any = Vue.extend(PresentAwardsVueContent as any);
   return new Ctor({ propsData: { items, loadState: "ready", onSave, onReload } });
@@ -164,7 +164,7 @@ describe("PresentAwardsVueContent — previously presented visibility", () => {
   it("still saves a hidden award that remains ticked", async () => {
     // Hiding a row must not silently drop it from the next save — the storage event is a full
     // replace, so an omitted row would be erased.
-    const onSave = jest.fn().mockResolvedValue(null);
+    const onSave = jest.fn().mockResolvedValue({});
     const content = mountContent([makeItem("a", { alreadyStored: true, presentedOn: "01/02/2026" })], onSave);
 
     expect(content.visibleItems).toEqual([]);
@@ -402,7 +402,7 @@ describe("PresentAwardsVueContent — saving", () => {
   });
 
   it("saves the selected awards with their edited dates applied", async () => {
-    const onSave = jest.fn().mockResolvedValue(null);
+    const onSave = jest.fn().mockResolvedValue({});
     const item = makeItem("a", { presentedOn: "01/02/2026" });
     const content = mountContent([item], onSave);
 
@@ -417,7 +417,7 @@ describe("PresentAwardsVueContent — saving", () => {
   });
 
   it("excludes unticked awards from the saved payload", async () => {
-    const onSave = jest.fn().mockResolvedValue(null);
+    const onSave = jest.fn().mockResolvedValue({});
     const presented = makeItem("a", { presentedOn: "01/02/2026" });
     const other = makeItem("b", { presentedOn: "02/02/2026" });
     const content = mountContent([presented, other], onSave);
@@ -428,8 +428,21 @@ describe("PresentAwardsVueContent — saving", () => {
     expect((onSave.mock.calls[0][0] as SummitAchievement[]).map((entry) => entry.id)).toEqual(["a"]);
   });
 
+  it("tells the user when their save had to be merged with someone else's", async () => {
+    // A merge means the screen they were looking at was not the whole picture, so a plain
+    // "Saved." would be misleading.
+    const notice = "Saved. Someone else had also made changes at 9:41 am; both sets have been kept.";
+    const onSave = jest.fn().mockResolvedValue({ mergeNotice: notice });
+    const content = mountContent([makeItem("a", { presentedOn: "01/02/2026" })], onSave);
+
+    await content.onSaveClick();
+
+    expect(content.feedback).toBe(notice);
+    expect(content.feedback).not.toBe(SAVED_MESSAGE);
+  });
+
   it("reports a failure message rather than silently swallowing it", async () => {
-    const onSave = jest.fn().mockResolvedValue("Request failed with status 500");
+    const onSave = jest.fn().mockResolvedValue({ error: "Request failed with status 500" });
     const content = mountContent([makeItem("a", { presentedOn: "01/02/2026" })], onSave);
 
     await content.onSaveClick();

@@ -12,6 +12,8 @@ import { createLogger } from "@/helpers";
 const logger = createLogger("PresentAwardsVueContent");
 
 const FEEDBACK_TIMEOUT_MS = 4000;
+/** Longer, because a merge notice reports something the user did not already know. */
+const MERGE_FEEDBACK_TIMEOUT_MS = 10000;
 
 export const NOTHING_SELECTED_MESSAGE = "No new awards were selected as presented.";
 export const SAVED_MESSAGE = "Saved.";
@@ -51,7 +53,7 @@ export default defineComponent({
   props: {
     items: { type: Array as PropType<SummitAchievement[]>, default: () => [] },
     loadState: { type: String, default: "loading" },
-    onSave: { type: Function as PropType<(presentedItems: SummitAchievement[]) => Promise<string | null>>, default: undefined },
+    onSave: { type: Function as PropType<(presentedItems: SummitAchievement[]) => Promise<{ error?: string; mergeNotice?: string }>>, default: undefined },
     onReload: { type: Function as PropType<() => Promise<void>>, default: undefined },
   },
   data() {
@@ -186,12 +188,12 @@ export default defineComponent({
       this.groupByMember = filters.groupByMember;
       this.persistFilters();
     },
-    showFeedback(message: string) {
+    showFeedback(message: string, timeoutMs: number = FEEDBACK_TIMEOUT_MS) {
       if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
       this.feedback = message;
       this.feedbackTimer = setTimeout(() => {
         this.feedback = "";
-      }, FEEDBACK_TIMEOUT_MS);
+      }, timeoutMs);
     },
     /**
      * Export rows carry the value currently ON SCREEN for the Presented column, not the value
@@ -264,8 +266,17 @@ export default defineComponent({
 
       this.isSaving = true;
       try {
-        const error = this.onSave ? await this.onSave(presentedItems) : null;
-        this.showFeedback(error ? `Save failed: ${error}` : SAVED_MESSAGE);
+        const outcome = this.onSave ? await this.onSave(presentedItems) : {};
+        // A merge notice is already a full sentence about what happened, so it replaces the plain
+        // "Saved." rather than being appended — and it stays up longer, since it is telling the
+        // user something they did not know rather than confirming something they just did.
+        if (outcome.error) {
+          this.showFeedback(`Save failed: ${outcome.error}`);
+        } else if (outcome.mergeNotice) {
+          this.showFeedback(outcome.mergeNotice, MERGE_FEEDBACK_TIMEOUT_MS);
+        } else {
+          this.showFeedback(SAVED_MESSAGE);
+        }
       } finally {
         this.isSaving = false;
       }

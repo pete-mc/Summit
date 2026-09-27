@@ -33,6 +33,10 @@ export const STORAGE_EVENT_DATA_VERSION = "2";
 const STORAGE_EVENT_WINDOW_START = "2100-01-01T00:00:00";
 const STORAGE_EVENT_WINDOW_END = "2100-01-30T00:00:00";
 
+/** The format SummitAchievement.presented carries. Declared here so this service does not depend
+ *  on a page component for it. */
+const DISPLAY_DATE_FORMAT = "DD/MM/YYYY";
+
 export interface PresentedAwardsLoad {
   /** The storage event, or undefined if this unit has never presented anything. */
   storeEvent: TerrainEvent | undefined;
@@ -74,22 +78,167 @@ export function readPresentedGuids(storeEvent: TerrainEvent | undefined): { guid
 }
 
 /**
+ * One presented award, in the minimal form the storage event needs.
+ *
+ * The merge works in these rather than in SummitAchievement, because an award merged in from
+ * ANOTHER user's save exists only as packed data in their schedule item — there is no
+ * SummitAchievement for it in this user's session unless they happen to have loaded the same row.
+ * Everything the payload builder needs is recoverable from the stored item: the packed
+ * description carries the guid and date, `leader_notes` the member id, `assistant_notes` the name.
+ */
+export interface PresentedAwardRecord {
+  guid: string;
+  date: Date;
+  memberid: string;
+  membername: string;
+}
+
+/**
+ * Reads a storage event as full award records, preserving which member each award belongs to.
+ *
+ * readPresentedGuids() deliberately flattens that away, because its callers only ask "is this
+ * guid presented?". The merge needs more: it has to write back other users' awards untouched, and
+ * that requires their member attribution to survive the round trip.
+ *
+ * Falls back to the event's own last-written time for a v1 award, which stored no date.
+ */
+export function readPresentedRecords(storeEvent: TerrainEvent | undefined): PresentedAwardRecord[] {
+  if (!storeEvent?.schedule_items) return [];
+
+  const isCurrentVersion = storeEvent.equipment_notes === STORAGE_EVENT_DATA_VERSION;
+  const fallbackDate = lastWrittenAt(storeEvent) ?? new Date();
+
+  return storeEvent.schedule_items.flatMap((item) => {
+    const unpacked = isCurrentVersion ? reconstructGuidsAndDates([item.description]) : reconstructGuids([item.description]).map((guid) => ({ guid, date: null as Date | null }));
+
+    return unpacked.map((entry) => ({
+      guid: entry.guid,
+      date: entry.date ?? fallbackDate,
+      memberid: item.leader_notes ?? "",
+      membername: item.assistant_notes ?? "",
+    }));
+  });
+}
+
+/**
+ * When this storage event was last written, or null if it has never been.
+ *
+ * buildStorageEventPayload stamps every schedule item's start_datetime with moment() at save
+ * time, so every save rewrites them all to "now" — which makes the latest one a de-facto
+ * "last written at" clock. Not used to DETECT a concurrent save (the content hash does that, and
+ * catches changes within the same second), but it lets the user be told when the other save
+ * happened.
+ */
+export function lastWrittenAt(storeEvent: TerrainEvent | undefined): Date | null {
+  const times = (storeEvent?.schedule_items ?? []).map((item) => new Date(item.start_datetime).getTime()).filter((time) => !Number.isNaN(time));
+
+  return times.length > 0 ? new Date(Math.max(...times)) : null;
+}
+
+/**
+ * Fingerprint of a storage event's contents, for detecting that someone else has written since we
+ * read it.
+ *
+ * Deliberately derived from the data rather than stored as a counter: a counter only records
+ * writes that went through this code, so an older Summit build, the legacy page, or a manual edit
+ * would leave it stale — and it would fail while still appearing to work. A content hash is
+ * correct by construction, whoever wrote and however.
+ *
+ * FNV-1a. This detects accidental concurrent edits, not tampering; the merge is conservative
+ * anyway, and two genuinely different award sets colliding is vanishingly unlikely.
+ */
+export function hashStorageEvent(storeEvent: TerrainEvent | undefined): string {
+  // Sorted so an insertion order change alone doesn't read as a content change — the packed
+  // descriptions are what matter, not which schedule item they landed in.
+  const content = (storeEvent?.schedule_items ?? [])
+    .map((item) => item.description)
+    .sort()
+    .join("|");
+
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < content.length; i++) {
+    hash ^= content.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, "0");
+}
+
+/**
+ * Reconciles this user's save against what is on the server now, keeping both sets of work.
+ *
+ * Compares what the user is saving against THE BASE THEY LOADED, so only their deliberate
+ * changes are applied on top of the current server state. Everything they merely carried along
+ * unchanged has no effect, and other users' awards pass through untouched.
+ *
+ * That distinction is what resolves the one genuinely divergent case. Two users working from the
+ * same base can only move an award the same direction — both ticking, or both unticking — which
+ * merges trivially. Divergence needs different bases, i.e. a third save in between:
+ *
+ *   09:00  Alice loads          → award X is "not presented"
+ *   09:05  Carol ticks X, saves → X is now presented
+ *   09:06  Bob loads            → X is "presented"
+ *   09:10  Alice ticks X        → acting on stale data; X was already presented
+ *   09:11  Bob unticks X        → sees it presented, judges it wrong, corrects it
+ *
+ * Alice's set contains X but so did nothing she changed — X was not in her base, yet she "added"
+ * something already true, so the union absorbs it harmlessly. Bob's base HAD X and his save omits
+ * it, so he deliberately removed it, and that removal wins. No precedence rule is needed; the
+ * diff distinguishes a decision from inherited state.
+ *
+ * Irreducible case, accepted: two users changing the same award in opposite directions, from
+ * different bases, within the few hundred milliseconds between the re-read and the write. Both
+ * intents are real and simultaneous with no basis to choose, so last write wins. Closing that
+ * would need a server-side conditional write, which Terrain does not offer.
+ */
+export function mergePresentedAwards(base: PresentedAwardRecord[], mine: PresentedAwardRecord[], current: PresentedAwardRecord[]): PresentedAwardRecord[] {
+  const baseGuids = new Set(base.map((record) => record.guid));
+  const mineGuids = new Set(mine.map((record) => record.guid));
+
+  // What this user actually decided, as opposed to carried along unchanged.
+  const added = mine.filter((record) => !baseGuids.has(record.guid));
+  const removedGuids = new Set(base.filter((record) => !mineGuids.has(record.guid)).map((record) => record.guid));
+
+  const result = new Map<string, PresentedAwardRecord>();
+  current.forEach((record) => result.set(record.guid, record));
+  // This user's own edits win over the server's copy of the same award, so a date they changed
+  // is not silently reverted to whatever was already stored.
+  mine.filter((record) => !removedGuids.has(record.guid) && result.has(record.guid)).forEach((record) => result.set(record.guid, record));
+  added.forEach((record) => result.set(record.guid, record));
+  removedGuids.forEach((guid) => result.delete(guid));
+
+  return Array.from(result.values());
+}
+
+/**
  * Builds the full storage-event payload from the complete list of presented awards.
  *
  * Note this is a whole-event replacement, not a merge: the caller must pass EVERY award that
- * should remain presented, not just newly-ticked ones. Two leaders with the page open at once
- * will therefore have the later save win and silently discard the earlier one — a known,
- * pre-existing limitation carried over as-is from the React page (see .claude/DEV_NOTES.md).
+ * should remain presented. savePresentedAwards() handles the merging before calling this.
  */
 export function buildStorageEventPayload(newItems: SummitAchievement[]): TerrrainPostEvent {
+  return buildStorageEventPayloadFromRecords(newItems.map(toPresentedAwardRecord));
+}
+
+/** The storage-event form of a row the user has ticked. */
+export function toPresentedAwardRecord(item: SummitAchievement): PresentedAwardRecord {
+  return {
+    guid: item.id,
+    date: moment(item.presented, DISPLAY_DATE_FORMAT).toDate(),
+    memberid: item.memberid,
+    membername: item.member,
+  };
+}
+
+/** As buildStorageEventPayload, but over the merge's own record form. */
+export function buildStorageEventPayloadFromRecords(records: PresentedAwardRecord[]): TerrrainPostEvent {
   // Group the presented awards by member.
   const presentedRecordsByMember = [] as { memberid: string; membername: string; awards: { guid: string; date: Date }[] }[];
-  newItems.forEach((item) => {
+  records.forEach((item) => {
     const existing = presentedRecordsByMember.find((i) => i.memberid === item.memberid);
     if (existing) {
-      existing.awards.push({ guid: item.id, date: moment(item.presented, "DD/MM/YYYY").toDate() });
+      existing.awards.push({ guid: item.guid, date: item.date });
     } else {
-      presentedRecordsByMember.push({ memberid: item.memberid, membername: item.member, awards: [{ guid: item.id, date: moment(item.presented, "DD/MM/YYYY").toDate() }] });
+      presentedRecordsByMember.push({ memberid: item.memberid, membername: item.membername, awards: [{ guid: item.guid, date: item.date }] });
     }
   });
 
@@ -175,8 +324,43 @@ export async function savePresentedAwards(storeEvent: TerrainEvent | undefined, 
     };
   }
 
-  const body = JSON.stringify(buildStorageEventPayload(newItems));
-  return storeEvent?.id ? await updateEvent(storeEvent.id, body) : await createNewEvent(body);
+  if (!storeEvent?.id) {
+    // Nothing stored yet, so there is nothing to merge against.
+    return await createNewEvent(JSON.stringify(buildStorageEventPayload(newItems)));
+  }
+
+  const base = readPresentedRecords(storeEvent);
+  const mine = newItems.map(toPresentedAwardRecord);
+  const baseHash = hashStorageEvent(storeEvent);
+
+  // Re-read immediately before writing, so the window in which a concurrent save can slip through
+  // is the round trip below rather than the minutes a leader leaves the page open.
+  const latest = await fetchActivity(storeEvent.id);
+
+  // A failed re-read must not be read as "the event is now empty" — merging into that would
+  // produce a wipe. Fail loudly instead.
+  if (!latest) {
+    return saveFailure("Could not check for other changes before saving. Nothing was saved — please try again.");
+  }
+
+  const someoneElseSaved = hashStorageEvent(latest) !== baseHash;
+  const toWrite = someoneElseSaved ? mergePresentedAwards(base, mine, readPresentedRecords(latest)) : mine;
+
+  if (someoneElseSaved) {
+    logger.info("merging with a concurrent save", { at: lastWrittenAt(latest)?.toISOString() });
+  }
+
+  const result = await updateEvent(storeEvent.id, JSON.stringify(buildStorageEventPayloadFromRecords(toWrite)));
+  if (!result.ok || !someoneElseSaved) {
+    return result;
+  }
+
+  return { ok: true, mergedWith: lastWrittenAt(latest) };
+}
+
+function saveFailure(message: string): SaveEventResult {
+  logger.error(message);
+  return { ok: false, status: 0, topLevelMessages: [message], fieldErrors: {}, rawMessage: message };
 }
 
 /**

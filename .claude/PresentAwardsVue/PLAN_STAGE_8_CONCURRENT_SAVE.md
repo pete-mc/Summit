@@ -1,7 +1,7 @@
 # Stage 8 — Concurrent saves
 
-**Status:** the empty-save guard is **built** (2026-09-27). The merge/hash work is still planned,
-not built.
+**Status:** **complete** (2026-09-27). Empty-save guard, content-hash detection and the merge are
+all built. Two things changed during implementation — see "Deviations from this plan" at the foot.
 
 Addresses the long-standing note in `.claude/DEV_NOTES.md`:
 
@@ -205,3 +205,57 @@ Merge logic is pure set algebra over GUID arrays, so it tests directly with no D
 **The legacy React page shares this service**, so it inherits the protection. It still cannot
 *report* a merge, because it never holds the save promise (see `awardStorageEvent.ts`) — its saves
 will silently do the right thing, which is a strict improvement on silently doing the wrong one.
+
+## Deviations from this plan, as built
+
+**1. The merge works in award records, not GUIDs.**
+
+The plan's algebra is over GUID sets, but `buildStorageEventPayload` needs `memberid` and
+`membername` per award to group schedule items — and an award merged in from *another* user's
+save exists only as packed data in their schedule item, with no `SummitAchievement` for it in this
+user's session.
+
+Recoverable from the stored item: the packed description carries guid and date, `leader_notes` the
+member id, `assistant_notes` the name. So `PresentedAwardRecord` carries all four,
+`readPresentedRecords()` reads them (where `readPresentedGuids()` flattens that away), and
+`buildStorageEventPayloadFromRecords()` writes them back. `buildStorageEventPayload()` keeps its
+old signature and delegates, so the React page and existing tests are untouched.
+
+Without this the merge compiles fine and silently loses other users' member attribution.
+
+**2. No retry.**
+
+The plan called for one retry when the hash moves again mid-save. Built and then removed: it added
+a confirm-read, a second merge and a loop guard, to cover a window the re-read has already
+narrowed to a single round trip — and the honest answer in that window is last-write-wins anyway,
+which is what the plan's "irreducible case" section already accepts. The retry was complexity
+buying almost nothing.
+
+A failed *re-read* is still handled explicitly, and is the more important case: it must not be
+read as "the event is now empty", since merging into that would produce a wipe. It fails loudly
+instead.
+
+**3. The merge prefers this user's own dates.**
+
+Not in the plan. If both the server copy and this user's save hold the same award, this user's
+record wins, so a presentation date they edited is not silently reverted to the stored one.
+
+## What shipped
+
+`awardStorageEvent.ts`: `PresentedAwardRecord`, `readPresentedRecords`, `lastWrittenAt`,
+`hashStorageEvent`, `mergePresentedAwards`, `toPresentedAwardRecord`,
+`buildStorageEventPayloadFromRecords`, and the re-read/compare/merge path in
+`savePresentedAwards`.
+
+`saveEventResult.ts`: `mergedWith?: Date | null` on the success case.
+
+`PresentAwardsVue.ts`: `saveAwards` returns `PresentAwardsSaveOutcome` (`{ error?, mergeNotice? }`)
+rather than `string | null`, so a merge can be reported distinctly from an ordinary save.
+
+`PresentAwardsVueContent.ts`: a merge notice replaces "Saved." and stays up for 10s rather than 4s,
+since it reports something the user did not already know.
+
+**Tests:** 12 in `mergePresentedAwards.spec.ts` (both sides of the Alice/Bob/Carol case, member
+attribution surviving, date preference, no duplicates), plus hash/records/`lastWrittenAt` coverage
+in `awardStorageEvent.spec.ts`, and a merge-notice test on the content component. 610 total,
+609 passing — the one failure is the pre-existing UNC-path smoke test.
