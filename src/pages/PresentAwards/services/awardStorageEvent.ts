@@ -2,9 +2,11 @@ import moment from "moment";
 import { TerrainEvent, TerrainEventScheduleItem, TerrainUnitMember, TerrrainPostEvent } from "@/types/terrainTypes";
 import { fetchMemberEvents, fetchUnitAchievementsFilterd, fetchActivity, updateEvent, createNewEvent, fetchUnitMembers } from "@/services";
 import type { SaveEventResult } from "@/services/saveEventResult";
-import { TerrainState, processGuidsAndDates, reconstructGuids, reconstructGuidsAndDates } from "@/helpers";
+import { TerrainState, createLogger, processGuidsAndDates, reconstructGuids, reconstructGuidsAndDates } from "@/helpers";
 import { TerrainAchievementsType } from "@/shared";
 import SummitAchievement from "../models/SummitAchievement";
+
+const logger = createLogger("awardStorageEvent");
 
 /**
  * Terrain has no API for "this award has been physically handed to the member", so Summit stores
@@ -161,6 +163,49 @@ export function buildStorageEventPayload(newItems: SummitAchievement[]): Terrrai
  * from a promise nobody held.
  */
 export async function savePresentedAwards(storeEvent: TerrainEvent | undefined, newItems: SummitAchievement[]): Promise<SaveEventResult> {
+  const guardFailure = checkNotAnAccidentalWipe(storeEvent, newItems);
+  if (guardFailure) {
+    logger.error("refused to save:", guardFailure);
+    return {
+      ok: false,
+      status: 0,
+      topLevelMessages: [guardFailure],
+      fieldErrors: {},
+      rawMessage: guardFailure,
+    };
+  }
+
   const body = JSON.stringify(buildStorageEventPayload(newItems));
   return storeEvent?.id ? await updateEvent(storeEvent.id, body) : await createNewEvent(body);
+}
+
+/**
+ * Refuses a save that would wipe an existing presentation history.
+ *
+ * The save is a whole-event replace, so writing an empty list over a populated event erases every
+ * presentation record for the unit — irreversibly, since the previous list is simply gone. That
+ * is a legitimate action when a leader genuinely unticks everything, and a catastrophe when it
+ * happens because the page loaded without its data (a failed or partial fetch leaves
+ * `loadPresentedAwards` unable to distinguish "nothing has ever been presented" from "we could
+ * not read it").
+ *
+ * Callers pass the items they intend to store, so the two cases are told apart by whether the UI
+ * had the stored awards in hand at all: a deliberate clear-out comes from a page that loaded the
+ * history and then removed it, which means `items` was non-empty at some point. This function can
+ * only see the outgoing list, so it takes the conservative reading and asks the user to confirm
+ * via a reload rather than guessing.
+ *
+ * Returns a message describing the refusal, or null to proceed.
+ */
+export function checkNotAnAccidentalWipe(storeEvent: TerrainEvent | undefined, newItems: SummitAchievement[]): string | null {
+  if (newItems.length > 0) {
+    return null;
+  }
+
+  const storedCount = readPresentedGuids(storeEvent).length;
+  if (storedCount === 0) {
+    return null;
+  }
+
+  return `This would clear all ${storedCount} previously presented award${storedCount === 1 ? "" : "s"} for the unit. If that is what you want, untick them individually; otherwise reload the page and try again.`;
 }

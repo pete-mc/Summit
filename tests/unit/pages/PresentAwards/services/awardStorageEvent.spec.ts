@@ -13,7 +13,7 @@ jest.mock("@/helpers/TerrainState", () => ({
   },
 }));
 
-import { buildStorageEventPayload, readPresentedGuids, STORAGE_EVENT_DATA_VERSION, STORAGE_EVENT_TITLE } from "@/pages/PresentAwards/services/awardStorageEvent";
+import { buildStorageEventPayload, checkNotAnAccidentalWipe, readPresentedGuids, STORAGE_EVENT_DATA_VERSION, STORAGE_EVENT_TITLE } from "@/pages/PresentAwards/services/awardStorageEvent";
 
 const GUID_A = "11111111-2222-3333-4444-555555555555";
 const GUID_B = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
@@ -99,6 +99,58 @@ describe("awardStorageEvent — buildStorageEventPayload", () => {
 
   it("produces an empty schedule item list when nothing is presented", () => {
     expect(buildStorageEventPayload([]).schedule_items).toEqual([]);
+  });
+});
+
+describe("awardStorageEvent — checkNotAnAccidentalWipe", () => {
+  /** A stored event holding one presented award, as a populated storage event would look. */
+  function makePopulatedEvent(): TerrainEvent {
+    return {
+      equipment_notes: STORAGE_EVENT_DATA_VERSION,
+      schedule_items: buildStorageEventPayload([makePresentedItem(GUID_A, "member-1", "Alex", "05/03/2026")]).schedule_items,
+    } as TerrainEvent;
+  }
+
+  it("refuses an empty save against a populated event", () => {
+    // The save is a whole-event replace, so this would erase the unit's entire history.
+    const refusal = checkNotAnAccidentalWipe(makePopulatedEvent(), []);
+
+    expect(refusal).not.toBeNull();
+    expect(refusal).toContain("1 previously presented award");
+  });
+
+  it("counts the awards at risk in the message", () => {
+    const storeEvent = {
+      equipment_notes: STORAGE_EVENT_DATA_VERSION,
+      schedule_items: buildStorageEventPayload([makePresentedItem(GUID_A, "member-1", "Alex", "05/03/2026"), makePresentedItem(GUID_B, "member-2", "Sam", "06/03/2026")]).schedule_items,
+    } as TerrainEvent;
+
+    expect(checkNotAnAccidentalWipe(storeEvent, [])).toContain("2 previously presented awards");
+  });
+
+  it("allows a normal save that stores awards", () => {
+    expect(checkNotAnAccidentalWipe(makePopulatedEvent(), [makePresentedItem(GUID_A, "member-1", "Alex", "05/03/2026")])).toBeNull();
+  });
+
+  it("allows an empty save when nothing was stored", () => {
+    // A unit that has never presented anything has nothing to lose.
+    const emptyEvent = { equipment_notes: STORAGE_EVENT_DATA_VERSION, schedule_items: [] } as unknown as TerrainEvent;
+
+    expect(checkNotAnAccidentalWipe(emptyEvent, [])).toBeNull();
+  });
+
+  it("allows an empty save when no storage event exists yet", () => {
+    expect(checkNotAnAccidentalWipe(undefined, [])).toBeNull();
+  });
+
+  it("protects a legacy version 1 event too", () => {
+    // Version 1 packed guids without dates; the guard must read both formats.
+    const legacyEvent = {
+      equipment_notes: "1",
+      schedule_items: [{ description: processGuids([GUID_A])[0] } as TerrainEventScheduleItem],
+    } as TerrainEvent;
+
+    expect(checkNotAnAccidentalWipe(legacyEvent, [])).not.toBeNull();
   });
 });
 

@@ -15,8 +15,7 @@
 
 - Coonsider adding checksum in calendar to avoid "if two Leaders have the Present Awards page open at the same time, whichever one saves last wins and silently discards the other's changes — there's no merge, just a full replace." If you try and save with wrong version it would reload and merge remote and local changes, with warning.
 
-- Consider better grid:
-  - Badge icon for "Badger".
+- Move badge to before Award column.
 
 Notes from Terrain help:
 Scouts | Terrain supports you along the way of achieving a badge or element of the Achievement Pathways, but it does not keep track of whether an individual has been handed or ‘awarded’ their badge or achievement.
@@ -34,5 +33,10 @@ The system can’t record that a youth member has had the achievement awarded to
 ## OAS Progression
 
 - Add ability to switch between Group by Skill or Member
+
   - Skill keeps icon
   - Name has no icon. Sortby still works.
+
+  ## I - Statements
+
+  - Filter area doesn't have same space below it, as per OAS Progession, Present Awards etc. This layout should be standard for every page we make.
