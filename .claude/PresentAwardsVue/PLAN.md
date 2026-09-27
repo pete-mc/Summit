@@ -1,9 +1,10 @@
 # Present Awards (Vue) — overview plan
 
-**Status:** Complete and promoted, 2026-09-26. The Vue page now owns
+**Status:** Complete, promoted and verified live, 2026-09-28. The Vue page owns
 `/summit/tools/PresentAwards`; the React original is archived at
-`/summit/tools/presentawards-legacy`. Grouping by member and a badge-icon column were added on
-top of the planned five stages. See **Outcome** at the foot of this file.
+`/summit/tools/presentawards-legacy`. Grouping by member, a badge-icon column and
+concurrent-save merging were added on top of the planned five stages. Nothing outstanding —
+see **Outcome** at the foot of this file.
 
 ## Context
 
@@ -232,7 +233,16 @@ as making concurrent saves safe.
 
 ### Still open
 
-- Nothing outstanding on this page.
+Nothing blocking. Two optional follow-ups:
+
+- **Local SVG badge artwork.** The nine OAS skill icons are PNGs. Local SVGs would render sharper
+  at any size for smaller files, with the same reliability — unlike Terrain's own hashed SVG URLs,
+  which were evaluated and rejected (see "Badge artwork" above). Needs the artwork exported into
+  `resources/`; the wiring is one line per file in `BADGE_ICON_FILENAMES`.
+- **`.claude/DEV_NOTES.md` is out of date.** Its Present Awards entries — grouping by member, and
+  the concurrent-save checksum — are both now done, and the "Badger" badge icon is partly done
+  (the column exists; non-OAS types show a placeholder until artwork is added). That file is
+  developer-only, so it is the user's to update rather than the agent's.
 
 ## Key references
 

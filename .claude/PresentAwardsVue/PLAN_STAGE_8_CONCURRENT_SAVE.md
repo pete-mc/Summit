@@ -259,3 +259,21 @@ since it reports something the user did not already know.
 attribution surviving, date preference, no duplicates), plus hash/records/`lastWrittenAt` coverage
 in `awardStorageEvent.spec.ts`, and a merge-notice test on the content component. 610 total,
 609 passing — the one failure is the pre-existing UNC-path smoke test.
+
+## Live verification (2026-09-28)
+
+Confirmed by the user against real unit data, using two concurrent browser sessions:
+
+- Saving from one session and loading in the other merged correctly.
+- Two saves roughly two seconds apart both survived — neither overwrote the other.
+
+**What the two-second result does and does not prove.** The race window is the gap between our
+re-read and our PATCH: one round trip, realistically 100–300ms. Two saves two seconds apart never
+overlap it — the second session's re-read happens after the first's write has landed, so it sees
+the new state and merges. That exercises the **merge path**, which is the thing that matters day
+to day, but it does not exercise the race.
+
+Hitting the unmerged case needs both PATCHes genuinely in flight at once, i.e. two clicks inside
+the same few hundred milliseconds. Hard to do deliberately, rare in practice, and still
+last-write-wins when it happens. Recorded so a future reader does not take this verification as
+evidence the race is closed — it is not, and cannot be without a server-side conditional write.
