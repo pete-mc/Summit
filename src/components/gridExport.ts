@@ -98,55 +98,88 @@ const cropCanvas = (source: HTMLCanvasElement, sourceY: number, sourceHeight: nu
   return slice;
 };
 
-/** Row class that introduces a new section (skill/patrol heading) rather than data. A whole
- *  section — the heading plus every data row until the next heading — is kept together on one
- *  page whenever it fits: the PREFERRED break points are only right before a heading row (never
- *  right after one either, which would strand it alone separated from its own data). */
-const SECTION_HEADING_ROW_SELECTOR = ".oas-heatmap-skill-title-row, .oas-heatmap-patrol-title-row";
+/**
+ * Top-level section heading: a skill when grouped by skill, a member when grouped by member.
+ * Breaking here keeps a whole section — heading plus all its rows — together on one page.
+ */
+const SECTION_HEADING_ROW_SELECTOR = ".oas-heatmap-skill-title-row";
+
+/**
+ * Sub-heading within a section: a patrol row, which only appears with "Break by patrol" on.
+ *
+ * Deliberately RANKED BELOW the section heading rather than treated as equivalent. When both were
+ * in one selector, a patrol row counted as a section boundary, so the algorithm would happily
+ * break right before one — splitting a skill across pages and stranding its heading at the foot
+ * of the previous page with nothing beneath it. A patrol is a subdivision *within* a skill, so it
+ * is only an acceptable break point when the skill itself is too tall to fit whole.
+ */
+const SUB_HEADING_ROW_SELECTOR = ".oas-heatmap-patrol-title-row";
 
 interface RowBreakPoints {
-  /** Section boundaries only (right before each heading, and the table's end) — tried first, so
-   *  a whole skill/patrol section stays on one page whenever it fits. */
+  /** Section boundaries only (right before each top-level heading, and the table's end) — tried
+   *  first, so a whole skill or member section stays on one page whenever it fits. */
   sectionBreaksPx: number[];
-  /** Every row boundary — the fallback when no section boundary fits within one page (e.g. a
-   *  single section taller than a full page), so a page still never cuts a row in half even
-   *  though it has to cut through the middle of that oversized section. */
+  /** Section boundaries plus patrol sub-headings — tried second, so an oversized skill splits at
+   *  a patrol rather than mid-patrol. Only differs from sectionBreaksPx when "Break by patrol"
+   *  is on. */
+  subSectionBreaksPx: number[];
+  /** Every row boundary — the last resort when not even one sub-section fits within a page, so a
+   *  page still never cuts a row in half. */
   rowBreaksPx: number[];
 }
 
 /**
  * Y-positions (in element CSS pixels, relative to the element's own top) that a page break may
- * land on, in two tiers — see RowBreakPoints. Empty arrays for a non-table element just mean
+ * land on, in three tiers — see RowBreakPoints. Empty arrays for a non-table element just mean
  * pagination behaves as a plain pixel slice.
  */
 const getRowBreakPoints = (element: HTMLElement): RowBreakPoints => {
   const rows = Array.from(element.querySelectorAll("tr"));
   if (rows.length === 0) {
-    return { sectionBreaksPx: [], rowBreaksPx: [] };
+    return { sectionBreaksPx: [], subSectionBreaksPx: [], rowBreaksPx: [] };
   }
 
   const containerTop = element.getBoundingClientRect().top;
   const rowBottomPx = (row: Element) => row.getBoundingClientRect().bottom - containerTop;
 
+  // A break lands on the bottom of the row BEFORE a heading, never after one — otherwise the
+  // heading is stranded at the foot of a page, separated from the rows it introduces.
   const sectionBreaksPx: number[] = [];
+  const subSectionBreaksPx: number[] = [];
   rows.forEach((row, index) => {
-    if (index === 0 || !row.matches(SECTION_HEADING_ROW_SELECTOR)) {
+    if (index === 0) {
       return;
     }
-    sectionBreaksPx.push(rowBottomPx(rows[index - 1]));
+    const previousBottom = rowBottomPx(rows[index - 1]);
+    if (row.matches(SECTION_HEADING_ROW_SELECTOR)) {
+      sectionBreaksPx.push(previousBottom);
+      subSectionBreaksPx.push(previousBottom);
+    } else if (row.matches(SUB_HEADING_ROW_SELECTOR)) {
+      subSectionBreaksPx.push(previousBottom);
+    }
   });
-  sectionBreaksPx.push(rowBottomPx(rows[rows.length - 1]));
+
+  const tableBottom = rowBottomPx(rows[rows.length - 1]);
+  sectionBreaksPx.push(tableBottom);
+  subSectionBreaksPx.push(tableBottom);
 
   const rowBreaksPx = rows.map(rowBottomPx);
 
-  return { sectionBreaksPx, rowBreaksPx };
+  return { sectionBreaksPx, subSectionBreaksPx, rowBreaksPx };
 };
 
 /**
- * Largest break point that still fits within `maxHeightPx` of `sourceY`, preferring a section
- * boundary (keeps a whole skill/patrol section on one page) and falling back to a plain row
- * boundary (never cuts a row in half, even if it has to cut through an oversized section), and
- * finally to the raw pixel limit if not even one row fits.
+ * Largest break point that still fits within `maxHeightPx` of `sourceY`, in descending order of
+ * preference:
+ *
+ *   1. a section boundary    — keeps a whole skill (or member) section on one page
+ *   2. a sub-section boundary — splits an oversized skill at a patrol rather than mid-patrol
+ *   3. any row boundary       — never cuts a row in half
+ *   4. the raw pixel limit    — when not even one row fits
+ *
+ * Tier 2 exists because patrol rows used to share tier 1: a patrol counted as a section boundary,
+ * so a skill would be split across pages with its heading stranded at the foot of the previous
+ * one, even when the whole skill would have fitted on the next page.
  */
 const resolveSliceHeightPx = (sourceY: number, maxHeightPx: number, canvasHeightPx: number, breaks: RowBreakPoints, scale: number): number => {
   // Guarantees forward progress even if maxHeightPx rounds to (near) zero on a very small page.
@@ -156,7 +189,7 @@ const resolveSliceHeightPx = (sourceY: number, maxHeightPx: number, canvasHeight
 
   const fitsWithinPage = (breakPoint: number) => breakPoint > sourceYUnscaled + 1 && breakPoint <= maxUnscaled;
 
-  const bestBreakUnscaled = breaks.sectionBreaksPx.filter(fitsWithinPage).pop() ?? breaks.rowBreaksPx.filter(fitsWithinPage).pop();
+  const bestBreakUnscaled = breaks.sectionBreaksPx.filter(fitsWithinPage).pop() ?? breaks.subSectionBreaksPx.filter(fitsWithinPage).pop() ?? breaks.rowBreaksPx.filter(fitsWithinPage).pop();
 
   if (bestBreakUnscaled === undefined) {
     return hardLimitPx;
