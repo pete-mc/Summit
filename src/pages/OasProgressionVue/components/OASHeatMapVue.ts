@@ -282,18 +282,38 @@ export default defineComponent({
       });
       return result;
     },
+
+    /**
+     * Column definitions, used only to tell v-data-table how many columns exist — the actual
+     * <thead> is hand-written in the header slot, because the stage-group row needs colspan,
+     * which Vuetify's own header renderer (one <th> per entry) cannot express.
+     */
+    dataTableHeaders(): Array<{ text: string; value: string; sortable: boolean }> {
+      return [{ text: "Member", value: "member", sortable: false }, { text: "Stage", value: "stage", sortable: false }, ...this.allStages.map((stage) => ({ text: String(stage), value: `stage-${stage}`, sortable: false }))];
+    },
+
+    /**
+     * v-data-table requires an `items` array, but the rows are rendered from `sections` in the
+     * body slot — one <tbody> per skill section, which the PDF export paginates on, where
+     * v-data-table emits only one. An entry per rendered member row keeps the component's own
+     * bookkeeping (empty-state detection, item counts) consistent with what is on screen.
+     */
+    flatRows(): Array<{ memberId: string }> {
+      return this.sections.flatMap((section) => section.patrolGroups.flatMap((group) => group.members.map((member) => ({ memberId: member.memberId }))));
+    },
   },
   methods: {
     /**
      * The <table> element the PDF export measures row geometry from.
      *
-     * A method rather than the `$refs.exportTable` the caller used to read directly, so the
-     * contract survives the table being rendered differently — a ref on a v-data-table resolves
-     * to the component instance, not an element, and that failure is silent (an empty PDF rather
-     * than an error). See OASHeatMapDataTableVue.ts for the variant that needs it.
+     * A method rather than the `$refs.exportTable` the caller used to read directly: a ref on a
+     * v-data-table resolves to the Vue component instance, not an element, and that failure would
+     * be silent — exportElementToPdf would find no <tr>s and emit an empty PDF rather than
+     * throwing. Asking the component for its table keeps the caller working regardless of how
+     * this one renders internally.
      */
     getExportTable(): HTMLTableElement | undefined {
-      return (this.$refs.exportTable as HTMLTableElement | undefined) ?? (this.$el as HTMLElement | undefined)?.querySelector("table") ?? undefined;
+      return (this.$el as HTMLElement | undefined)?.querySelector("table") ?? undefined;
     },
   },
 });

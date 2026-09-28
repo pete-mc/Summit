@@ -1,8 +1,6 @@
 import { defineComponent } from "vue";
 import type { PropType } from "vue";
-// SPIKE: swapped from ./OASHeatMapVue.vue so the v-data-table version can be compared live.
-// Revert this one line to go back to the hand-built table.
-import OASHeatMapVue from "./OASHeatMapDataTableVue.vue";
+import OASHeatMapVue from "./OASHeatMapVue.vue";
 import OASProgressionFiltersVue from "./OASProgressionFiltersVue.vue";
 import OASProgressionTableVue from "./OASProgressionTableVue.vue";
 import { filterOASProgressionRows } from "./OASProgressionTableVue";
