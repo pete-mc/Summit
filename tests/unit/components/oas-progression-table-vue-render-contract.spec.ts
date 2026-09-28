@@ -93,7 +93,9 @@ describe("OASProgressionTableVue render contract", () => {
     expect(source).toContain(':items="filteredItems"');
     expect(source).not.toContain(':search="search"');
     expect(source).toContain("#body.prepend");
-    expect(source).toContain('v-for="header in headers"');
+    // renderedHeaders, not headers: Vuetify removes the grouped column from its own header row,
+    // so iterating the raw list emits one <th> too many and shifts every filter box left.
+    expect(source).toContain('v-for="header in renderedHeaders"');
     expect(source).toContain(':value="columnFilters[header.value]');
     expect(source).toContain("onColumnFilterInput(header.value");
     expect(source).toContain("#item.answered");
@@ -121,9 +123,7 @@ describe("OASProgressionTableVue render contract", () => {
 
   it("both v-text-field's <input> and v-select's selected-value text override global 20px font-size rules (.v-application .theme--light.v-text-field input, .v-application .v-select__selection--comma), matched to the shared body text size", () => {
     const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASProgressionTableVue.vue"), "utf8");
-    expect(source).toMatch(
-      /\.oas-vue-column-filter-input\.v-text-field ::v-deep input,\s*\.oas-vue-column-filter-input\.v-select ::v-deep \.v-select__selection\s*\{[^}]*font-size:\s*var\(--oas-vue-font-size-body\)\s*!important/,
-    );
+    expect(source).toMatch(/\.oas-vue-column-filter-input\.v-text-field ::v-deep input,\s*\.oas-vue-column-filter-input\.v-select ::v-deep \.v-select__selection\s*\{[^}]*font-size:\s*var\(--oas-vue-font-size-body\)\s*!important/);
   });
 
   it("filter row opts out of v-data-table's own row-hover highlight, and filter boxes get a solid (not translucent) background — fixes the reported bug where boxes were invisible on a white row and only visible once the row's own hover state turned it grey", () => {

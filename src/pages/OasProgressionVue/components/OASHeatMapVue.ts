@@ -230,10 +230,17 @@ export default defineComponent({
      * "skill" (default) groups by skill/stream, listing members — the original layout, optionally
      * sub-grouped by patrol. "member" inverts it: a section per member listing their skills, with
      * no secondary grouping, since the heading is already a person.
+     *
+     * "none" is shared with the table view, which can be flat. A heat map cannot — it is always
+     * grouped by something — so it is treated as "skill" here rather than adding a third layout.
      */
-    groupBy: { type: String as PropType<"skill" | "member">, default: "skill" },
+    groupBy: { type: String as PropType<"skill" | "member" | "none">, default: "skill" },
   },
   computed: {
+    /** "none" has no heat-map meaning, so it falls back to the skill-first layout. */
+    isGroupedByMember(): boolean {
+      return this.groupBy === "member";
+    },
     grouped(): Record<string, ReturnType<typeof groupRowsForHeatMap>[string]> {
       return groupRowsForHeatMap(this.items, this.trunkStageCounts, this.members);
     },

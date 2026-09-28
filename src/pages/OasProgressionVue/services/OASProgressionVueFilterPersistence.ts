@@ -1,7 +1,11 @@
 export interface OASProgressionVueFilterState {
   viewMode: "heatmap" | "table";
-  /** "skill" keeps the original skill-first layout; "member" inverts it. Defaults to "skill". */
-  groupBy: "skill" | "member";
+  /**
+   * "skill" keeps the original skill-first layout; "member" inverts it; "none" leaves the table
+   * flat. Shared by both views so switching between them keeps the same organisation — the heat
+   * map has no ungrouped form, so it reads "none" as "skill". Defaults to "skill".
+   */
+  groupBy: "skill" | "member" | "none";
   memberFilter: string;
   hideLastName: boolean;
   useCodenames: boolean;

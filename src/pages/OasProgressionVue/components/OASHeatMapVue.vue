@@ -36,7 +36,7 @@
           <tr>
             <!-- The first column holds whatever is NOT the section heading: member names under a
                  skill heading, skill names under a member heading. -->
-            <th class="oas-heatmap-member-header">{{ groupBy === "member" ? "Skill" : "Member" }}</th>
+            <th class="oas-heatmap-member-header">{{ isGroupedByMember ? "Skill" : "Member" }}</th>
             <th class="oas-heatmap-highest-stage-header">Stage</th>
             <th v-for="stage in allStages" :key="stage" class="oas-heatmap-stage-group-header">
               {{ stage }}
@@ -54,7 +54,7 @@
         icon moves from the heading onto each row. No patrol sub-grouping — a member belongs to
         one patrol, so it is shown beside their name rather than dividing anything.
       -->
-      <template v-if="groupBy === 'member'" #body>
+      <template v-if="isGroupedByMember" #body>
         <tbody v-for="section in memberSections" :key="section.memberId" :data-oas-member-section="section.memberId">
           <tr class="oas-heatmap-skill-title-row">
             <td class="oas-heatmap-skill-title" :colspan="allStages.length + 2">

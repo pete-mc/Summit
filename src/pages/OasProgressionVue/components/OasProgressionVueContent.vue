@@ -44,7 +44,10 @@
         />
       </template>
 
-      <OASProgressionTableVue v-else :items="items" :column-filters.sync="tableColumnFilters" />
+      <!-- One Group by setting shared with the heat map, so switching views keeps the same
+           organisation. "None" only means anything here — a heat map is always grouped by
+           something, and treats it as Skill. -->
+      <OASProgressionTableVue v-else :items="items" :column-filters.sync="tableColumnFilters" :group-by="filters.groupBy" />
     </div>
   </v-app>
 </template>
