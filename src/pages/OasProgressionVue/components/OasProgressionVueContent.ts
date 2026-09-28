@@ -1,6 +1,8 @@
 import { defineComponent } from "vue";
 import type { PropType } from "vue";
-import OASHeatMapVue from "./OASHeatMapVue.vue";
+// SPIKE: swapped from ./OASHeatMapVue.vue so the v-data-table version can be compared live.
+// Revert this one line to go back to the hand-built table.
+import OASHeatMapVue from "./OASHeatMapDataTableVue.vue";
 import OASProgressionFiltersVue from "./OASProgressionFiltersVue.vue";
 import OASProgressionTableVue from "./OASProgressionTableVue.vue";
 import { filterOASProgressionRows } from "./OASProgressionTableVue";
@@ -15,7 +17,7 @@ import type { TerrainUnitMember } from "@/types/terrainTypes";
 const logger = createLogger("OasProgressionVueContent");
 
 interface HeatMapVueInstance {
-  $refs: { exportTable?: HTMLTableElement };
+  getExportTable(): HTMLTableElement | undefined;
 }
 
 // Matches OASProgressionTableVue.ts's own column set (same flat row shape), so the Table view's
@@ -123,7 +125,10 @@ export default defineComponent({
     },
     async onPdfExportClick() {
       const heatMap = this.$refs.heatMap as unknown as HeatMapVueInstance | undefined;
-      const table = heatMap?.$refs.exportTable;
+      // Asked for rather than reached into: how the heat map renders its table is its own
+      // business, and a ref would resolve to a component instance rather than an element if it
+      // ever renders through v-data-table.
+      const table = heatMap?.getExportTable();
       if (!table) {
         return;
       }

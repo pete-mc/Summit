@@ -1,22 +1,13 @@
 import OASHeatMapVue from "./OASHeatMapVue";
 
 /**
- * SPIKE — heat map rendered through v-data-table.
+ * Heat map rendered through v-data-table, so Terrain's own table styling is inherited rather than
+ * reimplemented in Summit's CSS.
  *
- * Extends the real heat map's options object rather than duplicating its ~250 lines of grouping,
- * filtering and cell-state logic, so this measures the RENDERING change and nothing else.
- *
- * See .claude/OASProgression/SPIKE_HEATMAP_DATATABLE.md for what this proved.
+ * Extends the real heat map's options object rather than duplicating its grouping, filtering and
+ * cell-state logic — only the rendering differs. See
+ * .claude/OASProgression/SPIKE_HEATMAP_DATATABLE.md.
  */
-
-interface SectionLike {
-  key: string;
-  skill: string;
-  iconUrl: string | null;
-  title: string;
-  patrolGroups: Array<{ patrolName: string; members: unknown[] }>;
-}
-
 export default {
   ...OASHeatMapVue,
   name: "OASHeatMapDataTableVue",
@@ -24,55 +15,43 @@ export default {
     ...OASHeatMapVue.computed,
 
     /**
-     * Headers exist only so v-data-table renders a <thead> with the right number of columns.
-     *
-     * Every one is `sortable: false`: sorting is disabled wholesale, because row order comes from
-     * sortMembers() with patrol grouping and codename handling, which Vuetify's comparator knows
-     * nothing about.
-     *
-     * NOTE what is missing — the real heat map's stage-group header uses colspan to span several
-     * stage columns under one label. v-data-table's header renderer emits one <th> per header
-     * with no colspan support, so reproducing that needs the `header` slot too, i.e. hand-writing
-     * the thead as well as the tbody.
+     * Column definitions, used only to tell v-data-table how many columns exist — the actual
+     * <thead> is hand-written in the header slot, because the stage-group row needs colspan.
      */
     dataTableHeaders(): Array<{ text: string; value: string; sortable: boolean }> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const stages = (this as any).allStages as number[];
-      return [
-        { text: "Member", value: "member", sortable: false },
-        { text: "Stage", value: "stage", sortable: false },
-        ...stages.map((stage) => ({ text: String(stage), value: `stage-${stage}`, sortable: false })),
-      ];
+      return [{ text: "Member", value: "member", sortable: false }, { text: "Stage", value: "stage", sortable: false }, ...stages.map((stage) => ({ text: String(stage), value: `stage-${stage}`, sortable: false }))];
     },
 
     /**
-     * v-data-table requires a flat `items` array, but the heat map's shape is three levels deep
-     * (section -> patrol group -> member row). This flattens it purely to satisfy that contract —
-     * the body slot then immediately un-flattens it via sectionsFrom() below.
-     *
-     * That round trip is the clearest evidence the component is being fought rather than used:
-     * the data is reshaped to enter it and reshaped back to render.
+     * v-data-table requires an `items` array, but the heat map's rows are rendered from its own
+     * `sections` tree in the body slot. One entry per rendered member row keeps the component's
+     * internal bookkeeping (empty-state detection, item counts) consistent with what is on screen
+     * without the rendering depending on it.
      */
-    flatRows(): Array<{ sectionKey: string }> {
+    flatRows(): Array<{ memberId: string }> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sections = (this as any).sections as SectionLike[];
-      return sections.flatMap((section) => section.patrolGroups.flatMap((group) => group.members.map(() => ({ sectionKey: section.key }))));
+      const sections = (this as any).sections as Array<{ patrolGroups: Array<{ members: Array<{ memberId: string }> }> }>;
+      return sections.flatMap((section) => section.patrolGroups.flatMap((group) => group.members.map((member) => ({ memberId: member.memberId }))));
     },
   },
   methods: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...(OASHeatMapVue as any).methods,
+    ...((OASHeatMapVue as any).methods ?? {}),
 
     /**
-     * Recovers the original section tree, ignoring the flat `items` the slot hands back.
+     * The <table> element the PDF export measures row geometry from.
      *
-     * The argument is accepted and discarded deliberately: it shows that nothing v-data-table
-     * does to `items` (sorting, filtering, pagination — all disabled above) is of any use here,
-     * so the rendering reads straight from the component's own `sections` computed.
+     * A `ref` on a v-data-table resolves to the Vue component instance, not an element, so the
+     * old `$refs.exportTable` contract cannot work here — and the failure would be silent, since
+     * exportElementToPdf would simply find no <tr>s and produce an empty PDF rather than throwing.
+     * Exposing it as a method keeps the caller working against a stable contract regardless of how
+     * either heat map renders internally.
      */
-    sectionsFrom(_items: unknown[]): SectionLike[] {
+    getExportTable(): HTMLTableElement | undefined {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (this as any).sections as SectionLike[];
+      return ((this as any).$el as HTMLElement | undefined)?.querySelector("table") ?? undefined;
     },
   },
 };

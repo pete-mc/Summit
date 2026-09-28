@@ -283,4 +283,17 @@ export default defineComponent({
       return result;
     },
   },
+  methods: {
+    /**
+     * The <table> element the PDF export measures row geometry from.
+     *
+     * A method rather than the `$refs.exportTable` the caller used to read directly, so the
+     * contract survives the table being rendered differently — a ref on a v-data-table resolves
+     * to the component instance, not an element, and that failure is silent (an empty PDF rather
+     * than an error). See OASHeatMapDataTableVue.ts for the variant that needs it.
+     */
+    getExportTable(): HTMLTableElement | undefined {
+      return (this.$refs.exportTable as HTMLTableElement | undefined) ?? (this.$el as HTMLElement | undefined)?.querySelector("table") ?? undefined;
+    },
+  },
 });

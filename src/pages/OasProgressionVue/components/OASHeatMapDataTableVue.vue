@@ -1,36 +1,48 @@
 <template>
   <div class="oas-heatmap-scroll">
     <!--
-      SPIKE: heat map rendered through v-data-table instead of a hand-built <table>.
-      See .claude/OASProgression/SPIKE_HEATMAP_DATATABLE.md for findings.
+      Heat map rendered through Vuetify's own v-data-table, so it inherits Terrain's table
+      styling rather than reimplementing it. See .claude/OASProgression/SPIKE_HEATMAP_DATATABLE.md.
 
-      Every one of these props exists to switch OFF a v-data-table feature the heat map cannot
-      use, which is itself the headline finding:
-        :items-per-page="-1"   pagination is meaningless for a heat map
-        disable-sort           row order comes from sortMembers (patrol grouping, codenames)
-        disable-filtering      the stage columns have no per-column semantics
-        hide-default-footer    nothing left to show once pagination is off
+      The disabled props are features the heat map never used in the first place — it is one
+      continuous grid whose order comes from sortMembers() and whose filtering is the filter bar
+      above. They are switched off so Vuetify does not add UI for them, not because anything was
+      given up.
     -->
     <v-data-table
-      ref="exportTable"
       :headers="dataTableHeaders"
       :items="flatRows"
       :items-per-page="-1"
       disable-sort
       disable-filtering
       disable-pagination
+      hide-default-header
       hide-default-footer
       dense
       class="oas-heatmap-data-table"
     >
       <!--
-        The entire body is hand-rendered. v-data-table emits ONE <tbody>
-        (VDataTable.js:558), but the heat map needs one per skill section — that grouping is what
-        the PDF export paginates on. So the body slot takes over completely, and what is inside it
-        is the original markup essentially unchanged.
+        Hand-written thead: the stage-group row uses colspan to span several stage columns under
+        one label, which Vuetify's own header renderer (one <th> per header entry) cannot express.
       -->
-      <template #body="{ items }">
-        <tbody v-for="section in sectionsFrom(items)" :key="section.key" :data-oas-skill="section.skill">
+      <template #header>
+        <thead class="oas-heatmap-thead">
+          <tr>
+            <th class="oas-heatmap-member-header">Member</th>
+            <th class="oas-heatmap-highest-stage-header">Stage</th>
+            <th v-for="stage in allStages" :key="stage" class="oas-heatmap-stage-group-header">
+              {{ stage }}
+            </th>
+          </tr>
+        </thead>
+      </template>
+
+      <!--
+        Hand-written tbody: v-data-table emits a single <tbody>, but each skill section needs its
+        own so the PDF export can paginate on section boundaries.
+      -->
+      <template #body>
+        <tbody v-for="section in sections" :key="section.key" :data-oas-skill="section.skill">
           <tr class="oas-heatmap-skill-title-row">
             <td class="oas-heatmap-skill-title" :colspan="allStages.length + 2">
               <img v-if="section.iconUrl" :src="section.iconUrl" alt="" class="oas-heatmap-skill-icon" :data-oas-skill-icon="section.skill" />
@@ -71,18 +83,22 @@
 }
 
 /*
- * v-data-table sets its own background and wrapper styling; the heat map's table is
- * width: max-content inside a horizontal scroller, so the wrapper must not constrain it.
+ * Vuetify's table defaults to width: 100%. The heat map is a wide grid inside a horizontal
+ * scroller, so it must size to its content instead.
  */
 .oas-heatmap-data-table ::v-deep > .v-data-table__wrapper > table {
   width: max-content;
   border-collapse: collapse;
 }
 
-/* Terrain's own v-data-table frame: white, thin border, small radius. */
+/*
+ * Terrain's own v-data-table frame, via its tokens rather than literals so it tracks any
+ * retheme — see .claude/DESIGN.md. Terrain does not style thead at all, so the heat map's own
+ * green header styling is removed rather than replaced.
+ */
 .oas-heatmap-data-table ::v-deep > .v-data-table__wrapper {
-  background: #fff;
-  border: 1px solid #e5e9ec;
+  background: var(--color-white, #fff);
+  border: 1px solid var(--color-light-charcoal, #e5e9ec);
   border-radius: 4px;
 }
 </style>
