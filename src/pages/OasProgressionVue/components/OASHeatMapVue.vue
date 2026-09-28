@@ -1,47 +1,81 @@
 <template>
   <div class="oas-heatmap-scroll">
-    <table ref="exportTable" class="oas-heatmap-table">
-      <thead class="oas-heatmap-thead">
-        <tr>
-          <th class="oas-heatmap-member-header">Member</th>
-          <th class="oas-heatmap-highest-stage-header">Stage</th>
-          <th v-for="stage in allStages" :key="stage" class="oas-heatmap-stage-group-header">
-            {{ stage }}
-          </th>
-        </tr>
-      </thead>
-      <tbody v-for="section in sections" :key="section.key" :data-oas-skill="section.skill">
-        <tr class="oas-heatmap-skill-title-row">
-          <td class="oas-heatmap-skill-title" :colspan="allStages.length + 2">
-            <img v-if="section.iconUrl" :src="section.iconUrl" alt="" class="oas-heatmap-skill-icon" :data-oas-skill-icon="section.skill" />
-            {{ section.title }}
-          </td>
-        </tr>
-        <template v-for="group in section.patrolGroups">
-          <tr v-if="group.patrolName" :key="'patrol::' + group.patrolName" class="oas-heatmap-patrol-title-row" :data-oas-patrol-title="group.patrolName">
-            <td class="oas-heatmap-patrol-title" :colspan="allStages.length + 2">{{ group.patrolName }}</td>
+    <!--
+      Heat map rendered through Vuetify's own v-data-table, so it inherits Terrain's table
+      styling rather than reimplementing it. See .claude/OASProgression/SPIKE_HEATMAP_DATATABLE.md.
+
+      The disabled props are features the heat map never used in the first place — it is one
+      continuous grid whose order comes from sortMembers() and whose filtering is the filter bar
+      above. They are switched off so Vuetify does not add UI for them, not because anything was
+      given up.
+    -->
+    <v-data-table
+      :headers="dataTableHeaders"
+      :items="flatRows"
+      :items-per-page="-1"
+      disable-sort
+      disable-filtering
+      disable-pagination
+      hide-default-header
+      hide-default-footer
+      dense
+      class="oas-heatmap-data-table"
+    >
+      <!--
+        Hand-written thead: the stage-group row uses colspan to span several stage columns under
+        one label, which Vuetify's own header renderer (one <th> per header entry) cannot express.
+
+        Deliberately WITHOUT the .oas-heatmap-thead class: that class exists only to paint the
+        header Summit green (index.css), and Terrain does not style table headers at all —
+        confirmed from its own Computed panel. Leaving it off lets Vuetify's default show through
+        (12px, 60% black, 32px tall in dense mode), which is what "match Terrain" actually means
+        here. The class stays in index.css for the legacy React page, which still uses it.
+      -->
+      <template #header>
+        <thead>
+          <tr>
+            <th class="oas-heatmap-member-header">Member</th>
+            <th class="oas-heatmap-highest-stage-header">Stage</th>
+            <th v-for="stage in allStages" :key="stage" class="oas-heatmap-stage-group-header">
+              {{ stage }}
+            </th>
           </tr>
-          <tr v-for="member in group.members" :key="member.memberId" :data-oas-member="member.memberId">
-            <td class="oas-heatmap-member-name">{{ member.displayName }}</td>
-            <td class="oas-heatmap-highest-stage">
-              {{ member.stageDisplay }}<span v-if="member.nextStageProgress" class="oas-heatmap-stage-progress">.{{ member.nextStageProgress }}</span>
-            </td>
-            <td v-for="(cell, cellIndex) in member.cells" :key="allStages[cellIndex]" class="oas-heatmap-stage-cell">
-              <div v-if="cell.kind === 'bar-complete'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete" :title="cell.title"></div>
-              <div v-else-if="cell.kind === 'bar-unstarted'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-unstarted" :title="cell.title"></div>
-              <div v-else-if="cell.kind === 'squares'" class="oas-heatmap-squares">
-                <div
-                  v-for="square in cell.squares"
-                  :key="square.inputId"
-                  :class="['oas-heatmap-square', square.stateClass, square.groupClass]"
-                  :title="square.title"
-                ></div>
-              </div>
+        </thead>
+      </template>
+
+      <!--
+        Hand-written tbody: v-data-table emits a single <tbody>, but each skill section needs its
+        own so the PDF export can paginate on section boundaries.
+      -->
+      <template #body>
+        <tbody v-for="section in sections" :key="section.key" :data-oas-skill="section.skill">
+          <tr class="oas-heatmap-skill-title-row">
+            <td class="oas-heatmap-skill-title" :colspan="allStages.length + 2">
+              <img v-if="section.iconUrl" :src="section.iconUrl" alt="" class="oas-heatmap-skill-icon" :data-oas-skill-icon="section.skill" />
+              {{ section.title }}
             </td>
           </tr>
-        </template>
-      </tbody>
-    </table>
+          <template v-for="group in section.patrolGroups">
+            <tr v-if="group.patrolName" :key="'patrol::' + group.patrolName" class="oas-heatmap-patrol-title-row" :data-oas-patrol-title="group.patrolName">
+              <td class="oas-heatmap-patrol-title" :colspan="allStages.length + 2">{{ group.patrolName }}</td>
+            </tr>
+            <tr v-for="member in group.members" :key="member.memberId" :data-oas-member="member.memberId">
+              <td class="oas-heatmap-member-name">{{ member.displayName }}</td>
+              <td class="oas-heatmap-highest-stage">
+                {{ member.stageDisplay }}<span v-if="member.nextStageProgress" class="oas-heatmap-stage-progress">.{{ member.nextStageProgress }}</span>
+              </td>
+              <td v-for="(cell, cellIndex) in member.cells" :key="allStages[cellIndex]" class="oas-heatmap-stage-cell">
+                <div v-if="cell.kind === 'bar-complete'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete" :title="cell.title"></div>
+                <div v-else-if="cell.kind === 'bar-unstarted'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-unstarted" :title="cell.title"></div>
+                <div v-else-if="cell.kind === 'squares'" class="oas-heatmap-squares">
+                  <div v-for="square in cell.squares" :key="square.inputId" :class="['oas-heatmap-square', square.stateClass, square.groupClass]" :title="square.title"></div>
+                </div>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </template>
+    </v-data-table>
   </div>
 </template>
 
@@ -49,26 +83,28 @@
 </script>
 
 <style scoped>
-/*
- * Pinned explicitly, via the shared body scale (--oas-vue-font-size-body/--oas-vue-font-family,
- * defined once on .oas-vue-content in OasProgressionVueContent.vue), so the heat-map's own text
- * matches the Table view's data cells and both views' filter boxes rather than each table
- * inheriting whatever ambient font Vuetify/Terrain's page-level CSS happens to resolve to here.
- */
-.oas-heatmap-table {
+.oas-heatmap-data-table {
   font-size: var(--oas-vue-font-size-body);
   font-family: var(--oas-vue-font-family);
 }
 
 /*
- * .oas-heatmap-member-name is a class SHARED with the original React heat-map page (defined once
- * in src/styles/index.css, not per-page) and sets its own explicit font-size: var(--summit-font-
- * size-lg) (16px) on the <td> itself — a direct rule on the element beats the inherited body size
- * from .oas-heatmap-table above regardless of scoping, since inheritance always loses to any rule
- * that targets the element directly. Overriding it here, scoped to just this Vue page, rather than
- * editing the shared index.css rule (which would also change the React page's heat-map).
+ * Vuetify's table defaults to width: 100%. The heat map is a wide grid inside a horizontal
+ * scroller, so it must size to its content instead.
  */
-.oas-heatmap-member-name {
-  font-size: var(--oas-vue-font-size-body);
+.oas-heatmap-data-table ::v-deep > .v-data-table__wrapper > table {
+  width: max-content;
+  border-collapse: collapse;
+}
+
+/*
+ * Terrain's own v-data-table frame, via its tokens rather than literals so it tracks any
+ * retheme — see .claude/DESIGN.md. Terrain does not style thead at all, so the heat map's own
+ * green header styling is removed rather than replaced.
+ */
+.oas-heatmap-data-table ::v-deep > .v-data-table__wrapper {
+  background: var(--color-white, #fff);
+  border: 1px solid var(--color-light-charcoal, #e5e9ec);
+  border-radius: 4px;
 }
 </style>

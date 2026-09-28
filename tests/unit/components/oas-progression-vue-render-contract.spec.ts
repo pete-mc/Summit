@@ -118,14 +118,20 @@ describe("OasProgressionVueContent render contract", () => {
     expect(source).not.toMatch(/<v-[a-z]/);
   });
 
-  it("VueStage 4: PDF export reuses the shared gridExport service against OASHeatMapVue's own table ref, matching the React page's approach", () => {
+  it("VueStage 4: PDF export reuses the shared gridExport service, asking the heat map for its table rather than reaching into its refs", () => {
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
     expect(tsSource).toContain('from "@/components/gridExport"');
     expect(tsSource).toContain("exportElementToPdf");
-    expect(tsSource).toContain("heatMap?.$refs.exportTable");
 
-    const heatMapSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASHeatMapVue.vue"), "utf8");
-    expect(heatMapSource).toContain('ref="exportTable"');
+    // getExportTable() rather than $refs.exportTable: a ref on a v-data-table resolves to the
+    // component instance, not an element, and that failure is silent — exportElementToPdf finds
+    // no <tr>s and produces an empty PDF rather than throwing. The method keeps the caller
+    // working whichever way the heat map renders its table.
+    expect(tsSource).toContain("heatMap?.getExportTable()");
+    expect(tsSource).not.toContain("$refs.exportTable");
+
+    const heatMapSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASHeatMapVue.ts"), "utf8");
+    expect(heatMapSource).toContain("getExportTable()");
 
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(templateSource).toContain('ref="heatMap"');

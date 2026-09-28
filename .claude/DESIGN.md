@@ -166,6 +166,67 @@ not a font-size problem at all, which was only found because there was finally o
 shared value to check against instead of independently-set numbers with nothing to
 compare.
 
+## Terrain's own CSS custom properties — prefer these over hardcoded values
+
+Terrain declares a full palette on `:root`, in the **same `:root` as Summit's own `--summit-*`
+tokens**, so both are live on every page and either can be referenced. Read from the live site's
+Computed panel, 2026-09-28.
+
+```css
+/* Structure and text */
+--color-white:              #fff;
+--color-default-background: #fafafa;   /* the page ground v-data-table sits on */
+--color-light-charcoal:     #e5e9ec;   /* Terrain's own table/card border */
+--color-light-mid-charcoal: #b7c2cc;
+--color-neutral-charcoal:   #748494;
+--color-medium-charcoal:    #405261;
+--color-dark-charcoal:      #253642;   /* Terrain's body text */
+--color-slate:              #1d2b36;
+
+/* Brand blues */
+--color-australian-nav-blue: #071e57;
+--color-scouts-medium-blue:  #00348d;  /* floated input labels */
+--color-base-blue:           #1070ca;  /* buttons; our Vuetify theme primary */
+--color-blue-2:              #2d9cdb;
+
+/* Sections */
+--color-section-joey: #b65518;  --color-section-cubs:     #ffc82e;
+--color-section-scouts: #00ae42; --color-section-venturer: #9e1b32;
+--color-section-rover: #dc291e;  --color-international:    #622599;
+
+/* Alerts */
+--color-alert-danger: #ef5350;  --color-alert-success: #6fcf97;
+--color-alert-caution: #ffd180; --color-alert-info:    #a0d4ff;
+
+/* OAS stages 1-9 — Terrain's own per-stage scale */
+--color-oas-stage-1: #003c1c;  --color-oas-stage-2: #106236;  --color-oas-stage-3: #00897b;
+--color-oas-stage-4: #00acc1;  --color-oas-stage-5: #00838f;  --color-oas-stage-6: #2549a8;
+--color-oas-stage-7: #16337f;  --color-oas-stage-8: #071e57;  --color-oas-stage-9: #001d3e;
+```
+
+**Use the token, not the literal.** `var(--color-light-charcoal, #e5e9ec)` tracks Terrain if they
+ever retheme; `#e5e9ec` does not. The fallback keeps it working if a page ever loads without them.
+
+Two things worth knowing:
+
+- **`--summit-color-text-primary` (#201f1e) and `--color-dark-charcoal` (#253642)** are two
+  slightly different near-blacks doing the same job. New text on a Vuetify page should prefer
+  Terrain's.
+- **Terrain has nine official OAS stage colours.** The heat map currently colours by *state*
+  (`--summit-color-status-unanswered/answered/awarded` — grey/purple/green), not by stage. Using
+  Terrain's scale instead would be a deliberate design change, not a tidy-up; noted here so the
+  option is known rather than rediscovered.
+
+### Terrain does not style its table headers
+
+Confirmed from the live Computed panel on a Terrain `v-data-table` `thead`: no background, no
+colour override, no font-weight, no border. Everything visible is Vuetify's default, plus the
+global `* { font-family: NunitoSans-regular }` and `* { margin: 0; padding: 0 }` resets.
+
+So "make a table look like Terrain's" means **removing** our own header styling, not replacing it
+with different values. Summit's OAS heat map currently paints its `thead` with
+`--summit-color-bg-primary` (Summit green); Terrain has no equivalent anywhere.
+
 ## Terrain's own styling (the host site Summit runs inside)
 
 Terrain (`https://terrain.scouts.com.au`) is a separate Nuxt.js (Vue 2) app built on
