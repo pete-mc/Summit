@@ -201,19 +201,51 @@
 }
 
 /*
- * Live DevTools confirmed the real cause of "Display" looking larger than its 18px computed
- * font-size: it wasn't a text-size problem at all. The browser's own UA stylesheet sets
+ * THE ANSWER to "why does Display look bigger than Member/Skills/Stage from, when every rule says
+ * they are the same size?" — after several failed attempts that all assumed it was a font problem.
+ *
+ * It is not a font problem. Those rules ARE identical (see above and .oas-vue-filter-select
+ * below): same size, family, weight, letter-spacing. The difference is that Vuetify floats its
+ * input labels by SCALING them after layout:
+ *
+ *   .v-text-field .v-label--active { transform: translateY(-18px) scale(0.75); }
+ *
+ * So a v-label declared at 18px does not paint at 18px, while a <legend> does. Both report
+ * font-size: 18px in DevTools' Computed panel, because the shrink happens in the transform, after
+ * computed styles are resolved — which is exactly why inspecting them side by side kept showing a
+ * match while the pixels plainly differed.
+ *
+ * The value below is MEASURED, not computed. An initial attempt set it to 18 × 0.75 = 13.5px
+ * straight from the scale factor and came out a pixel too small (9px against the labels' 10px),
+ * because scale() shrinks glyphs that were laid out and hinted at 18px — which is not the same as
+ * rendering natively at the scaled size — and the labels' own line-height is in play too. The
+ * labels themselves measure 10px from a declared 18px, a 0.556 ratio, not the 0.75 the transform
+ * alone would suggest.
+ *
+ * Calibrated against the user's own on-screen measurements of rendered cap height:
+ *   legend at 18px   → 12px    (0.667 measured per declared px)
+ *   legend at 13.5px →  9px    (same ratio, confirming it is linear)
+ *   target           → 10px    → 10 ÷ 0.667 ≈ 15px
+ *
+ * Do not "tidy" this back to var(--oas-vue-font-size-heading), and do not re-derive it from
+ * Vuetify's 0.75 — that is the mistake this comment exists to prevent. If it ever needs
+ * revisiting, measure the rendered text again rather than recomputing it.
+ *
+ * Not solved with a matching transform on the legend: a transform changes the painted size but
+ * not the layout box, which would reintroduce the alignment problem described next.
+ *
+ * There were TWO causes stacked on top of each other, which is why this took several passes.
+ * The second, found earlier and fixed by the width/display rules here: the UA stylesheet sets
  * `legend { display: block }`, and the shared `.oas-heatmap-display-group legend` rule in
  * src/styles/index.css (written for the REACT heat-map page, where Display sits alone on its own
- * row above the checkboxes) adds `width: 100%` on top of that — stretching the legend into a
- * full-width block box. On the React page that's fine; on this Vue page Display sits inline in
- * the same row as the checkboxes (see the fieldset's own `display: flex` above), so the same
- * `width: 100%` rule instead forced the legend into an oversized box that made its text read as
- * visually bigger than a plain inline label at the same font-size. `display: inline` alone did
- * NOT fix this (an earlier attempt), since the UA/shared block-level rules still won on
- * specificity — !important is required to actually override them here.
+ * row above the checkboxes) adds `width: 100%`. On this Vue page Display sits inline among the
+ * checkboxes, so that stretched it into an oversized box. `display: inline` alone did NOT win
+ * against the UA and shared rules, hence !important. That fix was necessary but not sufficient —
+ * the note claiming it was "the real cause" was premature, since the scale(0.75) difference
+ * remained underneath it.
  */
 .oas-heatmap-display-group legend.oas-vue-filter-heading-match {
+  font-size: 15px !important;
   display: inline-block !important;
   width: auto !important;
 }
