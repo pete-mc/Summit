@@ -61,30 +61,42 @@ Each `MemberSectionView` is `{ memberId, displayName, patrolName, skillRows[] }`
   per skill and are unaffected by which level does the grouping.
 - **The cell rendering** — `buildStageCellView()` is per (member, skill, stage) either way.
 
-## What needs thought
+## Decided 2026-09-28
 
-**Patrol grouping.** `breakByPatrol` inserts patrol heading rows inside a skill section. Grouped
-by member, a member belongs to exactly one patrol, so patrol becomes an attribute of the section
-heading rather than a divider within it. Suggest: show the patrol name beside the member name and
-sort members by patrol — no separate heading rows. Confirm before building.
+**Patrol grouping applies to Skill grouping only.** Grouped by Skill/Stream the existing
+`breakByPatrol` behaviour stays exactly as it is — members, optionally sub-grouped by patrol where
+patrols exist. Grouped by Member there is **no secondary grouping at all**: the section heading is
+already a person, so patrol has nowhere meaningful to sit. The `breakByPatrol` checkbox is
+therefore irrelevant while grouped by member — hide it rather than leave a control that does
+nothing.
+
+**No count on the heat map's group headings.** Present Awards counts outstanding awards because
+that is what a leader is handing out; OAS Progression has no equivalent single number worth
+showing, and the heat map's whole point is that the squares convey progress visually. Section
+headings stay as the skill name or member name alone.
+
+**A member with no progress shows, with blank cells.** Grouped by member they appear as a section
+with their skill rows rendered empty, rather than being hidden. This is a deliberate reversal of
+the "hide empty" instinct: absence of progress is itself the useful signal here — a member who has
+started nothing is exactly who a leader is looking for, and hiding them would make them invisible
+in the view most likely to be used for that.
+
+Note this differs from `hideEmptyStreams`, which remains an explicit opt-in filter. The default is
+show; the filter still hides when asked.
+
+## What needs thought
 
 **Hide empty skills.** Today this hides a whole skill section. Grouped by member it should hide
 that member's **row** for a skill with no progress, leaving other members' rows for that skill
 intact. Same filter, different granularity.
-
-**A member with no progress at all.** Grouped by skill they simply do not appear in any section.
-Grouped by member they would be an empty section. Suggest hiding them entirely, consistent with
-"hide empty skills".
 
 ## Table view
 
 Uses `v-data-table` grouping, the same mechanism already built for Present Awards
 (`PresentAwardsTableVue`), with a three-way choice: **None / Member / Skill**.
 
-Group headers should carry a count, as Present Awards' do. The wording needs deciding — Present
-Awards uses "(N not presented)" because that is what a leader is counting there. For OAS the
-useful count is less obvious; "(N i-statements outstanding)" is one option, plain "(N rows)"
-another.
+**No counts in the group headers** — same reasoning as the heat map. Present Awards counts
+outstanding awards because that is the task; there is no equivalent number here worth the noise.
 
 Reuses `renderedHeaders` — the computed added for Present Awards that mirrors Vuetify dropping
 the grouped column from its own header row. That bug applies here too.
@@ -109,7 +121,5 @@ other key, so a saved state predating this still loads.
 
 ## Open questions
 
-- Patrol handling when grouped by member (suggestion above)
-- Group header count wording on the table view
 - Whether "Group by Member" should also be offered on the **I Statements** page, which shares this
-  page's visual language
+  page's visual language. Not in scope here.
