@@ -40,6 +40,7 @@
           :hide-empty-top-columns="filters.hideEmptyTopColumns"
           :only-in-progress="filters.onlyInProgress"
           :hide-answered="filters.hideAnswered"
+          :group-by="filters.groupBy"
         />
       </template>
 

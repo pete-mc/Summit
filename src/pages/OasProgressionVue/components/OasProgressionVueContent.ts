@@ -36,6 +36,8 @@ const MAX_STAGE = 9;
 
 const DEFAULT_FILTERS: OASProgressionVueFilterState = {
   viewMode: "heatmap",
+  // Skill-first is the original layout, so an existing user sees no change on upgrade.
+  groupBy: "skill",
   memberFilter: "",
   hideLastName: false,
   useCodenames: false,

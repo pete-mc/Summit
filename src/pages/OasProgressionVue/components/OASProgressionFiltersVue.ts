@@ -23,6 +23,12 @@ const SORT_OPTIONS: Array<{ value: OASProgressionVueFilterState["sortBy"]; text:
   { value: "stageProgress", text: "Stage" },
 ];
 
+/** Exclusive, so a select rather than a checkbox — see PLAN_GROUP_BY_MEMBER.md. */
+const GROUP_BY_OPTIONS: Array<{ value: OASProgressionVueFilterState["groupBy"]; text: string }> = [
+  { value: "skill", text: "Skill" },
+  { value: "member", text: "Member" },
+];
+
 /**
  * Filter bar for OasProgressionVueContent's heat-map, using real Vuetify controls
  * (v-text-field/v-select/v-checkbox) in place of the React page's hand-rolled equivalents —
@@ -43,6 +49,7 @@ export default defineComponent({
       skillOptions: OAS_SKILLS.map((skill) => ({ value: skill, text: SKILL_TITLES[skill] ?? skill })),
       stageOptions: STAGE_OPTIONS,
       sortOptions: SORT_OPTIONS,
+      groupByOptions: GROUP_BY_OPTIONS,
     };
   },
   computed: {

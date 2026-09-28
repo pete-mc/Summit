@@ -1,5 +1,7 @@
 export interface OASProgressionVueFilterState {
   viewMode: "heatmap" | "table";
+  /** "skill" keeps the original skill-first layout; "member" inverts it. Defaults to "skill". */
+  groupBy: "skill" | "member";
   memberFilter: string;
   hideLastName: boolean;
   useCodenames: boolean;

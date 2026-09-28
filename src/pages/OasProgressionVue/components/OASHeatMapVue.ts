@@ -4,6 +4,7 @@ import { groupRowsForHeatMap } from "@/pages/OasProgression/services/groupRowsFo
 import type { HeatMapSection, HeatMapStage, SectionMemberRow } from "@/pages/OasProgression/services/groupRowsForHeatMap";
 import { filterMembersByPatrol, groupMembersByPatrol, sliceStagesToRange, formatStageProgress, sortMembers } from "@/pages/OasProgression/services/filterHeatMapSections";
 import type { PatrolGroup } from "@/pages/OasProgression/services/filterHeatMapSections";
+import { groupSectionsByMember } from "@/pages/OasProgression/services/groupSectionsByMember";
 import { getSkillIconUrl } from "@/pages/OasProgression/services/getSkillIconUrl";
 import { getCodename } from "@/pages/OasProgression/services/getCodename";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
@@ -176,6 +177,24 @@ interface PatrolGroupView {
   members: MemberRowView[];
 }
 
+/** One skill's row inside a member section — a member row view plus the skill's own labelling. */
+interface MemberSkillRowView extends MemberRowView {
+  key: string;
+  title: string;
+  iconUrl: string | null;
+}
+
+/**
+ * A member section: the heading is the person, the rows are their skills. The mirror image of
+ * SectionView, which heads with the skill and lists people.
+ */
+interface MemberSectionViewModel {
+  memberId: string;
+  title: string;
+  patrolName: string | null;
+  skillRows: MemberSkillRowView[];
+}
+
 interface SectionView {
   key: string;
   skill: string;
@@ -207,6 +226,12 @@ export default defineComponent({
     hideEmptyTopColumns: { type: Boolean, default: false },
     onlyInProgress: { type: Boolean, default: false },
     hideAnswered: { type: Boolean, default: false },
+    /**
+     * "skill" (default) groups by skill/stream, listing members — the original layout, optionally
+     * sub-grouped by patrol. "member" inverts it: a section per member listing their skills, with
+     * no secondary grouping, since the heading is already a person.
+     */
+    groupBy: { type: String as PropType<"skill" | "member">, default: "skill" },
   },
   computed: {
     grouped(): Record<string, ReturnType<typeof groupRowsForHeatMap>[string]> {
@@ -281,6 +306,42 @@ export default defineComponent({
         });
       });
       return result;
+    },
+
+    /**
+     * Member-first sections: one per member, listing their skills.
+     *
+     * Reuses the same visibleSectionsBySkill the skill-first view builds from, so every filter
+     * (hide empty skills, stage range, member search, patrol selection) has already been applied
+     * before the inversion — the two views cannot drift.
+     *
+     * No patrol sub-grouping here: the section heading is already a person, so patrol becomes an
+     * attribute shown beside their name rather than a divider. Members with no progress are kept,
+     * rendering empty rows — see groupSectionsByMember() for why that is deliberate.
+     */
+    memberSections(): MemberSectionViewModel[] {
+      const visibleBySkill: Record<string, { sections: HeatMapSection[]; maxStage: number }> = {};
+      this.skills.forEach((skill) => {
+        visibleBySkill[skill] = { sections: this.visibleSectionsBySkill.get(skill) ?? [], maxStage: this.grouped[skill].maxStage };
+      });
+
+      const nameNeedle = this.memberFilter.trim().toLowerCase();
+
+      return groupSectionsByMember(visibleBySkill, this.skills)
+        .filter((section) => !nameNeedle || section.memberName.toLowerCase().includes(nameNeedle))
+        .filter((section) => this.selectedPatrols.length === 0 || (section.patrolName !== null && this.selectedPatrols.includes(section.patrolName)))
+        .map((section) => ({
+          memberId: section.memberId,
+          title: displayName(section.memberName, section.memberId, this.hideLastName, this.useCodenames),
+          patrolName: section.patrolName,
+          skillRows: section.skillRows.map((row) => ({
+            key: row.key,
+            title: row.stream ? `${skillTitle(row.skill)} — ${formatStream(row.stream)}` : skillTitle(row.skill),
+            iconUrl: getSkillIconUrl(row.skill),
+            ...buildMemberRowView(row.member, this.allStages, this.hideLastName, this.useCodenames, this.onlyInProgress, this.hideAnswered, row.isStreamSection, row.trunkStageCount),
+          })),
+        }))
+        .sort((a, b) => a.title.localeCompare(b.title));
     },
 
     /**

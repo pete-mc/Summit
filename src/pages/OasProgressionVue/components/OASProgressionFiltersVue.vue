@@ -81,11 +81,34 @@
         @change="patch({ sortBy: $event })"
       ></v-select>
 
+      <v-select
+        :value="filters.groupBy"
+        :items="groupByOptions"
+        item-text="text"
+        item-value="value"
+        label="Group by"
+        dense
+        hide-details
+        style="max-width: 140px"
+        class="oas-vue-filter-select"
+        @change="patch({ groupBy: $event })"
+      ></v-select>
+
       <fieldset class="oas-heatmap-display-group">
         <legend class="oas-heatmap-filter-label oas-vue-filter-heading-match">Display</legend>
         <v-checkbox :input-value="filters.useCodenames" label="Use codenames" dense hide-details @change="onUseCodenamesChange"></v-checkbox>
         <v-checkbox :input-value="filters.hideLastName" :disabled="filters.useCodenames" label="Hide last name" dense hide-details @change="patch({ hideLastName: $event })"></v-checkbox>
-        <v-checkbox v-if="availablePatrols.length > 0" :input-value="filters.breakByPatrol" label="Break by patrol" dense hide-details @change="patch({ breakByPatrol: $event })"></v-checkbox>
+        <!-- Hidden when grouped by member: the section heading is already a person, so there is
+             nothing for a patrol divider to divide. Leaving an inert control visible would be
+             worse than removing it. -->
+        <v-checkbox
+          v-if="availablePatrols.length > 0 && filters.groupBy !== 'member'"
+          :input-value="filters.breakByPatrol"
+          label="Break by patrol"
+          dense
+          hide-details
+          @change="patch({ breakByPatrol: $event })"
+        ></v-checkbox>
         <v-checkbox :input-value="filters.hideEmptyStreams" label="Hide empty skills" dense hide-details @change="patch({ hideEmptyStreams: $event })"></v-checkbox>
         <v-checkbox :input-value="filters.hideEmptyTopColumns" label="Hide empty top stages" dense hide-details @change="patch({ hideEmptyTopColumns: $event })"></v-checkbox>
         <v-checkbox :input-value="filters.onlyInProgress" label="Hide complete/not started" dense hide-details @change="patch({ onlyInProgress: $event })"></v-checkbox>

@@ -34,7 +34,9 @@
       <template #header>
         <thead>
           <tr>
-            <th class="oas-heatmap-member-header">Member</th>
+            <!-- The first column holds whatever is NOT the section heading: member names under a
+                 skill heading, skill names under a member heading. -->
+            <th class="oas-heatmap-member-header">{{ groupBy === "member" ? "Skill" : "Member" }}</th>
             <th class="oas-heatmap-highest-stage-header">Stage</th>
             <th v-for="stage in allStages" :key="stage" class="oas-heatmap-stage-group-header">
               {{ stage }}
@@ -47,7 +49,38 @@
         Hand-written tbody: v-data-table emits a single <tbody>, but each skill section needs its
         own so the PDF export can paginate on section boundaries.
       -->
-      <template #body>
+      <!--
+        Grouped by member: the heading is the person, the rows are their skills, and the skill
+        icon moves from the heading onto each row. No patrol sub-grouping — a member belongs to
+        one patrol, so it is shown beside their name rather than dividing anything.
+      -->
+      <template v-if="groupBy === 'member'" #body>
+        <tbody v-for="section in memberSections" :key="section.memberId" :data-oas-member-section="section.memberId">
+          <tr class="oas-heatmap-skill-title-row">
+            <td class="oas-heatmap-skill-title" :colspan="allStages.length + 2">
+              {{ section.title }}<span v-if="section.patrolName" class="oas-heatmap-member-patrol"> — {{ section.patrolName }}</span>
+            </td>
+          </tr>
+          <tr v-for="row in section.skillRows" :key="row.key" :data-oas-skill="row.key">
+            <td class="oas-heatmap-member-name">
+              <img v-if="row.iconUrl" :src="row.iconUrl" alt="" class="oas-heatmap-skill-icon" :data-oas-skill-icon="row.key" />
+              {{ row.title }}
+            </td>
+            <td class="oas-heatmap-highest-stage">
+              {{ row.stageDisplay }}<span v-if="row.nextStageProgress" class="oas-heatmap-stage-progress">.{{ row.nextStageProgress }}</span>
+            </td>
+            <td v-for="(cell, cellIndex) in row.cells" :key="allStages[cellIndex]" class="oas-heatmap-stage-cell">
+              <div v-if="cell.kind === 'bar-complete'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete" :title="cell.title"></div>
+              <div v-else-if="cell.kind === 'bar-unstarted'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-unstarted" :title="cell.title"></div>
+              <div v-else-if="cell.kind === 'squares'" class="oas-heatmap-squares">
+                <div v-for="square in cell.squares" :key="square.inputId" :class="['oas-heatmap-square', square.stateClass, square.groupClass]" :title="square.title"></div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </template>
+
+      <template v-else #body>
         <tbody v-for="section in sections" :key="section.key" :data-oas-skill="section.skill">
           <tr class="oas-heatmap-skill-title-row">
             <td class="oas-heatmap-skill-title" :colspan="allStages.length + 2">
@@ -86,6 +119,15 @@
 .oas-heatmap-data-table {
   font-size: var(--oas-vue-font-size-body);
   font-family: var(--oas-vue-font-family);
+}
+
+/*
+ * Patrol beside a member's name when grouped by member. Lighter than the name it follows, since
+ * it qualifies rather than identifies — the member is what the row is about.
+ */
+.oas-heatmap-member-patrol {
+  font-weight: normal;
+  color: var(--color-neutral-charcoal, #748494);
 }
 
 /*
