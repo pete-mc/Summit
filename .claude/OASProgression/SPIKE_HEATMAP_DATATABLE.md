@@ -70,10 +70,14 @@ likely to fail silently — a broken export produces a wrong-looking PDF, not an
 Terrain's own frame, which is three CSS properties read off its `v-data-table` rule:
 
 ```css
-background: #fff;
-border: 1px solid #e5e9ec;
+background: var(--color-white, #fff);
+border: 1px solid var(--color-light-charcoal, #e5e9ec);
 border-radius: 4px;
 ```
+
+Confirmed afterwards from the live site: Terrain does **not** style its table headers at all — no
+background, colour, weight or border; everything visible is Vuetify's default. So removing the
+heat map's green `thead` is a deletion, not a substitution. See DESIGN.md for the full palette.
 
 That is available on the existing `<table>` for the cost of one wrapper, with no rewrite, no
 disabled features, and no export risk.
