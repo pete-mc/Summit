@@ -89,6 +89,7 @@ architecture exists, and `.claude/DESIGN.md` for the styling rules.
 | 3 | [PLAN_STAGE_3.md](PLAN_STAGE_3.md) | The heat-map table itself — grouped headers, purple squares. | Complete |
 | 4 | [PLAN_STAGE_4.md](PLAN_STAGE_4.md) | Filters + persistence + hide-empty logic. | Complete |
 | 5 | [PLAN_STAGE_5.md](PLAN_STAGE_5.md) | Verification in the live browser, and docs. | Docs done; merge audit outstanding |
+| 6 | [PLAN_STAGE_6_MATCH_OAS.md](PLAN_STAGE_6_MATCH_OAS.md) | Match OAS Progression's layout, spacing and table elements — `v-data-table`, green header dropped, shared filter-panel class. | Built; live verification outstanding |
 
 ## Decisions that changed during implementation
 

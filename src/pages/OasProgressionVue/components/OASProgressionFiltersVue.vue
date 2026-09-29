@@ -130,12 +130,6 @@
 </script>
 
 <style scoped>
-.oas-vue-filter-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 /*
  * This is a custom <span> in the v-select's own #selection slot template, not Vuetify's native
  * .v-select__selection element the ::v-deep rule below targets — it renders instead of that

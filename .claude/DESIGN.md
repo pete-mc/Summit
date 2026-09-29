@@ -267,24 +267,35 @@ tokens, spacing scale) for a specific integration point, check live via DevTools
 Application/Elements tab → inspect `:root` CSS custom properties on the Terrain page
 itself (Vuetify typically exposes theme colors as `--v-primary-base` etc.).
 
-## Page layout: filter panel spacing is NOT yet standard (known gap)
+## Page layout: filter panel spacing IS standard — declare it once, never per page
 
-Every Vuetify page wraps its filter controls in `.oas-vue-filter-panel`, but **each redeclares
-that class in its own scoped `<style>` block**, and none of them sets space *below* the panel —
-the gap before the table comes from whatever the next element happens to bring.
+**Fixed 2026-09-29.** `.oas-vue-filter-panel` and the page-level panel classes now live in
+`src/styles/index.css` and are **not** redeclared in any page's scoped `<style>` block.
 
-The result is that OAS Progression, Present Awards and I Statements do not line up, which is the
-`.claude/DEV_NOTES.md` entry:
+This was the `.claude/DEV_NOTES.md` entry:
 
 > Filter area doesn't have same space below it, as per OAS Progression, Present Awards etc. This
 > layout should be standard for every page we make.
 
-**When fixing this**, the class belongs in `src/styles/index.css` once, not redeclared per page —
-the duplication is the actual cause, since each copy can drift independently. Scoped styles cannot
-be shared between components, so a shared class has to live in the global sheet.
+The duplication was the cause, and it failed in both directions at once:
 
-Not yet done. Left as a deliberate cross-page change rather than patched on one page at a time,
-which would make the inconsistency worse before it got better.
+- OAS Progression declared the class with `gap: 12px`, Present Awards with `gap: 8px` — two
+  copies, free to drift, and drifted.
+- **I Statements declared it nowhere at all.** The class was on its markup, looked load-bearing,
+  and did nothing. Nothing flagged this, because a class that matches no rule is not an error.
+- `.istatement-panel` and `.present-awards-panel` were dead the same way — written on their pages'
+  root elements, defined nowhere. Only `.oas-progression-panel` existed.
+
+None of the copies set space *below* the panel, so the gap before the table came from whatever
+the next element happened to bring. The shared rule sets `margin-bottom` explicitly.
+
+**The rule for new pages:** put the class on the markup and stop. Do not redeclare it locally
+"to be sure" — a local copy is how this broke. A genuinely page-specific difference (Present
+Awards overrides `.oas-heatmap-controls`, because it has one checkbox group rather than a full
+filter row) stays local and says why in a comment.
+
+Guarded by `tests/unit/components/istatement-matches-oas-progression.spec.ts`, which fails if any
+page redeclares the class.
 
 ## Summit's CSS loses cascade ties — never rely on inheriting a Vuetify rule
 
@@ -310,6 +321,31 @@ The fix is to state the rule yourself, scoped to your component and reaching thr
 `::v-deep` where it targets Vuetify-rendered elements, so the layout no longer depends
 on which stylesheet won. Both `PresentAwardsTableVue.vue` and `OASProgressionTableVue.vue`
 now restate their cell padding this way.
+
+## Sticky table cells need an opaque background *stated*, not inherited
+
+When a table drops a coloured header (as both heat maps did, since Terrain does not style
+table headers), any `position: sticky` cell loses the background that colour was silently
+providing. A sticky cell with no background of its own is **transparent**, so scrolled content
+passes visibly underneath it.
+
+Two things to state explicitly whenever a cell is sticky:
+
+- **An opaque `background`.** Use `var(--color-white, #fff)` to match Terrain's table frame.
+  On a frozen first column this also has to survive zebra striping, so the stripe rule needs a
+  matching selector for the sticky column or that column becomes a solid block beside striped rows.
+- **`border-collapse: separate`** on the table. Collapsed borders detach sticky cells' backgrounds
+  and break every frozen edge at once — and Vuetify's own table does not set this.
+
+**The specificity trap underneath this**, which is how it goes wrong quietly: a blanket
+`::v-deep thead th` rule compiles to `[data-v-*] thead th` — a class *and* an element, `(0,1,1)`.
+A per-cell rule written as a bare `.my-stage-header` is only `(0,1,0)` and **loses**, so its
+background is replaced by the blanket one and a sub-header row disappears into the row above it.
+No error, no warning, just a header that looks wrong.
+
+Write every rule in such a block at the same shape (`::v-deep thead th.my-class`) so they resolve
+by source order rather than by an accident of specificity. `IStatementHeatMap.vue` does this and
+says so in a comment covering the whole block.
 
 ## Verification
 

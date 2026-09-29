@@ -460,12 +460,39 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   background-color: #197419 !important;
 }
 
-.oas-progression-panel {
+/*
+ * Page-level column layout, shared by every Vuetify page. .istatement-panel and
+ * .present-awards-panel were previously written on their pages' root elements but defined
+ * nowhere — dead classes that looked like they were doing something, which is part of why the
+ * three pages' spacing never matched. Grouped here so the resemblance is enforced rather than
+ * left to each page to remember.
+ */
+.oas-progression-panel,
+.present-awards-panel,
+.istatement-panel {
   display: flex;
   flex-direction: column;
   gap: var(--summit-space-md);
   margin-bottom: var(--summit-space-md);
   padding-top: var(--summit-space-md);
+}
+
+/*
+ * The standard filter-panel layout for every Vuetify page (OAS Progression, Present Awards,
+ * I Statements). Declared ONCE here rather than per page, because per-page copies are exactly
+ * how the three drifted apart: two declared it with different gaps and the third declared it
+ * not at all, so I Statements' filter row got no layout whatsoever. Scoped styles cannot be
+ * shared between components, so a genuinely shared class has to live in this global sheet.
+ *
+ * `margin-bottom` is the space BELOW the panel, which no page set — the gap before the table
+ * came from whatever the next element happened to bring, which is why they did not line up.
+ * Sibling pages should look the same without each having to remember to say so.
+ */
+.oas-vue-filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--summit-space-md);
+  margin-bottom: var(--summit-space-md);
 }
 
 .oas-heatmap-controls {

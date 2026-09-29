@@ -72,5 +72,15 @@ export default defineComponent({
 
       return Object.freeze(rendered) as RenderedRow[];
     },
+
+    /**
+     * v-data-table requires `headers` even though the header is hand-written in the #header
+     * slot — the two-row header spans stage columns under one group label via colspan, which
+     * Vuetify's own renderer (one <th> per entry) cannot express. Mirrors OASHeatMapVue so both
+     * heat maps are configured the same way.
+     */
+    dataTableHeaders(): Array<{ text: string; value: string; sortable: boolean }> {
+      return [{ text: "I-Statement", value: "statement", sortable: false }, ...this.columns.map((column) => ({ text: column.title, value: column.key, sortable: false }))];
+    },
   },
 });

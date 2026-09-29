@@ -14,12 +14,14 @@
 </script>
 
 <style scoped>
-.oas-vue-filter-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
+/*
+ * .oas-vue-filter-panel itself is the shared rule in src/styles/index.css — deliberately not
+ * redeclared here.
+ *
+ * This override IS page-specific and stays: Present Awards has a single checkbox group rather
+ * than a full filter row, so the bordered card look the shared rule gives would frame almost
+ * nothing.
+ */
 .oas-heatmap-controls {
   display: flex;
   flex-wrap: wrap;
