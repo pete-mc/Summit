@@ -1,5 +1,7 @@
 # PLAN.md — shared page loading indicator
 
+**Status: complete.** Built and verified working in the browser 2026-09-29. Commit `e146644`.
+
 Addresses:
 
 > The Present Award page sometimes takes a moment to load.
@@ -9,10 +11,10 @@ Addresses:
 > - This should actually be a function of all 3 pages we have created, and all should be the same style.
 > - Think about a common location and display.
 
-## What is actually there today
+## What was there before this change
 
-The three Vue pages do not differ by a little. They differ by a lot, and only one of
-them is right.
+The three Vue pages did not differ by a little. They differed by a lot, and only one of
+them was right. This table describes the state *before* the fix.
 
 | Page | Knows it is loading? | Shows a bar? | Error state? |
 | ---- | -------------------- | ------------ | ------------ |
@@ -22,22 +24,23 @@ them is right.
 
 ### The Present Awards bug is not "no spinner"
 
-`PresentAwardsVue.ts:71-78` sets `loadState` properly and passes it to the content
-component. But the only thing gated on it is a `<span>` of text in the header row
-([PresentAwardsVueContent.vue:5](../../src/pages/PresentAwardsVue/components/PresentAwardsVueContent.vue#L5)).
-The filter panel and table render **unconditionally**, so during the load you get a
-complete-looking table with headers and no rows.
+`loadAwards()` in [PresentAwardsVue.ts](../../src/pages/PresentAwardsVue/PresentAwardsVue.ts)
+set `loadState` properly and passed it to the content component. But the only thing
+gated on it was a `<span>` of text in the header row. The filter panel and table
+rendered **unconditionally**, so during the load you got a complete-looking table with
+headers and no rows.
 
 That reads as *"there are no awards"*, not *"still loading"* — which is why the page
 "takes a moment" in a way worth reporting. The information was already in the
 component; nothing displayed it.
 
-### OAS Progression fails silently
+### OAS Progression failed silently
 
-`OasProgressionVue.ts:106` catches a failed load and only calls `logger.error`. There
-is no error flag on the component, so a failure leaves a permanently empty heat map
-with no message on screen. Fixing that is in scope here because "all should be the
-same style" cannot be true while one page has no error state to style.
+`loadOasProgressionData()`'s catch block in
+[OasProgressionVue.ts](../../src/pages/OasProgressionVue/OasProgressionVue.ts) only called
+`logger.error`. There was no error flag on the component, so a failure left a permanently
+empty heat map with no message on screen. Fixing that was in scope because "all should be
+the same style" cannot be true while one page has no error state to style.
 
 ## Design — one component, normalised props
 
@@ -48,13 +51,18 @@ its own state onto them:
 ```
 <SummitLoadingState
   :state="'loading' | 'ready' | 'error'"
-  :message="string"        // "Loading templates 47/180..."
-  :done="number"           // omit for indeterminate
+  :done="number"           // omit (with total) for an indeterminate bar
   :total="number"
   :error-message="string"
   :on-retry="() => void"   // omit to render no Retry button
 />
 ```
+
+*As built.* The plan originally also had a `:message` prop for the "Loading templates
+47/180..." text. It was dropped: every page already had that text in its own header row,
+next to its own buttons, and moving it into the component would have relocated a visible
+piece of each page's layout for no gain. The pages keep their own wording; the component
+owns the bar.
 
 `done`/`total` absent ⇒ indeterminate bar. Present ⇒ determinate with percentage.
 This is exactly I Statements' existing behaviour, generalised: its two loading phases
@@ -77,6 +85,10 @@ strictly better than a shared class, which is what the `.oas-vue-filter-panel` e
 - **Body hidden while loading.** The bar replaces filters and table until `ready`.
   Unambiguous: an empty table never masquerades as a loaded one. This is what
   I Statements already does.
+  > **Revised while building.** This holds for a *first* load only. Both Present Awards
+  > and OAS Progression gate on `hasContent` instead, because each re-runs its load with
+  > content already on screen — see "Found while building" below. I Statements, which has
+  > no such path, works exactly as written here.
 - **OAS Progression gets a determinate bar and a real error state.** It already counts
   9 streams down, so the running count comes almost free.
 
@@ -99,7 +111,7 @@ strictly better than a shared class, which is what the `.oas-vue-filter-panel` e
 | 2 | I Statements onto it (behaviour-neutral — proves the component covers the reference case) | ✅ |
 | 3 | Present Awards: gate body, add bar + error/retry | ✅ |
 | 4 | OAS Progression: `loadError` flag, determinate bar, error state | ✅ |
-| 5 | Live verification | ⬜ **outstanding** |
+| 5 | Live verification | ✅ confirmed working in browser 2026-09-29 |
 
 ## Found while building
 
@@ -117,8 +129,8 @@ drift.
 clickable during the load, offering an empty spreadsheet and a save of nothing.
 
 **Gating on `loadState` alone would have been a regression — caught in self-review.** Every save
-calls `loadAwards()` (`PresentAwardsVue.ts:97`, so the edit state re-seeds from what is actually
-stored), which sets `loadState` back to `"loading"`. A table gated on that would blank a full
+calls `loadAwards()` (from `saveAwards()` in `PresentAwardsVue.ts`, so the edit state re-seeds
+from what is actually stored), which sets `loadState` back to `"loading"`. A table gated on that would blank a full
 screen of ticked checkboxes on every Save, and the "Saved." confirmation would have been hidden
 inside the same gate. Both pages therefore gate on `hasContent` (`items.length > 0`) and keep
 feedback outside it: only a genuine first load has nothing to show, and a background reload is
@@ -134,11 +146,32 @@ reasons — OAS Progression for incremental streams, Present Awards for the save
 They do not — they need the same stub. The config change was solving a problem that already had
 a convention, so it was reverted and the stub added instead.
 
-## Live verification checklist
+## Live verification — done 2026-09-29
 
-- [ ] Present Awards on a slow load shows a bar, not an empty table.
-- [ ] Present Awards error state offers Retry and recovers on click.
-- [ ] OAS Progression shows a running count as the 9 streams land.
-- [ ] OAS Progression per-stream reload does **not** blank the page.
-- [ ] I Statements looks unchanged — same two phases, same counts.
-- [ ] All three bars are the same height, colour and position relative to the header row.
+Verified in the browser by the developer; reported working.
+
+- [x] Present Awards on a slow load shows a bar, not an empty table.
+- [x] Present Awards saving does **not** blank the table — the `hasContent` gate, and the one
+      thing most likely to have been a regression.
+- [x] OAS Progression shows a running count as the 9 streams land.
+- [x] OAS Progression per-stream reload does **not** blank the page.
+- [x] I Statements looks unchanged — same two phases, same counts.
+- [x] All three bars are the same height, colour and position relative to the header row.
+
+**Not exercised live:** the error/Retry paths on all three pages. They need a failing request to
+trigger, which normal use does not produce. The markup and wiring are covered by the contract
+tests, but the first real failure will be the first time the error state is seen on screen.
+
+## Feature complete
+
+Nothing outstanding. The original ask — a loading indicator on Present Awards, the same on all
+three pages, in a common location — is delivered:
+
+- **Common location:** `src/components/SummitLoadingState.vue`, one definition, styles scoped
+  to it so no page can redeclare them.
+- **Same display:** same bar, same position, same error treatment on all three.
+- **Present Awards fixed:** the reported page no longer shows an empty table mid-load.
+
+Two behaviours generalised out of this work are recorded in `.claude/DESIGN.md` under
+"A shared *component* beats a shared *class*", since they apply to anything shared across these
+pages in future.
