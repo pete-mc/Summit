@@ -93,9 +93,7 @@ describe("OASProgressionTableVue render contract", () => {
     expect(source).toContain(':items="filteredItems"');
     expect(source).not.toContain(':search="search"');
     expect(source).toContain("#body.prepend");
-    // renderedHeaders, not headers: Vuetify removes the grouped column from its own header row,
-    // so iterating the raw list emits one <th> too many and shifts every filter box left.
-    expect(source).toContain('v-for="header in renderedHeaders"');
+    expect(source).toContain('v-for="header in headers"');
     expect(source).toContain(':value="columnFilters[header.value]');
     expect(source).toContain("onColumnFilterInput(header.value");
     expect(source).toContain("#item.answered");

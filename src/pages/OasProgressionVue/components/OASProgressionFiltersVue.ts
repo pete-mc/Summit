@@ -26,14 +26,12 @@ const SORT_OPTIONS: Array<{ value: OASProgressionVueFilterState["sortBy"]; text:
 /**
  * Exclusive, so a select rather than a checkbox — see PLAN_GROUP_BY_MEMBER.md.
  *
- * "None" only affects the table view; a heat map is always grouped by something and reads it as
- * Skill. Offered on both rather than swapping the control between views, so the setting stays one
- * shared thing and switching views keeps the same organisation.
+ * Heat-map only: the table view's own grouping was built and then removed, because how it should
+ * behave alongside that view's sorting and per-column filters needs more thought than it had.
  */
 const GROUP_BY_OPTIONS: Array<{ value: OASProgressionVueFilterState["groupBy"]; text: string }> = [
   { value: "skill", text: "Skill" },
   { value: "member", text: "Member" },
-  { value: "none", text: "None (table only)" },
 ];
 
 /**

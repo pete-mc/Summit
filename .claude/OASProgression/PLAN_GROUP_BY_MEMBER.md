@@ -90,7 +90,31 @@ show; the filter still hides when asked.
 that member's **row** for a skill with no progress, leaving other members' rows for that skill
 intact. Same filter, different granularity.
 
-## Table view
+## Table view — BUILT, THEN REMOVED (2026-09-29)
+
+Shipped in `1ca66e5` and removed the same day: on seeing it in use the grouping did not feel
+right in this view, and how it *should* behave needs more thought than it had.
+
+The mechanism was sound — it reused the Present Awards pattern and worked — so the question is
+design, not implementation. What was never resolved:
+
+- **Grouping versus sorting.** The table's columns are sortable, but grouping confines sorting to
+  within each group. Grouped by Member, "sort by Stage" no longer answers "who is furthest along?"
+  — which is much of the point of the flat view.
+- **Grouping versus the per-column filters.** Filtering to one Skill while grouped by Skill leaves
+  a single group heading wrapping every row: noise, not structure.
+- **What the flat view is *for*.** The heat map already answers "how is this member doing?" once
+  grouped by member. The table's distinct value may be precisely that it is flat and sortable, in
+  which case grouping makes it a worse heat map rather than a better table.
+
+Re-adding it is therefore a deliberate design decision, not a tidy-up. The heat map's own grouping
+is unaffected and stays.
+
+One artefact remains on purpose: `groupBy` still accepts `"none"` in the persisted filter state,
+because the table's control briefly offered it and a state saved in that window must still load.
+The heat map renders `"none"` as `"skill"`.
+
+## Table view (original plan, not built)
 
 Uses `v-data-table` grouping, the same mechanism already built for Present Awards
 (`PresentAwardsTableVue`), with a three-way choice: **None / Member / Skill**.

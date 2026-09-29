@@ -61,11 +61,6 @@ export default defineComponent({
   props: {
     items: { type: Array as PropType<OASProgressionRow[]>, required: true },
     columnFilters: { type: Object as PropType<Record<string, string>>, default: () => ({}) },
-    /**
-     * Shares the heat map's own setting, so switching views keeps the same organisation. "skill"
-     * groups by the Skill column, "member" by Member, and anything else leaves the table flat.
-     */
-    groupBy: { type: String as PropType<"skill" | "member" | "none">, default: "none" },
   },
   data() {
     return {
@@ -75,27 +70,6 @@ export default defineComponent({
   computed: {
     filteredItems(): OASProgressionRow[] {
       return filterOASProgressionRows(this.items, this.columnFilters);
-    },
-    /**
-     * v-data-table takes groupBy as an array of field names; an empty array means "don't group".
-     * The page's own "skill"/"member" maps onto this table's column names.
-     */
-    groupByFields(): string[] {
-      if (this.groupBy === "member") return ["memberName"];
-      if (this.groupBy === "skill") return ["stream"];
-      return [];
-    },
-    /**
-     * The headers v-data-table actually renders, which the #body.prepend filter row must mirror
-     * cell for cell.
-     *
-     * Vuetify drops the grouped column from its own header row (`computedHeaders` filters it out
-     * — VDataTable.js:126), since its value is shown in the group heading instead. Iterating the
-     * raw `headers` emits one <th> too many, shifting every filter box left of its column — the
-     * same bug fixed in PresentAwardsTableVue.
-     */
-    renderedHeaders(): DataTableHeader[] {
-      return this.headers.filter((header) => !this.groupByFields.includes(header.value));
     },
     hasActiveColumnFilters(): boolean {
       return Object.values(this.columnFilters).some((value) => value.trim() !== "");

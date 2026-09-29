@@ -4,35 +4,10 @@
       <v-btn v-if="hasActiveColumnFilters" text small color="primary" class="oas-vue-clear-filters-btn" @click="onClearFiltersClick">Clear filters</v-btn>
     </div>
 
-    <v-data-table
-      :headers="headers"
-      :items="filteredItems"
-      :group-by="groupByFields"
-      dense
-      :items-per-page="25"
-      :footer-props="{ itemsPerPageOptions: [10, 25, 50, 100, -1] }"
-      class="oas-vue-data-table"
-    >
-      <!--
-        Custom group header: Vuetify's default ships a "remove grouping" button that would clear
-        groupBy directly, leaving the page's own Group by control saying one thing and the table
-        doing another. This keeps the collapse toggle and drops that. No count, per
-        PLAN_GROUP_BY_MEMBER.md — unlike Present Awards there is no single number worth the noise.
-      -->
-      <template #group.header="{ group, isOpen, toggle }">
-        <td :colspan="renderedHeaders.length" class="oas-vue-group-header">
-          <v-btn icon small class="oas-vue-group-toggle" :aria-label="isOpen ? `Collapse ${group}` : `Expand ${group}`" @click="toggle">
-            <v-icon small>{{ isOpen ? "mdi-chevron-down" : "mdi-chevron-right" }}</v-icon>
-          </v-btn>
-          <span class="oas-vue-group-label">{{ group }}</span>
-        </td>
-      </template>
-
+    <v-data-table :headers="headers" :items="filteredItems" dense :items-per-page="25" :footer-props="{ itemsPerPageOptions: [10, 25, 50, 100, -1] }" class="oas-vue-data-table">
       <template #body.prepend>
         <tr class="oas-vue-column-filter-row">
-          <!-- renderedHeaders, not headers: Vuetify removes the grouped column from its own
-               header row, so iterating the raw list shifts every filter box left by one. -->
-          <th v-for="header in renderedHeaders" :key="header.value">
+          <th v-for="header in headers" :key="header.value">
             <v-select
               v-if="header.filterType === 'select'"
               :value="columnFilters[header.value] || null"
@@ -101,24 +76,6 @@
   vertical-align: middle;
 }
 
-/* Group heading rows, matching PresentAwardsTableVue's own so the three tables read alike. */
-.oas-vue-group-header {
-  background-color: var(--summit-color-bg-muted, #f3f2f1);
-}
-
-.oas-vue-group-label {
-  font-size: var(--oas-vue-font-size-body);
-  font-family: var(--oas-vue-font-family);
-  font-weight: var(--summit-font-weight-semibold, 600);
-  margin-left: var(--summit-space-xs, 4px);
-}
-
-/* Chevron sits tight against the label rather than carrying v-btn's default icon-button width. */
-.oas-vue-group-toggle.v-btn {
-  width: 20px;
-  height: 20px;
-  margin: 0;
-}
 
 /*
  * v-data-table's own body text otherwise falls back to whatever Vuetify/Terrain's ambient

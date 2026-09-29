@@ -45,43 +45,20 @@ describe("OAS heat map — group by Skill or Member", () => {
   });
 });
 
-describe("OAS table view — grouping", () => {
+describe("OAS table view — deliberately not grouped", () => {
   const TABLE = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASProgressionTableVue.vue"), "utf8");
-  const TABLE_TS = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASProgressionTableVue.ts"), "utf8");
 
-  it("maps the shared setting onto this table's own column names", () => {
-    expect(TABLE_TS).toContain('if (this.groupBy === "member") return ["memberName"]');
-    expect(TABLE_TS).toContain('if (this.groupBy === "skill") return ["stream"]');
+  it("stays flat", () => {
+    // Table grouping was built and then removed: how it should behave alongside this view's own
+    // sorting and per-column filters needs more thought than it had. Re-adding it is a deliberate
+    // decision, not a tidy-up — see PLAN_GROUP_BY_MEMBER.md.
+    expect(TABLE).not.toContain(":group-by=");
+    expect(TABLE).not.toContain("#group.header");
   });
 
-  it("leaves the table flat for any other value", () => {
-    expect(TABLE_TS).toContain("return [];");
-  });
-
-  it("builds the filter row from the rendered headers, not the raw ones", () => {
-    // Vuetify drops the grouped column from its own header row, so iterating `headers` emits one
-    // <th> too many and shifts every filter box left — the same bug already fixed in Present
-    // Awards.
-    expect(TABLE).toContain('v-for="header in renderedHeaders"');
-    expect(TABLE_TS).toContain("this.headers.filter((header) => !this.groupByFields.includes(header.value))");
-  });
-
-  it("sizes the group heading to the rendered header count", () => {
-    expect(TABLE).toContain(':colspan="renderedHeaders.length"');
-  });
-
-  it("uses a custom group header without Vuetify's remove-grouping button", () => {
-    // That button clears groupBy directly, which would leave the page's own Group by control
-    // saying one thing while the table does another.
-    expect(TABLE).toContain("#group.header");
-    expect(TABLE).toContain("mdi-chevron-down");
-  });
-
-  it("shows no count in the group heading", () => {
-    // Unlike Present Awards, which counts outstanding awards because that is the task there.
-    const headerSlot = TABLE.slice(TABLE.indexOf("#group.header"), TABLE.indexOf("#body.prepend"));
-    expect(headerSlot).toContain("{{ group }}");
-    expect(headerSlot).not.toMatch(/\(\{\{.*length/);
+  it("builds its filter row from the plain header list", () => {
+    // With no grouping there is no dropped column, so renderedHeaders has nothing to mirror.
+    expect(TABLE).toContain('v-for="header in headers"');
   });
 });
 
