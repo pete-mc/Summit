@@ -1,8 +1,9 @@
 # OAS Progression — group by Skill or Member
 
-**Status:** planned, not built. Agreed 2026-09-28.
+**Status:** **complete for the heat map**, verified live 2026-09-29. The table view's own grouping
+was built and then removed the same day — see "Table view" below for why.
 
-Addresses the `.claude/DEV_NOTES.md` entry:
+Addressed the `.claude/DEV_NOTES.md` entry (since cleared by the user):
 
 > Add ability to switch between Group by Skill or Member
 >   - Group by Skill keeps skill icon.
@@ -134,16 +135,33 @@ Persisted in `summit.oasProgressionVue.filters` as a new `groupBy: "skill" | "me
 defaulting to `"skill"` so existing users see no change. Merged over `DEFAULT_FILTERS` like every
 other key, so a saved state predating this still loads.
 
-## Staging
+## Staging — as built
 
-1. `groupSectionsByMember()` + unit tests — pure function, no UI
-2. Heat map renders either grouping; toggle in the Display fieldset; persistence
-3. Table view grouping (None/Member/Skill), reusing the Present Awards pattern
-4. Live verification, and the PDF export re-checked — it paginates on
-   `.oas-heatmap-skill-title-row`, and grouped by member those become member rows, so the export's
-   section selector needs to match whichever heading is in play
+1. ✅ `groupSectionsByMember()` + 13 unit tests — pure function, no UI (`d0b581f`)
+2. ✅ Heat map renders either grouping; `Group by` select; persistence (`743aa13`)
+3. ❌ Table view grouping (`1ca66e5`) — **reverted** (`1e7b165`), see above
+4. ✅ Live verification, including the PDF export
+
+The control ended up as a `v-select` in the filter row rather than inside the `Display` fieldset:
+Skill and Member are exclusive, so a checkbox would have been wrong, and it reads better beside
+the other selects than as an odd one out among checkboxes.
+
+### The PDF export bug this surfaced
+
+Stage 4 was right to single out the export, though not for the reason given. The member-grouped
+heading reuses `.oas-heatmap-skill-title-row`, so the selector needed no change at all.
+
+What it exposed instead was a **pre-existing** bug, unrelated to grouping: skill and patrol
+headings shared one selector, so a patrol counted as a full section boundary. With "Break by
+patrol" on, the exporter split skills across pages and stranded their headings. Fixed in `2d18e4a`
+by ranking breaks in three tiers — section, then sub-section, then any row.
+
+Worth noting how it was found: not by a test, but by the user opening a real PDF. That logic had
+no tests at all, and its failure mode is a wrong-looking document rather than an error. Five tests
+now cover it.
 
 ## Open questions
 
 - Whether "Group by Member" should also be offered on the **I Statements** page, which shares this
   page's visual language. Not in scope here.
+- Whether the table view should group at all — see "Table view" above for what was unresolved.

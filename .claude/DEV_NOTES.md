@@ -32,11 +32,6 @@ The system can’t record that a youth member has had the achievement awarded to
 
 ## OAS Progression
 
-- Add ability to switch between Group by Skill or Member
+## I - Statements
 
-  - Skill keeps icon
-  - Name has no icon. Sortby still works.
-
-  ## I - Statements
-
-  - Filter area doesn't have same space below it, as per OAS Progession, Present Awards etc. This layout should be standard for every page we make.
+- Filter area doesn't have same space below it, as per OAS Progession, Present Awards etc. This layout should be standard for every page we make.

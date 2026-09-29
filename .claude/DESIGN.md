@@ -267,6 +267,25 @@ tokens, spacing scale) for a specific integration point, check live via DevTools
 Application/Elements tab → inspect `:root` CSS custom properties on the Terrain page
 itself (Vuetify typically exposes theme colors as `--v-primary-base` etc.).
 
+## Page layout: filter panel spacing is NOT yet standard (known gap)
+
+Every Vuetify page wraps its filter controls in `.oas-vue-filter-panel`, but **each redeclares
+that class in its own scoped `<style>` block**, and none of them sets space *below* the panel —
+the gap before the table comes from whatever the next element happens to bring.
+
+The result is that OAS Progression, Present Awards and I Statements do not line up, which is the
+`.claude/DEV_NOTES.md` entry:
+
+> Filter area doesn't have same space below it, as per OAS Progression, Present Awards etc. This
+> layout should be standard for every page we make.
+
+**When fixing this**, the class belongs in `src/styles/index.css` once, not redeclared per page —
+the duplication is the actual cause, since each copy can drift independently. Scoped styles cannot
+be shared between components, so a shared class has to live in the global sheet.
+
+Not yet done. Left as a deliberate cross-page change rather than patched on one page at a time,
+which would make the inconsistency worse before it got better.
+
 ## Summit's CSS loses cascade ties — never rely on inheriting a Vuetify rule
 
 `manifest.json` injects `summit.css` as a **content-script stylesheet**. Chrome places
