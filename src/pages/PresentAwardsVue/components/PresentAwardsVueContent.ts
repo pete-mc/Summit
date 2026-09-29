@@ -3,6 +3,7 @@ import type { PropType } from "vue";
 import SummitAchievement from "@/pages/PresentAwards/models/SummitAchievement";
 import PresentAwardsTableVue from "./PresentAwardsTableVue.vue";
 import PresentAwardsFiltersVue from "./PresentAwardsFiltersVue.vue";
+import SummitLoadingState from "@/components/SummitLoadingState.vue";
 import type { PresentAwardsDisplayFilters } from "./PresentAwardsFiltersVue";
 import { filterPresentAwardRows, NOT_PRESENTED } from "./PresentAwardsTableVue";
 import { DEFAULT_FILTERS, loadPresentAwardsVueFilters, savePresentAwardsVueFilters, type PresentAwardsVueFilterState } from "../services/PresentAwardsVueFilterPersistence";
@@ -49,7 +50,7 @@ function loadInitialFilters(): PresentAwardsVueFilterState {
  */
 export default defineComponent({
   name: "PresentAwardsVueContent",
-  components: { PresentAwardsTableVue, PresentAwardsFiltersVue },
+  components: { PresentAwardsTableVue, PresentAwardsFiltersVue, SummitLoadingState },
   props: {
     items: { type: Array as PropType<SummitAchievement[]>, default: () => [] },
     loadState: { type: String, default: "loading" },
@@ -95,6 +96,24 @@ export default defineComponent({
     if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
   },
   computed: {
+    /**
+     * Whether the page has data on screen. Saving and refreshing both re-run the load, which
+     * sets loadState back to "loading" — gating the table on loadState alone would therefore
+     * blank a full screen of ticked checkboxes every time the user pressed Save. The Save
+     * button's own spinner already reports that work. Only a genuine first load has nothing
+     * to show.
+     */
+    hasContent(): boolean {
+      return this.items.length > 0;
+    },
+    /**
+     * Errors always show. The bar only shows on a first load, for the reason above — a reload
+     * behind existing content is reported by the refresh and Save buttons' own spinners.
+     */
+    sharedLoadState(): "loading" | "ready" | "error" {
+      if (this.loadState === "error") return "error";
+      return this.loadState === "loading" && !this.hasContent ? "loading" : "ready";
+    },
     /**
      * The hide-previously-presented toggle runs UPSTREAM of the column filters, so the Type
      * dropdown's options (derived from what the table is given) only ever offer values that could

@@ -9,13 +9,17 @@
         <v-btn icon title="Refresh data" :loading="isLoading" :disabled="isLoading" @click="onReload"><v-icon>mdi-refresh</v-icon></v-btn>
       </div>
 
-      <v-progress-linear v-if="loadState === 'loading-trees'" indeterminate color="primary"></v-progress-linear>
-      <v-progress-linear v-else-if="loadState === 'loading-templates'" :value="progressPercent" color="primary"></v-progress-linear>
-
-      <div v-if="loadState === 'error'" class="istatement-error">
-        <p>Could not load i-statement data.</p>
-        <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onReload">Retry</v-btn>
-      </div>
+      <!--
+        This page's two loading phases map onto the shared component's optional counts: trees
+        have no knowable total, templates do. See src/components/SummitLoadingState.ts.
+      -->
+      <SummitLoadingState
+        :state="sharedLoadState"
+        :done="loadState === 'loading-templates' ? progressDone : undefined"
+        :total="loadState === 'loading-templates' ? progressTotal : undefined"
+        error-message="Could not load i-statement data."
+        :on-retry="onReload"
+      />
 
       <template v-if="loadState === 'ready' && matrix">
         <p v-if="matrix.failedTemplates > 0" role="status" class="istatement-warning">
@@ -57,8 +61,8 @@
   letter-spacing: normal;
 }
 
-.istatement-warning,
-.istatement-error {
+/* .istatement-error went with the error markup — that now lives in SummitLoadingState.vue. */
+.istatement-warning {
   font-family: var(--oas-vue-font-family);
   font-size: var(--oas-vue-font-size-body);
   padding: 8px 0;

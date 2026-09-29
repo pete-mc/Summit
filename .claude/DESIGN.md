@@ -297,6 +297,40 @@ filter row) stays local and says why in a comment.
 Guarded by `tests/unit/components/istatement-matches-oas-progression.spec.ts`, which fails if any
 page redeclares the class.
 
+## A shared *component* beats a shared *class*
+
+**Added 2026-09-29**, building `src/components/SummitLoadingState.vue`.
+
+The section above says a shared class belongs in `index.css`, declared once. That is right, but
+it is the weaker of two options. When the thing being shared is a whole piece of UI — markup plus
+its styling — make it a **component** and let its styles stay in its own scoped `<style>` block.
+
+The difference is that a class can be copied and a component cannot. `.oas-vue-filter-panel` drifted
+precisely because each page *could* redeclare it; two did, with different gaps, and a third declared
+it not at all. A component imported from `src/components/` has exactly one definition by construction,
+and there is no "declare it locally to be sure" mistake available to make.
+
+So:
+
+- **Shared markup + styling** → a component in `src/components/`, styles scoped to it.
+- **A shared class applied to page-specific markup** (`.oas-vue-filter-panel`, the panel classes)
+  → `index.css`, declared once, per the section above.
+
+Pages still differ in *when* they show a shared component. The three Vue pages all use
+`SummitLoadingState`, but OAS Progression shows it alongside partial content while the other two
+replace their body with it — its nine skills stream in one at a time, so hiding everything until
+all nine land would feel slower. That is a real behavioural difference, argued in
+`.claude/SharedLoading/PLAN.md`, not drift. Consistency means the same component and the same
+look, not identical conditions.
+
+**Note for tests:** Jest cannot parse an SFC, so a `.vue` import in a component under test needs a
+`jest.mock(..., { virtual: true })` stub — see the top of
+`tests/unit/pages/PresentAwardsVue/PresentAwardsVueContent.spec.ts`. This applies to relative and
+`@/`-aliased imports alike; neither resolves to the sibling `.ts` on its own.
+
+Guarded by `tests/unit/components/shared-loading-state.spec.ts`, which fails if any page
+reintroduces its own `<v-progress-linear>`.
+
 ## Summit's CSS loses cascade ties — never rely on inheriting a Vuetify rule
 
 `manifest.json` injects `summit.css` as a **content-script stylesheet**. Chrome places

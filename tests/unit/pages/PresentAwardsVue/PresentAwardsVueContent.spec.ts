@@ -8,6 +8,7 @@ import type { TerrainAchievements, TerrainUnitMember } from "@/types/terrainType
 // options object under test can be required — the table is covered by its own logic tests.
 jest.mock("@/pages/PresentAwardsVue/components/PresentAwardsTableVue.vue", () => ({ __esModule: true, default: { name: "PresentAwardsTableVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/PresentAwardsVue/components/PresentAwardsFiltersVue.vue", () => ({ __esModule: true, default: { name: "PresentAwardsFiltersVue", render: () => null } }), { virtual: true });
+jest.mock("@/components/SummitLoadingState.vue", () => ({ __esModule: true, default: { name: "SummitLoadingState", render: () => null } }), { virtual: true });
 
 // gridExport's top-level jsPDF/xlsx imports are ESM that Jest cannot parse, so it is mocked here
 // as the other grid tests do. Mocking it also lets these assert what reaches the exporters.

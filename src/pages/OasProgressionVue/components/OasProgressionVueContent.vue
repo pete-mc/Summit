@@ -2,20 +2,36 @@
   <v-app>
     <div class="oas-vue-content oas-progression-panel">
       <div class="oas-progression-view-row">
-        <span v-if="loadingStreams.size > 0">Loading {{ loadingStreams.size }} stream(s)...</span>
+        <span v-if="loadingStreams.size > 0">Loading skills {{ streamsDone }}/{{ totalStreams }}...</span>
         <v-spacer></v-spacer>
-        <v-btn v-if="filters.viewMode === 'heatmap'" outlined color="primary" class="oas-vue-pill-btn" @click="onPdfExportClick">PDF Export</v-btn>
-        <template v-else>
-          <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onTableExcelExportClick">Excel Export</v-btn>
-          <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onTablePdfExportClick">PDF Export</v-btn>
+        <!-- Exports and the view toggle need something to act on; hidden until a stream lands. -->
+        <template v-if="hasContent">
+          <v-btn v-if="filters.viewMode === 'heatmap'" outlined color="primary" class="oas-vue-pill-btn" @click="onPdfExportClick">PDF Export</v-btn>
+          <template v-else>
+            <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onTableExcelExportClick">Excel Export</v-btn>
+            <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onTablePdfExportClick">PDF Export</v-btn>
+          </template>
+          <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onToggleViewModeClick">{{ filters.viewMode === "heatmap" ? "Show Table" : "Show Heatmap" }}</v-btn>
         </template>
-        <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onToggleViewModeClick">{{ filters.viewMode === "heatmap" ? "Show Table" : "Show Heatmap" }}</v-btn>
         <v-btn icon title="Refresh data" :loading="isReloading" :disabled="isReloading" @click="onReloadAllClick"><v-icon>mdi-refresh</v-icon></v-btn>
       </div>
 
+      <!--
+        Unlike the other two pages this bar sits ALONGSIDE the content rather than replacing it:
+        the nine skills arrive one at a time and each renders as it lands. See `hasContent` in
+        the .ts for why hiding the body here would be a regression.
+      -->
+      <SummitLoadingState
+        :state="sharedLoadState"
+        :done="streamsDone"
+        :total="totalStreams"
+        error-message="Could not load OAS progression data."
+        :on-retry="onReloadAllClick"
+      />
+
       <div v-if="exportFeedback" role="status" class="data-grid-export-feedback">{{ exportFeedback }}</div>
 
-      <template v-if="filters.viewMode === 'heatmap'">
+      <template v-if="hasContent && filters.viewMode === 'heatmap'">
         <OASProgressionFiltersVue
           :filters="filters"
           :available-patrols="availablePatrols"
@@ -44,7 +60,7 @@
         />
       </template>
 
-      <OASProgressionTableVue v-else :items="items" :column-filters.sync="tableColumnFilters" />
+      <OASProgressionTableVue v-else-if="hasContent" :items="items" :column-filters.sync="tableColumnFilters" />
     </div>
   </v-app>
 </template>

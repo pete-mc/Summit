@@ -2,29 +2,56 @@
   <v-app>
     <div class="oas-vue-content present-awards-panel">
       <div class="oas-progression-view-row">
-        <span v-if="loadState === 'loading'">Loading awards...</span>
-        <span v-else-if="loadState === 'error'">Could not load awards. Try reloading the page.</span>
+        <span v-if="sharedLoadState === 'loading'">Loading awards...</span>
         <v-spacer></v-spacer>
-        <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onExcelExportClick">Excel Export</v-btn>
-        <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onPdfExportClick">PDF Export</v-btn>
-        <v-btn depressed class="oas-vue-pill-btn present-awards-save-btn" :loading="isSaving" :disabled="isSaving" @click="onSaveClick">Save Changes</v-btn>
+        <!--
+          Exports and Save act on loaded data, so they are hidden until there is some. Leaving
+          them clickable during the load offered an empty spreadsheet and a save of nothing.
+        -->
+        <template v-if="hasContent">
+          <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onExcelExportClick">Excel Export</v-btn>
+          <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onPdfExportClick">PDF Export</v-btn>
+          <v-btn depressed class="oas-vue-pill-btn present-awards-save-btn" :loading="isSaving" :disabled="isSaving" @click="onSaveClick">Save Changes</v-btn>
+        </template>
         <v-btn icon title="Refresh data" :loading="isReloading" :disabled="isReloading" @click="onReloadClick"><v-icon>mdi-refresh</v-icon></v-btn>
       </div>
 
-      <PresentAwardsFiltersVue :filters="displayFilters" @update:filters="onDisplayFiltersUpdate" />
+      <!--
+        The load is unmeasurable (one request, not a countable set), so no counts are passed and
+        the bar is indeterminate. Retry re-runs the load rather than telling the user to reload
+        the page, which is what the old error text did.
 
+        `sharedLoadState` suppresses the bar once there is content: saving re-runs the load, and
+        a bar replacing the table on every Save would be worse than the bug being fixed.
+      -->
+      <SummitLoadingState :state="sharedLoadState" error-message="Could not load awards." :on-retry="onReloadClick" />
+
+      <!--
+        Deliberately OUTSIDE the ready gate below. Saving triggers a reload, so gating this on
+        loadState would hide the "Saved." confirmation during the very reload the save causes.
+        Export feedback has no relationship to load state either.
+      -->
       <div v-if="feedback" role="status" class="data-grid-export-feedback">{{ feedback }}</div>
 
-      <PresentAwardsTableVue
-        :items="visibleItems"
-        :selected-ids="selectedIds"
-        :presented-dates="presentedDates"
-        :column-filters="columnFilters"
-        :group-by-member="groupByMember"
-        @toggle-present="onTogglePresent"
-        @update-date="onUpdateDate"
-        @update:columnFilters="onColumnFiltersUpdate"
-      />
+      <!--
+        Gated on 'ready'. Previously the filter panel and table rendered during the load, showing
+        a complete-looking table with no rows — which reads as "no awards" rather than "still
+        loading". That is the reported bug: the state was known, nothing displayed it.
+      -->
+      <template v-if="hasContent">
+        <PresentAwardsFiltersVue :filters="displayFilters" @update:filters="onDisplayFiltersUpdate" />
+
+        <PresentAwardsTableVue
+          :items="visibleItems"
+          :selected-ids="selectedIds"
+          :presented-dates="presentedDates"
+          :column-filters="columnFilters"
+          :group-by-member="groupByMember"
+          @toggle-present="onTogglePresent"
+          @update-date="onUpdateDate"
+          @update:columnFilters="onColumnFiltersUpdate"
+        />
+      </template>
     </div>
   </v-app>
 </template>

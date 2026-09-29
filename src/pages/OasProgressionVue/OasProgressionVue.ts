@@ -11,6 +11,12 @@ const logger = createLogger("OasProgressionVue");
 const CONCURRENCY = 6;
 
 /**
+ * The nine OAS skills, fetched on every load. Lifted out of loadOasProgressionData so the
+ * progress bar's denominator and the set of streams it waits for cannot drift apart.
+ */
+const ALL_STREAMS = ["bushcraft", "bushwalking", "camping", "aquatics", "boating", "paddling", "alpine", "cycling", "vertical"];
+
+/**
  * OasProgressionVueContent is mounted as a second, independent Vue instance built from
  * Summit's own Vuetify-registered `vue` (see src/vuetifySetup.ts) — NOT registered as a child
  * component in this SFC's own template. Terrain's router renders this outer .vue file against
@@ -29,6 +35,7 @@ interface ContentInstance {
   trunkStageCounts: Record<string, number>;
   members: TerrainUnitMember[];
   loadingStreams: Set<string>;
+  loadError: boolean;
   $mount(el: HTMLElement): void;
   $destroy(): void;
 }
@@ -38,6 +45,12 @@ function data() {
     items: [] as OASProgressionRow[],
     contentInstance: undefined as ContentInstance | undefined,
     loadingStreams: new Set<string>(),
+    /**
+     * A whole-load failure, as opposed to one stream failing. Previously the catch below only
+     * logged, so a failed load left a permanently empty heat map with nothing on screen to say
+     * why. TOTAL_STREAMS is the denominator for the progress bar.
+     */
+    loadError: false,
     trunkStageCounts: {} as Record<string, number>,
     members: [] as TerrainUnitMember[],
   };
@@ -51,6 +64,9 @@ export default defineComponent({
       this.renderContent(newItems);
     },
     loadingStreams() {
+      this.renderContent(this.items);
+    },
+    loadError() {
       this.renderContent(this.items);
     },
     members() {
@@ -87,13 +103,14 @@ export default defineComponent({
   methods: {
     async loadOasProgressionData() {
       try {
+        this.loadError = false;
         const unitId = TerrainState.getUnitID();
         const members = (await fetchUnitMembers()).filter((m) => m.unit.duty != "adult_leader");
         this.members = members;
 
         this.items = [];
         this.trunkStageCounts = {};
-        this.loadingStreams = new Set(["bushcraft", "bushwalking", "camping", "aquatics", "boating", "paddling", "alpine", "cycling", "vertical"]);
+        this.loadingStreams = new Set(ALL_STREAMS);
 
         await fetchAllOASProgression(unitId, members, CONCURRENCY, (stream, result) => {
           this.items = [...this.items, ...result.rows];
@@ -104,6 +121,10 @@ export default defineComponent({
         });
       } catch (e) {
         logger.error("failed to load OAS progression data:", e);
+        // Clear the in-flight set too: leaving streams "loading" forever would show a stuck
+        // progress bar rather than the error.
+        this.loadingStreams = new Set<string>();
+        this.loadError = true;
       }
     },
     async reloadAll() {
@@ -148,6 +169,8 @@ export default defineComponent({
           trunkStageCounts: this.trunkStageCounts,
           members: this.members,
           loadingStreams: this.loadingStreams,
+          loadError: this.loadError,
+          totalStreams: ALL_STREAMS.length,
           onReloadAll: this.reloadAll,
           onReloadStream: this.reloadStream,
         },
@@ -160,6 +183,7 @@ export default defineComponent({
       this.contentInstance.trunkStageCounts = this.trunkStageCounts;
       this.contentInstance.members = this.members;
       this.contentInstance.loadingStreams = this.loadingStreams;
+      this.contentInstance.loadError = this.loadError;
     },
     unmountContentComponent() {
       this.contentInstance?.$destroy();

@@ -1,13 +1,14 @@
 import { defineComponent, type PropType } from "vue";
 import IStatementFilters from "./IStatementFilters.vue";
 import IStatementHeatMap from "./IStatementHeatMap.vue";
+import SummitLoadingState from "@/components/SummitLoadingState.vue";
 import { type IStatementMatrix } from "../services/buildIStatementMatrix";
 import { filterIStatementMatrix, type FilteredMatrix, type IStatementFilters as Filters } from "../services/filterIStatementMatrix";
 import { defaultIStatementFilters, loadIStatementFilters, saveIStatementFilters } from "../services/IStatementFilterPersistence";
 
 export default defineComponent({
   name: "IStatementsContent",
-  components: { IStatementFilters, IStatementHeatMap },
+  components: { IStatementFilters, IStatementHeatMap, SummitLoadingState },
   props: {
     matrix: { type: Object as PropType<IStatementMatrix | undefined>, default: undefined },
     loadState: { type: String, default: "loading-trees" },
@@ -22,8 +23,14 @@ export default defineComponent({
     isLoading(): boolean {
       return this.loadState === "loading-trees" || this.loadState === "loading-templates";
     },
-    progressPercent(): number {
-      return this.progressTotal > 0 ? (this.progressDone / this.progressTotal) * 100 : 0;
+    /**
+     * Collapses this page's four load states onto the three the shared indicator knows about.
+     * The two loading phases differ only in whether counts are available, which the indicator
+     * decides for itself from the props it is given.
+     */
+    sharedLoadState(): "loading" | "ready" | "error" {
+      if (this.isLoading) return "loading";
+      return this.loadState === "error" ? "error" : "ready";
     },
     filtered(): FilteredMatrix {
       if (!this.matrix) {

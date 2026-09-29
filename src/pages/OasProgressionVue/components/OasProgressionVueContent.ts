@@ -3,6 +3,7 @@ import type { PropType } from "vue";
 import OASHeatMapVue from "./OASHeatMapVue.vue";
 import OASProgressionFiltersVue from "./OASProgressionFiltersVue.vue";
 import OASProgressionTableVue from "./OASProgressionTableVue.vue";
+import SummitLoadingState from "@/components/SummitLoadingState.vue";
 import { filterOASProgressionRows } from "./OASProgressionTableVue";
 import { groupRowsForHeatMap } from "@/pages/OasProgression/services/groupRowsForHeatMap";
 import { collectPatrolNames, OAS_SKILLS } from "@/pages/OasProgression/services/filterHeatMapSections";
@@ -62,7 +63,7 @@ function loadInitialFilters(): OASProgressionVueFilterState {
 
 export default defineComponent({
   name: "OasProgressionVueContent",
-  components: { OASHeatMapVue, OASProgressionFiltersVue, OASProgressionTableVue },
+  components: { OASHeatMapVue, OASProgressionFiltersVue, OASProgressionTableVue, SummitLoadingState },
   props: {
     items: { type: Array as PropType<OASProgressionRow[]>, required: true },
     trunkStageCounts: { type: Object as PropType<Record<string, number>>, required: true },
@@ -71,6 +72,8 @@ export default defineComponent({
     // omitted here rather than declared as Object — a Set fails that check at runtime and logs
     // a spurious "[Vue warn]: Invalid prop" despite being exactly the value passed in.
     loadingStreams: { type: null as unknown as PropType<Set<string>>, required: true },
+    loadError: { type: Boolean, default: false },
+    totalStreams: { type: Number, default: 0 },
     onReloadAll: { type: Function as PropType<() => void>, required: true },
     onReloadStream: { type: Function as PropType<(stream: string) => void>, required: true },
   },
@@ -83,6 +86,31 @@ export default defineComponent({
     };
   },
   computed: {
+    /**
+     * Drives the shared indicator. Note this page shows the bar WHILE streams are still arriving,
+     * rather than instead of the content — see `hasContent` for why.
+     */
+    sharedLoadState(): "loading" | "ready" | "error" {
+      if (this.loadError) return "error";
+      return this.loadingStreams.size > 0 ? "loading" : "ready";
+    },
+    /**
+     * Whether to render the heat map alongside the bar.
+     *
+     * This page deliberately differs from Present Awards and I Statements, which hide their body
+     * until loaded. OAS streams arrive one at a time and the heat map renders each as it lands,
+     * so hiding everything until all nine finish would make the page feel slower, not faster —
+     * and a per-stream reload would blank a full screen of data to reload one skill. Showing
+     * partial results with the bar still running is the honest display here: the bar says more
+     * is coming.
+     */
+    hasContent(): boolean {
+      return this.items.length > 0;
+    },
+    /** Streams landed so far, for the running count. */
+    streamsDone(): number {
+      return Math.max(0, this.totalStreams - this.loadingStreams.size);
+    },
     grouped(): Record<string, ReturnType<typeof groupRowsForHeatMap>[string]> {
       return groupRowsForHeatMap(this.items, this.trunkStageCounts, this.members);
     },
