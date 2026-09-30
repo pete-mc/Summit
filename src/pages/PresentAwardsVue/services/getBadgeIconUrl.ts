@@ -1,31 +1,15 @@
 /**
  * Badge artwork lookup for the Present Awards table's icon column.
  *
- * Only the nine OAS skill icons exist so far (src/images/oas-skills/, already exposed via
- * manifest.json's web_accessible_resources). Every other award type — milestones, SIAs, peak
- * awards, courses — has no artwork yet and gets a neutral placeholder, so the column stays
- * visually aligned and the Badger can still scan down it. Drop a file into src/images/badges/
- * and add a line to BADGE_ICON_FILENAMES to light one up; no other change is needed.
+ * Every badge Summit knows about — which artwork it has, and which it does not — lives in the
+ * shared manifest at src/shared/badgeManifest.ts. This module is only the URL-building half.
+ * To add artwork, edit the manifest, not this file.
+ *
+ * Awards with no artwork yet resolve to null, and the caller renders a neutral placeholder so the
+ * column stays visually aligned and the Badger can still scan down it.
  */
 
-/** OAS branch key -> filename in images/oas-skills/. Mirrors getSkillIconUrl.ts's own map. */
-const OAS_SKILL_ICON_FILENAMES: Record<string, string> = {
-  bushcraft: "Bushcraft.png",
-  bushwalking: "Bushwalking.png",
-  camping: "Camping.png",
-  aquatics: "Aquatic.png",
-  boating: "Boating.png",
-  paddling: "Paddling.png",
-  alpine: "Alpine.png",
-  cycling: "Cycling.png",
-  vertical: "Vertical.png",
-};
-
-/**
- * Non-OAS badge key -> filename in images/badges/. Empty until artwork is added to the repo —
- * every key falls through to the placeholder until then.
- */
-const BADGE_ICON_FILENAMES: Record<string, string> = {};
+import { getBadgeEntry } from "@/shared/badgeManifest";
 
 /**
  * The extension's own base URL, read from a DOM attribute rather than chrome.runtime.
@@ -44,24 +28,25 @@ function getExtensionUrl(): string | null {
  */
 export function getBadgeIconUrl(badgeKey: string): string | null {
   const extensionUrl = getExtensionUrl();
-  if (!extensionUrl || !badgeKey) {
+  if (!extensionUrl) {
     return null;
   }
 
-  const skillFilename = OAS_SKILL_ICON_FILENAMES[badgeKey];
-  if (skillFilename) {
-    return `${extensionUrl}images/oas-skills/${skillFilename}`;
-  }
-
-  const badgeFilename = BADGE_ICON_FILENAMES[badgeKey];
-  if (badgeFilename) {
-    return `${extensionUrl}images/badges/${badgeFilename}`;
-  }
-
-  return null;
+  const file = getBadgeEntry(badgeKey)?.file;
+  return file ? `${extensionUrl}images/${file}` : null;
 }
 
 /** True when real artwork exists for this key — i.e. the placeholder is not being used. */
 export function hasBadgeIcon(badgeKey: string): boolean {
-  return Boolean(OAS_SKILL_ICON_FILENAMES[badgeKey] || BADGE_ICON_FILENAMES[badgeKey]);
+  return Boolean(getBadgeEntry(badgeKey)?.file);
+}
+
+/**
+ * True when this key's artwork is wide (96x66) rather than a square OAS icon (85x85). The table's
+ * icon column is a fixed square, so a wide badge needs extra width or it letterboxes down to a
+ * visibly smaller badge than its neighbours.
+ */
+export function hasWideIcon(badgeKey: string): boolean {
+  const entry = getBadgeEntry(badgeKey);
+  return Boolean(entry?.file && entry.wide);
 }

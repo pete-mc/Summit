@@ -197,13 +197,18 @@ should be suspected as this before anyone starts adjusting values.
 
 ### Badge artwork — current state
 
-The badge column ships with the **nine existing OAS skill PNGs** wired up; every other award type
-renders a neutral dashed placeholder. `SummitAchievement.badgeKey` resolves to the OAS *branch*
-for OAS awards (artwork is per skill) and to the achievement type otherwise.
+**Moved to `.claude/BadgeManifest/PLAN.md`.** Badge lookup was originally two hardcoded maps
+local to this page (`AAWARD_ICON_FILENAMES` etc.); as of 2026-09-30 it is one shared table,
+`src/shared/badgeManifest.ts`, covering every badge type Terrain awards — not just this page's
+OAS/additional-award columns — with a validation test that checks keys against Terrain's own
+bundle. See that plan for the full design, the inventory (72 badges, 28 with artwork), the
+camper-award and OAS sub-branch traps it caught, and how to add artwork.
 
-To add artwork: drop a file into `src/images/badges/` and add one line to
-`BADGE_ICON_FILENAMES` in `src/pages/PresentAwardsVue/services/getBadgeIconUrl.ts`. Nothing else
-needs to change — `manifest.json` already exposes the image directories.
+The short version for this page: `PresentAwardsTableVue` still calls `getBadgeIconUrl()` and
+`hasWideIcon()` from `getBadgeIconUrl.ts` exactly as before — those signatures didn't change, only
+what backs them. `SummitAchievement.badgeKey` resolves per award type (OAS branch/stream, the
+specific additional-award id, section+stage for milestones, section for peak awards, the selected
+SIA) rather than the bare achievement type, so distinct badges don't collapse onto one icon.
 
 **Terrain's own SVG icons were evaluated and rejected** (e.g.
 `_nuxt/img/icon--oas-bushwalking.--329572d.svg`). Three reasons, all verified against the
@@ -220,6 +225,10 @@ SVG *is* the better format, so the upgrade worth making is **local SVGs** — sa
 today, sharper rendering. That would only change if Terrain turns out to serve a stable unhashed
 path.
 
+**Done 2026-09-29**: the user supplied local SVGs for all nine OAS skills plus eight additional
+awards. The reasoning above still stands — these are bundled with the extension, not fetched from
+Terrain's hashed paths.
+
 ### Concurrent saves — resolved
 
 Built 2026-09-27, see `PLAN_STAGE_8_CONCURRENT_SAVE.md`. Saves now re-read immediately before
@@ -233,12 +242,9 @@ as making concurrent saves safe.
 
 ### Still open
 
-Nothing blocking. Two optional follow-ups:
+Nothing blocking. Local SVG badge artwork is done (see "Badge artwork" above and
+`.claude/BadgeManifest/PLAN.md`). One optional follow-up remains:
 
-- **Local SVG badge artwork.** The nine OAS skill icons are PNGs. Local SVGs would render sharper
-  at any size for smaller files, with the same reliability — unlike Terrain's own hashed SVG URLs,
-  which were evaluated and rejected (see "Badge artwork" above). Needs the artwork exported into
-  `resources/`; the wiring is one line per file in `BADGE_ICON_FILENAMES`.
 - **`.claude/DEV_NOTES.md` is out of date.** Its Present Awards entries — grouping by member, and
   the concurrent-save checksum — are both now done, and the "Badger" badge icon is partly done
   (the column exists; non-OAS types show a placeholder until artwork is added). That file is
@@ -246,6 +252,7 @@ Nothing blocking. Two optional follow-ups:
 
 ## Key references
 
+- `.claude/BadgeManifest/PLAN.md` — the shared badge lookup this page's icon column reads from
 - `.claude/OASProgression/PLAN_VUE.md` — why the second Vue instance is required
 - `.claude/OASProgression/PLAN_VUESTAGE_5.md` — the Table view build, including the three CSS
   mechanics (`::v-deep`, the two 20px global overrides, the `#body.prepend` hover leak)

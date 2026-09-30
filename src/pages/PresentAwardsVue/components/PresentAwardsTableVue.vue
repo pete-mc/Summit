@@ -76,7 +76,7 @@
         icon alone is ambiguous for anyone who does not recognise the artwork.
       -->
       <template #item.badge="{ item }">
-        <img v-if="badgeIconUrl(item)" :src="badgeIconUrl(item)" :alt="item.achievementName" :title="item.achievementName" class="present-awards-badge-icon" />
+        <img v-if="badgeIconUrl(item)" :src="badgeIconUrl(item)" :alt="item.achievementName" :title="item.achievementName" class="present-awards-badge-icon" :class="{ 'present-awards-badge-icon--wide': isWideBadge(item) }" />
         <span v-else class="present-awards-badge-placeholder" :title="item.achievementName" aria-hidden="true"></span>
       </template>
 
@@ -222,6 +222,15 @@
 
 .present-awards-badge-icon {
   object-fit: contain;
+}
+
+/*
+ * Additional awards are wide (96x66) rather than square like the OAS icons. Letterboxing one into
+ * the 28px square would shrink it to ~19px tall and leave it visibly smaller than its neighbours,
+ * so it gets the width its aspect ratio needs while keeping the shared 28px row height.
+ */
+.present-awards-badge-icon--wide {
+  width: 41px;
 }
 
 /* Neutral dashed outline: reads as "artwork not loaded yet" rather than as a real badge. */

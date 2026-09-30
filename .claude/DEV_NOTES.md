@@ -9,11 +9,7 @@
 
 ## Table Layout
 
-- On the OAS Progression and Present Award pages the table layout, particularly the padding/margins need fixing. eg The member names are up against the far left edge of the table. But if I visit the Summit home page first then they appear correct. A hard refresh causes the error to reappear.
-
 ## Present Award
-
-- Coonsider adding checksum in calendar to avoid "if two Leaders have the Present Awards page open at the same time, whichever one saves last wins and silently discards the other's changes — there's no merge, just a full replace." If you try and save with wrong version it would reload and merge remote and local changes, with warning.
 
 - Move badge to before Award column.
 

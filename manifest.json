@@ -27,7 +27,7 @@
           "matches": ["https://terrain.scouts.com.au/*"]
         },
         {
-          "resources": ["images/oas-skills/*"],
+          "resources": ["images/*"],
           "matches": ["https://terrain.scouts.com.au/*"]
         }
       ],

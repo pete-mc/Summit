@@ -16,3 +16,6 @@
 # project scaffolding (local secrets)
 /.claude/DEVENV.local.md
 /.claude/scheduled_tasks.lock
+
+# Windows Explorer thumbnail caches, created whenever an image folder is browsed
+Thumbs.db

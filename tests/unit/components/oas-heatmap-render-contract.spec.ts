@@ -324,7 +324,7 @@ describe("OASHeatMap render contract", () => {
 
     const icon = container.querySelector('img[data-oas-skill-icon="bushwalking"]') as HTMLImageElement;
     expect(icon).toBeTruthy();
-    expect(icon.src).toContain("images/oas-skills/Bushwalking.png");
+    expect(icon.src).toContain("images/oas-skills/oas-bushwalking.svg");
   });
 
   it("filters member rows by name using the memberFilter prop", () => {

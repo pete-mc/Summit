@@ -16,12 +16,13 @@ describe("getSkillIconUrl", () => {
 
   it("builds the icon URL by joining the stamped extension base URL with the skill's icon path", () => {
     document.documentElement.setAttribute("data-summit-extension-url", "chrome-extension://abc/");
-    expect(getSkillIconUrl("bushcraft")).toBe("chrome-extension://abc/images/oas-skills/Bushcraft.png");
+    expect(getSkillIconUrl("bushcraft")).toBe("chrome-extension://abc/images/oas-skills/oas-bushcraft.svg");
   });
 
-  it("uses the singular 'Aquatic.png' filename for the plural 'aquatics' skill key", () => {
+  it("names every icon oas-<skill>.svg, matching the skill key exactly", () => {
     document.documentElement.setAttribute("data-summit-extension-url", "chrome-extension://abc/");
-    expect(getSkillIconUrl("aquatics")).toBe("chrome-extension://abc/images/oas-skills/Aquatic.png");
+    expect(getSkillIconUrl("aquatics")).toBe("chrome-extension://abc/images/oas-skills/oas-aquatics.svg");
+    expect(getSkillIconUrl("vertical")).toBe("chrome-extension://abc/images/oas-skills/oas-vertical.svg");
   });
 
   it("maps every one of the 9 OAS skills to a filename", () => {

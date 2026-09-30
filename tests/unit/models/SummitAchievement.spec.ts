@@ -55,13 +55,36 @@ describe("SummitAchievement", () => {
   });
 
   it("derives an OAS award's badge key from its branch, not its type", () => {
-    // Badge artwork is per skill (Bushwalking.png etc.), so the branch is what identifies it.
+    // Badge artwork is per skill (oas-bushwalking.svg etc.), so the branch is what identifies it.
     const achievement = makeAchievement({
       type: TerrainAchievementsType.OutdoorAdventureSkill as TerrainAchievements["type"],
       achievement_meta: { branch: "bushwalking", stage: 2 },
     } as Partial<TerrainAchievements>);
 
     expect(new SummitAchievement(achievement, makeMember(), []).badgeKey).toBe("bushwalking");
+  });
+
+  it("falls back to the stream for a forked OAS sub-branch, which wears its parent skill's badge", () => {
+    // Paddling forks into canoeing/kayaking/sea-kayaking/white-water-rafting at higher stages.
+    // Scouts Australia awards no badge for a sub-branch, and Terrain ships artwork for the nine
+    // skills only — so a sub-branch must resolve to its stream or it shows a blank placeholder.
+    const achievement = makeAchievement({
+      type: TerrainAchievementsType.OutdoorAdventureSkill as TerrainAchievements["type"],
+      achievement_meta: { stream: "paddling", branch: "sea-kayaking", stage: 6 },
+    } as Partial<TerrainAchievements>);
+
+    expect(new SummitAchievement(achievement, makeMember(), []).badgeKey).toBe("paddling");
+  });
+
+  it("prefers the branch over the stream when the branch has artwork of its own", () => {
+    // On trunk stages branch and stream are the same value; this also keeps working if artwork
+    // for a specific sub-branch is ever added.
+    const achievement = makeAchievement({
+      type: TerrainAchievementsType.OutdoorAdventureSkill as TerrainAchievements["type"],
+      achievement_meta: { stream: "paddling", branch: "paddling", stage: 2 },
+    } as Partial<TerrainAchievements>);
+
+    expect(new SummitAchievement(achievement, makeMember(), []).badgeKey).toBe("paddling");
   });
 
   it("normalises a hyphenated OAS branch to the icon key form", () => {
@@ -73,8 +96,54 @@ describe("SummitAchievement", () => {
     expect(new SummitAchievement(achievement, makeMember(), []).badgeKey).toBe("vertical_climbing");
   });
 
-  it("falls back to the achievement type as the badge key for non-OAS awards", () => {
-    expect(new SummitAchievement(makeAchievement(), makeMember(), []).badgeKey).toBe("special_interest_area");
+  it("derives an SIA's badge key from the selected interest area, not the bare type", () => {
+    // Artwork is per SIA, so keying on the type would give all six the same icon.
+    expect(new SummitAchievement(makeAchievement(), makeMember(), []).badgeKey).toBe("sia_stem_innovation");
+  });
+
+  it("falls back to the achievement type when an SIA records no selection", () => {
+    const achievement = makeAchievement({ answers: {} } as Partial<TerrainAchievements>);
+
+    expect(new SummitAchievement(achievement, makeMember(), []).badgeKey).toBe("special_interest_area");
+  });
+
+  it("derives milestone and peak award keys from the section, since artwork differs per section", () => {
+    const milestone = makeAchievement({
+      type: TerrainAchievementsType.Milestone as TerrainAchievements["type"],
+      achievement_meta: { stage: 2 },
+    } as Partial<TerrainAchievements>);
+    const peak = makeAchievement({
+      type: TerrainAchievementsType.PeakAward as TerrainAchievements["type"],
+    } as Partial<TerrainAchievements>);
+
+    expect(new SummitAchievement(milestone, makeMember(), []).badgeKey).toBe("milestone_scout_2");
+    expect(new SummitAchievement(peak, makeMember(), []).badgeKey).toBe("peak_award_scout");
+  });
+
+  it("falls back to the type when a milestone has no stage recorded", () => {
+    const achievement = makeAchievement({
+      type: TerrainAchievementsType.Milestone as TerrainAchievements["type"],
+    } as Partial<TerrainAchievements>);
+
+    expect(new SummitAchievement(achievement, makeMember(), []).badgeKey).toBe("milestone");
+  });
+
+  it("derives an additional award's badge key from its award id, so each award gets its own icon", () => {
+    // Without this every additional award would share the key "additional_award" and one icon.
+    const achievement = makeAchievement({
+      type: TerrainAchievementsType.AdditionalAward as TerrainAchievements["type"],
+      achievement_meta: { additional_award_id: "walkabout_100" },
+    } as Partial<TerrainAchievements>);
+
+    expect(new SummitAchievement(achievement, makeMember(), []).badgeKey).toBe("walkabout_100");
+  });
+
+  it("falls back to the type when an additional award has no award id recorded", () => {
+    const achievement = makeAchievement({
+      type: TerrainAchievementsType.AdditionalAward as TerrainAchievements["type"],
+    } as Partial<TerrainAchievements>);
+
+    expect(new SummitAchievement(achievement, makeMember(), []).badgeKey).toBe("additional_award");
   });
 
   it("falls back to the type when an OAS award has no branch recorded", () => {

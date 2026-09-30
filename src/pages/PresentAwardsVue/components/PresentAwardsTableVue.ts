@@ -2,7 +2,7 @@ import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import moment from "moment";
 import SummitAchievement from "@/pages/PresentAwards/models/SummitAchievement";
-import { getBadgeIconUrl } from "../services/getBadgeIconUrl";
+import { getBadgeIconUrl, hasWideIcon } from "../services/getBadgeIconUrl";
 
 export interface DataTableHeader {
   text: string;
@@ -246,6 +246,10 @@ export default defineComponent({
     /** Artwork URL for a row's badge, or null when only a placeholder is available. */
     badgeIconUrl(item: SummitAchievement): string | null {
       return getBadgeIconUrl(item.badgeKey);
+    },
+    /** True for wide (non-square) artwork, which needs more width than the 28px icon box. */
+    isWideBadge(item: SummitAchievement): boolean {
+      return hasWideIcon(item.badgeKey);
     },
     isDateMenuOpen(item: SummitAchievement): boolean {
       return this.openDateMenus[item.id] === true;

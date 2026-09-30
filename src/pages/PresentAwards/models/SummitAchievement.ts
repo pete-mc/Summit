@@ -1,6 +1,7 @@
 import moment from "moment";
 import type { TerrainAchievements, TerrainUnitMember } from "@/types/terrainTypes";
 import { TerrainAchievementsType, siaTypes } from "@/shared";
+import { getBadgeEntry } from "@/shared/badgeManifest";
 
 export default class SummitAchievement {
   id: string;
@@ -39,19 +40,67 @@ export default class SummitAchievement {
   }
 
   /**
-   * Which badge artwork identifies this award.
+   * Which badge artwork identifies this award. Keys match src/shared/badgeManifest.ts.
    *
-   * OAS awards resolve to their branch ("bushwalking", "canoeing", …), which is what the existing
-   * skill icons in src/images/oas-skills/ are named after. Every other award type resolves to its
-   * own achievement type, so artwork can be dropped in per type later without touching this code.
+   * Each award type is keyed as narrowly as its artwork varies, because a key coarser than the
+   * artwork makes different badges share one icon:
+   *
+   * - OAS → branch, falling back to stream ("bushwalking"); artwork is per skill, not per stage
+   *   or sub-branch. See the OAS case below for why both are consulted.
+   * - Additional awards → the award id ("walkabout_100"); the bare type would collapse all 32.
+   * - Milestones → section AND stage ("milestone_scout_2"); Terrain ships distinct artwork for
+   *   each of the 5 sections × 3 stages.
+   * - Peak awards → section ("peak_award_venturer"); artwork differs per section.
+   * - SIAs → the selected SIA id ("sia_environment"), which lives in the answers, not the meta.
+   *
+   * Every branch falls back to the bare achievement type when its metadata is missing, so an
+   * unexpected payload degrades to a placeholder rather than throwing.
    */
   private static getBadgeKey(achievement: TerrainAchievements): string {
-    if (achievement.type === TerrainAchievementsType.OutdoorAdventureSkill) {
-      // The branch is the specific skill; the stream is the broader grouping. Icons are per skill.
-      const branch = achievement.achievement_meta?.branch;
-      if (branch) return branch.replace(/-/g, "_").toLowerCase();
+    const type = String(achievement.type ?? "").toLowerCase();
+    const meta = achievement.achievement_meta;
+    const normalise = (value: string) => value.replace(/-/g, "_").toLowerCase();
+    const section = achievement.section ? normalise(achievement.section) : null;
+
+    switch (achievement.type) {
+      case TerrainAchievementsType.OutdoorAdventureSkill: {
+        // The STREAM is the skill (paddling); the BRANCH is either the same value on trunk stages
+        // or a sub-branch once the tree forks (canoeing, sea-kayaking, white-water-rafting…).
+        // Scouts Australia awards no badge for a sub-branch — a branch wears its parent skill's
+        // badge — and Terrain ships artwork for the nine skills only.
+        //
+        // So: prefer the branch (it equals the skill on trunk stages, and keeps working if
+        // artwork for a sub-branch is ever added), but fall back to the stream when the branch has
+        // no badge of its own. Deriving it this way rather than from a hardcoded sub-branch list
+        // means a sub-branch Terrain adds later still resolves, with nothing to keep in sync.
+        const branchKey = meta?.branch ? normalise(meta.branch) : null;
+        if (branchKey && getBadgeEntry(branchKey)?.file) {
+          return branchKey;
+        }
+
+        const streamKey = meta?.stream ? normalise(String(meta.stream)) : null;
+        return streamKey ?? branchKey ?? type;
+      }
+
+      case TerrainAchievementsType.AdditionalAward:
+        return meta?.additional_award_id ? normalise(meta.additional_award_id) : type;
+
+      case TerrainAchievementsType.Milestone:
+        return section && meta?.stage ? `milestone_${section}_${meta.stage}` : type;
+
+      case TerrainAchievementsType.PeakAward:
+        return section ? `peak_award_${section}` : type;
+
+      case TerrainAchievementsType.SpecialInterestArea: {
+        // `answers` is a loose union (string | string[] | boolean | date range), so narrow to a
+        // string before using it as a key — a malformed answer falls back to the type.
+        const sia = achievement.answers?.special_interest_area_selection;
+        return typeof sia === "string" && sia ? normalise(sia) : type;
+      }
+
+      default:
+        return type;
     }
-    return String(achievement.type ?? "").toLowerCase();
   }
 
   public updatePresented(newValue: string) {
