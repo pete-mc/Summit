@@ -413,3 +413,69 @@ export function transposeWorksheetPage(page: WorksheetPage): TransposedWorksheet
     rows,
   };
 }
+
+/**
+ * Splits one transposed (Layout B, "members as rows") page's I-Statement COLUMNS into batches of at
+ * most `maxColumns`, each becoming its own full page with identical member ROWS (every member
+ * repeats in full on every batch — rows are this layout's whole point, never split) but only that
+ * batch's columns. The column-axis mirror of splitPageIntoColumnBatches above, replacing the old
+ * "shrink the font to fit every column on one page" behaviour (fitRotatedHeaderFont.ts) now that
+ * I-Statement columns wrap at a fixed width/font instead of shrinking indefinitely.
+ *
+ * Same even-batch-size approach as splitPageIntoColumnBatches, for the same reason: every batch
+ * should render at the same column width as its siblings, which even sizing guarantees and a
+ * lopsided remainder batch would not.
+ *
+ * groupSpans are clipped to each batch's own column range the same way splitTableColumnsForPrint's
+ * sliceHeaderRowColumns clips a patrol span against a new DOM column range: a span with no overlap
+ * is dropped, a span that partially overlaps is kept with its columnCount/startColumnIndex
+ * recomputed to the overlapping portion only.
+ *
+ * A page with `columns.length <= maxColumns` is returned as a single-element array unchanged (by
+ * reference), matching splitPageIntoColumnBatches's own contract.
+ */
+export function splitTransposedPageIntoColumnBatches(page: TransposedWorksheetPage, maxColumns: number): TransposedWorksheetPage[] {
+  if (page.columns.length <= maxColumns || maxColumns <= 0) {
+    return [page];
+  }
+
+  const batchCount = Math.ceil(page.columns.length / maxColumns);
+  const evenBatchSize = Math.ceil(page.columns.length / batchCount);
+  const batches: TransposedWorksheetPage[] = [];
+
+  for (let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
+    const startIndex = batchIndex * evenBatchSize;
+    const endIndex = Math.min(startIndex + evenBatchSize, page.columns.length);
+    const batchColumns = page.columns.slice(startIndex, endIndex);
+
+    const batchGroupSpans: TransposedGroupSpan[] = page.groupSpans
+      .map((span) => {
+        const spanStart = span.startColumnIndex;
+        const spanEnd = span.startColumnIndex + span.columnCount;
+        const overlapStart = Math.max(spanStart, startIndex);
+        const overlapEnd = Math.min(spanEnd, endIndex);
+        if (overlapEnd <= overlapStart) {
+          return null;
+        }
+        return { title: span.title, startColumnIndex: overlapStart - startIndex, columnCount: overlapEnd - overlapStart };
+      })
+      .filter((span): span is TransposedGroupSpan => span !== null);
+
+    batches.push({
+      ...page,
+      key: `${page.key}::batch${batchIndex}`,
+      // "(statements 1-13 of 40)" — deliberately "statements", not "members": rows (members) still
+      // repeat in FULL on every batch here, unlike Layout A's member-range split, so the suffix must
+      // not read like a member-range label.
+      title: batchCount > 1 ? `${page.title} (statements ${startIndex + 1}-${endIndex} of ${page.columns.length})` : page.title,
+      columns: batchColumns,
+      groupSpans: batchGroupSpans,
+      rows: page.rows.map((row) => ({
+        ...row,
+        cells: row.cells.slice(startIndex, endIndex),
+      })),
+    });
+  }
+
+  return batches;
+}

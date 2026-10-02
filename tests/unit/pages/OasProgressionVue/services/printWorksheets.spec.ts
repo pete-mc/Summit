@@ -46,14 +46,14 @@ describe("printWorksheets", () => {
   it("returns false and opens nothing when the popup is blocked", () => {
     openSpy.mockReturnValue(null);
 
-    const result = printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test" });
+    const result = printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
 
     expect(result).toBe(false);
     expect(fakeWindow.document.write).not.toHaveBeenCalled();
   });
 
   it("returns true and writes every page table's markup into the new document", () => {
-    const result = printWorksheets({ pageTables: [makeTable("p1"), makeTable("p2")], documentTitle: "Test Title" });
+    const result = printWorksheets({ pageTables: [makeTable("p1"), makeTable("p2")], documentTitle: "Test Title", orientation: "landscape" });
 
     expect(result).toBe(true);
     expect(fakeWindow.document.open).toHaveBeenCalled();
@@ -66,16 +66,23 @@ describe("printWorksheets", () => {
     expect(written).toContain("p2 content");
   });
 
-  it("always prints A4 landscape — portrait was dropped in Stage 5", () => {
-    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test" });
+  it("prints A4 landscape when orientation is 'landscape' (Layout A)", () => {
+    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
 
     const written = fakeWindow.document.write.mock.calls[0][0] as string;
     expect(written).toContain("size: A4 landscape");
-    expect(written).not.toContain("portrait");
+  });
+
+  it("prints A4 portrait when orientation is 'portrait' (Layout B)", () => {
+    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "portrait" });
+
+    const written = fakeWindow.document.write.mock.calls[0][0] as string;
+    expect(written).toContain("size: A4 portrait");
+    expect(written).not.toContain("size: A4 landscape");
   });
 
   it("calls print() exactly once, even if both onload and the fallback timeout fire", () => {
-    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test" });
+    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
 
     fakeWindow.onload?.();
     jest.advanceTimersByTime(1000);
@@ -84,7 +91,7 @@ describe("printWorksheets", () => {
   });
 
   it("does not call print() via the fallback timeout if the window was closed first", () => {
-    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test" });
+    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
 
     fakeWindow.closed = true;
     jest.advanceTimersByTime(1000);
@@ -93,13 +100,13 @@ describe("printWorksheets", () => {
   });
 
   it("opens the window with the configured popup name", () => {
-    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test" });
+    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
 
     expect(openSpy).toHaveBeenCalledWith("", "oasWorksheetsPrint", expect.any(String));
   });
 
   it("focuses the new window immediately, not only right before printing", () => {
-    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test" });
+    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
 
     // Called once synchronously during printWorksheets itself, before onload/the timeout have had
     // any chance to fire — reported live: the window wasn't reliably coming to the front, so an
@@ -109,7 +116,7 @@ describe("printWorksheets", () => {
   });
 
   it("writes a visible close button into the document, so the window isn't stuck with no way back to it", () => {
-    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test" });
+    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
 
     const written = fakeWindow.document.write.mock.calls[0][0] as string;
     expect(written).toContain("window.close()");

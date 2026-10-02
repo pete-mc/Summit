@@ -572,3 +572,213 @@ that output to PDF via the established Playwright+Edge route and visually confir
 GUI split-alignment fix and the print re-splitting fix) — confirmed working as expected ("99% like
 what I imagined"). Layout A ("members as columns") is considered done for now; Layout B ("members
 as rows") is next.
+
+## Layout B fixes — wrap instead of shrink, real column splitting, group borders, portrait print
+
+**Implemented** 2026-10-02, per `.claude/plans/witty-leaping-gem.md` (plan-mode session). `npm test`
+(862/863, the 1 pre-existing UNC-path smoke failure unrelated) / `npx tsc --noEmit` / `npm run lint`
+/ `npm run build` all clean.
+
+Layout B was built in Stage 5 as the large-unit answer to Layout A's original overflow bug: members
+become unbounded rows, I-Statements become column headers. But the column axis itself was never
+really solved — `fitRotatedHeaderFont.ts` binary-searched ONE font size (down to a 6px floor) so the
+page's single longest I-Statement fit on one rotated line, and `transposedColumnWidthPx` divided a
+fixed width budget evenly across however many I-Statement columns existed, with no ceiling — more
+columns meant a smaller font, indefinitely. Requested live: replace this with the same "wrap at a
+fixed, never-shrinking font; split onto an extra sheet once that's not enough" pattern already
+proven on Layout A, plus two more asks confirmed before planning (see the plan file's own
+clarifying-question answers): rotated headers stay rotated (wrap onto more rotated lines, don't
+switch to horizontal text), and Layout B now prints portrait specifically (not user-selectable, not
+applied to Layout A, which stays landscape).
+
+### What shipped
+
+- **`worksheetPrintPageSize.ts`**: added `PRINT_PORTRAIT_USABLE_WIDTH_PX` (A4 portrait's usable
+  width — Layout B's own print budget, narrower than Layout A's landscape
+  `PRINT_USABLE_WIDTH_PX`), and `TRANSPOSED_COLUMN_WRAP_WIDTH_SCREEN_PX`/`_PRINT_PX` (Layout B's new
+  FIXED column width, deliberately reusing Layout A's own ~50-char statement wrap-width numbers
+  rather than deriving a third figure — rotating the header text swaps which box dimension is "wrap
+  width" vs "available text-flow length", so this same number becomes the column's width instead of
+  the statement cell's width). Removed `transposedColumnWidthPx` and the font-size bound constants
+  from the live path (kept `ROTATED_HEADER_HEIGHT_PX` as the budgeted text-flow length). Reused the
+  EXISTING `maxFittingMemberColumns` (its name predates this reuse — it's a generic "how many
+  fixed-width columns fit" calculation) for Layout B's own fitting threshold, passing
+  `MEMBER_NAME_COLUMN_WIDTH_PX` for the group-band slot.
+- **`buildWorksheetPages.ts`**: new `splitTransposedPageIntoColumnBatches()` — the column-axis mirror
+  of `splitPageIntoColumnBatches`, splitting `TransposedWorksheetPage.columns` (I-Statements) into
+  evenly-sized batches while every member ROW repeats in full on every batch (rows are this layout's
+  unbounded axis, never split). `groupSpans` are clipped to each batch's own column range the same
+  way `splitTableColumnsForPrint`'s patrol-colspan clipping already works. Split pages get a
+  "(statements X-Y of Z)" title suffix — deliberately "statements", not "members", since members
+  never narrow here.
+- **`OASWorksheetsVue.ts`**: `rowsLayoutPages` rewritten to split + bundle per-batch views
+  (`TransposedPageView` gained `statementOffset`/`originalColumnCount`, lost `headerFontSizePx`),
+  reusing the SAME `screenAvailableWidthPx` ResizeObserver measurement Layout A's `columnsLayoutPages`
+  already established (one measurement serves both layouts). New `groupBorderClassesForPage()` —
+  the column-axis mirror of `patrolBorderClassesForPage`, computing a per-I-Statement-column
+  {start,end} boundary flag from `groupSpans` instead of patrol spans, so the existing
+  `oas-worksheet-patrol-group-start`/`-end` border classes now run "all the way down" every
+  Plan/Do/Review/Verify group's own body cells too (requested live), not just the one hardcoded
+  border Stage 5 put on the group-span header cell alone. New `splitRowsTableColumnsForPrint()` —
+  the column-axis mirror of `splitTableColumnsForPrint`, re-deriving Layout B's own print-time column
+  batches from print's own (now portrait) budget independently of whatever the screen rendered,
+  with the same global-offset/-total renumbering discipline against re-splitting an already
+  screen-split table. `printCurrentPages()` now decides orientation per call from
+  `isMembersAsRows` and passes it through to `printWorksheets()`.
+- **`printWorksheets.ts`**: `buildPrintStylesheet()` regains an `orientation` parameter (removed in
+  Stage 5 when portrait was fully dropped) — only the `@page` size line varies; every other rule is
+  shared. Layout B's I-Statement header text now WRAPS (`white-space: normal`, scoped to
+  `th.oas-worksheet-statement-header .oas-worksheet-rotated-text` so Layout A's own short, never-wrap
+  rotated headers are untouched) at the new fixed column width instead of shrinking.
+- **`OASWorksheetsVue.vue`**: rows template binds the new fixed `columnWidthPx`, drops the inline
+  `fontSize` style entirely, applies `groupBorderClassesForPage()` classes to both the statement
+  header `<th>` and every body `<td>`, and adds a scoped wrap override for Layout B's own rotated
+  header text. `fitRotatedHeaderFont.ts` itself was left in place (a working, independently-tested
+  utility) but is no longer called from the live render path — noted here, not deleted
+  speculatively, so a future cleanup pass can remove it deliberately.
+
+### A real bug caught during visual verification, not by any test
+
+Rendering a real fixture through the actual pipeline (Playwright+Edge PDF, same route as every prior
+round) surfaced a title/group-header overlap on print: the page title lives on the group-span row's
+own `th.oas-worksheet-member-name-header` cell, which shares its class with that row's "Member"/
+other header cells but — unlike Layout A's own `.oas-worksheet-page-title` — had no override for the
+generic `th { white-space: nowrap }` rule, so a long title (e.g. "Stage 1 - Bushcraft (statements
+1-3 of 20)") overflowed past its own 140px width straight into the adjacent "Plan" group header,
+visibly overlapping it. **Fixed** with the same shape as Layout A's existing page-title fix: a scoped
+`tr.oas-worksheet-group-span-row th.oas-worksheet-member-name-header { white-space: normal; }`
+override in `printWorksheets.ts`. Confirmed not present on screen (the component's own scoped CSS
+never set `nowrap` on that cell in the first place, so only the print stylesheet needed the fix).
+No unit test would have caught this — it's a CSS layout interaction, not a data/logic bug — which is
+why the established "render a real fixture, actually look at it" verification step stayed in the
+loop rather than relying on the (otherwise thorough) test suite alone.
+
+### Verified
+
+New/updated tests: `worksheetPrintPageSize.spec.ts` (new constants), `buildWorksheetPages.spec.ts`
+(`splitTransposedPageIntoColumnBatches` — even-split math, groupSpan clipping/dropping/recomputing
+at a batch boundary, rows preserved in full on every batch, title suffixing), `OASWorksheetsVue.spec.ts`
+(`rowsLayoutPages`'s new per-batch bundling mirroring `columnsLayoutPages`' own test shapes,
+`groupBorderClassesForPage`, a full new `splitRowsTableColumnsForPrint` describe block mirroring
+`splitTableColumnsForPrint`'s own 12-test shape), `printWorksheets.spec.ts` (orientation parameter),
+and the render-contract suite (both Stage-5-era tests that pinned the OLD "always landscape"/
+"font-fitted" invariants rewritten to assert the new, intentional contract instead).
+
+Rendered a real fixture (20 I-Statements across 4 groups, 5 members across 2 patrols, forced to
+split at 3 columns/sheet under the new portrait budget) through the actual
+`buildWorksheetPages`/`transposeWorksheetPage`/`splitTransposedPageIntoColumnBatches`/
+`buildPrintStylesheet("portrait")` pipeline, rendered to PDF via Playwright+Edge, and visually
+inspected via PyMuPDF: 7 portrait sheets, I-Statement text wraps cleanly at word boundaries at a
+fixed, legible, non-shrinking size; every one of the 5 members repeats in full on every sheet; a
+group that straddles a batch boundary (e.g. "Plan"'s last 2 columns + "Do"'s first column) renders
+as two correctly-labelled, correctly-bordered header cells; patrol divider rows render correctly.
+Caught and fixed the title-overlap bug described above during this same pass.
+
+**Not yet verified live**: the actual Worksheets tab inside the real extension, Layout B specifically
+— resize behaviour on screen and the real print dialog's portrait default both need a human check,
+consistent with this feature's established discipline of not calling a stage done on tests/fixtures
+alone.
+
+## Layout B fixes, round 2 — wrong wrap axis, wrong splitting formula, wrong orientation (all three live-tested bugs)
+
+**Done** 2026-10-02. Live testing of the round-1 fixes above surfaced three real bugs, all traced to
+the same root cause and two separate mistakes:
+
+1. **I-Statement text wrapped at ~26-30 characters, not the requested ~50.** Root cause: rotating
+   text 90° (`writing-mode: vertical-rl`) swaps which box dimension is "the wrap length" vs "the
+   dimension that grows as more wrapped lines stack" — characters flow along the element's HEIGHT,
+   and wrapping to a new line extends sideways (WIDTH), the opposite of normal horizontal text.
+   Round 1 had the two axes backwards: the ~50-char wrap-length number
+   (`TRANSPOSED_COLUMN_WRAP_WIDTH_SCREEN_PX`/`_PRINT_PX`) was applied to the column's WIDTH, and the
+   old `ROTATED_HEADER_HEIGHT_PX` (220px, a leftover from the removed font-fitting design) stayed on
+   the HEIGHT — 220px at 14px font wraps at ~30 characters, exactly the reported symptom.
+2. **Columns rendered far wider than the screen, no splitting, lots of horizontal scroll.**
+   `rowsLayoutPages` was calling `maxFittingMemberColumns` to decide how many I-Statement columns
+   fit — but that function always divides the remaining width by `MEMBER_COLUMN_MIN_WIDTH_PX`
+   (Layout A's 70px member-column width), regardless of what's passed in for the per-column slot.
+   Dividing by 70 instead of Layout B's own, much wider, per-column width silently overcounted how
+   many columns "fit" by roughly 5x.
+3. **Print was requested portrait in the previous round but reported "too small"** — reverted to
+   landscape for both layouts (the user's explicit call once seen printed for real).
+
+**Fixed**:
+- Swapped the axes: the ~50-char wrap number is now the header `<th>`'s HEIGHT; a new WIDTH budget
+  (`TRANSPOSED_COLUMN_WIDTH_SCREEN_PX`/`_PRINT_PX` = `TRANSPOSED_COLUMN_LINE_WIDTH_*_PX ×
+  TRANSPOSED_COLUMN_MAX_WRAP_LINES`, confirmed with the user as 3 lines) governs how many wrapped
+  lines a column can grow to hold before a long statement is an accepted, un-widened overflow.
+- New `maxFittingTransposedColumns(usableWidthPx, memberNameColumnWidthPx, columnWidthPx)` —
+  Layout B's own fitting formula, dividing by the I-Statement column's own width instead of Layout
+  A's fixed 70px — replaces the `maxFittingMemberColumns` misuse everywhere in `rowsLayoutPages` and
+  `splitRowsTableColumnsForPrint`.
+- `printCurrentPages()`'s Layout B branch reverted to `PRINT_USABLE_WIDTH_PX` (landscape); the
+  now-unused `PRINT_PORTRAIT_USABLE_WIDTH_PX` constant was removed rather than left as dead code.
+  `printWorksheets.ts`'s `orientation` parameter stays explicit (not hardcoded) so a layout-specific
+  orientation remains easy to reintroduce if ever wanted again.
+
+Verified via a real fixture rendered through the actual pipeline (not assumed): 1200px simulated
+screen fit 14 columns (down from the old, wrong "no limit" behaviour), split cleanly at a sensible
+count; landscape print fit 13 columns/sheet, 2 sheets instead of the previous 7 portrait sheets;
+text wrapped at a correct, readable length with no shrinking.
+
+## Layout B fixes, round 3 — member names (measured width, never truncated) + I-Statement left-align
+
+**Done** 2026-10-02, explicitly scoped to Layout B ("members as rows") only. `npm test` (870/871, the
+1 pre-existing UNC-path smoke failure unrelated) / `npx tsc --noEmit` / `npm run lint` / `npm run
+build` all clean.
+
+Two more live-tested requests, both deliberately brought back for explicit confirmation before
+implementing (per direct feedback mid-round: stop making visual-design calls unilaterally, ask
+first) — see the two `AskUserQuestion` exchanges in this round for the confirmed choices (longest-
+name-on-the-page sizing; 3 wrapped lines per column, from the previous round).
+
+1. **Member names must never wrap, truncate, or ellipsise — the column should fit the full name.**
+   The member-name column was a fixed 140px (`MEMBER_NAME_COLUMN_WIDTH_PX`) with
+   `white-space: nowrap; overflow: hidden; text-overflow: ellipsis` from round 2's own nowrap fix —
+   correct for preventing WRAP, but silently clipped any name wider than 140px. **Fixed**: removed
+   the fixed constant entirely, replaced by `memberNameColumnWidthPx(displayNames, fontSizePx,
+   fontFamily)` in `worksheetPrintPageSize.ts` — canvas-based text measurement (reusing
+   `fitRotatedHeaderFont.ts`'s own measurement approach via a new exported
+   `measureLongestTextWidthPx`, with the same character-count fallback for environments without a
+   real canvas, e.g. this repo's jsdom tests), sized to the LONGEST member name actually on the page,
+   plus padding, floored at a sensible minimum. Computed ONCE per ORIGINAL, unsplit page (from
+   `transposed.rows` before splitting) and applied to every one of that page's batches, the same
+   per-page-not-per-batch discipline `computeColumnsLayoutMetrics` already established for Layout A —
+   so split sheets still line up at the same member-name-column width as each other. Print measures
+   independently from the live DOM's own real member-name cells inside `splitRowsTableColumnsForPrint`
+   (at print's own font size), since print's and screen's fonts differ.
+2. **I-Statement header text should read left-aligned (at the bottom of the cell), not centered.**
+   The rotated header `<th>` had no explicit `text-align`, so it inherited the browser's default
+   centered `<th>` alignment. **Fixed**: added `text-align: left` to `.oas-worksheet-statement-header`
+   in both the component's scoped CSS and `printWorksheets.ts`'s mirrored stylesheet, paired with the
+   existing `vertical-align: bottom`.
+
+**What shipped**: `worksheetPrintPageSize.ts` gained `memberNameColumnWidthPx()` and the font
+constants it needs (`WORKSHEET_FONT_FAMILY`, `WORKSHEET_BODY_FONT_SIZE_SCREEN_PX`/`_PRINT_PX`, the
+same 14px/10pt values already used elsewhere, now named and exported rather than re-typed per call
+site); `fitRotatedHeaderFont.ts` gained `measureLongestTextWidthPx()` (exported, reusing its existing
+private `widthAt` measurer). `OASWorksheetsVue.ts`'s `TransposedPageView` gained
+`memberNameColumnWidthPx`; `rowsLayoutPages` measures it once per page; `splitRowsTableColumnsForPrint`
+measures it from the live DOM and overwrites both the I-Statement AND member-name column widths on
+each print clone (screen and print are different fixed/measured surfaces, never shared). Template
+binds the measured width inline on all three member-name cells (group-span title row, statement-
+header "Member" row, every body row); the old fixed-140px CSS rule is now a fallback-only min-width,
+with its `overflow: hidden`/`text-overflow: ellipsis` removed (no longer needed, and dangerous to
+leave in as a silent-truncation trap if measurement is ever wrong).
+
+**Verified**: updated `worksheetPrintPageSize.spec.ts` (`memberNameColumnWidthPx` with a
+deterministic fake measurer — longest name wins, never truncates, floors sensibly) and
+`OASWorksheetsVue.spec.ts` (`rowsLayoutPages` measures per page and shares one width across split
+batches; `splitRowsTableColumnsForPrint` measures from the live DOM's own member names). Rendered two
+real fixtures through the actual pipeline: a mix of very short ("Jo") and very long ("Alexandra
+Montgomery-Smith") names on the same page, confirming every name shows in full, both split batches
+render at the identical member-name-column width, and the I-Statement header text visibly hugs the
+left edge of each column instead of floating centered.
+
+**Verified live by the user** 2026-10-02 — "working 99% as expected." Full suite then run (it had
+been deliberately skipped mid-round per the user's own "just test this change, don't run the full
+suite" instruction while fixes were still landing): 8 tests across 3 spec files had pinned the
+round-1/round-2-superseded contracts (fixed `MEMBER_NAME_COLUMN_WIDTH_PX`, `maxFittingMemberColumns`
+reused for Layout B, portrait print) and were rewritten to assert the current, confirmed-correct
+behaviour instead — none were testing a still-live bug, all were stale assertions left over from
+intermediate states of this same round. `npm test` 870/871 (1 pre-existing UNC smoke failure,
+unrelated), `npx tsc --noEmit`, `npm run lint`, `npm run build` all clean.

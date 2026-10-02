@@ -86,6 +86,22 @@ function widthAt(text: string, fontSizePx: number, fontFamily: string): number {
   return measureTextWidthPx(text, fontSizePx, fontFamily) ?? estimateTextWidthPx(text, fontSizePx);
 }
 
+/**
+ * Measures the widest of a set of strings at a fixed font size — used for Layout B's member-name
+ * column, which (requested live) must be sized to fit the longest member name on the page in full,
+ * never wrapped/truncated/ellipsised, with every split batch of that page sharing the SAME width
+ * (the caller is responsible for measuring against the ORIGINAL, unsplit page's full member list and
+ * applying the one result to every batch — this function only does the measurement itself).
+ *
+ * Same canvas-measurement-with-character-count-fallback approach as fitRotatedHeaderFont, for the
+ * same reason (font metrics vary by content; a pure formula risks being visibly wrong once
+ * rendered) — but no font-size search here, since the font size is fixed and only the required
+ * WIDTH is in question.
+ */
+export function measureLongestTextWidthPx(texts: string[], fontSizePx: number, fontFamily: string, measureWidthPx: (text: string, fontSizePx: number, fontFamily: string) => number = widthAt): number {
+  return texts.reduce((longest, text) => Math.max(longest, measureWidthPx(text, fontSizePx, fontFamily)), 0);
+}
+
 export function fitRotatedHeaderFont(options: FitRotatedHeaderFontOptions): FitRotatedHeaderFontResult {
   const { texts, availableLengthPx, fontFamily, maxFontSizePx, minFontSizePx, measureWidthPx = widthAt } = options;
 

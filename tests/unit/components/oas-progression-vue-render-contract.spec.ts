@@ -328,11 +328,13 @@ describe("OasProgressionVueContent render contract", () => {
     expect(tsSource).toContain('worksheetLayout: "membersAsColumns"');
   });
 
-  it("OASWorksheets Stage 5: printing is always landscape — buildPrintStylesheet takes no orientation parameter any more", () => {
+  it("OASWorksheets print orientation: both layouts print landscape (a Layout-B-specific portrait attempt was tried and reverted live)", () => {
     const printSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/services/printWorksheets.ts"), "utf8");
-    expect(printSource).toContain("@page { size: A4 landscape");
-    expect(printSource).not.toContain('orientation: "portrait"');
-    expect(printSource).not.toMatch(/buildPrintStylesheet\([^)]+\)/);
+    expect(printSource).toContain("@page { size: A4 ${orientation}");
+
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASWorksheetsVue.ts"), "utf8");
+    expect(tsSource).toContain('orientation: "landscape"');
+    expect(tsSource).not.toMatch(/isMembersAsRows\s*\?\s*"portrait"/);
   });
 
   it("OASWorksheets Stage 5: the Layout selector exists in the worksheet filter bar", () => {
@@ -354,10 +356,11 @@ describe("OasProgressionVueContent render contract", () => {
     expect(templateSource).not.toContain("oas-worksheet-overflow-warning");
   });
 
-  it("OASWorksheets Stage 5: Layout B (transpose) renders I-Statement columns via transposeWorksheetPage, with rotated/font-fitted headers", () => {
+  it("OASWorksheets Layout B (transpose) renders I-Statement columns via transposeWorksheetPage, with rotated, WRAPPED (not font-shrunk) headers that split into extra sheets once too many to fit", () => {
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASWorksheetsVue.ts"), "utf8");
     expect(tsSource).toContain("transposeWorksheetPage");
-    expect(tsSource).toContain("fitRotatedHeaderFont");
+    expect(tsSource).toContain("splitTransposedPageIntoColumnBatches");
+    expect(tsSource).not.toContain("fitRotatedHeaderFont(");
 
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASWorksheetsVue.vue"), "utf8");
     expect(templateSource).toContain("oas-worksheet-rotated-text");

@@ -16,9 +16,11 @@
  * no Terrain chrome, no cascade fight, nothing to hide.
  */
 
-import { PRINT_PAGE_MARGIN_MM, STATEMENT_COLUMN_WRAP_WIDTH_PRINT_PX } from "./worksheetPrintPageSize";
+import { PRINT_PAGE_MARGIN_MM, STATEMENT_COLUMN_WRAP_WIDTH_PRINT_PX, TRANSPOSED_COLUMN_WRAP_WIDTH_PRINT_PX, TRANSPOSED_COLUMN_WIDTH_PRINT_PX } from "./worksheetPrintPageSize";
 
 const PRINT_WINDOW_NAME = "oasWorksheetsPrint";
+
+export type WorksheetPrintOrientation = "landscape" | "portrait";
 
 /**
  * The print stylesheet, self-contained (no var(--summit-*)/var(--oas-vue-*) tokens — this document
@@ -26,14 +28,17 @@ const PRINT_WINDOW_NAME = "oasWorksheetsPrint";
  * awarded green, patrol tint) are restated as literal colours matching those tokens' current
  * values, since a fresh window has no access to Terrain's or Summit's CSS custom properties.
  *
- * Always landscape — portrait was dropped in Stage 5 (PLAN_STAGE_5_LARGE_UNITS.md decision 4): a
- * large unit needs landscape's extra width regardless of layout, so offering portrait only
- * invited a choice that made the overflow problem worse, not a genuine tradeoff.
+ * Both layouts print landscape (PLAN_STAGE_5_LARGE_UNITS.md decision 4 dropped portrait entirely for
+ * Layout A; a later attempt to print Layout B portrait specifically was reverted — requested live,
+ * portrait made its output too small/cramped). `orientation` stays an explicit parameter rather than
+ * a hardcoded "landscape" string so a layout-specific orientation remains easy to reintroduce later
+ * if ever wanted again — every other rule below is identical regardless of orientation; only the
+ * `@page` size line varies.
  */
 /** Exported so a static preview/fixture (e.g. a large-unit test page outside the real extension) can reuse the exact print appearance rather than hand-duplicating it. */
-export function buildPrintStylesheet(): string {
+export function buildPrintStylesheet(orientation: WorksheetPrintOrientation): string {
   return `
-    @page { size: A4 landscape; margin: ${PRINT_PAGE_MARGIN_MM}mm; }
+    @page { size: A4 ${orientation}; margin: ${PRINT_PAGE_MARGIN_MM}mm; }
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -124,13 +129,51 @@ export function buildPrintStylesheet(): string {
       display: inline-block;
     }
 
+    /*
+     * Layout B's I-Statement header text WRAPS (requested live — fixed font, never shrinking,
+     * wrapping instead) rather than staying on one line like Layout A's own rotated headers (short,
+     * fixed single words/names, never meant to wrap) — scoped to this layout's own header class so
+     * Layout A's .oas-worksheet-rotated-text rule above is untouched. word-break only engages for a
+     * single word that alone exceeds the column's fixed width.
+     */
+    th.oas-worksheet-statement-header .oas-worksheet-rotated-text {
+      white-space: normal;
+      word-break: break-word;
+    }
+
     /* Layout A's rotated member-name/group-band columns — narrow width, tall header, matching the screen CSS's own 28px/140px. */
     th.oas-worksheet-member-header { width: 28px; min-width: 28px; max-width: 28px; height: 140px; padding: 6px 2px; }
     td.oas-worksheet-group-band { width: 28px; min-width: 28px; max-width: 28px; padding: 4px 2px; }
 
-    /* Layout B ("members as rows") — fixed member-name column, even-width rotated-header I-Statement columns (widths set inline per column by the component, matching transposedColumnWidthPx). */
-    th.oas-worksheet-member-name-header, td.oas-worksheet-member-name-cell { text-align: left; min-width: 140px; max-width: 140px; padding: 4px 8px; }
-    th.oas-worksheet-statement-header { height: 220px; padding: 4px 2px; font-weight: normal; vertical-align: bottom; }
+    /*
+     * Layout B ("members as rows") — member-name column width is MEASURED per table (the longest
+     * member name actually on it, in full — requested live: never wrap, truncate, or ellipsise a
+     * name) and set inline by splitRowsTableColumnsForPrint; the 140px min-width here is only a
+     * FALLBACK for a cell that somehow didn't get an inline width. I-Statement columns are a FIXED
+     * width (TRANSPOSED_COLUMN_WIDTH_PRINT_PX, set inline per column by the component — same
+     * fallback reasoning as Layout A's own .oas-worksheet-statement rule above), wrapping at ~50
+     * characters instead of shrinking a shared font size to fit every column on one page.
+     */
+    th.oas-worksheet-member-name-header, td.oas-worksheet-member-name-cell { text-align: left; min-width: 140px; padding: 4px 8px; white-space: nowrap; }
+    /*
+     * The page TITLE lives on the group-span row's own member-name-header header cell (see
+     * splitRowsTableColumnsForPrint's own comment on where the title text actually sits) - without
+     * this override it inherits the generic th nowrap rule above, and a long title (e.g.
+     * "Stage 1 - Bushcraft (statements 1-3 of 20)") would wrap onto an unpredictable width. Same fix
+     * shape as Layout A's own .oas-worksheet-page-title override.
+     */
+    tr.oas-worksheet-group-span-row th.oas-worksheet-member-name-header { white-space: normal; }
+    /*
+     * Rotating text 90 degrees swaps which box dimension is "the ~50-char wrap LENGTH" vs "the
+     * dimension that grows as more lines wrap" — see the matching comment in OASWorksheetsVue.vue
+     * for the full explanation of why height carries the wrap-length number
+     * (TRANSPOSED_COLUMN_WRAP_WIDTH_PRINT_PX) and width carries the multi-line budget
+     * (TRANSPOSED_COLUMN_WIDTH_PRINT_PX) rather than the reverse, which an earlier version had
+     * backwards and wrapped text at ~30 characters instead of the requested ~50. text-align: left
+     * (requested live, replacing the browser's default centered th text) reads, in this rotated
+     * frame, as hugging the near edge of the column rather than floating centered across its width.
+     */
+    th.oas-worksheet-statement-header { width: ${TRANSPOSED_COLUMN_WIDTH_PRINT_PX}px; min-width: ${TRANSPOSED_COLUMN_WIDTH_PRINT_PX}px; height: ${TRANSPOSED_COLUMN_WRAP_WIDTH_PRINT_PX}px; padding: 4px 2px; font-weight: normal; text-align: left; vertical-align: bottom; }
     .oas-worksheet-patrol-divider-row td { background: #f3f2f1; font-weight: 600; text-align: left; }
 
     /*
@@ -157,6 +200,8 @@ export interface PrintWorksheetsOptions {
   /** The already-rendered <table class="oas-worksheet-page"> elements, in display order. */
   pageTables: HTMLTableElement[];
   documentTitle: string;
+  /** See buildPrintStylesheet's own comment — both layouts currently print landscape. */
+  orientation: WorksheetPrintOrientation;
 }
 
 /**
@@ -189,7 +234,7 @@ export function printWorksheets(options: PrintWorksheetsOptions): boolean {
 <head>
 <meta charset="utf-8">
 <title>${options.documentTitle}</title>
-<style>${buildPrintStylesheet()}</style>
+<style>${buildPrintStylesheet(options.orientation)}</style>
 </head>
 <body>
 <!--

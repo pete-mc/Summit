@@ -83,29 +83,47 @@
 
     <!--
       Layout B — "members as rows" ("Like Terrain" in Topo). Members are rows (unbounded — the
-      page just grows downward, never split) and I-Statements are rotated-header columns (bounded,
-      font-sized to fit one page width — see fitRotatedHeaderFont.ts). The real fix for a large
-      unit. See .claude/OASWorksheets/PLAN_STAGE_5_LARGE_UNITS.md §1-2.
+      page just grows downward, never split) and I-Statements are rotated-header columns, wrapped
+      at a fixed, never-shrinking font size (not font-shrunk to fit — see worksheetPrintPageSize.ts's
+      TRANSPOSED_COLUMN_WIDTH_SCREEN_PX/_PRINT_PX), split into extra sheets where needed by
+      rowsLayoutPages (see the .ts) once there are more I-Statement columns than fit wrapped.
+      See .claude/OASWorksheets/PLAN_STAGE_5_LARGE_UNITS.md §1-2.
     -->
     <template v-else>
-      <table v-for="view in rowsLayoutPages" :key="view.page.key" class="oas-worksheet-page oas-worksheet-layout-rows" :data-oas-worksheet-page="view.page.key">
+      <table
+        v-for="view in rowsLayoutPages"
+        :key="view.page.key"
+        class="oas-worksheet-page oas-worksheet-layout-rows"
+        :data-oas-worksheet-page="view.page.key"
+        :data-oas-worksheet-statement-offset="view.statementOffset"
+        :data-oas-worksheet-statement-total="view.originalColumnCount"
+      >
         <thead>
           <!-- Group-band spanning row over the I-Statement columns — the transposed mirror of Layout A's patrol-span row, per PLAN_STAGE_5_LARGE_UNITS.md decision 2. -->
           <tr class="oas-worksheet-group-span-row">
-            <th class="oas-worksheet-member-name-header">{{ view.page.title }}</th>
-            <th v-for="span in view.page.groupSpans" :key="span.title" :colspan="span.columnCount" class="oas-worksheet-group-header oas-worksheet-patrol-group-start oas-worksheet-patrol-group-end">
+            <th class="oas-worksheet-member-name-header" :style="{ width: view.memberNameColumnWidthPx + 'px', minWidth: view.memberNameColumnWidthPx + 'px' }">{{ view.page.title }}</th>
+            <th
+              v-for="span in view.page.groupSpans"
+              :key="span.title"
+              :colspan="span.columnCount"
+              class="oas-worksheet-group-header oas-worksheet-patrol-group-start oas-worksheet-patrol-group-end"
+            >
               {{ span.title }}
             </th>
           </tr>
           <tr>
-            <th class="oas-worksheet-member-name-header">Member</th>
+            <th class="oas-worksheet-member-name-header" :style="{ width: view.memberNameColumnWidthPx + 'px', minWidth: view.memberNameColumnWidthPx + 'px' }">Member</th>
             <th
-              v-for="column in view.page.columns"
+              v-for="(column, columnIndex) in view.page.columns"
               :key="column.inputId"
-              class="oas-worksheet-statement-header"
-              :style="{ width: view.columnWidthPx + 'px', minWidth: view.columnWidthPx + 'px', maxWidth: view.columnWidthPx + 'px' }"
+              :style="{ width: view.columnWidthPx + 'px', minWidth: view.columnWidthPx + 'px' }"
+              :class="[
+                'oas-worksheet-statement-header',
+                groupBorderClassesForPage(view.page)[columnIndex].start ? 'oas-worksheet-patrol-group-start' : '',
+                groupBorderClassesForPage(view.page)[columnIndex].end ? 'oas-worksheet-patrol-group-end' : '',
+              ]"
             >
-              <span class="oas-worksheet-rotated-text" :style="{ fontSize: view.headerFontSizePx + 'px' }">{{ column.iStatement }}</span>
+              <span class="oas-worksheet-rotated-text">{{ column.iStatement }}</span>
             </th>
           </tr>
         </thead>
@@ -115,8 +133,17 @@
               <td :colspan="view.page.columns.length + 1">{{ patrolDividerBeforeRow(view.page, rowIndex) }}</td>
             </tr>
             <tr :key="row.memberId">
-              <td class="oas-worksheet-member-name-cell">{{ row.displayName }}</td>
-              <td v-for="(cell, cellIndex) in row.cells" :key="view.page.columns[cellIndex].inputId" :class="['oas-worksheet-cell', worksheetCellClass(cell)]">
+              <td class="oas-worksheet-member-name-cell" :style="{ width: view.memberNameColumnWidthPx + 'px', minWidth: view.memberNameColumnWidthPx + 'px' }">{{ row.displayName }}</td>
+              <td
+                v-for="(cell, cellIndex) in row.cells"
+                :key="view.page.columns[cellIndex].inputId"
+                :class="[
+                  'oas-worksheet-cell',
+                  worksheetCellClass(cell),
+                  groupBorderClassesForPage(view.page)[cellIndex].start ? 'oas-worksheet-patrol-group-start' : '',
+                  groupBorderClassesForPage(view.page)[cellIndex].end ? 'oas-worksheet-patrol-group-end' : '',
+                ]"
+              >
                 <span v-if="cell.date" class="oas-worksheet-cell-date">{{ formatWorksheetDate(cell.date) }}</span>
                 <span v-else class="oas-worksheet-tick-box" aria-hidden="true"></span>
               </td>
@@ -342,11 +369,12 @@
 }
 
 /*
- * Patrol column boundaries (Layout A) — a border around each patrol's own block of columns,
- * applied via patrolBorderClassesForPage() (see the .ts) to the first/last column of every patrol
- * group, on both the member-header row AND the patrol-span header cell itself. Also reused, as-is,
- * for Layout B's group-span header cells (same visual purpose: mark a spanning header's own
- * boundary), via the same two classes on that row's <th>.
+ * Column-group boundaries — a border around each group's own block of columns. Layout A applies
+ * this via patrolBorderClassesForPage() (see the .ts) per PATROL group, to the first/last column of
+ * every patrol group's member-header/body cells and its own patrol-span header cell. Layout B
+ * reuses the same two classes via groupBorderClassesForPage() per PLAN/DO/REVIEW/VERIFY group —
+ * both the group-span header `<th>` AND, "all the way down" (requested live), every body `<td>` in
+ * that group's I-Statement columns, the column-axis mirror of Layout A's own per-member treatment.
  *
  * Replaces an earlier alternating background-tint approach, dropped after live feedback: tinting
  * every cell in a patrol's columns made an identical (unanswered) cell look like a different
@@ -393,16 +421,41 @@
 
 /*
  * Layout B ("members as rows") — its own header/row treatment. The member-name column is fixed
- * width and NOT rotated (names read fine horizontally as rows — PLAN_STAGE_5_LARGE_UNITS.md §1);
- * I-Statement columns are even-width (set inline per column, from worksheetPrintPageSize.ts's
- * transposedColumnWidthPx) with rotated, font-fitted header text (fitRotatedHeaderFont.ts).
+ * width and NOT rotated (names read fine horizontally as rows — PLAN_STAGE_5_LARGE_UNITS.md §1) and
+ * never wraps (requested live — a long name wrapping onto two lines made rows uneven and harder to
+ * scan); I-Statement columns are a FIXED width (worksheetPrintPageSize.ts's
+ * TRANSPOSED_COLUMN_WIDTH_SCREEN_PX/_PRINT_PX) with rotated header text that WRAPS at a constant,
+ * never-shrinking font size — replacing the earlier font-shrinking approach (fitRotatedHeaderFont.ts)
+ * now unused by this layout; a page with too many I-Statement columns to fit wrapped splits onto an
+ * extra sheet instead (rowsLayoutPages in the .ts).
+ */
+/*
+ * Width is MEASURED per page and set inline (view.memberNameColumnWidthPx, in the template) — the
+ * longest member name on the page, in full (requested live: never wrap, truncate, or ellipsise a
+ * name) — see memberNameColumnWidthPx in worksheetPrintPageSize.ts. No max-width here any more: an
+ * unexpectedly long name must still show in full rather than being clipped by a stale fixed cap.
+ * The 140px min-width is only a FALLBACK for a cell that somehow didn't get an inline width.
  */
 .oas-worksheet-layout-rows thead th.oas-worksheet-member-name-header {
   text-align: left;
   min-width: 140px;
-  max-width: 140px;
   padding: 6px 8px;
   font-weight: var(--summit-font-weight-semibold);
+}
+
+/*
+ * The page TITLE lives on the group-span row's own member-name-header cell (see
+ * splitRowsTableColumnsForPrint's own comment on where the title text actually sits) — it must keep
+ * wrapping (a long title like "Stage 1 - Bushcraft (statements 1-10 of 20)" needs to), unlike the
+ * statement-header row's OWN member-name-header cell below it, which only ever holds the fixed, short
+ * word "Member" and should never wrap onto two lines.
+ */
+.oas-worksheet-layout-rows thead tr.oas-worksheet-group-span-row th.oas-worksheet-member-name-header {
+  white-space: normal;
+}
+
+.oas-worksheet-layout-rows thead tr:not(.oas-worksheet-group-span-row) th.oas-worksheet-member-name-header {
+  white-space: nowrap;
 }
 
 .oas-worksheet-layout-rows td.oas-worksheet-member-name-cell {
@@ -410,25 +463,55 @@
   left: 0;
   z-index: 2;
   min-width: 140px;
-  max-width: 140px;
   text-align: left;
   padding: 4px 8px;
   background: var(--color-white, #fff);
   border-right: 2px solid var(--summit-color-border-default);
   border-bottom: 1px solid var(--summit-color-border-subtle);
   font-weight: var(--summit-font-weight-semibold);
+  white-space: nowrap;
 }
 
 /*
- * The budgeted header height the rotated I-Statement text fits within — matches
- * ROTATED_HEADER_HEIGHT_PX in worksheetPrintPageSize.ts, the same figure fitRotatedHeaderFont
- * solved against, so the header actually has the room its own font size was computed for.
+ * Rotating text 90° (`writing-mode: vertical-rl`, see .oas-worksheet-rotated-text) swaps which box
+ * dimension is "the wrap length" vs "the dimension that grows as more lines wrap": characters flow
+ * top-to-bottom along the element's HEIGHT, and wrapping to a new line extends sideways (WIDTH) — the
+ * opposite of normal horizontal text. An earlier version of this rule had the two axes backwards
+ * (height was the ~220px budget, width the ~350px one), which wrapped I-Statement text at ~30
+ * characters instead of the requested ~50 and made the header font look smaller/more cramped than
+ * Layout A's own rotated headers even though both share the same font-size.
+ *
+ * height: the ~50-char wrap LENGTH (TRANSPOSED_COLUMN_WRAP_WIDTH_SCREEN_PX in worksheetPrintPageSize.ts).
+ * width: up to TRANSPOSED_COLUMN_MAX_WRAP_LINES lines' worth of width (TRANSPOSED_COLUMN_WIDTH_SCREEN_PX) —
+ * also set inline per batch (view.columnWidthPx in the template) since it's the value
+ * maxFittingTransposedColumns' own splitting decision depends on; this rule is a fallback only.
+ *
+ * `text-align: left` (requested live, replacing the browser's default centered `<th>` text) — in
+ * this rotated frame, "left" reads as hugging the near edge of the column rather than the text
+ * floating centered across the column's multi-line width; paired with `vertical-align: bottom` so
+ * the rotated text's own start-of-flow edge sits at the bottom of the header.
  */
 .oas-worksheet-layout-rows thead th.oas-worksheet-statement-header {
-  height: 220px;
+  height: 350px;
   padding: 4px 2px;
   font-weight: normal;
+  text-align: left;
   vertical-align: bottom;
+}
+
+/*
+ * Wraps (requested live — fixed font, never shrinking, wrapping instead) rather than staying on one
+ * line like Layout A's own rotated headers (short, fixed single words/names, never meant to wrap) —
+ * scoped to this layout's own header class so the shared .oas-worksheet-rotated-text rule's
+ * `white-space: nowrap` (still correct for Layout A) is untouched. `word-break: break-word` only
+ * engages for a single word that alone exceeds the column's width (normal word-wrap still applies
+ * first) — without it, one long word could force the column wider than its fixed, inline-styled
+ * width, the same "unconstrained cell stretches the table" mechanism as the empty-gap bug fixed
+ * earlier on Layout A.
+ */
+.oas-worksheet-layout-rows thead th.oas-worksheet-statement-header .oas-worksheet-rotated-text {
+  white-space: normal;
+  word-break: break-word;
 }
 
 /*

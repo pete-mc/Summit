@@ -5,9 +5,22 @@ import OASWorksheetsVue, {
   duplicateMembersForDevPreview,
   DEV_DUPLICATE_MEMBERS_STORAGE_KEY,
   splitTableColumnsForPrint,
+  splitRowsTableColumnsForPrint,
 } from "@/pages/OasProgressionVue/components/OASWorksheetsVue";
 import type { WorksheetCell, WorksheetPage, TransposedWorksheetPage } from "@/pages/OasProgressionVue/services/buildWorksheetPages";
-import { MAX_FITTING_MEMBER_COLUMNS, maxFittingMemberColumns, GROUP_BAND_COLUMN_WIDTH_SCREEN_PX, STATEMENT_COLUMN_WRAP_WIDTH_SCREEN_PX, PRINT_USABLE_WIDTH_PX } from "@/pages/OasProgressionVue/services/worksheetPrintPageSize";
+import {
+  MAX_FITTING_MEMBER_COLUMNS,
+  maxFittingMemberColumns,
+  maxFittingTransposedColumns,
+  memberNameColumnWidthPx,
+  GROUP_BAND_COLUMN_WIDTH_SCREEN_PX,
+  STATEMENT_COLUMN_WRAP_WIDTH_SCREEN_PX,
+  PRINT_USABLE_WIDTH_PX,
+  TRANSPOSED_COLUMN_WIDTH_SCREEN_PX,
+  TRANSPOSED_COLUMN_WIDTH_PRINT_PX,
+  WORKSHEET_FONT_FAMILY,
+  WORKSHEET_BODY_FONT_SIZE_PRINT_PX,
+} from "@/pages/OasProgressionVue/services/worksheetPrintPageSize";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
 
@@ -247,48 +260,152 @@ describe("OASWorksheetsVue computed", () => {
   });
 
   describe("rowsLayoutPages", () => {
-    it("produces one transposed view per page, with a font size and column width computed", () => {
+    // Fixed, standing in for "whatever the ResizeObserver measured" — see columnsLayoutPages' own
+    // SCREEN_WIDTH_PX comment above for why a fixed value (not the pre-mount fallback) is used here.
+    const SCREEN_WIDTH_PX = PRINT_USABLE_WIDTH_PX;
+    // Every fixture below uses a single member, "Alba Sayer" (makeRow's own default memberName) —
+    // the member-name column width is MEASURED now (memberNameColumnWidthPx), not a fixed constant,
+    // so MAX_FITTING_SCREEN must be computed against that same real name via the real component
+    // logic's own maxFittingTransposedColumns, not assumed.
+    function maxFittingScreenFor(memberCount: number): number {
+      const rows = Array.from({ length: memberCount }, (_, i) => makeRow({ memberId: `m${i}` }));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const context: any = { items: rows, filters: makeFilters(), availablePatrols: [], screenAvailableWidthPx: SCREEN_WIDTH_PX };
+      context.pageSet = computed.pageSet.call(context);
+      const views = computed.rowsLayoutPages.call(context);
+      return maxFittingTransposedColumns(SCREEN_WIDTH_PX, views[0].memberNameColumnWidthPx, TRANSPOSED_COLUMN_WIDTH_SCREEN_PX);
+    }
+    const MAX_FITTING_SCREEN = maxFittingScreenFor(1);
+
+    function makeContextWithStatements(statementCount: number) {
+      const rows = Array.from({ length: statementCount }, (_, i) => makeRow({ memberId: "m1", inputId: `a${i}`, iStatement: `Statement ${i}` }));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const context: any = { items: rows, filters: makeFilters(), availablePatrols: [], screenAvailableWidthPx: SCREEN_WIDTH_PX };
+      context.pageSet = computed.pageSet.call(context);
+      return context;
+    }
+
+    it("produces one transposed view per page, with a fixed column width, when within the fitting threshold", () => {
       const rows = [makeRow({ memberId: "m1", inputId: "a1" }), makeRow({ memberId: "m2", inputId: "a1" })];
-      const context = { items: rows, filters: makeFilters(), availablePatrols: [] };
+      const context = { items: rows, filters: makeFilters(), availablePatrols: [], screenAvailableWidthPx: SCREEN_WIDTH_PX };
       context.pageSet = computed.pageSet.call(context);
 
       const views = computed.rowsLayoutPages.call(context);
 
       expect(views).toHaveLength(1);
       expect(views[0].page.rows.map((r: TransposedWorksheetPage["rows"][number]) => r.memberId)).toEqual(["m1", "m2"]);
-      expect(views[0].headerFontSizePx).toBeGreaterThan(0);
-      expect(views[0].columnWidthPx).toBeGreaterThan(0);
+      expect(views[0].columnWidthPx).toBe(TRANSPOSED_COLUMN_WIDTH_SCREEN_PX);
     });
 
-    it("never splits — a large member count stays one row-set, not multiple sheets", () => {
-      const rows = Array.from({ length: MAX_FITTING_MEMBER_COLUMNS + 20 }, (_, i) => makeRow({ memberId: `m${i}` }));
-      const context = { items: rows, filters: makeFilters(), availablePatrols: [] };
+    it("never splits members (rows) — a large member count stays in full on every column batch", () => {
+      const rows = Array.from({ length: 40 }, (_, i) => makeRow({ memberId: `m${i}` }));
+      const context = { items: rows, filters: makeFilters(), availablePatrols: [], screenAvailableWidthPx: SCREEN_WIDTH_PX };
+      context.pageSet = computed.pageSet.call(context);
+
+      const views = computed.rowsLayoutPages.call(context);
+
+      views.forEach((v: { page: TransposedWorksheetPage }) => {
+        expect(v.page.rows).toHaveLength(40);
+      });
+    });
+
+    it("splits into multiple sheets when a page has more I-Statement columns than fit wrapped", () => {
+      const context = makeContextWithStatements(MAX_FITTING_SCREEN + 5);
+      const views = computed.rowsLayoutPages.call(context);
+
+      expect(views.length).toBeGreaterThan(1);
+      const totalColumns = views.reduce((sum: number, v: { page: TransposedWorksheetPage }) => sum + v.page.columns.length, 0);
+      expect(totalColumns).toBe(MAX_FITTING_SCREEN + 5);
+    });
+
+    it("gives every batch a fixed column width — never shrinking, unlike the old font-fitting approach", () => {
+      const context = makeContextWithStatements(MAX_FITTING_SCREEN + 5);
+      const views = computed.rowsLayoutPages.call(context);
+
+      expect(views.length).toBeGreaterThan(1);
+      views.forEach((v: { columnWidthPx: number }) => {
+        expect(v.columnWidthPx).toBe(TRANSPOSED_COLUMN_WIDTH_SCREEN_PX);
+      });
+    });
+
+    it("tags each batch with its own statementOffset into the original page, and the true original column count", () => {
+      const context = makeContextWithStatements(MAX_FITTING_SCREEN + 5);
+      const views = computed.rowsLayoutPages.call(context);
+      expect(views.length).toBeGreaterThan(1);
+
+      const batchSize = views[0].page.columns.length;
+      views.forEach((v: { statementOffset: number; originalColumnCount: number }, i: number) => {
+        expect(v.statementOffset).toBe(i * batchSize);
+        expect(v.originalColumnCount).toBe(MAX_FITTING_SCREEN + 5);
+      });
+    });
+
+    it("gives statementOffset 0 for an unsplit page", () => {
+      const context = makeContextWithStatements(2);
+      const views = computed.rowsLayoutPages.call(context);
+      expect(views[0].statementOffset).toBe(0);
+      expect(views[0].originalColumnCount).toBe(2);
+    });
+
+    it("falls back to PRINT_USABLE_WIDTH_PX before the ResizeObserver has measured anything (screenAvailableWidthPx unset)", () => {
+      const rows = [makeRow({ memberId: "m1", inputId: "a1" })];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const context: any = { items: rows, filters: makeFilters(), availablePatrols: [] };
       context.pageSet = computed.pageSet.call(context);
 
       const views = computed.rowsLayoutPages.call(context);
 
       expect(views).toHaveLength(1);
-      expect(views[0].page.rows).toHaveLength(MAX_FITTING_MEMBER_COLUMNS + 20);
+      expect(views[0].columnWidthPx).toBe(TRANSPOSED_COLUMN_WIDTH_SCREEN_PX);
+    });
+
+    it("measures the member-name column width from the longest member name on the page, applying it to every batch", () => {
+      const rows = [makeRow({ memberId: "m1", memberName: "Jo", inputId: "a1" }), makeRow({ memberId: "m2", memberName: "Alexandra Montgomery-Smith", inputId: "a1" }), makeRow({ memberId: "m3", memberName: "Beth", inputId: "a1" })];
+      const context = { items: rows, filters: makeFilters(), availablePatrols: [], screenAvailableWidthPx: SCREEN_WIDTH_PX };
+      context.pageSet = computed.pageSet.call(context);
+
+      const views = computed.rowsLayoutPages.call(context);
+
+      expect(views).toHaveLength(1);
+      // Every row's own display name must fit within the measured width, including the longest one.
+      expect(views[0].memberNameColumnWidthPx).toBeGreaterThan(0);
+    });
+
+    it("gives every batch of a split page the SAME member-name column width, derived from the ORIGINAL page's full member list", () => {
+      const context = makeContextWithStatements(MAX_FITTING_SCREEN + 5);
+      const views = computed.rowsLayoutPages.call(context);
+
+      expect(views.length).toBeGreaterThan(1);
+      const widths = new Set(views.map((v: { memberNameColumnWidthPx: number }) => v.memberNameColumnWidthPx));
+      expect(widths.size).toBe(1);
     });
   });
 
   describe("hasSplitPages", () => {
-    // hasSplitPages reads `this.isMembersAsRows`/`this.columnsLayoutPages`/`this.pageSet` as plain
-    // properties — all three need pre-resolving onto the fixture context.
+    // hasSplitPages reads `this.isMembersAsRows`/`this.columnsLayoutPages`/`this.rowsLayoutPages`/
+    // `this.pageSet` as plain properties — all need pre-resolving onto the fixture context.
     function makeContext(rows: OASProgressionRow[], filterOverrides: Partial<OASProgressionVueFilterState> = {}) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const context: any = { items: rows, filters: makeFilters(filterOverrides), availablePatrols: [] };
+      const context: any = { items: rows, filters: makeFilters(filterOverrides), availablePatrols: [], screenAvailableWidthPx: PRINT_USABLE_WIDTH_PX };
       context.pageSet = computed.pageSet.call(context);
       context.isMembersAsRows = computed.isMembersAsRows.call(context);
       context.columnsLayoutPages = computed.columnsLayoutPages.call(context);
+      context.rowsLayoutPages = computed.rowsLayoutPages.call(context);
       return context;
     }
 
-    it("is false for membersAsRows regardless of member count — that layout never splits", () => {
+    it("is false for membersAsRows when nothing needed splitting — many members alone don't force a split on this axis", () => {
       const rows = Array.from({ length: MAX_FITTING_MEMBER_COLUMNS + 20 }, (_, i) => makeRow({ memberId: `m${i}` }));
       const context = makeContext(rows, { worksheetLayout: "membersAsRows" });
 
       expect(computed.hasSplitPages.call(context)).toBe(false);
+    });
+
+    it("is true for membersAsRows once a page has more I-Statement columns than fit wrapped", () => {
+      const rows = Array.from({ length: MAX_FITTING_MEMBER_COLUMNS + 5 }, (_, i) => makeRow({ memberId: "m1", inputId: `a${i}` }));
+      const context = makeContext(rows, { worksheetLayout: "membersAsRows" });
+
+      expect(computed.hasSplitPages.call(context)).toBe(true);
     });
 
     it("is false for membersAsColumns when nothing needed splitting", () => {
@@ -390,6 +507,43 @@ describe("OASWorksheetsVue computed", () => {
       const borders = methods.patrolBorderClassesForPage.call(context, page);
 
       expect(borders.every((b: { start: boolean; end: boolean }) => b.start && b.end)).toBe(true);
+    });
+  });
+
+  describe("groupBorderClassesForPage (Layout B's Plan/Do/Review/Verify column borders)", () => {
+    it("returns {start:false, end:false} for every column when there are no group spans", () => {
+      const page: TransposedWorksheetPage = { key: "k", skill: "bushcraft", stream: "bushcraft", stage: 1, title: "t", columns: [{ inputId: "a1", iStatement: "x", inputGroup: "Plan" }], groupSpans: [], rows: [] };
+
+      expect(methods.groupBorderClassesForPage.call({}, page)).toEqual([{ start: false, end: false }]);
+    });
+
+    it("flags only the first and last column of each group, not every column in it", () => {
+      const columns = [
+        { inputId: "a1", iStatement: "x", inputGroup: "Plan" },
+        { inputId: "a2", iStatement: "x", inputGroup: "Do" },
+        { inputId: "a3", iStatement: "x", inputGroup: "Do" },
+      ];
+      const page: TransposedWorksheetPage = {
+        key: "k",
+        skill: "bushcraft",
+        stream: "bushcraft",
+        stage: 1,
+        title: "t",
+        columns,
+        groupSpans: [
+          { title: "Plan", startColumnIndex: 0, columnCount: 1 },
+          { title: "Do", startColumnIndex: 1, columnCount: 2 },
+        ],
+        rows: [],
+      };
+
+      const borders = methods.groupBorderClassesForPage.call({}, page);
+
+      expect(borders).toEqual([
+        { start: true, end: true }, // Plan's only column
+        { start: true, end: false }, // Do's first column
+        { start: false, end: true }, // Do's last column
+      ]);
     });
   });
 
@@ -694,5 +848,193 @@ describe("splitTableColumnsForPrint", () => {
 
     expect(results).toHaveLength(1);
     expect(results[0].querySelectorAll(".oas-worksheet-cell")).toHaveLength(5);
+  });
+});
+
+describe("splitRowsTableColumnsForPrint (Layout B's column-axis print splitting)", () => {
+  // Mirrors OASWorksheetsVue.vue's rows template shape: a group-span row (leading member-name <th>
+  // + one <th> per Plan/Do/Review/Verify group with a colspan), a statement-header row (leading
+  // "Member" <th> + one <th> per I-Statement column), optional full-width patrol-divider rows, and
+  // ordinary body rows (leading member-name <td> + one <td> per column).
+  function makeRowsTable(columnCount: number, options: { groupSizes?: number[]; statementOffset?: number; statementTotal?: number; title?: string; memberCount?: number; withPatrolDivider?: boolean } = {}): HTMLTableElement {
+    const table = document.createElement("table");
+    table.className = "oas-worksheet-page oas-worksheet-layout-rows";
+    if (options.statementOffset !== undefined) {
+      table.dataset.oasWorksheetStatementOffset = String(options.statementOffset);
+    }
+    if (options.statementTotal !== undefined) {
+      table.dataset.oasWorksheetStatementTotal = String(options.statementTotal);
+    }
+
+    const groupSizes = options.groupSizes ?? [columnCount];
+    const groupHeaderCells = groupSizes.map((size, i) => `<th class="oas-worksheet-group-header" colspan="${size}">Group ${i}</th>`).join("");
+    const statementHeaderCells = Array.from({ length: columnCount }, (_, i) => `<th class="oas-worksheet-statement-header" style="width: 999px; min-width: 999px"><span class="oas-worksheet-rotated-text">Statement ${i}</span></th>`).join(
+      "",
+    );
+
+    const memberCount = options.memberCount ?? 1;
+    const bodyRows = Array.from({ length: memberCount }, (_, m) => {
+      const cells = Array.from({ length: columnCount }, () => `<td class="oas-worksheet-cell"><span class="oas-worksheet-tick-box"></span></td>`).join("");
+      const dividerRow = options.withPatrolDivider && m === 0 ? `<tr class="oas-worksheet-patrol-divider-row"><td colspan="${columnCount + 1}">Wombats</td></tr>` : "";
+      return `${dividerRow}<tr><td class="oas-worksheet-member-name-cell">Member ${m}</td>${cells}</tr>`;
+    }).join("");
+
+    table.innerHTML = `
+      <thead>
+        <tr class="oas-worksheet-group-span-row">
+          <th class="oas-worksheet-member-name-header">${options.title ?? "Stage 1 - Bushcraft"}</th>
+          ${groupHeaderCells}
+        </tr>
+        <tr>
+          <th class="oas-worksheet-member-name-header">Member</th>
+          ${statementHeaderCells}
+        </tr>
+      </thead>
+      <tbody>
+        ${bodyRows}
+      </tbody>
+    `;
+    return table;
+  }
+
+  // splitRowsTableColumnsForPrint takes (table, usableWidthPx, columnWidthPx) and derives maxColumns
+  // itself from the table's OWN member names (measured) — this computes the usableWidthPx needed to
+  // produce a given maxColumns for a table whose names are all "Member N" (makeRowsTable's own
+  // fixed format), using the same measurement function the real code calls internally, so these
+  // tests exercise the real splitting math rather than assuming a width.
+  function usableWidthForMaxColumns(table: HTMLTableElement, maxColumns: number, columnWidthPx = TRANSPOSED_COLUMN_WIDTH_PRINT_PX): number {
+    const memberNames = Array.from(table.querySelectorAll<HTMLElement>(".oas-worksheet-member-name-cell")).map((cell) => cell.textContent ?? "");
+    const nameColumnWidthPx = memberNameColumnWidthPx(memberNames, WORKSHEET_BODY_FONT_SIZE_PRINT_PX, WORKSHEET_FONT_FAMILY);
+    return nameColumnWidthPx + maxColumns * columnWidthPx;
+  }
+
+  it("does not mutate the live table passed in — every result is a separate clone", () => {
+    const table = makeRowsTable(2);
+    const results = splitRowsTableColumnsForPrint(table, usableWidthForMaxColumns(table, 10), TRANSPOSED_COLUMN_WIDTH_PRINT_PX);
+
+    expect(results[0]).not.toBe(table);
+    expect(table.querySelectorAll(".oas-worksheet-statement-header")).toHaveLength(2);
+  });
+
+  it("returns a single table unchanged in column count when it already fits within maxColumns", () => {
+    const table = makeRowsTable(5);
+    const results = splitRowsTableColumnsForPrint(table, usableWidthForMaxColumns(table, 10), TRANSPOSED_COLUMN_WIDTH_PRINT_PX);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].querySelectorAll(".oas-worksheet-statement-header")).toHaveLength(5);
+    expect(results[0].querySelectorAll(".oas-worksheet-cell")).toHaveLength(5);
+  });
+
+  it("re-splits a table into multiple print-sized tables when it exceeds maxColumns", () => {
+    const table = makeRowsTable(20);
+    const results = splitRowsTableColumnsForPrint(table, usableWidthForMaxColumns(table, 8), TRANSPOSED_COLUMN_WIDTH_PRINT_PX);
+
+    // ceil(20/8) = 3 batches, evenly sized: 7/7/6.
+    expect(results).toHaveLength(3);
+    expect(results[0].querySelectorAll(".oas-worksheet-statement-header")).toHaveLength(7);
+    expect(results[1].querySelectorAll(".oas-worksheet-statement-header")).toHaveLength(7);
+    expect(results[2].querySelectorAll(".oas-worksheet-statement-header")).toHaveLength(6);
+  });
+
+  it("keeps every member ROW in full on every column batch — rows are never split", () => {
+    const table = makeRowsTable(20, { memberCount: 5 });
+    const results = splitRowsTableColumnsForPrint(table, usableWidthForMaxColumns(table, 8), TRANSPOSED_COLUMN_WIDTH_PRINT_PX);
+
+    results.forEach((result) => {
+      expect(result.querySelectorAll(".oas-worksheet-member-name-cell")).toHaveLength(5);
+    });
+  });
+
+  it("labels each re-split batch with a 1-based statement range when there's more than one", () => {
+    const table = makeRowsTable(20);
+    const results = splitRowsTableColumnsForPrint(table, usableWidthForMaxColumns(table, 8), TRANSPOSED_COLUMN_WIDTH_PRINT_PX);
+
+    expect(results[0].querySelector(".oas-worksheet-member-name-header")!.textContent).toBe("Stage 1 - Bushcraft (statements 1-7 of 20)");
+    expect(results[1].querySelector(".oas-worksheet-member-name-header")!.textContent).toBe("Stage 1 - Bushcraft (statements 8-14 of 20)");
+    expect(results[2].querySelector(".oas-worksheet-member-name-header")!.textContent).toBe("Stage 1 - Bushcraft (statements 15-20 of 20)");
+  });
+
+  it("numbers a re-split batch against the ORIGINAL page's true total, not this table's own local column count", () => {
+    const table = makeRowsTable(29, { statementOffset: 0, statementTotal: 33, title: "Stage 1 - Bushcraft (statements 1-29 of 33)" });
+    const results = splitRowsTableColumnsForPrint(table, usableWidthForMaxColumns(table, 8), TRANSPOSED_COLUMN_WIDTH_PRINT_PX);
+
+    expect(results).toHaveLength(4);
+    expect(results[0].querySelector(".oas-worksheet-member-name-header")!.textContent).toBe("Stage 1 - Bushcraft (statements 1-8 of 33)");
+    expect(results[3].querySelector(".oas-worksheet-member-name-header")!.textContent).toBe("Stage 1 - Bushcraft (statements 25-29 of 33)");
+  });
+
+  it("does not double up the title suffix when re-splitting an already screen-split (suffixed) table", () => {
+    const table = makeRowsTable(29, { statementOffset: 0, statementTotal: 33, title: "Stage 1 - Bushcraft (statements 1-29 of 33)" });
+    const results = splitRowsTableColumnsForPrint(table, usableWidthForMaxColumns(table, 8), TRANSPOSED_COLUMN_WIDTH_PRINT_PX);
+
+    results.forEach((result) => {
+      const title = result.querySelector(".oas-worksheet-member-name-header")!.textContent!;
+      expect(title.match(/\(statements/g)).toHaveLength(1);
+    });
+  });
+
+  it("leaves the title unchanged when the original page was never split by the screen either", () => {
+    const table = makeRowsTable(5, { title: "Stage 1 - Bushcraft" });
+    const results = splitRowsTableColumnsForPrint(table, usableWidthForMaxColumns(table, 10), TRANSPOSED_COLUMN_WIDTH_PRINT_PX);
+
+    expect(results[0].querySelector(".oas-worksheet-member-name-header")!.textContent).toBe("Stage 1 - Bushcraft");
+  });
+
+  it("recomputes group-span colspans against each new column range, clipping/dropping spans at batch boundaries", () => {
+    // 2 groups of 10 columns each (20 total), split into batches of <=7.
+    const table = makeRowsTable(20, { groupSizes: [10, 10] });
+    const results = splitRowsTableColumnsForPrint(table, usableWidthForMaxColumns(table, 7), TRANSPOSED_COLUMN_WIDTH_PRINT_PX);
+
+    const groupHeadersOf = (result: HTMLTableElement) => Array.from(result.querySelectorAll<HTMLTableCellElement>(".oas-worksheet-group-header")).map((th) => ({ text: th.textContent, colspan: th.colSpan }));
+
+    expect(results).toHaveLength(3);
+    expect(groupHeadersOf(results[0])).toEqual([{ text: "Group 0", colspan: 7 }]);
+    expect(groupHeadersOf(results[1])).toEqual([
+      { text: "Group 0", colspan: 3 },
+      { text: "Group 1", colspan: 4 },
+    ]);
+    expect(groupHeadersOf(results[2])).toEqual([{ text: "Group 1", colspan: 6 }]);
+  });
+
+  it("every re-split batch's total colspan across group headers matches its own column count", () => {
+    const table = makeRowsTable(20, { groupSizes: [10, 10] });
+    const results = splitRowsTableColumnsForPrint(table, usableWidthForMaxColumns(table, 7), TRANSPOSED_COLUMN_WIDTH_PRINT_PX);
+
+    results.forEach((result) => {
+      const totalColspan = Array.from(result.querySelectorAll<HTMLTableCellElement>(".oas-worksheet-group-header")).reduce((sum, th) => sum + th.colSpan, 0);
+      const statementCellCount = result.querySelectorAll(".oas-worksheet-statement-header").length;
+      expect(totalColspan).toBe(statementCellCount);
+    });
+  });
+
+  it("keeps patrol-divider rows intact, untouched, on every batch", () => {
+    const table = makeRowsTable(20, { memberCount: 2, withPatrolDivider: true });
+    const results = splitRowsTableColumnsForPrint(table, usableWidthForMaxColumns(table, 8), TRANSPOSED_COLUMN_WIDTH_PRINT_PX);
+
+    results.forEach((result) => {
+      const divider = result.querySelector(".oas-worksheet-patrol-divider-row td")!;
+      expect(divider.textContent).toBe("Wombats");
+    });
+  });
+
+  it("treats maxColumns <= 0 as 'do not split', matching splitTransposedPageIntoColumnBatches", () => {
+    const table = makeRowsTable(5);
+    const results = splitRowsTableColumnsForPrint(table, 0, TRANSPOSED_COLUMN_WIDTH_PRINT_PX);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].querySelectorAll(".oas-worksheet-statement-header")).toHaveLength(5);
+  });
+
+  it("measures the member-name column width from the table's own longest member name and applies it to every batch", () => {
+    const table = makeRowsTable(20, { memberCount: 3 });
+    // Override the member names so one is much longer than the others, mirroring a real unit.
+    table.querySelectorAll<HTMLElement>(".oas-worksheet-member-name-cell").forEach((cell, i) => {
+      cell.textContent = ["Jo", "Alexandra Montgomery-Smith", "Beth"][i];
+    });
+    const results = splitRowsTableColumnsForPrint(table, usableWidthForMaxColumns(table, 8), TRANSPOSED_COLUMN_WIDTH_PRINT_PX);
+
+    expect(results.length).toBeGreaterThan(1);
+    const widths = new Set(results.map((r) => r.querySelector<HTMLElement>(".oas-worksheet-member-name-cell")!.style.width));
+    expect(widths.size).toBe(1);
   });
 });

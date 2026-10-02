@@ -1,4 +1,4 @@
-import { buildWorksheetPages, splitPageIntoColumnBatches, transposeWorksheetPage, type BuildWorksheetPagesOptions, type WorksheetPage } from "@/pages/OasProgressionVue/services/buildWorksheetPages";
+import { buildWorksheetPages, splitPageIntoColumnBatches, transposeWorksheetPage, splitTransposedPageIntoColumnBatches, type BuildWorksheetPagesOptions, type WorksheetPage } from "@/pages/OasProgressionVue/services/buildWorksheetPages";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import { getCodename } from "@/pages/OasProgression/services/getCodename";
 
@@ -389,5 +389,109 @@ describe("transposeWorksheetPage", () => {
     expect(transposed.stream).toBe(page.stream);
     expect(transposed.stage).toBe(page.stage);
     expect(transposed.title).toBe(page.title);
+  });
+});
+
+describe("splitTransposedPageIntoColumnBatches", () => {
+  // One member, `statementCount` distinct I-Statements (one per group so groupSpans has multiple
+  // entries to exercise clipping) — the column axis is what this splitter bounds; members (rows)
+  // are irrelevant to its own logic but still carried through to confirm they're never filtered.
+  function makeTransposedPage(statementCount: number, memberCount = 1): ReturnType<typeof transposeWorksheetPage> {
+    const rows: ReturnType<typeof makeRow>[] = [];
+    for (let m = 0; m < memberCount; m++) {
+      for (let i = 0; i < statementCount; i++) {
+        rows.push(makeRow({ memberId: `m${m}`, memberName: `Member${m}`, inputId: `a${i}`, inputGroup: `Group${i}`, answered: m === 0 && i === 1, date: m === 0 && i === 1 ? "2024-02-03" : null }));
+      }
+    }
+    const page = buildWorksheetPages(rows, options()).pages[0];
+    return transposeWorksheetPage(page);
+  }
+
+  it("returns the page unchanged (by reference) when it already fits within maxColumns", () => {
+    const page = makeTransposedPage(5);
+
+    expect(splitTransposedPageIntoColumnBatches(page, 10)).toEqual([page]);
+    expect(splitTransposedPageIntoColumnBatches(page, 10)[0]).toBe(page);
+  });
+
+  it("splits into EVENLY sized batches, not maxColumns-sized ones with a lopsided remainder", () => {
+    const page = makeTransposedPage(20);
+
+    const batches = splitTransposedPageIntoColumnBatches(page, 8);
+
+    expect(batches).toHaveLength(3);
+    expect(batches[0].columns).toHaveLength(7);
+    expect(batches[1].columns).toHaveLength(7);
+    expect(batches[2].columns).toHaveLength(6);
+  });
+
+  it("keeps every member ROW in full on every batch — rows are never split, only columns", () => {
+    const page = makeTransposedPage(20, 5);
+
+    const batches = splitTransposedPageIntoColumnBatches(page, 8);
+
+    batches.forEach((batch) => {
+      expect(batch.rows).toHaveLength(5);
+    });
+  });
+
+  it("keeps cells index-aligned with each batch's own column slice", () => {
+    // Column index 1 (of 20) is the only one with a date — it must land in batch 0 at its own
+    // local index 1, not drift when sliced out of the full 20-column row.
+    const page = makeTransposedPage(20);
+
+    const batches = splitTransposedPageIntoColumnBatches(page, 8);
+
+    expect(batches[0].rows[0].cells[1].date).toBe("2024-02-03");
+    expect(batches[0].rows[0].cells.filter((c) => c.date !== null)).toHaveLength(1);
+  });
+
+  it("clips groupSpans to each batch's own column range, dropping spans with no overlap", () => {
+    // 20 single-column groups (Group0..Group19), split into batches of <=8: batch 0 gets columns
+    // [0,8) — Group0..Group7, one column each; batch 2 gets [16,20) — Group16..Group19.
+    const page = makeTransposedPage(20);
+
+    const batches = splitTransposedPageIntoColumnBatches(page, 8);
+
+    expect(batches[0].groupSpans).toHaveLength(7);
+    expect(batches[0].groupSpans.map((s) => s.title)).toEqual(["Group0", "Group1", "Group2", "Group3", "Group4", "Group5", "Group6"]);
+    expect(batches[2].groupSpans.map((s) => s.title)).toEqual(["Group14", "Group15", "Group16", "Group17", "Group18", "Group19"]);
+  });
+
+  it("recomputes a group span's startColumnIndex/columnCount to the overlapping portion when it straddles a batch boundary", () => {
+    // One single group spanning all 20 columns — every batch must see it clipped to ITS OWN local
+    // range, starting at local index 0, with columnCount equal to that batch's own column count.
+    const rows = Array.from({ length: 20 }, (_, i) => makeRow({ memberId: "m1", inputId: `a${i}`, inputGroup: "Plan" }));
+    const page = transposeWorksheetPage(buildWorksheetPages(rows, options()).pages[0]);
+
+    const batches = splitTransposedPageIntoColumnBatches(page, 8);
+
+    expect(batches[0].groupSpans).toEqual([{ title: "Plan", startColumnIndex: 0, columnCount: 7 }]);
+    expect(batches[1].groupSpans).toEqual([{ title: "Plan", startColumnIndex: 0, columnCount: 7 }]);
+    expect(batches[2].groupSpans).toEqual([{ title: "Plan", startColumnIndex: 0, columnCount: 6 }]);
+  });
+
+  it("labels each batch with a 1-based STATEMENT range when there is more than one batch, not a member range", () => {
+    const page = makeTransposedPage(20);
+
+    const batches = splitTransposedPageIntoColumnBatches(page, 8);
+
+    expect(batches[0].title).toBe(`${page.title} (statements 1-7 of 20)`);
+    expect(batches[1].title).toBe(`${page.title} (statements 8-14 of 20)`);
+    expect(batches[2].title).toBe(`${page.title} (statements 15-20 of 20)`);
+  });
+
+  it("leaves the title unchanged when no splitting was needed (a single batch)", () => {
+    const page = makeTransposedPage(5);
+
+    const batches = splitTransposedPageIntoColumnBatches(page, 8);
+
+    expect(batches[0].title).toBe(page.title);
+    expect(batches[0].title).not.toContain("statements");
+  });
+
+  it("treats maxColumns <= 0 as 'do not split'", () => {
+    const page = makeTransposedPage(5);
+    expect(splitTransposedPageIntoColumnBatches(page, 0)).toEqual([page]);
   });
 });

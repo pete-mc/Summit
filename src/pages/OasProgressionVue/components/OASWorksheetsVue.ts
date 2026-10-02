@@ -1,10 +1,9 @@
 import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import moment from "moment";
-import { buildWorksheetPages, splitPageIntoColumnBatches, transposeWorksheetPage } from "@/pages/OasProgressionVue/services/buildWorksheetPages";
+import { buildWorksheetPages, splitPageIntoColumnBatches, transposeWorksheetPage, splitTransposedPageIntoColumnBatches } from "@/pages/OasProgressionVue/services/buildWorksheetPages";
 import type { WorksheetCell, WorksheetMember, WorksheetPage, WorksheetPageSet, TransposedWorksheetPage } from "@/pages/OasProgressionVue/services/buildWorksheetPages";
 import { printWorksheets } from "@/pages/OasProgressionVue/services/printWorksheets";
-import { fitRotatedHeaderFont } from "@/pages/OasProgressionVue/services/fitRotatedHeaderFont";
 import {
   maxFittingMemberColumns,
   computeColumnsLayoutMetrics,
@@ -14,10 +13,13 @@ import {
   STATEMENT_COLUMN_WRAP_WIDTH_PRINT_PX,
   STATEMENT_COLUMN_RELAXED_MAX_WIDTH_PX,
   PRINT_USABLE_WIDTH_PX,
-  transposedColumnWidthPx,
-  ROTATED_HEADER_MAX_FONT_SIZE_PX,
-  ROTATED_HEADER_MIN_FONT_SIZE_PX,
-  ROTATED_HEADER_HEIGHT_PX,
+  memberNameColumnWidthPx,
+  WORKSHEET_FONT_FAMILY,
+  WORKSHEET_BODY_FONT_SIZE_SCREEN_PX,
+  WORKSHEET_BODY_FONT_SIZE_PRINT_PX,
+  TRANSPOSED_COLUMN_WIDTH_SCREEN_PX,
+  TRANSPOSED_COLUMN_WIDTH_PRINT_PX,
+  maxFittingTransposedColumns,
 } from "@/pages/OasProgressionVue/services/worksheetPrintPageSize";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
@@ -113,11 +115,23 @@ export function duplicateMembersForDevPreview(items: OASProgressionRow[], duplic
   return [...items, ...copies];
 }
 
-/** One Layout B ("members as rows") page, plus the per-page computed values its template needs (font size, column width) — bundled so the template reads one object per page instead of calling several methods per page per render. */
+/**
+ * One Layout B ("members as rows") page BATCH, plus the per-page computed values its template
+ * needs — bundled the same way Layout A's ColumnsPageView already is. `columnWidthPx` is a fixed
+ * constant per surface (screen/print), not computed per page, since I-Statement columns wrap at a
+ * fixed width instead of shrinking a shared font to fit every column on one page.
+ * `memberNameColumnWidthPx` IS computed per page (the longest member name on that ORIGINAL,
+ * unsplit page, measured once and applied to every one of its batches — requested live: never wrap/
+ * truncate/ellipsise a name, and keep split tables the same width as each other).
+ */
 interface TransposedPageView {
   page: TransposedWorksheetPage;
-  headerFontSizePx: number;
   columnWidthPx: number;
+  memberNameColumnWidthPx: number;
+  /** This batch's 0-based start index within its ORIGINAL, unsplit page's full column list — see ColumnsPageView.memberOffset's own comment for why print needs this when re-splitting an already screen-split table. 0 when the page wasn't split by the screen. */
+  statementOffset: number;
+  /** The ORIGINAL, unsplit page's total I-Statement column count — see statementOffset's own comment. */
+  originalColumnCount: number;
 }
 
 /**
@@ -272,6 +286,107 @@ function applyColumnsLayoutPrintWidths(table: HTMLTableElement, statementWidthPx
 }
 
 /**
+ * Layout B's print-splitting — the column-axis mirror of splitTableColumnsForPrint, but splitting
+ * I-Statement COLUMNS (this layout's bounded axis) instead of member columns, while every member
+ * ROW is kept in full on every resulting table (rows are this layout's unbounded axis — never
+ * split). Needed for the same reason Layout A's print splitter is: print's own fixed (now portrait)
+ * width budget rarely matches whatever the screen's measured width allowed, so print must re-derive
+ * its own column batches rather than just re-style whatever the screen rendered.
+ *
+ * DOM shape (see OASWorksheetsVue.vue's rows template): `<thead>` has a group-span row (leading
+ * `<th class="oas-worksheet-member-name-header">` + one `<th>` per Plan/Do/Review/Verify group, with
+ * colspans) and a statement-header row (leading "Member" `<th>` + one `<th>` per I-Statement
+ * column). `<tbody>` has optional full-width patrol-divider `<tr>`s (kept as-is on every batch — they
+ * don't have per-column cells to slice) and ordinary rows (leading `<td class="oas-worksheet-
+ * member-name-cell">` + one `<td>` per column).
+ *
+ * The member-name column's own width is MEASURED here from the live table's own member names
+ * (requested live: never wrap/truncate/ellipsise a name) — read from the DOM rather than passed in,
+ * since how many I-Statement columns fit per print sheet depends on it (a wider name column leaves
+ * less room for I-Statement columns), the same chicken-and-egg each print surface resolves by
+ * measuring its own real content rather than assuming a caller-supplied number.
+ */
+export function splitRowsTableColumnsForPrint(table: HTMLTableElement, usableWidthPx: number, columnWidthPx: number): HTMLTableElement[] {
+  const headerRows = Array.from(table.querySelectorAll<HTMLTableRowElement>("thead tr"));
+  const groupSpanRow = headerRows[0];
+  const statementHeaderRow = headerRows[1];
+  const bodyRows = Array.from(table.querySelectorAll<HTMLTableRowElement>("tbody tr"));
+
+  const columnCount = statementHeaderRow.children.length - 1;
+  const memberNames = Array.from(table.querySelectorAll<HTMLElement>(".oas-worksheet-member-name-cell")).map((cell) => cell.textContent ?? "");
+  const nameColumnWidthPx = memberNameColumnWidthPx(memberNames, WORKSHEET_BODY_FONT_SIZE_PRINT_PX, WORKSHEET_FONT_FAMILY);
+  const maxColumns = maxFittingTransposedColumns(usableWidthPx, nameColumnWidthPx, columnWidthPx);
+
+  const batchRanges: Array<[number, number]> = [];
+  if (columnCount <= maxColumns || maxColumns <= 0) {
+    batchRanges.push([0, columnCount]);
+  } else {
+    const batchCount = Math.ceil(columnCount / maxColumns);
+    const evenBatchSize = Math.ceil(columnCount / batchCount);
+    for (let i = 0; i < batchCount; i++) {
+      batchRanges.push([i * evenBatchSize, Math.min((i + 1) * evenBatchSize, columnCount)]);
+    }
+  }
+
+  // Same reasoning as splitTableColumnsForPrint's own offset/total attributes: this table may
+  // already be one of several screen-split column batches of a larger original page, so renumbering
+  // must read against the TRUE original column total, not this table's own local count.
+  const globalOffset = Number(table.dataset.oasWorksheetStatementOffset ?? "0");
+  const globalTotal = Number(table.dataset.oasWorksheetStatementTotal ?? columnCount);
+  // The page TITLE lives on the group-span row's leading <th> — the statement-header row's own
+  // leading <th> shares the same .oas-worksheet-member-name-header class but holds the literal text
+  // "Member" (see the .vue template), so this must specifically target the FIRST row's cell.
+  const baseTitle = (groupSpanRow.querySelector<HTMLElement>("th.oas-worksheet-member-name-header")?.textContent ?? "").replace(/\s*\(statements \d+-\d+ of \d+\)$/, "");
+
+  return batchRanges.map(([start, end]) => {
+    const clone = table.cloneNode(false) as HTMLTableElement;
+    const thead = document.createElement("thead");
+    const tbody = document.createElement("tbody");
+
+    const groupSpanRowClone = sliceHeaderRowColumns(groupSpanRow, start, end, true);
+    const titleCell = groupSpanRowClone.querySelector<HTMLElement>("th.oas-worksheet-member-name-header");
+    if (titleCell && (batchRanges.length > 1 || globalTotal > columnCount)) {
+      titleCell.textContent = `${baseTitle} (statements ${globalOffset + start + 1}-${globalOffset + end} of ${globalTotal})`;
+    }
+    thead.appendChild(groupSpanRowClone);
+    thead.appendChild(sliceHeaderRowColumns(statementHeaderRow, start, end, false));
+    clone.appendChild(thead);
+
+    bodyRows.forEach((row) => {
+      tbody.appendChild(row.classList.contains("oas-worksheet-patrol-divider-row") ? (row.cloneNode(true) as HTMLTableRowElement) : sliceRowsBodyRowColumns(row, start, end));
+    });
+    clone.appendChild(tbody);
+
+    // The screen's own inline column width (view.columnWidthPx, TRANSPOSED_COLUMN_WIDTH_SCREEN_PX)
+    // carries over via cloneNode — overwrite it with print's own fixed width, same reasoning as
+    // Layout A's applyColumnsLayoutPrintWidths: screen and print are different fixed surfaces here,
+    // not one width shared between them. The member-name column width, by contrast, is the SAME
+    // measured value on both surfaces here (columnWidthPx is the caller's own, per-surface fixed
+    // value) — overwritten too, since the screen's own measured width was taken at the screen's
+    // font size, not print's.
+    clone.querySelectorAll<HTMLElement>(".oas-worksheet-statement-header").forEach((cell) => {
+      cell.style.width = `${columnWidthPx}px`;
+      cell.style.minWidth = `${columnWidthPx}px`;
+    });
+    clone.querySelectorAll<HTMLElement>(".oas-worksheet-member-name-cell").forEach((cell) => {
+      cell.style.width = `${nameColumnWidthPx}px`;
+      cell.style.minWidth = `${nameColumnWidthPx}px`;
+    });
+
+    return clone;
+  });
+}
+
+/** Slices a Layout B body `<tr>`'s I-Statement column `<td>`s to `[start, end)`, keeping the leading member-name `<td>` untouched. Patrol-divider rows are handled separately by the caller (they have one full-width colspan cell, nothing to slice). */
+function sliceRowsBodyRowColumns(row: HTMLTableRowElement, start: number, end: number): HTMLTableRowElement {
+  const clone = row.cloneNode(false) as HTMLTableRowElement;
+  const cells = Array.from(row.children) as HTMLTableCellElement[];
+  clone.appendChild(cells[0].cloneNode(true));
+  cells.slice(1 + start, 1 + end).forEach((cell) => clone.appendChild(cell.cloneNode(true)));
+  return clone;
+}
+
+/**
  * Worksheets view: one printable table per Skill x Stream x Stage, for manual checkoff during an
  * activity. See .claude/OASWorksheets/PLAN_STAGE_3.md for the original design, PLAN_STAGE_1.md for
  * the data layer, and PLAN_STAGE_5_LARGE_UNITS.md for the two-layout (membersAsColumns/
@@ -378,35 +493,65 @@ export default defineComponent({
       });
     },
     /**
-     * Layout B's render list — a straight transpose of every page in the set (no splitting: rows
-     * are unbounded, which is the whole point of this layout — see PLAN_STAGE_5_LARGE_UNITS.md §1),
-     * bundled with the per-page font size/column width its template needs.
+     * Layout B's render list — every page in the set, transposed and then split into column
+     * batches wherever it has more I-Statement columns than fit at a fixed, word-wrapped column
+     * width (TRANSPOSED_COLUMN_WIDTH_SCREEN_PX) — rows (members) are NEVER split, they repeat
+     * in full on every batch, since rows are unbounded and that's this layout's whole point (see
+     * PLAN_STAGE_5_LARGE_UNITS.md §1). This replaces the old "shrink one shared font size to fit
+     * every column on one page, indefinitely" behaviour (fitRotatedHeaderFont.ts) — requested live:
+     * wrap at a fixed, never-shrinking font size, split onto extra sheets instead.
+     *
+     * Uses maxFittingTransposedColumns, NOT maxFittingMemberColumns — the latter always divides by
+     * MEMBER_COLUMN_MIN_WIDTH_PX (Layout A's own, much narrower, member-column width), which
+     * silently overcounted how many wider I-Statement columns fit and was the direct cause of a
+     * reported bug: columns rendered far wider than the screen with no splitting kicking in.
+     *
+     * The member-name column's own width is MEASURED per page (memberNameColumnWidthPx — the
+     * longest member name on that page, in full, never wrapped/truncated/ellipsised) from the
+     * ORIGINAL, unsplit page's member list, computed ONCE and applied to every one of that page's
+     * batches — same discipline as columnsLayoutPages' own per-page metrics, so split tables render
+     * at the same width as each other rather than drifting batch to batch.
+     *
+     * Same pre-mount fallback as columnsLayoutPages: screenAvailableWidthPx is 0 before the
+     * ResizeObserver's first measurement, which would make maxFittingTransposedColumns go <= 0
+     * (="don't split" per splitTransposedPageIntoColumnBatches's own guard) — falls back to
+     * PRINT_USABLE_WIDTH_PX for that one pre-mount render instead.
      */
     rowsLayoutPages(): TransposedPageView[] {
-      return this.pageSet.pages.map((page) => {
+      const usableWidthPx = this.screenAvailableWidthPx > 0 ? this.screenAvailableWidthPx : PRINT_USABLE_WIDTH_PX;
+      return this.pageSet.pages.flatMap((page) => {
         const transposed = transposeWorksheetPage(page);
-        const columnWidthPx = transposedColumnWidthPx(transposed.columns.length);
-        const { fontSizePx } = fitRotatedHeaderFont({
-          texts: transposed.columns.map((c) => c.iStatement),
-          availableLengthPx: ROTATED_HEADER_HEIGHT_PX,
-          fontFamily: "NunitoSans-regular, arial, sans-serif",
-          maxFontSizePx: ROTATED_HEADER_MAX_FONT_SIZE_PX,
-          minFontSizePx: ROTATED_HEADER_MIN_FONT_SIZE_PX,
-        });
-        return { page: transposed, headerFontSizePx: fontSizePx, columnWidthPx };
+        const nameColumnWidthPx = memberNameColumnWidthPx(
+          transposed.rows.map((r) => r.displayName),
+          WORKSHEET_BODY_FONT_SIZE_SCREEN_PX,
+          WORKSHEET_FONT_FAMILY,
+        );
+        const maxColumns = maxFittingTransposedColumns(usableWidthPx, nameColumnWidthPx, TRANSPOSED_COLUMN_WIDTH_SCREEN_PX);
+        const batches = splitTransposedPageIntoColumnBatches(transposed, maxColumns);
+        const batchSize = batches[0].columns.length;
+        return batches.map((batch, batchIndex) => ({
+          page: batch,
+          columnWidthPx: TRANSPOSED_COLUMN_WIDTH_SCREEN_PX,
+          memberNameColumnWidthPx: nameColumnWidthPx,
+          statementOffset: batchIndex * batchSize,
+          originalColumnCount: transposed.columns.length,
+        }));
       });
     },
     hasPages(): boolean {
       return this.pageSet.pages.length > 0;
     },
     /**
-     * Whether Layout A's splitting actually produced more sheets than there are Skill/Stage pages
-     * — drives an informational (not alarming) note, replacing Stage 4's "squeezed/clipped"
-     * warning now that nothing is actually lost any more (PLAN_STAGE_5_LARGE_UNITS.md §3's
-     * "reword it" instruction). Only meaningful for Layout A; Layout B never splits.
+     * Whether the current layout's own splitting actually produced more sheets than there are
+     * Skill/Stage pages — drives an informational (not alarming) note, replacing Stage 4's
+     * "squeezed/clipped" warning now that nothing is actually lost any more (PLAN_STAGE_5_LARGE_
+     * UNITS.md §3's "reword it" instruction). Both layouts can split now — Layout A on the member
+     * axis, Layout B on the I-Statement axis (see rowsLayoutPages's own comment) — so this checks
+     * whichever one is currently showing rather than assuming only Layout A ever splits.
      */
     hasSplitPages(): boolean {
-      return !this.isMembersAsRows && this.columnsLayoutPages.length > this.pageSet.pages.length;
+      const renderedBatchCount = this.isMembersAsRows ? this.rowsLayoutPages.length : this.columnsLayoutPages.length;
+      return renderedBatchCount > this.pageSet.pages.length;
     },
   },
   methods: {
@@ -472,6 +617,30 @@ export default defineComponent({
       return null;
     },
     /**
+     * Layout B's Plan/Do/Review/Verify GROUP boundary, as a per-column border — the column-axis
+     * mirror of patrolBorderClassesForPage above, but keyed off `page.groupSpans` instead of patrol
+     * spans. One {start, end} pair per I-Statement column, index-aligned with `page.columns`.
+     *
+     * Requested live: extend the existing heavier-border treatment "all the way down" each group's
+     * block of columns (header AND every body row), not just the one hardcoded border Stage 5 put
+     * on the group-span header cell itself. Reuses the SAME CSS classes
+     * (`oas-worksheet-patrol-group-start`/`-end`) already styled and already mirrored in
+     * printWorksheets.ts — only the per-column computation is new, matching how Layout A already
+     * computes its own per-member-column patrol borders instead of a single hardcoded header border.
+     */
+    groupBorderClassesForPage(page: TransposedWorksheetPage): PatrolBorderClasses[] {
+      if (page.groupSpans.length === 0) {
+        return page.columns.map(() => NO_PATROL_BORDER);
+      }
+      const classes: PatrolBorderClasses[] = page.columns.map(() => NO_PATROL_BORDER);
+      page.groupSpans.forEach((span) => {
+        for (let i = 0; i < span.columnCount; i++) {
+          classes[span.startColumnIndex + i] = { start: i === 0, end: i === span.columnCount - 1 };
+        }
+      });
+      return classes;
+    },
+    /**
      * Collects the live, already-rendered <table class="oas-worksheet-page"> elements (whichever
      * layout is currently showing — both layouts render that same class, see the templates) and
      * hands them to printWorksheets() — asked for rather than reached into via a method like
@@ -479,26 +648,37 @@ export default defineComponent({
      * not a reference to this component's internal DOM structure. Returns false when the popup was
      * blocked, so the caller can tell the user rather than nothing visibly happening.
      *
-     * Layout A's screen tables are batched/sized against the SCREEN's own measured width (a wide
-     * monitor can fit far more member columns per sheet than an A4 page ever can) — printWorksheets()
+     * Both layouts' screen tables are batched/sized against the SCREEN's own measured width (a wide
+     * monitor can fit far more columns per sheet than a physical page ever can) — printWorksheets()
      * clones outerHTML verbatim (see that file's own top comment for why: no cascade fight, real
      * text, a real repeating thead), so printing the live tables unchanged would carry the SCREEN's
-     * batch sizes onto a physical sheet with a different, fixed, much smaller budget
-     * (PRINT_USABLE_WIDTH_PX) — reported live as most member columns being clipped off the printed
-     * page. `splitTableColumnsForPrint` below re-splits (and re-sizes) each live table into print's
-     * OWN, independently-computed column batches before handing off, leaving the live screen DOM
-     * (and its on-screen rendering) completely untouched.
+     * batch sizes onto a physical sheet with a different, fixed, much smaller budget — reported live
+     * (for Layout A) as most member columns being clipped off the printed page.
+     * `splitTableColumnsForPrint`/`splitRowsTableColumnsForPrint` re-split (and, for Layout A,
+     * re-size) each live table into print's OWN, independently-computed column batches before
+     * handing off, leaving the live screen DOM (and its on-screen rendering) completely untouched.
+     *
+     * Both layouts print landscape (requested live — portrait made Layout B's print output too
+     * small/cramped; Layout A has always printed landscape). Orientation is still passed through
+     * printWorksheets() as an explicit parameter rather than hardcoded there, so a layout-specific
+     * orientation remains straightforward to reintroduce later if ever wanted again.
      */
     printCurrentPages(): boolean {
       const liveTables = Array.from((this.$el as HTMLElement).querySelectorAll<HTMLTableElement>("table.oas-worksheet-page"));
       if (liveTables.length === 0) {
         return false;
       }
-      const printMaxColumns = maxFittingMemberColumns(PRINT_USABLE_WIDTH_PX, GROUP_BAND_COLUMN_WIDTH_PRINT_PX, STATEMENT_COLUMN_WRAP_WIDTH_PRINT_PX);
-      const tables = this.isMembersAsRows ? liveTables : liveTables.flatMap((table) => splitTableColumnsForPrint(table, printMaxColumns));
+      let tables: HTMLTableElement[];
+      if (this.isMembersAsRows) {
+        tables = liveTables.flatMap((table) => splitRowsTableColumnsForPrint(table, PRINT_USABLE_WIDTH_PX, TRANSPOSED_COLUMN_WIDTH_PRINT_PX));
+      } else {
+        const printMaxColumns = maxFittingMemberColumns(PRINT_USABLE_WIDTH_PX, GROUP_BAND_COLUMN_WIDTH_PRINT_PX, STATEMENT_COLUMN_WRAP_WIDTH_PRINT_PX);
+        tables = liveTables.flatMap((table) => splitTableColumnsForPrint(table, printMaxColumns));
+      }
       return printWorksheets({
         pageTables: tables,
         documentTitle: "Terrain | Summit - OAS Worksheets",
+        orientation: "landscape",
       });
     },
   },
