@@ -7,6 +7,16 @@ export interface PatrolGroup {
   members: SectionMemberRow[];
 }
 
+/** The minimal shape filterMembersByPatrol/groupMembersByPatrol actually need — both are generic over this rather than hard-typed to SectionMemberRow, so OASWorksheetsVue's WorksheetMember (a different, narrower shape) can reuse them directly instead of being force-fit into SectionMemberRow's heat-map-specific fields (highestStage, stages, trunkFullyAwarded) it has no use for. See .claude/OASWorksheets/PLAN_STAGE_1.md §2. */
+interface HasPatrolName {
+  patrolName: string | null;
+}
+
+export interface PatrolGroupOf<T extends HasPatrolName> {
+  patrolName: string;
+  members: T[];
+}
+
 /**
  * True stream names ("Bushwalking", "Bushcraft"...), NOT `OASProgressionRow.stream` (which is
  * actually Terrain's field name for what the UI calls "Skill" — see PLAN_STAGE_3.md round 3).
@@ -15,7 +25,7 @@ export interface PatrolGroup {
 export const OAS_SKILLS = ["bushcraft", "bushwalking", "camping", "aquatics", "boating", "paddling", "alpine", "cycling", "vertical"];
 
 /** Filters a section's members down to only those in one of the selected patrols. Empty selection = no filter. */
-export function filterMembersByPatrol(members: SectionMemberRow[], selectedPatrols: string[]): SectionMemberRow[] {
+export function filterMembersByPatrol<T extends HasPatrolName>(members: T[], selectedPatrols: string[]): T[] {
   if (selectedPatrols.length === 0) {
     return members;
   }
@@ -30,12 +40,12 @@ export function filterMembersByPatrol(members: SectionMemberRow[], selectedPatro
  * all, in which case grouping would add noise for no benefit, so a single unlabeled group
  * containing everyone is returned instead.
  */
-export function groupMembersByPatrol(members: SectionMemberRow[]): PatrolGroup[] {
+export function groupMembersByPatrol<T extends HasPatrolName>(members: T[]): PatrolGroupOf<T>[] {
   if (members.every((m) => m.patrolName === null)) {
     return [{ patrolName: "", members }];
   }
 
-  const groups = new Map<string, SectionMemberRow[]>();
+  const groups = new Map<string, T[]>();
   members.forEach((member) => {
     const key = member.patrolName ?? UNASSIGNED_PATROL;
     const existing = groups.get(key);
@@ -87,22 +97,42 @@ export interface StageProgressDisplay {
   nextStageProgress: string | null;
 }
 
+interface NextStageProgress {
+  ticked: number;
+  total: number;
+}
+
 /**
- * Zero-padded count of i-statements ticked (answered or awarded) in the stage immediately above
- * `highestStage`, scoped to `stages` — null when there's no next stage or it has zero progress.
+ * Ticked (answered or awarded) count and total i-statement count for the stage immediately above
+ * `highestStage`, scoped to `stages` — null when there's no next stage or it has zero ticks yet.
  */
-function nextStageTickProgress(highestStage: number, stages: SectionMemberRow["stages"]): string | null {
+function nextStageProgress(highestStage: number, stages: SectionMemberRow["stages"]): NextStageProgress | null {
   const nextStage = stages.find((s) => s.stage === highestStage + 1);
   if (!nextStage) {
     return null;
   }
 
-  const tickedCount = nextStage.cells.filter((c) => c.answered || c.awarded).length;
-  if (tickedCount === 0) {
+  const ticked = nextStage.cells.filter((c) => c.answered || c.awarded).length;
+  if (ticked === 0) {
     return null;
   }
 
-  return String(tickedCount).padStart(2, "0");
+  return { ticked, total: nextStage.cells.length };
+}
+
+/**
+ * Zero-padded count of i-statements ticked (answered or awarded) in the stage immediately above
+ * `highestStage`, scoped to `stages` — null when there's no next stage or it has zero ticks yet
+ * (see nextStageProgress). The stage's total i-statement count (also available from
+ * nextStageProgress) is deliberately not shown here — see stageProgressProportion for where the
+ * total is still used, as a sort tiebreaker.
+ */
+function nextStageTickProgress(highestStage: number, stages: SectionMemberRow["stages"]): string | null {
+  const progress = nextStageProgress(highestStage, stages);
+  if (!progress) {
+    return null;
+  }
+  return String(progress.ticked).padStart(2, "0");
 }
 
 /**
@@ -137,12 +167,14 @@ export function formatStageProgress(highestStage: number | null, stages: Section
 
 export type MemberSortBy = "lastName" | "firstName" | "stageProgress";
 
-function lastNameOf(memberName: string): string {
+/** Exported for OASWorksheetsVue's own member sort (.claude/OASWorksheets/PLAN_STAGE_1.md §2) — name-splitting rules stay in one place rather than growing a second copy. */
+export function lastNameOf(memberName: string): string {
   const parts = memberName.trim().split(/\s+/);
   return parts.length > 1 ? parts[parts.length - 1] : memberName;
 }
 
-function firstNameOf(memberName: string): string {
+/** Exported for OASWorksheetsVue — see lastNameOf's comment above. */
+export function firstNameOf(memberName: string): string {
   return memberName.trim().split(/\s+/)[0] ?? memberName;
 }
 
@@ -162,20 +194,33 @@ function effectiveHighestStage(member: SectionMemberRow, isStreamSection: boolea
   return member.highestStage === null ? trunkStageCount : Math.max(trunkStageCount, member.highestStage);
 }
 
-/** Count used as the Stage.xx tiebreaker — same "next stage above highestStage" cells this member's displayed .xx is built from, but as a raw number (0 when there's nothing to show) rather than a padded/null display string. */
-function stageProgressCount(member: SectionMemberRow, isStreamSection: boolean, trunkStageCount: number): number {
-  const progress = formatStageProgress(member.highestStage, member.stages, isStreamSection, trunkStageCount, member.trunkFullyAwarded);
-  return progress.nextStageProgress ? Number(progress.nextStageProgress) : 0;
+/**
+ * Proportion (ticked/total, 0..1) used as the Stage yy/nn tiebreaker — same "next stage above
+ * highestStage" cells the displayed yy/nn is built from, but as a raw fraction (0 when there's
+ * nothing to show) so members are ranked by how close they are to finishing the next stage,
+ * not by its raw i-statement count (a bigger next stage shouldn't out-rank a smaller one that's
+ * proportionally further along).
+ */
+function stageProgressProportion(member: SectionMemberRow, isStreamSection: boolean, trunkStageCount: number): number {
+  const effectiveStage = effectiveHighestStage(member, isStreamSection, trunkStageCount);
+  if (effectiveStage === null) {
+    return 0;
+  }
+  const progress = nextStageProgress(effectiveStage, member.stages);
+  return progress ? progress.ticked / progress.total : 0;
 }
 
 /**
  * Sorts a section's (or patrol group's) members by the chosen key. "stageProgress" sorts by
  * (section-appropriate) highestStage descending first (higher stage ranks first, matching how
- * members are usually scanned "who's furthest along"), then by the Stage.xx progress count
- * descending as a tiebreaker within the same stage — a member showing "5.08" ranks above "5.02",
- * and both rank above a plain "5" with no next-stage progress yet. A null (or gated-to-null, for
- * a locked stream section) highestStage sorts last. `isStreamSection`/`trunkStageCount` describe
- * the section being sorted, matching the same params `formatStageProgress` uses to render it.
+ * members are usually scanned "who's furthest along"), then by next-stage progress *proportion*
+ * (ticked/total, not the raw ticked count shown in the .xx display) descending as a tiebreaker
+ * within the same stage — a member with 5 of 6 i-statements ticked in the next stage (83%) ranks
+ * above one with 6 of 20 (30%) even though 6 > 5, since the next stage's own size can differ
+ * between members, and both rank above a plain "5" with no next-stage progress yet. A null (or
+ * gated-to-null, for a locked stream section) highestStage sorts last. `isStreamSection`/
+ * `trunkStageCount` describe the section being sorted,
+ * matching the same params `formatStageProgress` uses to render it.
  */
 export function sortMembers(members: SectionMemberRow[], sortBy: MemberSortBy, isStreamSection = false, trunkStageCount = 0): SectionMemberRow[] {
   const sorted = members.slice();
@@ -194,7 +239,7 @@ export function sortMembers(members: SectionMemberRow[], sortBy: MemberSortBy, i
         if (aStage === null) return 1;
         if (bStage === null) return -1;
         if (aStage !== bStage) return bStage - aStage;
-        return stageProgressCount(b, isStreamSection, trunkStageCount) - stageProgressCount(a, isStreamSection, trunkStageCount);
+        return stageProgressProportion(b, isStreamSection, trunkStageCount) - stageProgressProportion(a, isStreamSection, trunkStageCount);
       });
       break;
   }

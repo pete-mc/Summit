@@ -3,6 +3,8 @@ import type { PropType } from "vue";
 import OASHeatMapVue from "./OASHeatMapVue.vue";
 import OASProgressionFiltersVue from "./OASProgressionFiltersVue.vue";
 import OASProgressionTableVue from "./OASProgressionTableVue.vue";
+import OASWorksheetFiltersVue from "./OASWorksheetFiltersVue.vue";
+import OASWorksheetsVue from "./OASWorksheetsVue.vue";
 import SummitLoadingState from "@/components/SummitLoadingState.vue";
 import { filterOASProgressionRows } from "./OASProgressionTableVue";
 import { groupRowsForHeatMap } from "@/pages/OasProgression/services/groupRowsForHeatMap";
@@ -17,6 +19,10 @@ const logger = createLogger("OasProgressionVueContent");
 
 interface HeatMapVueInstance {
   getExportTable(): HTMLTableElement | undefined;
+}
+
+interface WorksheetsVueInstance {
+  printCurrentPages(): boolean;
 }
 
 // Matches OASProgressionTableVue.ts's own column set (same flat row shape), so the Table view's
@@ -51,19 +57,40 @@ const DEFAULT_FILTERS: OASProgressionVueFilterState = {
   visibleStreams: OAS_SKILLS,
   stageRange: [1, MAX_STAGE],
   sortBy: "firstName",
+
+  // Worksheets view's own defaults — independent of the heat map's keys above (see
+  // OASProgressionVueFilterPersistence.ts's comment on these fields). "Hide completed" off by
+  // default is what keeps PLAN.md decision 1 (every filtered member gets a column) true by default.
+  worksheetVisibleSkills: OAS_SKILLS,
+  worksheetStageRange: [1, MAX_STAGE],
+  worksheetHideLastName: false,
+  worksheetUseCodenames: false,
+  worksheetBreakByPatrol: false,
+  worksheetHideCompleted: false,
+  worksheetLayout: "membersAsColumns",
 };
+
+// Exhaustive list of valid viewMode values, kept separately from the type so a present-but-invalid
+// stored value (as opposed to a missing key, which the DEFAULT_FILTERS spread already covers) can
+// be detected and corrected rather than selecting no tab at all — see PLAN_STAGE_2.md §5.
+const VALID_VIEW_MODES: OASProgressionVueFilterState["viewMode"][] = ["heatmap", "table", "worksheets"];
+
+export function sanitiseViewMode(viewMode: unknown): OASProgressionVueFilterState["viewMode"] {
+  return VALID_VIEW_MODES.includes(viewMode as OASProgressionVueFilterState["viewMode"]) ? (viewMode as OASProgressionVueFilterState["viewMode"]) : "heatmap";
+}
 
 function loadInitialFilters(): OASProgressionVueFilterState {
   const stored = loadOASProgressionVueFilters();
   if (!stored) {
     return DEFAULT_FILTERS;
   }
-  return { ...DEFAULT_FILTERS, ...stored };
+  const merged = { ...DEFAULT_FILTERS, ...stored };
+  return { ...merged, viewMode: sanitiseViewMode(merged.viewMode) };
 }
 
 export default defineComponent({
   name: "OasProgressionVueContent",
-  components: { OASHeatMapVue, OASProgressionFiltersVue, OASProgressionTableVue, SummitLoadingState },
+  components: { OASHeatMapVue, OASProgressionFiltersVue, OASProgressionTableVue, OASWorksheetFiltersVue, OASWorksheetsVue, SummitLoadingState },
   props: {
     items: { type: Array as PropType<OASProgressionRow[]>, required: true },
     trunkStageCounts: { type: Object as PropType<Record<string, number>>, required: true },
@@ -135,8 +162,14 @@ export default defineComponent({
     onFiltersUpdate(next: OASProgressionVueFilterState) {
       this.filters = next;
     },
-    onToggleViewModeClick() {
-      this.filters = { ...this.filters, viewMode: this.filters.viewMode === "heatmap" ? "table" : "heatmap" };
+    /**
+     * v-tabs emits its tab's own `tab-value` string on @change (see the template's explicit
+     * `tab-value="heatmap"`/`tab-value="table"`/`tab-value="worksheets"`, rather than relying on
+     * v-model's default numeric index — see PLAN_STAGE_2.md §3). viewMode is deliberately not
+     * reset by "Reset filters" (see onResetFilters below), so this is the only place it changes.
+     */
+    onViewModeTabChange(viewMode: OASProgressionVueFilterState["viewMode"]) {
+      this.filters = { ...this.filters, viewMode };
     },
     onResetFilters() {
       // Matches the React page's own resetFilters: viewMode is a page-level display choice, not
@@ -204,6 +237,19 @@ export default defineComponent({
         logger.error("Table Excel export failed:", e);
         const message = e instanceof Error ? e.message : "Unknown error";
         this.exportFeedback = `Excel export failed: ${message}`;
+      }
+    },
+    /**
+     * Opens a brand-new window containing the Worksheets view's own already-rendered tables and
+     * prints it — NOT exportElementToPdf, which rasterizes to a single bitmap and does not fit a
+     * multi-page, repeating-header tabular document. See printWorksheets.ts's own comment and
+     * .claude/OASWorksheets/PLAN_STAGE_4.md §3 for the full reasoning.
+     */
+    onWorksheetPrintClick() {
+      const worksheets = this.$refs.worksheets as unknown as WorksheetsVueInstance | undefined;
+      const opened = worksheets?.printCurrentPages();
+      if (opened === false) {
+        this.exportFeedback = "Could not open the print window — check your browser's popup blocker.";
       }
     },
   },

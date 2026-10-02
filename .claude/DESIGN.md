@@ -6,19 +6,40 @@ Read this before adding or changing any UI in Summit. It records what Summit's d
 system actually is today, and what Terrain (the host site Summit injects into) is
 built with — so new work stays visually consistent with both.
 
-## Summit does NOT use a component library
+## Summit is now built on Vue 2.7 + Vuetify 2 — new UI work should use it
 
-Summit is plain React (18.2) with hand-written CSS — no Vuetify, MUI, Ant Design,
-Tailwind, or similar. There is a small legacy pocket of Vue 2.7 (Vuex/vue-router)
-still present from before the React migration, but new UI work should be React.
+**New pages should be Vue 2.7 + Vuetify 2 components**, following the pattern in
+`src/pages/OasProgressionVue/`, `src/pages/PresentAwardsVue/`, and
+`src/pages/IStatements/`. This is a deliberate shift, not a stray experiment: the
+Vuetify build of OAS Progression proved out well enough (see
+`.claude/OASProgression/PLAN_VUE.md`) that it replaced the original React page as the
+one linked from Summit's nav menu — see `src/router/SummitRouter.ts`, where
+`/summit/reports/oasprogression` and `/summit/tools/PresentAwards` route to the Vue
+components, and the React originals survive only at unlinked `-legacy` routes for
+reference. I Statements was built Vue-first and has no React equivalent at all.
 
-All shared styling lives in one file: [`src/styles/index.css`](../src/styles/index.css).
-There is no CSS-in-JS, no CSS modules, no styled-components. Components are styled by
-applying utility/semantic class names from that file.
+React (18.2) is **not** gone — it's still live and routed for pages that haven't been
+rebuilt: `Home`, `MilestoneReport`, `OasReport`, `PeakAward`, `Topo`,
+`SummitCalendar`, `DisplayOptions` (see `src/pages/` and `SummitRouter.ts`). Keep
+maintaining these in React; don't rewrite a page to Vue just because this file says
+Vue is now the default — that's a decision worth its own plan (as OAS Progression's
+was), not an incidental side effect of an unrelated change.
 
-**Reuse those classes before inventing new ones.** Check `index.css` first — most
-common needs (buttons, form inputs, dialogs, data grids, toolbars) already have a
-class.
+**So, for new work:** building a new page or materially reworking an existing one →
+Vue 2.7 + Vuetify 2. Small fixes to an existing React page → stay in React, matching
+that page's existing conventions below.
+
+All shared styling (both React's utility classes and the cross-cutting tokens Vue
+pages also use) lives in one file: [`src/styles/index.css`](../src/styles/index.css).
+There is no CSS-in-JS, no CSS modules, no styled-components — React components are
+styled by applying class names from that file; Vuetify components lean on Vuetify's
+own theme plus the `--oas-vue-*` scale described below.
+
+**Reuse existing classes/components before inventing new ones.** Check `index.css`
+first for React work — most common needs (buttons, form inputs, dialogs, data grids,
+toolbars) already have a class. For Vue work, check `src/components/` for a shared
+component (e.g. `SummitLoadingState.vue`) and the `--oas-vue-*` scale before adding
+page-local styling.
 
 ## Design tokens (CSS custom properties)
 
@@ -67,7 +88,11 @@ nothing. Note that `.oas-heatmap-square` carries the border independently of the
 classes, so any future "invisible" state must clear `border-color` too — setting only a
 transparent background leaves an empty outline behind.
 
-## Component conventions
+## Component conventions (React pages)
+
+These apply to the still-active React pages (`Home`, `MilestoneReport`, `OasReport`,
+`PeakAward`, `Topo`, `SummitCalendar`, `DisplayOptions`, and the unlinked `-legacy`
+pages). For new/Vue work see the next section.
 
 - Functional components, typed props via `interface` + `React.FC<Props>`. See
   [`SimpleDropdown.tsx`](../src/components/SimpleDropdown.tsx) for the canonical
@@ -87,10 +112,10 @@ transparent background leaves an empty outline behind.
 
 ## The `--oas-vue-*` type scale (Vuetify pages)
 
-`src/pages/OasProgressionVue/` is a deliberate exception to "Summit doesn't use a
-component library" above — built on real Vuetify 2 components (see
-`.claude/OASProgression/PLAN_VUE.md`) as an evaluation of whether Vuetify is worth adopting more
-broadly. It proved out well enough to become the primary OAS Progression page (route
+`src/pages/OasProgressionVue/` was the first page built on real Vuetify 2 components
+(see `.claude/OASProgression/PLAN_VUE.md`), evaluating whether Vuetify was worth
+adopting more broadly — it was, and Vuetify is now the default for new pages (see
+above). `OasProgressionVue` became the primary OAS Progression page (route
 `/summit/reports/oasprogression`); the original React version lives on unlinked at
 `/summit/reports/oasprogression-legacy` as a reference. It does not use Summit's
 `--summit-*` tokens; it has its own small type scale, defined once as CSS custom
@@ -252,15 +277,17 @@ SemiBold). Confirmed directly from the captured frontend in
 - No Bootstrap/Tailwind/Element UI/Quasar — ruled out by grep across the whole
   capture.
 
-**What this means for Summit:** Summit already has its own established look (green
-brand color, its own CSS system) rather than trying to be a Vuetify clone — don't
-pull in Vuetify or MDI as dependencies just to "match Terrain". Where Summit UI is
-injected directly into Terrain's own chrome (e.g. the nav-menu color overrides at the
-bottom of `index.css` targeting `.NavMenu__*` / `.v-menu-group__*` classes), match
-Terrain's actual rendered classes/colors there specifically, since that CSS is
-overriding Terrain's real DOM. For everything else — Summit's own pages and
-components — keep using Summit's existing green-branded style above; it doesn't need
-to visually imitate Vuetify/Material Design.
+**What this means for Summit:** Vuetify is now a direct dependency (`"vuetify": "^2.7.2"`
+in `package.json`, set up in `src/vuetifySetup.ts`), used deliberately *because* it's
+also what Terrain itself is built on — new Vue pages share Terrain's own component
+library rather than approximating its look from outside. That doesn't mean imitating
+Terrain pixel-for-pixel everywhere: Summit's brand green remains Summit's own identity
+color (primary buttons, heat-map header, nav-menu entries), and the still-active React
+pages keep their existing green-branded `--summit-*` look rather than being reworked
+to chase Material Design. Where Summit UI is injected directly into Terrain's own
+chrome (e.g. the nav-menu color overrides at the bottom of `index.css` targeting
+`.NavMenu__*` / `.v-menu-group__*` classes), match Terrain's actual rendered
+classes/colors there specifically, since that CSS is overriding Terrain's real DOM.
 
 If Terrain's Material Design look ever needs to be sourced precisely (exact color
 tokens, spacing scale) for a specific integration point, check live via DevTools:
@@ -391,3 +418,18 @@ against the real Terrain page.
 **Test a Vuetify page with a hard refresh directly onto its own URL**, not just by
 navigating to it from Summit home — see the cascade section above for why those two
 paths can render differently.
+
+## Archive — superseded history
+
+This section keeps a record of decisions this file used to document differently, for
+anyone cross-referencing old commits/plans against current guidance. Nothing here is
+current advice.
+
+- **"Summit does NOT use a component library."** Until the OAS Progression Vuetify
+  rebuild (`.claude/OASProgression/PLAN_VUE.md`), this file said Summit was plain
+  React with hand-written CSS and explicitly argued against adopting Vuetify. That
+  rebuild proved out well enough that Vuetify became the default for new pages — see
+  the top of this file for current guidance. The original reasoning (Summit has its
+  own established green-branded look; don't import a component library just to chase
+  Terrain's Material Design look) still holds for the React pages that remain, it's
+  just no longer a blanket rule for the whole codebase.

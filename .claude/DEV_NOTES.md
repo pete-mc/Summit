@@ -1,6 +1,8 @@
+IMPORTANT: NO AI Agent should ever edit this file.
+
 # Issues to investigate
 
-> Important These are notes for the developer only. They should not be considered by an AI Agent until explicitly resolved by the developer.
+These are notes for the developer only. They should not be considered by an AI Agent until explicitly resolved by the developer.
 
 ## GUI
 

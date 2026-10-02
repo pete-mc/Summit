@@ -231,6 +231,29 @@ describe("sortMembers", () => {
     expect(result.map((m) => m.memberId)).toEqual(["m2", "m1"]);
   });
 
+  it("sorts by stageProgress: proportionally-further-along ranks first even with a lower raw ticked count", () => {
+    const proportionallyFurther = makeMemberRow({
+      memberId: "m1",
+      highestStage: 5,
+      stages: [
+        makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] }),
+        makeStage({ stage: 6, cells: Array.from({ length: 6 }, (_, i) => makeCell({ inputId: `c${i}`, answered: i < 5 })) }), // 5/6 ticked
+      ],
+    });
+    const higherRawCount = makeMemberRow({
+      memberId: "m2",
+      highestStage: 5,
+      stages: [
+        makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] }),
+        makeStage({ stage: 6, cells: Array.from({ length: 20 }, (_, i) => makeCell({ inputId: `d${i}`, answered: i < 6 })) }), // 6/20 ticked
+      ],
+    });
+
+    const result = sortMembers([higherRawCount, proportionallyFurther], "stageProgress");
+
+    expect(result.map((m) => m.memberId)).toEqual(["m1", "m2"]);
+  });
+
   it("sorts by stageProgress: a null highestStage sorts last", () => {
     const noProgress = makeMemberRow({ memberId: "m1", highestStage: null });
     const someProgress = makeMemberRow({ memberId: "m2", highestStage: 1 });

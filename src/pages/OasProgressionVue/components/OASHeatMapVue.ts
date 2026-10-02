@@ -6,7 +6,7 @@ import { filterMembersByPatrol, groupMembersByPatrol, sliceStagesToRange, format
 import type { PatrolGroup } from "@/pages/OasProgression/services/filterHeatMapSections";
 import { groupSectionsByMember } from "@/pages/OasProgression/services/groupSectionsByMember";
 import { getSkillIconUrl } from "@/pages/OasProgression/services/getSkillIconUrl";
-import { getCodename } from "@/pages/OasProgression/services/getCodename";
+import { getMemberDisplayName } from "@/pages/OasProgression/services/getMemberDisplayName";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
 
@@ -39,11 +39,13 @@ const CORE_SKILLS = ["bushwalking", "bushcraft", "camping"];
  */
 const MIN_VISIBLE_STAGE = 2;
 
-function skillTitle(skill: string): string {
+/** Exported for OASWorksheetsVue (.claude/OASWorksheets/PLAN_STAGE_1.md) — worksheet page titles use the same skill-casing rules as the heat map rather than inventing a second set. */
+export function skillTitle(skill: string): string {
   return SKILL_TITLES[skill] ?? skill;
 }
 
-function formatStream(stream: string): string {
+/** Exported for OASWorksheetsVue — see skillTitle's comment above. */
+export function formatStream(stream: string): string {
   return stream
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -59,13 +61,6 @@ function orderSkills(skills: string[]): string[] {
   const core = CORE_SKILLS.filter((s) => skills.includes(s));
   const rest = skills.filter((s) => !CORE_SKILLS.includes(s)).sort();
   return [...core, ...rest];
-}
-
-function displayName(memberName: string, memberId: string, hideLastName: boolean, useCodenames: boolean): string {
-  if (useCodenames) {
-    return getCodename(memberId);
-  }
-  return hideLastName ? memberName.split(" ")[0] : memberName;
 }
 
 /** Trims trailing empty stage columns from the top down (never below MIN_VISIBLE_STAGE) — see OASHeatMap.tsx's equivalent function for the full rationale; this page differs only in its lower floor. */
@@ -165,7 +160,7 @@ function buildMemberRowView(member: SectionMemberRow, allStages: number[], hideL
   const stageProgress = formatStageProgress(member.highestStage, member.stages, isStreamSection, trunkStageCount, member.trunkFullyAwarded);
   return {
     memberId: member.memberId,
-    displayName: displayName(member.memberName, member.memberId, hideLastName, useCodenames),
+    displayName: getMemberDisplayName(member.memberName, member.memberId, hideLastName, useCodenames),
     stageDisplay: stageProgress.stage,
     nextStageProgress: stageProgress.nextStageProgress,
     cells: allStages.map((stage) => buildStageCellView(stagesByStage.get(stage), onlyInProgress, hideAnswered)),
@@ -339,7 +334,7 @@ export default defineComponent({
         .filter((section) => this.selectedPatrols.length === 0 || (section.patrolName !== null && this.selectedPatrols.includes(section.patrolName)))
         .map((section) => ({
           memberId: section.memberId,
-          title: displayName(section.memberName, section.memberId, this.hideLastName, this.useCodenames),
+          title: getMemberDisplayName(section.memberName, section.memberId, this.hideLastName, this.useCodenames),
           patrolName: section.patrolName,
           skillRows: section.skillRows.map((row) => ({
             key: row.key,

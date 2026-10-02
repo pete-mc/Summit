@@ -596,16 +596,18 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   color: var(--summit-color-text-primary);
   font-size: var(--summit-font-size-lg);
   white-space: nowrap;
-  vertical-align: top;
   padding-right: var(--summit-space-lg);
 }
 
 .oas-heatmap-highest-stage,
 .oas-heatmap-highest-stage-header {
   text-align: center;
-  vertical-align: top;
   border-left: 1px solid var(--summit-color-border-default);
   border-right: 1px solid var(--summit-color-border-default);
+}
+
+.oas-heatmap-highest-stage {
+  vertical-align: top;
 }
 
 .oas-heatmap-stage-progress {

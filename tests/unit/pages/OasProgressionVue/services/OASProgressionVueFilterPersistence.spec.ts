@@ -6,6 +6,7 @@ const REACT_PAGE_STORAGE_KEY = "summit.oasProgression.filters";
 function makeFilters(overrides: Partial<OASProgressionVueFilterState> = {}): OASProgressionVueFilterState {
   return {
     viewMode: "heatmap",
+    groupBy: "skill",
     memberFilter: "",
     hideLastName: false,
     useCodenames: false,
@@ -14,9 +15,17 @@ function makeFilters(overrides: Partial<OASProgressionVueFilterState> = {}): OAS
     hideEmptyStreams: false,
     hideEmptyTopColumns: false,
     onlyInProgress: false,
+    hideAnswered: false,
     visibleStreams: ["bushcraft", "bushwalking"],
     stageRange: [1, 9],
     sortBy: "firstName",
+    worksheetVisibleSkills: ["bushcraft", "bushwalking"],
+    worksheetStageRange: [1, 9],
+    worksheetHideLastName: false,
+    worksheetUseCodenames: false,
+    worksheetBreakByPatrol: false,
+    worksheetHideCompleted: false,
+    worksheetLayout: "membersAsColumns",
     ...overrides,
   };
 }

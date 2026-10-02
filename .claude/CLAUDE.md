@@ -1,6 +1,6 @@
 <!-- @format -->
 
-This is a project to expand the capability of Summit, an extension used with the Scoust Terrain site. It uses a failry standard TS/React extension stack.
+This is a project to expand the capability of Summit, an extension used with the Scouts Australia Terrain site. It's a TS browser extension; new UI work is built with Vue 2.7 + Vuetify 2 (matching Terrain's own stack), with a shrinking set of still-active React 18.2 pages not yet rebuilt. See `.claude/DESIGN.md` for which pages are which and why.
 
 The user should be prompted to describe what they want, in a chat or through a specification md file.
 Coding agent firms up requirements via collaborative dialog, writes PLAN.md or multiple PLAN_STAGE_X.md files for each stage or component. Plans are grouped per feature in a subfolder under `.claude/` (e.g. `.claude/OASProgression/`, `.claude/I_Statement/`).
@@ -48,7 +48,7 @@ Items to consider:
 
 - **Runtime**: Node.js 24.x, npm (project pins `engines.node: 24.x`)
 - **Language**: TypeScript 5.9
-- **UI**: React 18.2 (+ some legacy Vue 2.7 components/router/Vuex still present)
+- **UI**: Vue 2.7 + Vuetify 2 is the default for new/reworked pages (Vuex/vue-router also present); React 18.2 remains live for pages not yet rebuilt — see `.claude/DESIGN.md`
 - **Bundler**: Webpack 5 (`npm run build` / `build-prod` / `build-watch` / `start`)
 - **Testing**: Jest 29 (unit, `npm test`), Playwright 1.59 (browser, `npm run test:browser`)
 - **Linting/formatting**: ESLint 9 (flat config) + Prettier, via `npm run lint`

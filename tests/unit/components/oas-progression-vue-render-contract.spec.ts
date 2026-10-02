@@ -147,20 +147,49 @@ describe("OasProgressionVueContent render contract", () => {
     expect(templateSource).toContain(':loading="isReloading"');
   });
 
-  it("VueStage 5: a single 'Show Table'/'Show Heatmap' button toggles viewMode, and shows OASProgressionTableVue when viewMode is 'table'", () => {
+  it("OASWorksheets Stage 2: a Terrain-style v-tabs strip switches viewMode, and shows OASProgressionTableVue when viewMode is 'table'", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(templateSource).toContain("<OASProgressionTableVue");
-    expect(templateSource).toContain("onToggleViewModeClick");
-    expect(templateSource).toContain("Show Table");
-    expect(templateSource).toContain("Show Heatmap");
-    // The earlier v-btn-toggle-based control (and its styling saga, see PLAN_VUESTAGE_5.md) was
-    // deliberately dropped in favor of this single plain button — simpler, and it sidesteps the
-    // whole "matching Vuetify's active-state class + a conflicting external CSS rule" problem.
+    expect(templateSource).toContain("<v-tabs");
+    // tab-value, NOT value: v-tab's `value` is a read-only computed with no corresponding prop
+    // (falls back to `to`/`href`, else the tab's index) — a plain `value="heatmap"` attribute is
+    // silently dropped, which was a real bug caught live (every tab fell back to its index as its
+    // identity, so clicking a tab never matched filters.viewMode's string). See the long comment
+    // above the <v-tabs> block in the .vue file for the full explanation.
+    expect(templateSource).toContain('<v-tab tab-value="heatmap">');
+    expect(templateSource).toContain('<v-tab tab-value="table">');
+    expect(templateSource).not.toMatch(/<v-tab value="/);
+    expect(templateSource).toContain("onViewModeTabChange");
+    // Replaced by v-tabs per .claude/OASWorksheets/PLAN_STAGE_2.md (DEV_NOTES asked for "the same
+    // control as terrain, instead of a button") — the single-button toggle from VueStage 5, and
+    // the v-btn-toggle it in turn replaced, are both gone now.
     expect(templateSource).not.toContain("<v-btn-toggle");
+    expect(templateSource).not.toContain("onToggleViewModeClick");
+    expect(templateSource).not.toContain("Show Table");
+    expect(templateSource).not.toContain("Show Heatmap");
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
-    expect(tsSource).toContain("onToggleViewModeClick");
+    expect(tsSource).toContain("onViewModeTabChange");
     expect(tsSource).toContain("OASProgressionTableVue");
+    expect(tsSource).not.toContain("onToggleViewModeClick");
+  });
+
+  it("OASWorksheets Stage 2: v-tabs is bound by explicit string value/@change, not v-model's default numeric index", () => {
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
+    expect(templateSource).toContain(':value="filters.viewMode"');
+    expect(templateSource).toContain('@change="onViewModeTabChange"');
+    // A v-model here would model a numeric tab index rather than filters.viewMode's own string —
+    // see PLAN_STAGE_2.md §3 for why that would be a second, driftable source of truth.
+    expect(templateSource).not.toMatch(/<v-tabs[^>]*v-model/);
+  });
+
+  it("OASWorksheets Stage 2: matches Terrain's own Programming-page tab strip (grow, 40px, primary/grey lighten-5)", () => {
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
+    const tabsTag = templateSource.slice(templateSource.indexOf("<v-tabs"), templateSource.indexOf(">", templateSource.indexOf("<v-tabs")) + 1);
+    expect(tabsTag).toContain("grow");
+    expect(tabsTag).toContain('height="40"');
+    expect(tabsTag).toContain('color="primary"');
+    expect(tabsTag).toContain('background-color="grey lighten-5"');
   });
 
   it("VueStage 5: resetting filters preserves the current viewMode (a display choice, not a filter)", () => {
@@ -181,29 +210,35 @@ describe("OasProgressionVueContent render contract", () => {
     expect(tsSource).toContain("onTableExcelExportClick");
   });
 
-  it("VueStage 5 fixes: header row buttons keep a consistent left-to-right order — [Excel Export,] PDF Export, Show xxx, Refresh — so each button's position doesn't shift when Excel Export appears/disappears between views", () => {
+  it("VueStage 5 fixes: header row buttons keep a consistent left-to-right order — [Excel Export,] PDF Export, Refresh — so each button's position doesn't shift when Excel Export appears/disappears between views", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     const headerRow = templateSource.slice(templateSource.indexOf('<div class="oas-progression-view-row">'), templateSource.indexOf("</div>", templateSource.indexOf('<div class="oas-progression-view-row">')));
 
-    const toggleIndex = headerRow.indexOf("onToggleViewModeClick");
     const excelIndex = headerRow.indexOf("onTableExcelExportClick");
     const heatmapPdfIndex = headerRow.indexOf("onPdfExportClick");
     const tablePdfIndex = headerRow.indexOf("onTablePdfExportClick");
     const refreshIndex = headerRow.indexOf("onReloadAllClick");
 
-    expect(toggleIndex).toBeGreaterThan(-1);
     expect(refreshIndex).toBeGreaterThan(-1);
-    // Left to right: [Excel Export,] PDF Export, Show xxx (view toggle), Refresh (rightmost).
+    // Left to right: [Excel Export,] PDF Export, Refresh (rightmost). The view-mode toggle used to
+    // sit between PDF Export and Refresh here; it is now the v-tabs strip below this row entirely
+    // (see .claude/OASWorksheets/PLAN_STAGE_2.md §2 — a full-width row of its own, not another item
+    // in this right-aligned button row).
     expect(excelIndex).toBeLessThan(tablePdfIndex);
-    expect(heatmapPdfIndex).toBeLessThan(toggleIndex);
-    expect(tablePdfIndex).toBeLessThan(toggleIndex);
-    expect(toggleIndex).toBeLessThan(refreshIndex);
+    expect(heatmapPdfIndex).toBeLessThan(refreshIndex);
+    expect(tablePdfIndex).toBeLessThan(refreshIndex);
   });
 
-  it("VueStage 5 fixes: the view-mode button reuses the same .oas-vue-pill-btn Terrain-matching style as PDF/Excel Export, with no bespoke toggle styling", () => {
+  it("OASWorksheets Stage 2: the view-mode tab strip is its own row, below the export/refresh row, not inside it", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
-    expect(templateSource).toMatch(/<v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onToggleViewModeClick"/);
-    // No leftover CSS from the abandoned v-btn-toggle approach.
+    const viewRowStart = templateSource.indexOf('<div class="oas-progression-view-row">');
+    const viewRowEnd = templateSource.indexOf("</div>", viewRowStart);
+    const tabsIndex = templateSource.indexOf("<v-tabs");
+
+    expect(tabsIndex).toBeGreaterThan(-1);
+    // The tab strip must appear AFTER the view-row's closing </div>, i.e. outside it.
+    expect(tabsIndex).toBeGreaterThan(viewRowEnd);
+    // No leftover CSS from the abandoned v-btn-toggle / single-button approaches.
     expect(templateSource).not.toContain("oas-vue-view-toggle");
     expect(templateSource).not.toContain("oas-vue-toggle-active");
   });
@@ -224,5 +259,108 @@ describe("OasProgressionVueContent render contract", () => {
     const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/OasProgressionVue.ts"), "utf8");
     expect(source).toContain("OAS Progression");
     expect(source).toContain("/summit/reports/oasprogression");
+  });
+
+  it("OASWorksheets Stage 3: a third 'Worksheets' tab (not 'OAS Worksheets' — the page is already titled OAS Progression) renders OASWorksheetsVue and OASWorksheetFiltersVue", () => {
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
+    expect(templateSource).toContain('<v-tab tab-value="worksheets">Worksheets</v-tab>');
+    expect(templateSource).not.toContain("OAS Worksheets</v-tab>");
+    expect(templateSource).toContain("<OASWorksheetsVue");
+    expect(templateSource).toContain("<OASWorksheetFiltersVue");
+    expect(templateSource).toContain("filters.viewMode === 'worksheets'");
+
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
+    expect(tsSource).toContain("OASWorksheetsVue");
+    expect(tsSource).toContain("OASWorksheetFiltersVue");
+  });
+
+  it("OASWorksheets Stage 3: the worksheet filter keys are separate from the heat map's own, not shared", () => {
+    const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence.ts"), "utf8");
+    ["worksheetVisibleSkills", "worksheetStageRange", "worksheetHideLastName", "worksheetUseCodenames", "worksheetBreakByPatrol", "worksheetHideCompleted"].forEach((key) => {
+      expect(source).toContain(key);
+    });
+
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
+    expect(tsSource).toContain("worksheetVisibleSkills");
+  });
+
+  it("OASWorksheets Stage 3/4: the Table view's Excel/PDF export buttons are gated on viewMode === 'table' specifically, not a bare v-else that would also catch 'worksheets'", () => {
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
+    const headerRow = templateSource.slice(templateSource.indexOf('<div class="oas-progression-view-row">'), templateSource.indexOf("</div>", templateSource.indexOf('<div class="oas-progression-view-row">')));
+    expect(headerRow).toContain("filters.viewMode === 'table'");
+  });
+
+  it("OASWorksheets Stage 4: the Worksheets tab gets its own Print button, wired to printCurrentPages via a ref (not reusing exportElementToPdf)", () => {
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
+    expect(templateSource).toContain("filters.viewMode === 'worksheets'");
+    expect(templateSource).toContain("onWorksheetPrintClick");
+    expect(templateSource).toContain('ref="worksheets"');
+
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
+    expect(tsSource).toContain("onWorksheetPrintClick");
+    expect(tsSource).toContain("printCurrentPages");
+    expect(tsSource).not.toContain("worksheets?.getExportTable");
+  });
+
+  it("OASWorksheets Stage 4: printing goes through printWorksheets.ts, not gridExport's exportElementToPdf", () => {
+    const worksheetsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASWorksheetsVue.ts"), "utf8");
+    expect(worksheetsSource).toContain("printWorksheets");
+    expect(worksheetsSource).not.toContain("exportElementToPdf");
+  });
+
+  it("OASWorksheets Stage 4: one sheet per page via break-after/page-break-after, with a :last-of-type reset so no trailing blank page prints", () => {
+    const printSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/services/printWorksheets.ts"), "utf8");
+    expect(printSource).toContain("break-after: page");
+    expect(printSource).toContain("page-break-after: always");
+    expect(printSource).toContain(":last-of-type");
+    expect(printSource).toContain("display: table-header-group");
+    expect(printSource).toContain("break-inside: avoid");
+  });
+
+  it("OASWorksheets Stage 5: worksheetLayout persists (replacing the dropped worksheetOrientation), defaulting to membersAsColumns", () => {
+    const persistenceSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence.ts"), "utf8");
+    expect(persistenceSource).toContain("worksheetLayout");
+    // Not a LIVE field any more — it may still be mentioned in a comment explaining the replacement
+    // (backtick-quoted prose), so check it's not declared as an interface member specifically.
+    expect(persistenceSource).not.toMatch(/^\s*worksheetOrientation:/m);
+
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
+    expect(tsSource).toContain('worksheetLayout: "membersAsColumns"');
+  });
+
+  it("OASWorksheets Stage 5: printing is always landscape — buildPrintStylesheet takes no orientation parameter any more", () => {
+    const printSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/services/printWorksheets.ts"), "utf8");
+    expect(printSource).toContain("@page { size: A4 landscape");
+    expect(printSource).not.toContain('orientation: "portrait"');
+    expect(printSource).not.toMatch(/buildPrintStylesheet\([^)]+\)/);
+  });
+
+  it("OASWorksheets Stage 5: the Layout selector exists in the worksheet filter bar", () => {
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASWorksheetFiltersVue.vue"), "utf8");
+    expect(templateSource).toContain("worksheetLayout");
+    expect(templateSource).not.toContain("worksheetOrientation");
+
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASWorksheetFiltersVue.ts"), "utf8");
+    expect(tsSource).toContain("membersAsColumns");
+    expect(tsSource).toContain("membersAsRows");
+  });
+
+  it("OASWorksheets Stage 5: Layout A splits over-wide pages into extra sheets rather than warning about clipping", () => {
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASWorksheetsVue.ts"), "utf8");
+    expect(tsSource).toContain("splitPageIntoColumnBatches");
+    expect(tsSource).not.toContain("pageExceedsColumnLimit");
+
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASWorksheetsVue.vue"), "utf8");
+    expect(templateSource).not.toContain("oas-worksheet-overflow-warning");
+  });
+
+  it("OASWorksheets Stage 5: Layout B (transpose) renders I-Statement columns via transposeWorksheetPage, with rotated/font-fitted headers", () => {
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASWorksheetsVue.ts"), "utf8");
+    expect(tsSource).toContain("transposeWorksheetPage");
+    expect(tsSource).toContain("fitRotatedHeaderFont");
+
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASWorksheetsVue.vue"), "utf8");
+    expect(templateSource).toContain("oas-worksheet-rotated-text");
+    expect(templateSource).toContain("groupSpans");
   });
 });
