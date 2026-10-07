@@ -24,61 +24,88 @@ describe("OASProgressionFiltersVue wiring and gating rules", () => {
     expect(tsSource).toContain('this.$emit("reset")');
   });
 
-  it("gates the Patrol filter and Break-by-patrol toggle on availablePatrols being non-empty, matching the React page's rule", () => {
-    expect(templateSource).toContain('v-if="availablePatrols.length > 0"');
+  // Changed from a bare `availablePatrols.length > 0` check: with exactly one named patrol and
+  // no unassigned members, the Patrol filter had no real choice to offer and a single-item
+  // multi-select could never actually reach its own "filtered" state — see
+  // .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md's note on the Patrol filter bug.
+  it("gates the Patrol filter on canFilterByPatrol, not a bare availablePatrols check", () => {
+    expect(templateSource).toContain('v-if="canFilterByPatrol"');
+    expect(tsSource).toContain("canFilterByPatrol");
   });
 
-  it("gates Hide-last-name disabled state on useCodenames, matching the React page's precedence rule", () => {
-    expect(templateSource).toContain(':disabled="filters.useCodenames"');
+  // A reconciliation method (onPatrolsChange) and a display-substitution computed
+  // (selectedPatrolsForDisplay) were tried first and both removed — the display/storage split
+  // they created is what caused the original bug, and it can't be patched around for a
+  // single-item list. The Patrol select is now a plain, honest multi-select bound directly to
+  // filters.selectedPatrols, with "Unassigned" as a real selectable item
+  // (patrolFilterOptions) rather than inferred. See
+  // .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
+  it("binds the Patrol multi-select directly to filters.selectedPatrols with a plain patch() on change", () => {
+    expect(templateSource).toContain(':value="filters.selectedPatrols || []"');
+    expect(templateSource).toContain(':items="patrolFilterOptions"');
+    expect(templateSource).toContain('@change="patch({ selectedPatrols: $event })"');
+    expect(tsSource).not.toContain("onPatrolsChange");
+    expect(tsSource).not.toContain("selectedPatrolsForDisplay");
   });
 
-  // Diverges from the React page, which gates this on hasAnyEmptySections. Now that the filter
-  // also hides empty trunk sections, it is always shown so its position in the Display group
-  // doesn't shift as data loads.
-  it("shows Hide-empty-skills unconditionally, unlike the React page's gated version", () => {
-    expect(templateSource).toContain('label="Hide empty skills"');
-    expect(templateSource).not.toContain('v-if="hasAnyEmptySections"');
+  // The old "Use codenames"/"Hide last name" checkboxes (one disabling the other) were replaced
+  // by the single-select NameFormatSelect dropdown — see
+  // .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md. Exclusivity is now structural (one
+  // dropdown value) rather than a disabled-state rule to assert on.
+  it("uses the shared NameFormatSelect component for the Names control, bound to filters.nameFormat", () => {
+    expect(templateSource).toContain("<NameFormatSelect");
+    expect(templateSource).toContain(':value="filters.nameFormat"');
+    expect(tsSource).toContain("NameFormatSelect");
+  });
+
+  // The Skills select's own chips row was removed (doubled up on the control itself) but the
+  // select is restored — only hiding the control entirely was a mistake in an earlier pass. See
+  // .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
+  it("keeps the Skills multi-select but not its selected-skill chip row", () => {
+    expect(templateSource).toContain('label="Skills"');
+    expect(templateSource).toContain(':value="filters.visibleStreams"');
+    expect(templateSource).not.toContain("oas-vue-selected-skills");
+  });
+
+  // The original "Hide" dropdown (a double negative) was inverted into a positive-selection
+  // "Show" dropdown, all-on by default — see .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
+  // It also absorbed "Break by patrol", the sole remaining item from the old Display fieldset,
+  // which is removed entirely.
+  it("uses a multi-select Show dropdown, not a Hide dropdown or the old Display fieldset", () => {
+    expect(templateSource).toContain('label="Show"');
+    expect(templateSource).not.toContain('label="Hide"');
+    expect(templateSource).not.toContain("oas-heatmap-display-group");
+    expect(templateSource).not.toContain("<fieldset");
+    expect(templateSource).not.toContain("<legend");
+  });
+
+  it("groups the Show dropdown's items under Skills/I Statements/Grouping subheaders", () => {
+    expect(tsSource).toContain('{ header: "Skills" }');
+    expect(tsSource).toContain('{ header: "I Statements" }');
+    expect(tsSource).toContain('{ header: "Grouping" }');
+    expect(tsSource).toContain("{ divider: true }");
+  });
+
+  // Renamed twice: "Empty skills rows" → "Empty skills" in the first pass, then
+  // DEV_NOTES.md asked for "Empty Skills" → "Not Started" (the Skills-section item, not the
+  // I-Statement "Not started" state option — the underlying field, showEmptySkillRows, is
+  // unchanged both times).
+  it("the showEmptySkillRows item is labelled 'Not Started'", () => {
+    expect(tsSource).toContain('{ value: "showEmptySkillRows", text: "Not Started" }');
+    expect(tsSource).not.toContain("Empty skills rows");
+    expect(tsSource).not.toContain('text: "Empty skills"');
   });
 
   it("uses real Vuetify form controls, not hand-rolled equivalents", () => {
-    ["v-text-field", "v-select", "v-checkbox", "v-btn"].forEach((control) => {
+    ["v-text-field", "v-select", "v-btn"].forEach((control) => {
       expect(templateSource).toContain(`<${control}`);
     });
-  });
-
-  it("resets the Display group's <fieldset> border/padding/margin, since a bare fieldset carries the browser's own default border (reported live as a stray line around the checkbox row)", () => {
-    expect(templateSource).toMatch(/\.oas-heatmap-display-group\s*\{[^}]*border:\s*none/);
-  });
-
-  it("the Display fieldset does NOT carry the shared .oas-field class — that class's ::after rule (a 1px divider drawn after every non-last .oas-field, from src/styles/index.css) was the real source of the reported stray line, confirmed via the user's own DevTools inspector output", () => {
-    expect(templateSource).not.toContain('class="oas-field oas-heatmap-display-group"');
-    expect(templateSource).toContain('class="oas-heatmap-display-group"');
   });
 
   it("Member's v-text-field has no separate placeholder — a floating label (like Skills/Patrol/Stage/Sort by) is enough, and duplicating it as a placeholder was redundant", () => {
     const memberField = templateSource.slice(templateSource.indexOf("<v-text-field"), templateSource.indexOf("</v-text-field>"));
     expect(memberField).toContain('label="Member"');
     expect(memberField).not.toContain("placeholder=");
-  });
-
-  it("Display's legend and Member's label share ONE identical set of styling values (color, font-size, font-family, font-weight, letter-spacing) — not each element's own distinct native Terrain rule, per explicit instruction that all filter headings on this row must look the same", () => {
-    const SHARED_VALUES = {
-      color: /color:\s*var\(--color-scouts-medium-blue,\s*#00348d\)\s*!important/,
-      fontSize: /font-size:\s*var\(--oas-vue-font-size-heading\)\s*!important/,
-      fontFamily: /font-family:\s*var\(--oas-vue-font-family\)\s*!important/,
-      fontWeight: /font-weight:\s*normal\s*!important/,
-      letterSpacing: /letter-spacing:\s*-0\.01em\s*!important/,
-    };
-
-    expect(templateSource).toContain('class="oas-heatmap-filter-label oas-vue-filter-heading-match"');
-
-    const sharedClassBlock = templateSource.slice(templateSource.indexOf(".oas-vue-filter-heading-match {"), templateSource.indexOf(".oas-vue-filter-heading-match {") + 300);
-    const memberLabelBlock = templateSource.slice(templateSource.indexOf(".oas-heatmap-controls ::v-deep .v-text-field .v-label {"), templateSource.indexOf(".oas-heatmap-controls ::v-deep .v-text-field .v-label {") + 400);
-
-    Object.values(SHARED_VALUES).forEach((pattern) => {
-      expect(sharedClassBlock).toMatch(pattern);
-      expect(memberLabelBlock).toMatch(pattern);
-    });
   });
 
   it("the heat-map's own filter fields (Member/Skills/Patrol/Stage/Sort by) match the shared body text size/family used across both views' tables and filter boxes, overriding the global 20px rule found on the Table view's filter boxes", () => {
@@ -89,9 +116,5 @@ describe("OASProgressionFiltersVue wiring and gating rules", () => {
 
   it("Member's label is forced into the permanently-floated (small, above-the-box) position, since Vuetify only floats it once the field has focus/a value", () => {
     expect(templateSource).toMatch(/\.oas-heatmap-controls ::v-deep \.v-text-field \.v-label\s*\{[^}]*transform:\s*translateY\(-18px\) scale\(0\.75\)/);
-  });
-
-  it("Display checkbox label spacing (12px) beats Terrain's own page-level checkbox restyling rule via !important, since that rule's selector specificity ties with ours and cascade order alone wasn't reliably deciding the winner — confirmed via live DevTools (the actual winning rule was `.v-application.theme--light .v-input--checkbox .v-input--selection-controls__input { margin-right: 24px; ... }`, not Vuetify's own 8px default)", () => {
-    expect(templateSource).toMatch(/\.oas-heatmap-display-group ::v-deep \.v-input--selection-controls__input\s*\{[^}]*margin-right:\s*12px\s*!important/);
   });
 });

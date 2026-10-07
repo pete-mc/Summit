@@ -1,7 +1,8 @@
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
-import { OAS_SKILLS, filterMembersByPatrol, groupMembersByPatrol, sliceStagesToRange, lastNameOf, firstNameOf } from "@/pages/OasProgression/services/filterHeatMapSections";
+import { OAS_SKILLS, filterMembersByPatrol, groupMembersByPatrol, sliceStagesToVisible } from "@/pages/OasProgression/services/filterHeatMapSections";
 import type { PatrolGroupOf } from "@/pages/OasProgression/services/filterHeatMapSections";
 import { getMemberDisplayName } from "@/pages/OasProgression/services/getMemberDisplayName";
+import type { NameFormat } from "@/pages/OasProgression/services/getMemberDisplayName";
 import { skillTitle, formatStream } from "@/pages/OasProgressionVue/components/OASHeatMapVue";
 
 /**
@@ -12,6 +13,9 @@ export interface WorksheetMember {
   memberId: string;
   /** Already resolved through codenames / hide-last-name — the string to print. */
   displayName: string;
+  /** Real, separate name fields (Terrain's own first_name/last_name) — used for sorting, never displayName, which may be a codename/initial and is never re-split. See .claude/OASProgression/NAME_RESOLUTION.md. */
+  firstName: string;
+  lastName: string;
   patrolName: string | null;
 }
 
@@ -71,11 +75,10 @@ export interface WorksheetPageSet {
 
 export interface BuildWorksheetPagesOptions {
   visibleSkills: string[];
-  stageRange: [number, number];
+  visibleStages: number[];
   selectedPatrols: string[];
   memberFilter: string;
-  hideLastName: boolean;
-  useCodenames: boolean;
+  nameFormat: NameFormat;
   breakByPatrol: boolean;
   /** Drops a member's column from pages where they have completed that Skill/Stage (keyed on `awarded`, not `answered` — see the pass below). */
   hideCompleted: boolean;
@@ -85,9 +88,9 @@ export interface BuildWorksheetPagesOptions {
 function sortWorksheetMembers(members: WorksheetMember[], sortBy: "firstName" | "lastName"): WorksheetMember[] {
   const sorted = members.slice();
   if (sortBy === "lastName") {
-    sorted.sort((a, b) => lastNameOf(a.displayName).localeCompare(lastNameOf(b.displayName)) || firstNameOf(a.displayName).localeCompare(firstNameOf(b.displayName)));
+    sorted.sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
   } else {
-    sorted.sort((a, b) => firstNameOf(a.displayName).localeCompare(firstNameOf(b.displayName)) || lastNameOf(a.displayName).localeCompare(lastNameOf(b.displayName)));
+    sorted.sort((a, b) => a.firstName.localeCompare(b.firstName) || a.lastName.localeCompare(b.lastName));
   }
   return sorted;
 }
@@ -116,7 +119,9 @@ function buildMemberList(rows: OASProgressionRow[], options: BuildWorksheetPages
     seen.push(row.memberId);
     byId.set(row.memberId, {
       memberId: row.memberId,
-      displayName: getMemberDisplayName(row.memberName, row.memberId, options.hideLastName, options.useCodenames),
+      displayName: getMemberDisplayName(row.firstName, row.lastName, row.memberId, options.nameFormat),
+      firstName: row.firstName,
+      lastName: row.lastName,
       patrolName: row.patrolName,
     });
   });
@@ -127,7 +132,12 @@ function buildMemberList(rows: OASProgressionRow[], options: BuildWorksheetPages
   // filterMembersByPatrol is generic over `{ patrolName }` (see its own comment), so a
   // WorksheetMember satisfies it directly — no reshaping into SectionMemberRow needed. Contrast
   // with sortMembers, which genuinely cannot be reused this way (PLAN_STAGE_1.md §2).
-  const patrolFiltered = filterMembersByPatrol(nameFiltered, options.selectedPatrols);
+  //
+  // Unlike filterMembersByPatrol's own shared "empty = show everyone" contract (kept unchanged
+  // there, since the legacy React page also relies on it), this options.selectedPatrols behaves
+  // like every other Worksheets filter: nothing selected means nothing shown. See
+  // .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
+  const patrolFiltered = options.selectedPatrols.length === 0 ? [] : filterMembersByPatrol(nameFiltered, options.selectedPatrols);
   const sorted = sortWorksheetMembers(patrolFiltered, options.sortBy);
 
   // When "break by patrol" is on, member COLUMNS are reordered by patrol (see
@@ -204,9 +214,9 @@ export function buildWorksheetPages(rows: OASProgressionRow[], options: BuildWor
   const memberIndexById = new Map(members.map((m, i) => [m.memberId, i]));
 
   const visibleSkillSet = new Set(options.visibleSkills);
-  const stages = sliceStagesToRange(
+  const stages = sliceStagesToVisible(
     Array.from({ length: 9 }, (_, i) => i + 1),
-    options.stageRange,
+    options.visibleStages,
   );
   const stageSet = new Set(stages);
 

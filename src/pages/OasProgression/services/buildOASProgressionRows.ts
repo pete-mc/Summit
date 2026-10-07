@@ -21,7 +21,17 @@ export interface OASProgressionRow {
   inputId: string;
   iStatement: string;
   memberId: string;
+  /**
+   * Convenience display/search string (`${firstName} ${lastName}`) — kept for the member-filter
+   * substring search and the Table view's PDF/Excel export column, where concatenation is
+   * lossless. Sorting and name-format logic (initials, last-name-first, etc.) must use
+   * firstName/lastName directly instead, never re-split memberName — splitting it back apart
+   * loses information for multi-word given/family names (e.g. "Van Der Berg"). See
+   * .claude/OASProgression/NAME_RESOLUTION.md.
+   */
   memberName: string;
+  firstName: string;
+  lastName: string;
   patrolName: string | null;
   answered: boolean;
   awarded: boolean;
@@ -69,6 +79,8 @@ export function buildBlankMatrix(unitId: string, stream: string, branch: string,
         iStatement: iStatement.iStatement,
         memberId: member.id,
         memberName: member.first_name + " " + member.last_name,
+        firstName: member.first_name,
+        lastName: member.last_name,
         patrolName: member.patrol?.name ?? null,
         answered: false,
         awarded: false,

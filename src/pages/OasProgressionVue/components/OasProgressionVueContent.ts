@@ -8,7 +8,7 @@ import OASWorksheetsVue from "./OASWorksheetsVue.vue";
 import SummitLoadingState from "@/components/SummitLoadingState.vue";
 import { filterOASProgressionRows } from "./OASProgressionTableVue";
 import { groupRowsForHeatMap } from "@/pages/OasProgression/services/groupRowsForHeatMap";
-import { collectPatrolNames, OAS_SKILLS } from "@/pages/OasProgression/services/filterHeatMapSections";
+import { collectPatrolNames, hasUnassignedMembers, UNASSIGNED_PATROL, OAS_SKILLS } from "@/pages/OasProgression/services/filterHeatMapSections";
 import { loadOASProgressionVueFilters, saveOASProgressionVueFilters, type OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
 import { exportElementToPdf, exportGridToExcel, exportGridToPdf, type GridExportColumn, type GridExportRow } from "@/components/gridExport";
 import { createLogger } from "@/helpers";
@@ -46,28 +46,38 @@ const DEFAULT_FILTERS: OASProgressionVueFilterState = {
   // Skill-first is the original layout, so an existing user sees no change on upgrade.
   groupBy: "skill",
   memberFilter: "",
-  hideLastName: false,
-  useCodenames: false,
-  selectedPatrols: [],
+  nameFormat: "full",
+  // null = "not yet resolved" — see OASProgressionVueFilterPersistence.ts's comment on this
+  // field. Resolved to the full patrolFilterOptions list by the watcher below once real patrol
+  // data has loaded; a reset also lands here via onResetFilters, so it re-resolves the same way.
+  selectedPatrols: null,
   breakByPatrol: false,
-  hideEmptyStreams: false,
-  hideEmptyTopColumns: false,
-  onlyInProgress: false,
-  hideAnswered: false,
+  showEmptySkillRows: true,
+  showEmptyTopStages: true,
+  showAwarded: true,
+  showNotStarted: true,
+  showAnswered: true,
   visibleStreams: OAS_SKILLS,
-  stageRange: [1, MAX_STAGE],
+  visibleStages: Array.from({ length: MAX_STAGE }, (_, i) => i + 1),
   sortBy: "firstName",
 
   // Worksheets view's own defaults — independent of the heat map's keys above (see
-  // OASProgressionVueFilterPersistence.ts's comment on these fields). "Hide completed" off by
+  // OASProgressionVueFilterPersistence.ts's comment on these fields). "Show completed" on by
   // default is what keeps PLAN.md decision 1 (every filtered member gets a column) true by default.
-  worksheetVisibleSkills: OAS_SKILLS,
-  worksheetStageRange: [1, MAX_STAGE],
-  worksheetHideLastName: false,
-  worksheetUseCodenames: false,
+  // Skills/Stages narrowed to Camping/stage 1 by default (DEV_NOTES.md: "To limit processing
+  // overhead") rather than the heat map's own "show everything" default — a worksheet is a
+  // print target a leader deliberately narrows before printing, not a dashboard to scan broadly.
+  worksheetVisibleSkills: ["camping"],
+  worksheetVisibleStages: [1],
+  worksheetNameFormat: "full",
+  // Same null = "not yet resolved" sentinel as selectedPatrols above — see
+  // worksheetSelectedPatrols's own comment on OASProgressionVueFilterState.
+  worksheetSelectedPatrols: null,
   worksheetBreakByPatrol: false,
-  worksheetHideCompleted: false,
-  worksheetLayout: "membersAsColumns",
+  worksheetShowCompleted: true,
+  // "Like Terrain" / the large-unit layout, now the default — see worksheetLayout's own doc
+  // comment on OASProgressionVueFilterState for the two layouts' tradeoffs.
+  worksheetLayout: "membersAsRows",
 };
 
 // Exhaustive list of valid viewMode values, kept separately from the type so a present-but-invalid
@@ -144,6 +154,28 @@ export default defineComponent({
     availablePatrols(): string[] {
       return collectPatrolNames(Object.values(this.grouped).flatMap((skill) => skill.sections));
     },
+    /**
+     * The Patrol filter dropdown's own item list: named patrols plus, when at least one member
+     * has none, the explicit "Unassigned" sentinel (UNASSIGNED_PATROL) — so a user can filter to
+     * just the unassigned members, or exclude them, rather than them being silently included or
+     * excluded by a rule they can't see or control. Deliberately a separate list from
+     * availablePatrols, which stays patrol-names-only since it's also used elsewhere (gating
+     * "Break by patrol") where adding a synthetic "Unassigned" item would be wrong — a unit with
+     * zero named patrols and every member unassigned has nothing to group by, even though
+     * patrolFilterOptions would show one "Unassigned" entry in that case.
+     */
+    patrolFilterOptions(): string[] {
+      const sections = Object.values(this.grouped).flatMap((skill) => skill.sections);
+      return hasUnassignedMembers(sections) ? [...this.availablePatrols, UNASSIGNED_PATROL] : this.availablePatrols;
+    },
+    /**
+     * Whether the Patrol filter has any real choice to offer — false when patrolFilterOptions
+     * has at most one entry, since a single-item multi-select has nothing to narrow between (see
+     * .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md's note on the Patrol filter bug).
+     */
+    canFilterByPatrol(): boolean {
+      return this.patrolFilterOptions.length > 1;
+    },
     // Reuses the same filterOASProgressionRows the table itself filters with, so the Table
     // view's export always matches what's currently on screen rather than every row.
     tableFilteredItems(): OASProgressionRow[] {
@@ -156,6 +188,32 @@ export default defineComponent({
       handler(newFilters: OASProgressionVueFilterState) {
         saveOASProgressionVueFilters(newFilters);
       },
+    },
+    /**
+     * Resolves selectedPatrols/worksheetSelectedPatrols: null (a new user, or just after a
+     * reset) to the full patrolFilterOptions list the first time real patrol data becomes
+     * available — which patrol names exist (and whether "Unassigned" should be offered) isn't
+     * known until the heat map's rows have loaded, so this can't simply be a static
+     * DEFAULT_FILTERS value. Both Heat Map and Worksheets Patrol filters resolve from the same
+     * patrolFilterOptions (one shared member roster, just presented two ways), but each keeps
+     * its own independent selection once resolved. Guarded on `=== null` specifically: once
+     * resolved (or once a user deliberately empties it), [] means "show nothing" and must never
+     * be overwritten again. See .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
+     */
+    patrolFilterOptions(newOptions: string[]) {
+      if (newOptions.length === 0) {
+        return;
+      }
+      const resolved: Partial<OASProgressionVueFilterState> = {};
+      if (this.filters.selectedPatrols === null) {
+        resolved.selectedPatrols = newOptions;
+      }
+      if (this.filters.worksheetSelectedPatrols === null) {
+        resolved.worksheetSelectedPatrols = newOptions;
+      }
+      if (Object.keys(resolved).length > 0) {
+        this.filters = { ...this.filters, ...resolved };
+      }
     },
   },
   methods: {
@@ -174,7 +232,16 @@ export default defineComponent({
     onResetFilters() {
       // Matches the React page's own resetFilters: viewMode is a page-level display choice, not
       // a "filter" to reset, so it survives a reset.
-      this.filters = { ...DEFAULT_FILTERS, viewMode: this.filters.viewMode };
+      //
+      // selectedPatrols/worksheetSelectedPatrols are resolved here directly rather than left as
+      // null for the patrolFilterOptions watcher to pick up: patrol data was already loaded
+      // before this reset ran, so patrolFilterOptions's VALUE doesn't change when filters reset
+      // — Vue's watcher only fires on an actual change, so it would never fire and both would
+      // stay null (which reads as "show nothing" downstream) forever. Resolving synchronously
+      // here, the same way the watcher would, fixes "Patrol filter does not default to all ON
+      // when reset" — see .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
+      const resolvedPatrols = this.patrolFilterOptions.length > 0 ? this.patrolFilterOptions : null;
+      this.filters = { ...DEFAULT_FILTERS, viewMode: this.filters.viewMode, selectedPatrols: resolvedPatrols, worksheetSelectedPatrols: resolvedPatrols };
     },
     async onReloadAllClick() {
       this.isReloading = true;
@@ -198,7 +265,7 @@ export default defineComponent({
         await exportElementToPdf({
           element: table,
           fileName: "OASProgressionHeatMapVue.pdf",
-          title: "Terrain | Summit - OAS Progression Heat Map (Vue)",
+          title: "Terrain | Summit - OAS Progression Heat Map",
           orientation: "landscape",
         });
         this.exportFeedback = "PDF export complete";
@@ -212,7 +279,7 @@ export default defineComponent({
       try {
         exportGridToPdf({
           fileName: "OASProgressionVue.pdf",
-          title: "Terrain | Summit - OAS Progression (Vue)",
+          title: "Terrain | Summit - OAS Progression",
           rows: this.tableFilteredItems as unknown as GridExportRow[],
           columns: TABLE_EXPORT_COLUMNS,
           orientation: "landscape",
@@ -228,7 +295,7 @@ export default defineComponent({
       try {
         exportGridToExcel({
           fileName: "OASProgressionVue.xlsx",
-          title: "OAS Progression (Vue)",
+          title: "OAS Progression",
           rows: this.tableFilteredItems as unknown as GridExportRow[],
           columns: TABLE_EXPORT_COLUMNS,
         });

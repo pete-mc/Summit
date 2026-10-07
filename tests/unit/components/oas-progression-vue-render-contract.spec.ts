@@ -70,12 +70,13 @@ describe("OasProgressionVueContent render contract", () => {
     expect(source).toContain('@reset="onResetFilters"');
     [
       ':visible-streams="filters.visibleStreams"',
-      ':stage-range="filters.stageRange"',
+      ':visible-stages="filters.visibleStages"',
       ':sort-by="filters.sortBy"',
       ':member-filter="filters.memberFilter"',
-      ':use-codenames="filters.useCodenames"',
+      ':name-format="filters.nameFormat"',
       ':break-by-patrol="filters.breakByPatrol"',
-      ':only-in-progress="filters.onlyInProgress"',
+      ':show-awarded="filters.showAwarded"',
+      ':show-not-started="filters.showNotStarted"',
     ].forEach((binding) => {
       expect(source).toContain(binding);
     });
@@ -276,7 +277,7 @@ describe("OasProgressionVueContent render contract", () => {
 
   it("OASWorksheets Stage 3: the worksheet filter keys are separate from the heat map's own, not shared", () => {
     const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence.ts"), "utf8");
-    ["worksheetVisibleSkills", "worksheetStageRange", "worksheetHideLastName", "worksheetUseCodenames", "worksheetBreakByPatrol", "worksheetHideCompleted"].forEach((key) => {
+    ["worksheetVisibleSkills", "worksheetVisibleStages", "worksheetNameFormat", "worksheetBreakByPatrol", "worksheetShowCompleted"].forEach((key) => {
       expect(source).toContain(key);
     });
 
@@ -317,7 +318,9 @@ describe("OasProgressionVueContent render contract", () => {
     expect(printSource).toContain("break-inside: avoid");
   });
 
-  it("OASWorksheets Stage 5: worksheetLayout persists (replacing the dropped worksheetOrientation), defaulting to membersAsColumns", () => {
+  // Default flipped per DEV_NOTES.md: "Layout > Members as rows, should be default and top item
+  // in list" — see .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
+  it("OASWorksheets Stage 5: worksheetLayout persists (replacing the dropped worksheetOrientation), defaulting to membersAsRows", () => {
     const persistenceSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence.ts"), "utf8");
     expect(persistenceSource).toContain("worksheetLayout");
     // Not a LIVE field any more — it may still be mentioned in a comment explaining the replacement
@@ -325,7 +328,7 @@ describe("OasProgressionVueContent render contract", () => {
     expect(persistenceSource).not.toMatch(/^\s*worksheetOrientation:/m);
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
-    expect(tsSource).toContain('worksheetLayout: "membersAsColumns"');
+    expect(tsSource).toContain('worksheetLayout: "membersAsRows"');
   });
 
   it("OASWorksheets print orientation: both layouts print landscape (a Layout-B-specific portrait attempt was tried and reverted live)", () => {

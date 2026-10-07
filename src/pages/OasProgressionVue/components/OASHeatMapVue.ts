@@ -2,11 +2,12 @@ import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import { groupRowsForHeatMap } from "@/pages/OasProgression/services/groupRowsForHeatMap";
 import type { HeatMapSection, HeatMapStage, SectionMemberRow } from "@/pages/OasProgression/services/groupRowsForHeatMap";
-import { filterMembersByPatrol, groupMembersByPatrol, sliceStagesToRange, formatStageProgress, sortMembers } from "@/pages/OasProgression/services/filterHeatMapSections";
+import { filterMembersByPatrol, groupMembersByPatrol, sliceStagesToVisible, formatStageProgress, sortMembers } from "@/pages/OasProgression/services/filterHeatMapSections";
 import type { PatrolGroup } from "@/pages/OasProgression/services/filterHeatMapSections";
 import { groupSectionsByMember } from "@/pages/OasProgression/services/groupSectionsByMember";
 import { getSkillIconUrl } from "@/pages/OasProgression/services/getSkillIconUrl";
 import { getMemberDisplayName } from "@/pages/OasProgression/services/getMemberDisplayName";
+import type { NameFormat } from "@/pages/OasProgression/services/getMemberDisplayName";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
 
@@ -14,8 +15,8 @@ import type { TerrainUnitMember } from "@/types/terrainTypes";
  * Vue+Vuetify port of OASHeatMap.tsx (see that file for the original React version and
  * PLAN_VUESTAGE_2.md for the porting rationale). This stage only wires the props VueStage 1
  * already has (items/trunkStageCounts/members) — filter-driven props (memberFilter,
- * selectedPatrols, breakByPatrol, hideLastName, useCodenames, onlyInProgress,
- * hideEmptyTopColumns) default to their "show everything" values here and get real controls in
+ * selectedPatrols, breakByPatrol, nameFormat, showAwarded, showNotStarted,
+ * showEmptyTopStages) default to their "show everything" values here and get real controls in
  * VueStage 3, matching this page's own staged build order.
  */
 
@@ -33,11 +34,12 @@ const SKILL_TITLES: Record<string, string> = {
 
 const CORE_SKILLS = ["bushwalking", "bushcraft", "camping"];
 /**
- * Floor for "Hide empty top stages": trimming stops here, so stages 1 and 2 always stay on screen
- * even with no progress in them. The React page keeps its own (higher) floor of 4 — this page
- * trims further on purpose.
+ * Floor for "Hide empty top stages": trimming stops here, so stage 1 always stays on screen even
+ * with no progress in it. The React page keeps its own (higher) floor of 4 — this page trims
+ * further on purpose. Lowered from 2 to 1 per DEV_NOTES.md: "Empty top stages can hide empty
+ * stages down to 2, inclusively. So only stage 1 must be shown."
  */
-const MIN_VISIBLE_STAGE = 2;
+const MIN_VISIBLE_STAGE = 1;
 
 /** Exported for OASWorksheetsVue (.claude/OASWorksheets/PLAN_STAGE_1.md) — worksheet page titles use the same skill-casing rules as the heat map rather than inventing a second set. */
 export function skillTitle(skill: string): string {
@@ -101,38 +103,33 @@ interface StageCellView {
   }>;
 }
 
-function buildStageCellView(stage: HeatMapStage | undefined, onlyInProgress: boolean, hideAnswered: boolean): StageCellView {
+function buildStageCellView(stage: HeatMapStage | undefined, showAwarded: boolean, showNotStarted: boolean, showAnswered: boolean): StageCellView {
   if (!stage) {
     return { kind: "empty" };
   }
   if (stage.complete) {
-    return onlyInProgress ? { kind: "empty" } : { kind: "bar-complete", title: `Stage ${stage.stage} — complete` };
+    return showAwarded ? { kind: "bar-complete", title: `Stage ${stage.stage} — Awarded` } : { kind: "empty" };
   }
   const hasAnyProgress = stage.cells.some((c) => c.answered || c.awarded);
   if (!hasAnyProgress) {
-    return onlyInProgress ? { kind: "empty" } : { kind: "bar-unstarted", title: `Stage ${stage.stage} — not started` };
+    // A "not started" stage, per the user's own definition: this single stage, for this single
+    // member, for this single skill, has zero answered/awarded I-Statements anywhere in it.
+    // showNotStarted governs only this whole-stage-bar case — it has no bearing on individual
+    // unanswered squares inside a stage that DOES have some progress (the branch below).
+    return showNotStarted ? { kind: "bar-unstarted", title: `Stage ${stage.stage} — Not started` } : { kind: "empty" };
   }
 
   /*
-   * "Hide answered" makes answered-but-not-yet-awarded squares invisible in place rather than
-   * removing them, so the remaining squares keep their positions and rows stay aligned between
-   * members. It affects squares and nothing else — suppressing the complete/not-started bars
-   * above is onlyInProgress's job.
+   * "Show answered"/"Show awarded" make their squares invisible in place rather than removing
+   * them, so the remaining squares keep their positions and rows stay aligned between members.
+   * There is deliberately no "not started" case here: once a stage has any progress at all, its
+   * individual unanswered squares are structural (they hold position within the group) and are
+   * never affected by showNotStarted — see .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
    */
   const squares = stage.cells.map((cell, index) => {
     const inProgressCell = cell.answered && !cell.awarded;
     const stateClass =
-      hideAnswered && inProgressCell
-        ? "oas-heatmap-square-hidden"
-        : onlyInProgress
-          ? inProgressCell
-            ? "oas-heatmap-square-answered"
-            : "oas-heatmap-square-unanswered"
-          : cell.awarded
-            ? "oas-heatmap-square-awarded"
-            : cell.answered
-              ? "oas-heatmap-square-answered"
-              : "oas-heatmap-square-unanswered";
+      (!showAnswered && inProgressCell) || (!showAwarded && cell.awarded) ? "oas-heatmap-square-hidden" : cell.awarded ? "oas-heatmap-square-awarded" : cell.answered ? "oas-heatmap-square-answered" : "oas-heatmap-square-unanswered";
     const isNewGroup = index === 0 || stage.cells[index - 1].inputGroup !== cell.inputGroup;
     const groupClass = isNewGroup && index > 0 ? "oas-heatmap-square-group-start" : "";
     return {
@@ -155,15 +152,15 @@ interface MemberRowView {
   cells: StageCellView[];
 }
 
-function buildMemberRowView(member: SectionMemberRow, allStages: number[], hideLastName: boolean, useCodenames: boolean, onlyInProgress: boolean, hideAnswered: boolean, isStreamSection: boolean, trunkStageCount: number): MemberRowView {
+function buildMemberRowView(member: SectionMemberRow, allStages: number[], nameFormat: NameFormat, showAwarded: boolean, showNotStarted: boolean, showAnswered: boolean, isStreamSection: boolean, trunkStageCount: number): MemberRowView {
   const stagesByStage = new Map(member.stages.map((s) => [s.stage, s]));
   const stageProgress = formatStageProgress(member.highestStage, member.stages, isStreamSection, trunkStageCount, member.trunkFullyAwarded);
   return {
     memberId: member.memberId,
-    displayName: getMemberDisplayName(member.memberName, member.memberId, hideLastName, useCodenames),
+    displayName: getMemberDisplayName(member.firstName, member.lastName, member.memberId, nameFormat),
     stageDisplay: stageProgress.stage,
     nextStageProgress: stageProgress.nextStageProgress,
-    cells: allStages.map((stage) => buildStageCellView(stagesByStage.get(stage), onlyInProgress, hideAnswered)),
+    cells: allStages.map((stage) => buildStageCellView(stagesByStage.get(stage), showAwarded, showNotStarted, showAnswered)),
   };
 }
 
@@ -207,20 +204,20 @@ export default defineComponent({
     trunkStageCounts: { type: Object as PropType<Record<string, number>>, required: true },
     members: { type: Array as PropType<TerrainUnitMember[]>, required: true },
     visibleStreams: { type: Array as PropType<string[]>, required: true },
-    stageRange: { type: Array as unknown as PropType<[number, number]>, required: true },
+    visibleStages: { type: Array as PropType<number[]>, required: true },
     sortBy: { type: String as PropType<"firstName" | "lastName" | "stageProgress">, required: true },
     // Defaults to showing everything, matching the page's own default (the binding is
-    // `!filters.hideEmptyStreams`, and that filter starts off). Now that an empty trunk section can
-    // be hidden too, a `false` default would mean an omitted prop silently hides whole skills.
-    showEmptySections: { type: Boolean, default: true },
+    // `filters.showEmptySkillRows`, and that filter starts on). Now that an empty trunk section
+    // can be hidden too, a `false` default would mean an omitted prop silently hides whole skills.
+    showEmptySkillRows: { type: Boolean, default: true },
     memberFilter: { type: String, default: "" },
-    hideLastName: { type: Boolean, default: false },
-    useCodenames: { type: Boolean, default: false },
+    nameFormat: { type: String as PropType<NameFormat>, default: "full" },
     selectedPatrols: { type: Array as PropType<string[]>, default: () => [] },
     breakByPatrol: { type: Boolean, default: false },
-    hideEmptyTopColumns: { type: Boolean, default: false },
-    onlyInProgress: { type: Boolean, default: false },
-    hideAnswered: { type: Boolean, default: false },
+    showEmptyTopStages: { type: Boolean, default: true },
+    showAwarded: { type: Boolean, default: true },
+    showNotStarted: { type: Boolean, default: true },
+    showAnswered: { type: Boolean, default: true },
     /**
      * "skill" (default) groups by skill/stream, listing members — the original layout, optionally
      * sub-grouped by patrol. "member" inverts it: a section per member listing their skills, with
@@ -250,7 +247,7 @@ export default defineComponent({
       return Array.from({ length: this.overallMaxStage }, (_, i) => i + 1);
     },
     rangeStages(): number[] {
-      return sliceStagesToRange(this.allStagesUntrimmed, this.stageRange);
+      return sliceStagesToVisible(this.allStagesUntrimmed, this.visibleStages);
     },
     visibleSectionsBySkill(): Map<string, HeatMapSection[]> {
       const rangeStageSet = new Set(this.rangeStages);
@@ -266,20 +263,20 @@ export default defineComponent({
       this.skills.forEach((skill) => {
         map.set(
           skill,
-          this.grouped[skill].sections.filter((section: HeatMapSection) => this.showEmptySections || !isEmptyWithinRange(section)),
+          this.grouped[skill].sections.filter((section: HeatMapSection) => this.showEmptySkillRows || !isEmptyWithinRange(section)),
         );
       });
       return map;
     },
     allStagesTrimmed(): number[] {
-      if (!this.hideEmptyTopColumns) {
+      if (this.showEmptyTopStages) {
         return this.allStagesUntrimmed;
       }
       const allSections = this.skills.flatMap((s) => this.visibleSectionsBySkill.get(s) ?? []);
       return trimEmptyTrailingStages(this.allStagesUntrimmed, allSections);
     },
     allStages(): number[] {
-      return this.hideEmptyTopColumns ? sliceStagesToRange(this.allStagesTrimmed, this.stageRange) : this.rangeStages;
+      return this.showEmptyTopStages ? this.rangeStages : sliceStagesToVisible(this.allStagesTrimmed, this.visibleStages);
     },
     sections(): SectionView[] {
       const result: SectionView[] = [];
@@ -289,10 +286,14 @@ export default defineComponent({
         sections.forEach((section: HeatMapSection) => {
           const isStreamSection = section.stream !== null;
           const nameFiltered = section.members.filter((member: SectionMemberRow) => !this.memberFilter.trim() || member.memberName.toLowerCase().includes(this.memberFilter.trim().toLowerCase()));
-          const patrolFiltered = filterMembersByPatrol(nameFiltered, this.selectedPatrols);
+          // Unlike filterMembersByPatrol's own shared "empty = show everyone" contract (still
+          // relied on by Worksheets and the legacy React page), the Heat Map's own Patrol filter
+          // behaves like every other filter on this page: nothing selected means nothing shown.
+          // See .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
+          const patrolFiltered = this.selectedPatrols.length === 0 ? [] : filterMembersByPatrol(nameFiltered, this.selectedPatrols);
           const filteredMembers = sortMembers(patrolFiltered, this.sortBy, isStreamSection, section.trunkStageCount);
 
-          const toRowView = (member: SectionMemberRow) => buildMemberRowView(member, this.allStages, this.hideLastName, this.useCodenames, this.onlyInProgress, this.hideAnswered, isStreamSection, section.trunkStageCount);
+          const toRowView = (member: SectionMemberRow) => buildMemberRowView(member, this.allStages, this.nameFormat, this.showAwarded, this.showNotStarted, this.showAnswered, isStreamSection, section.trunkStageCount);
 
           const patrolGroups: PatrolGroupView[] = this.breakByPatrol
             ? groupMembersByPatrol(filteredMembers).map((group: PatrolGroup) => ({ patrolName: group.patrolName, members: group.members.map(toRowView) }))
@@ -314,8 +315,10 @@ export default defineComponent({
      * Member-first sections: one per member, listing their skills.
      *
      * Reuses the same visibleSectionsBySkill the skill-first view builds from, so every filter
-     * (hide empty skills, stage range, member search, patrol selection) has already been applied
-     * before the inversion — the two views cannot drift.
+     * (hide empty skills, stage range, member search) has already been applied before the
+     * inversion — the two views cannot drift. Patrol filtering and sorting are applied
+     * separately below, the same way the skill-first `sections` computed applies them, since
+     * groupSectionsByMember() folds members across skills and has no sense of either on its own.
      *
      * No patrol sub-grouping here: the section heading is already a person, so patrol becomes an
      * attribute shown beside their name rather than a divider. Members with no progress are kept,
@@ -329,21 +332,32 @@ export default defineComponent({
 
       const nameNeedle = this.memberFilter.trim().toLowerCase();
 
-      return groupSectionsByMember(visibleBySkill, this.skills)
-        .filter((section) => !nameNeedle || section.memberName.toLowerCase().includes(nameNeedle))
-        .filter((section) => this.selectedPatrols.length === 0 || (section.patrolName !== null && this.selectedPatrols.includes(section.patrolName)))
-        .map((section) => ({
-          memberId: section.memberId,
-          title: getMemberDisplayName(section.memberName, section.memberId, this.hideLastName, this.useCodenames),
-          patrolName: section.patrolName,
-          skillRows: section.skillRows.map((row) => ({
-            key: row.key,
-            title: row.stream ? `${skillTitle(row.skill)} — ${formatStream(row.stream)}` : skillTitle(row.skill),
-            iconUrl: getSkillIconUrl(row.skill),
-            ...buildMemberRowView(row.member, this.allStages, this.hideLastName, this.useCodenames, this.onlyInProgress, this.hideAnswered, row.isStreamSection, row.trunkStageCount),
-          })),
-        }))
-        .sort((a, b) => a.title.localeCompare(b.title));
+      const nameFiltered = groupSectionsByMember(visibleBySkill, this.skills).filter((section) => !nameNeedle || section.memberName.toLowerCase().includes(nameNeedle));
+      // Same "empty selection shows nothing" rule as the skill-first sections computed — see its
+      // own comment above. Reuses filterMembersByPatrol (including its UNASSIGNED_PATROL
+      // handling) rather than a hand-rolled check, so the two layouts cannot drift again.
+      const patrolFiltered = this.selectedPatrols.length === 0 ? [] : filterMembersByPatrol(nameFiltered, this.selectedPatrols);
+      // "Stage" has no single-member equivalent here (a person has one stage per skill, not
+      // one overall) — the Sort By dropdown disables that option when grouped by member
+      // (OASProgressionFiltersVue.ts), so only firstName/lastName can reach this computed in
+      // practice; stageProgress falls back to firstName rather than throwing if it ever does.
+      // Sorts on the real firstName/lastName fields directly — see
+      // .claude/OASProgression/NAME_RESOLUTION.md.
+      const sortedByName = patrolFiltered.slice().sort((a, b) => {
+        return this.sortBy === "lastName" ? a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName) : a.firstName.localeCompare(b.firstName) || a.lastName.localeCompare(b.lastName);
+      });
+
+      return sortedByName.map((section) => ({
+        memberId: section.memberId,
+        title: getMemberDisplayName(section.firstName, section.lastName, section.memberId, this.nameFormat),
+        patrolName: section.patrolName,
+        skillRows: section.skillRows.map((row) => ({
+          key: row.key,
+          title: row.stream ? `${skillTitle(row.skill)} — ${formatStream(row.stream)}` : skillTitle(row.skill),
+          iconUrl: getSkillIconUrl(row.skill),
+          ...buildMemberRowView(row.member, this.allStages, this.nameFormat, this.showAwarded, this.showNotStarted, this.showAnswered, row.isStreamSection, row.trunkStageCount),
+        })),
+      }));
     },
 
     /**

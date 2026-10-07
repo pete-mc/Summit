@@ -28,23 +28,23 @@ function makeStoredFilters(overrides: Partial<OASProgressionVueFilterState> = {}
     viewMode: "heatmap",
     groupBy: "skill",
     memberFilter: "",
-    hideLastName: false,
-    useCodenames: false,
+    nameFormat: "full",
     selectedPatrols: [],
     breakByPatrol: false,
-    hideEmptyStreams: false,
-    hideEmptyTopColumns: false,
-    onlyInProgress: false,
-    hideAnswered: false,
+    showEmptySkillRows: true,
+    showEmptyTopStages: true,
+    showAwarded: true,
+    showNotStarted: true,
+    showAnswered: true,
     visibleStreams: ["bushcraft"],
-    stageRange: [1, 9],
+    visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     sortBy: "firstName",
     worksheetVisibleSkills: ["bushcraft"],
-    worksheetStageRange: [1, 9],
-    worksheetHideLastName: false,
-    worksheetUseCodenames: false,
+    worksheetVisibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    worksheetNameFormat: "full",
+    worksheetSelectedPatrols: [],
     worksheetBreakByPatrol: false,
-    worksheetHideCompleted: false,
+    worksheetShowCompleted: true,
     worksheetLayout: "membersAsColumns",
     ...overrides,
   };
@@ -108,7 +108,7 @@ describe("OasProgressionVueContent view mode", () => {
   it("onResetFilters leaves viewMode untouched", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const methods = (OasProgressionVueContent as any).methods;
-    const context = { filters: makeStoredFilters({ viewMode: "table", memberFilter: "someone" }) };
+    const context = { filters: makeStoredFilters({ viewMode: "table", memberFilter: "someone" }), patrolFilterOptions: [] };
 
     methods.onResetFilters.call(context);
 
@@ -116,23 +116,214 @@ describe("OasProgressionVueContent view mode", () => {
     expect(context.filters.memberFilter).toBe("");
   });
 
+  // Worksheets defaults are now narrowed (Camping / stage 1 only — DEV_NOTES.md: "To limit
+  // processing overhead"), not "everything" — set up a "before reset" state that differs from
+  // those defaults so the test actually demonstrates a reset, not a coincidental match.
   it("onResetFilters resets worksheet* keys too, since one shared reset covers the whole filter object", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const methods = (OasProgressionVueContent as any).methods;
     const context = {
       filters: makeStoredFilters({
         viewMode: "worksheets",
-        worksheetVisibleSkills: ["camping"],
-        worksheetStageRange: [3, 5] as [number, number],
-        worksheetHideCompleted: true,
+        worksheetVisibleSkills: ["bushcraft", "bushwalking"],
+        worksheetVisibleStages: [3, 4, 5],
+        worksheetShowCompleted: false,
       }),
+      patrolFilterOptions: [],
     };
 
     methods.onResetFilters.call(context);
 
     expect(context.filters.viewMode).toBe("worksheets");
-    expect(context.filters.worksheetVisibleSkills.length).toBeGreaterThan(1);
-    expect(context.filters.worksheetStageRange).toEqual([1, 9]);
-    expect(context.filters.worksheetHideCompleted).toBe(false);
+    expect(context.filters.worksheetVisibleSkills).toEqual(["camping"]);
+    expect(context.filters.worksheetVisibleStages).toEqual([1]);
+    expect(context.filters.worksheetShowCompleted).toBe(true);
+  });
+
+  it("defaults selectedPatrols to null for a new user — 'not yet resolved', not 'show nothing'", () => {
+    expect(loadFiltersViaComponentData().selectedPatrols).toBeNull();
+  });
+
+  // Same null-sentinel default as the Heat Map's selectedPatrols, since the Worksheets Patrol
+  // filter was added with identical defaults per DEV_NOTES.md: "Add exact same Patrol filter as
+  // per Heatmap, with same defaults."
+  it("defaults worksheetSelectedPatrols to null for a new user too", () => {
+    expect(loadFiltersViaComponentData().worksheetSelectedPatrols).toBeNull();
+  });
+
+  // onResetFilters resolves selectedPatrols/worksheetSelectedPatrols synchronously from
+  // patrolFilterOptions rather than leaving them null for the watcher — patrol data was
+  // already loaded before a reset runs, so patrolFilterOptions's VALUE doesn't change and the
+  // watcher would never fire. See .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md's
+  // note on the Patrol-reset bug. Both fields resolve to the SAME list — Heat Map and
+  // Worksheets share one member roster, just presented two ways.
+  it("onResetFilters resolves both selectedPatrols and worksheetSelectedPatrols to the full patrolFilterOptions list immediately, not null", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const methods = (OasProgressionVueContent as any).methods;
+    const context = { filters: makeStoredFilters({ selectedPatrols: ["Eagles"], worksheetSelectedPatrols: ["Wolves"] }), patrolFilterOptions: ["Eagles", "Wolves", "Unassigned"] };
+
+    methods.onResetFilters.call(context);
+
+    expect(context.filters.selectedPatrols).toEqual(["Eagles", "Wolves", "Unassigned"]);
+    expect(context.filters.worksheetSelectedPatrols).toEqual(["Eagles", "Wolves", "Unassigned"]);
+  });
+
+  it("onResetFilters falls back to null for both when there are no patrol options yet (data hasn't loaded)", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const methods = (OasProgressionVueContent as any).methods;
+    const context = { filters: makeStoredFilters({ selectedPatrols: ["Eagles"], worksheetSelectedPatrols: ["Eagles"] }), patrolFilterOptions: [] };
+
+    methods.onResetFilters.call(context);
+
+    expect(context.filters.selectedPatrols).toBeNull();
+    expect(context.filters.worksheetSelectedPatrols).toBeNull();
+  });
+});
+
+/**
+ * Regression tests for "When no patrol is selected, no members should be shown... Default to
+ * ALL ON if not set previously" — selectedPatrols: null is the "not set previously" sentinel;
+ * the patrolFilterOptions watcher resolves it to the full list the first time real patrol data
+ * (including "Unassigned") becomes available, and never touches it again once resolved (or
+ * once a user has deliberately emptied it). See
+ * .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
+ */
+describe("OasProgressionVueContent — selectedPatrols: null resolution", () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const patrolFilterOptionsWatcher = (OasProgressionVueContent as any).watch.patrolFilterOptions;
+
+  it("resolves null to the full patrolFilterOptions list once real options arrive", () => {
+    const context = { filters: makeStoredFilters({ selectedPatrols: null }) };
+
+    patrolFilterOptionsWatcher.call(context, ["Eagles", "Wolves", "Unassigned"]);
+
+    expect(context.filters.selectedPatrols).toEqual(["Eagles", "Wolves", "Unassigned"]);
+  });
+
+  it("does nothing while options are still empty (data hasn't loaded yet)", () => {
+    const context = { filters: makeStoredFilters({ selectedPatrols: null }) };
+
+    patrolFilterOptionsWatcher.call(context, []);
+
+    expect(context.filters.selectedPatrols).toBeNull();
+  });
+
+  it("never overwrites a user's deliberate empty selection ([] is not null)", () => {
+    const context = { filters: makeStoredFilters({ selectedPatrols: [] }) };
+
+    patrolFilterOptionsWatcher.call(context, ["Eagles", "Wolves"]);
+
+    expect(context.filters.selectedPatrols).toEqual([]);
+  });
+
+  it("never overwrites an already-resolved selection, even if patrolFilterOptions changes again later", () => {
+    const context = { filters: makeStoredFilters({ selectedPatrols: ["Eagles"] }) };
+
+    patrolFilterOptionsWatcher.call(context, ["Eagles", "Wolves", "Unassigned"]);
+
+    expect(context.filters.selectedPatrols).toEqual(["Eagles"]);
+  });
+
+  // worksheetSelectedPatrols resolves independently of selectedPatrols — each is only resolved
+  // while it is itself still null, matching "Worksheets gets the exact same Patrol filter, same
+  // defaults" without coupling the two views' own choices together.
+  it("resolves worksheetSelectedPatrols independently of selectedPatrols", () => {
+    const context = { filters: makeStoredFilters({ selectedPatrols: ["Eagles"], worksheetSelectedPatrols: null }) };
+
+    patrolFilterOptionsWatcher.call(context, ["Eagles", "Wolves", "Unassigned"]);
+
+    expect(context.filters.selectedPatrols).toEqual(["Eagles"]); // untouched — already resolved
+    expect(context.filters.worksheetSelectedPatrols).toEqual(["Eagles", "Wolves", "Unassigned"]); // newly resolved
+  });
+
+  it("resolves both selectedPatrols and worksheetSelectedPatrols together when both are still null", () => {
+    const context = { filters: makeStoredFilters({ selectedPatrols: null, worksheetSelectedPatrols: null }) };
+
+    patrolFilterOptionsWatcher.call(context, ["Eagles", "Wolves"]);
+
+    expect(context.filters.selectedPatrols).toEqual(["Eagles", "Wolves"]);
+    expect(context.filters.worksheetSelectedPatrols).toEqual(["Eagles", "Wolves"]);
+  });
+});
+
+describe("OasProgressionVueContent — Patrol filter gating", () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const computed = (OasProgressionVueContent as any).computed;
+
+  function makeSection(members: Array<{ patrolName: string | null }>) {
+    return { members };
+  }
+
+  // patrolFilterOptions and canFilterByPatrol both read sibling computeds (availablePatrols,
+  // and patrolFilterOptions reads availablePatrols too) — Vue resolves that via reactivity when
+  // mounted, but a bare .call() needs the chain resolved by hand first.
+  function resolveContext(grouped: Record<string, { sections: ReturnType<typeof makeSection>[] }>) {
+    const availablePatrols = computed.availablePatrols.call({ grouped }) as string[];
+    const context = { grouped, availablePatrols } as Record<string, unknown>;
+    context.patrolFilterOptions = computed.patrolFilterOptions.call(context) as string[];
+    return context;
+  }
+
+  function callPatrolFilterOptions(grouped: Record<string, { sections: ReturnType<typeof makeSection>[] }>) {
+    const context = resolveContext(grouped);
+    return computed.patrolFilterOptions.call(context) as string[];
+  }
+
+  function callCanFilterByPatrol(grouped: Record<string, { sections: ReturnType<typeof makeSection>[] }>) {
+    const context = resolveContext(grouped);
+    return computed.canFilterByPatrol.call(context) as boolean;
+  }
+
+  describe("patrolFilterOptions", () => {
+    it("is just the named patrols when nobody is unassigned", () => {
+      const grouped = { bushcraft: { sections: [makeSection([{ patrolName: "Eagles" }, { patrolName: "Wolves" }])] } };
+      expect(callPatrolFilterOptions(grouped)).toEqual(["Eagles", "Wolves"]);
+    });
+
+    // The scenario the bug report described: one named patrol plus unassigned members.
+    // "Unassigned" must be a real, selectable item here — it previously wasn't offered at all,
+    // so there was no way to filter to just the unassigned members. See
+    // .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
+    it("appends Unassigned when at least one member has no patrol", () => {
+      const grouped = { bushcraft: { sections: [makeSection([{ patrolName: "Eagles" }, { patrolName: null }, { patrolName: null }])] } };
+      expect(callPatrolFilterOptions(grouped)).toEqual(["Eagles", "Unassigned"]);
+    });
+
+    it("is just Unassigned when there are no named patrols but some members are unassigned", () => {
+      const grouped = { bushcraft: { sections: [makeSection([{ patrolName: null }])] } };
+      expect(callPatrolFilterOptions(grouped)).toEqual(["Unassigned"]);
+    });
+  });
+
+  describe("canFilterByPatrol", () => {
+    it("is false when there are no named patrols and nobody is unassigned", () => {
+      const grouped = { bushcraft: { sections: [makeSection([])] } };
+      expect(callCanFilterByPatrol(grouped)).toBe(false);
+    });
+
+    // The original bug: with exactly one selectable option (one named patrol, nobody
+    // unassigned), the Patrol filter has nothing to narrow between — a single-item
+    // multi-select could never actually reach its own "filtered" state.
+    it("is false with exactly one named patrol and no unassigned members", () => {
+      const grouped = { bushcraft: { sections: [makeSection([{ patrolName: "Eagles" }, { patrolName: "Eagles" }])] } };
+      expect(callCanFilterByPatrol(grouped)).toBe(false);
+    });
+
+    // The bug report's exact scenario: one named patrol plus unassigned members. Two real
+    // options now exist (the patrol, and "Unassigned"), so the filter is meaningful.
+    it("is true with exactly one named patrol AND at least one unassigned member — a real choice exists", () => {
+      const grouped = { bushcraft: { sections: [makeSection([{ patrolName: "Eagles" }, { patrolName: null }])] } };
+      expect(callCanFilterByPatrol(grouped)).toBe(true);
+    });
+
+    it("is true with two or more named patrols", () => {
+      const grouped = { bushcraft: { sections: [makeSection([{ patrolName: "Eagles" }, { patrolName: "Wolves" }])] } };
+      expect(callCanFilterByPatrol(grouped)).toBe(true);
+    });
+
+    it("is false when there are no named patrols and only one is-unassigned entry would result", () => {
+      const grouped = { bushcraft: { sections: [makeSection([{ patrolName: null }])] } };
+      expect(callCanFilterByPatrol(grouped)).toBe(false);
+    });
   });
 });

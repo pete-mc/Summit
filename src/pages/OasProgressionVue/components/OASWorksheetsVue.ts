@@ -109,7 +109,13 @@ export function duplicateMembersForDevPreview(items: OASProgressionRow[], duplic
   const copies: OASProgressionRow[] = [];
   for (let i = 1; i <= duplicateCount; i++) {
     items.forEach((row) => {
-      copies.push({ ...row, memberId: `${row.memberId}-dev${i}`, memberName: `${row.memberName} (dev ${i})` });
+      // lastName (not just memberName) must carry the distinguishing suffix — sorting/display
+      // reads firstName/lastName directly since the name-resolution refactor (see
+      // .claude/NAME_RESOLUTION.md), so a memberName-only suffix is invisible everywhere that
+      // matters. memberName is kept in sync with firstName/lastName rather than drifting from
+      // them, per that same rule.
+      const lastName = `${row.lastName} (dev ${i})`;
+      copies.push({ ...row, memberId: `${row.memberId}-dev${i}`, memberName: `${row.firstName} ${lastName}`, lastName });
     });
   }
   return [...items, ...copies];
@@ -427,15 +433,19 @@ export default defineComponent({
       // rather than as its own computed so existing tests calling `computed.pageSet.call(context)`
       // don't need a second computed-on-computed value pre-resolved onto their fixture context.
       const itemsForDisplay = duplicateMembersForDevPreview(this.items, readDevDuplicateCount());
+      // Same "empty selection shows nothing" rule as the Heat Map's own Patrol filter (see
+      // OASHeatMapVue.ts's sections/memberSections) — worksheetSelectedPatrols is null only
+      // transiently, before OasProgressionVueContent.ts's watcher resolves it to the full
+      // patrolFilterOptions list.
+      const selectedPatrols = this.filters.worksheetSelectedPatrols ?? [];
       return buildWorksheetPages(itemsForDisplay, {
         visibleSkills: this.filters.worksheetVisibleSkills,
-        stageRange: this.filters.worksheetStageRange,
-        selectedPatrols: [],
+        visibleStages: this.filters.worksheetVisibleStages,
+        selectedPatrols,
         memberFilter: "",
-        hideLastName: this.filters.worksheetHideLastName,
-        useCodenames: this.filters.worksheetUseCodenames,
+        nameFormat: this.filters.worksheetNameFormat,
         breakByPatrol: this.filters.worksheetBreakByPatrol,
-        hideCompleted: this.filters.worksheetHideCompleted,
+        hideCompleted: !this.filters.worksheetShowCompleted,
         sortBy: "firstName",
       });
     },

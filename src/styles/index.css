@@ -568,6 +568,7 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   text-align: center;
   border-left: 1px solid var(--summit-color-border-subtle);
   border-right: 1px solid var(--summit-color-border-subtle);
+  padding-left: 1em;
 }
 
 .oas-heatmap-skill-title-row td {
@@ -586,8 +587,8 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
 }
 
 .oas-heatmap-skill-icon {
-  width: 32px;
-  height: 32px;
+  height: 90%;
+  width: auto;
   vertical-align: middle;
   margin-right: var(--summit-space-sm);
 }
@@ -597,6 +598,7 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   font-size: var(--summit-font-size-lg);
   white-space: nowrap;
   padding-right: var(--summit-space-lg);
+  vertical-align: middle;
 }
 
 .oas-heatmap-highest-stage,
@@ -604,10 +606,8 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   text-align: center;
   border-left: 1px solid var(--summit-color-border-default);
   border-right: 1px solid var(--summit-color-border-default);
-}
-
-.oas-heatmap-highest-stage {
-  vertical-align: top;
+  padding-left: 1em;
+  padding-right: 1em;
 }
 
 .oas-heatmap-stage-progress {
@@ -618,6 +618,7 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
 .oas-heatmap-stage-cell {
   border-left: 1px solid var(--summit-color-border-subtle);
   border-right: 1px solid var(--summit-color-border-subtle);
+  padding-left: 1em;
 }
 
 .oas-heatmap-stage-bar {
@@ -671,6 +672,7 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
 
 .oas-heatmap-square-answered {
   background: var(--summit-color-status-answered);
+  border-color: transparent;
 }
 
 .oas-heatmap-square-awarded {
@@ -687,6 +689,29 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   background: transparent;
   border-color: transparent;
   visibility: hidden;
+}
+
+/*
+ * The Heat Map filter bar's "Show" dropdown groups its items under Skills/I Statements/Grouping
+ * subheaders (see OASProgressionFiltersVue.ts's showOptions). Vuetify's v-select renders its
+ * dropdown menu detached to <body> via v-menu (not inside the component's own DOM), so scoped
+ * ::v-deep CSS in the .vue file cannot reach it — these rules live here instead, scoped to
+ * .oas-vue-show-menu (passed via :menu-props="{ contentClass: 'oas-vue-show-menu' }") so they
+ * only affect this one dropdown, not every v-subheader/v-divider on the page.
+ *
+ * Vuetify's own v-subheader defaults to a fixed 48px height with generous horizontal padding —
+ * oversized for a dense dropdown list — and v-divider draws a visible 1px line. Flagged as "huge
+ * dividers" in testing; shrunk to a slim spacer with no visible rule and minimal padding instead.
+ */
+.oas-vue-show-menu .v-subheader {
+  height: auto;
+  min-height: 0;
+  padding: 4px 16px 2px;
+}
+
+.oas-vue-show-menu .v-divider {
+  border: none;
+  margin: 2px 0;
 }
 
 .oas-progression-view-row {

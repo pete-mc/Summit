@@ -1,5 +1,6 @@
 import Vue from "vue";
 import OASHeatMapVueOptions from "@/pages/OasProgressionVue/components/OASHeatMapVue";
+import { UNASSIGNED_PATROL } from "@/pages/OasProgression/services/filterHeatMapSections";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
 
@@ -51,20 +52,29 @@ interface MountProps {
   trunkStageCounts: Record<string, number>;
   members: TerrainUnitMember[];
   visibleStreams: string[];
-  stageRange: [number, number];
+  visibleStages: number[];
   sortBy: "firstName" | "lastName" | "stageProgress";
-  useCodenames?: boolean;
+  nameFormat?: "full" | "first" | "firstInitialLast" | "firstLastInitial" | "codename";
   selectedPatrols?: string[];
   breakByPatrol?: boolean;
-  onlyInProgress?: boolean;
-  hideAnswered?: boolean;
-  hideEmptyTopColumns?: boolean;
-  showEmptySections?: boolean;
+  showAwarded?: boolean;
+  showNotStarted?: boolean;
+  showAnswered?: boolean;
+  showEmptyTopStages?: boolean;
+  showEmptySkillRows?: boolean;
 }
 
+/**
+ * selectedPatrols now behaves like every other filter: [] means "show nothing," not "show
+ * everyone" (see .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md). Most of these tests
+ * aren't about patrol filtering at all and use makeMember()'s default (patrol: null, i.e.
+ * unassigned), so default selectedPatrols to [UNASSIGNED_PATROL] here unless a test explicitly
+ * overrides it (e.g. the patrol-filtering tests themselves, which pass a real patrol name).
+ */
 function mountLogic(props: MountProps) {
   const ComponentClass = Vue.extend(OASHeatMapVueOptions);
-  return new ComponentClass({ propsData: props }) as InstanceType<typeof ComponentClass> & Record<string, unknown>;
+  const propsWithDefaults = { selectedPatrols: [UNASSIGNED_PATROL], ...props };
+  return new ComponentClass({ propsData: propsWithDefaults }) as InstanceType<typeof ComponentClass> & Record<string, unknown>;
 }
 
 describe("OASHeatMapVue render contract", () => {
@@ -77,7 +87,7 @@ describe("OASHeatMapVue render contract", () => {
       trunkStageCounts: { bushcraft: 3 },
       members,
       visibleStreams: ["bushcraft"],
-      stageRange: [1, 9],
+      visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
       sortBy: "firstName",
     });
 
@@ -96,7 +106,7 @@ describe("OASHeatMapVue render contract", () => {
       trunkStageCounts: { bushcraft: 3, camping: 3 },
       members,
       visibleStreams: ["bushcraft"],
-      stageRange: [1, 9],
+      visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
       sortBy: "firstName",
     });
 
@@ -113,7 +123,7 @@ describe("OASHeatMapVue render contract", () => {
       trunkStageCounts: { bushcraft: 3 },
       members,
       visibleStreams: ["bushcraft"],
-      stageRange: [1, 9],
+      visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
       sortBy: "firstName",
     });
 
@@ -135,7 +145,7 @@ describe("OASHeatMapVue render contract", () => {
       trunkStageCounts: { bushcraft: 3 },
       members,
       visibleStreams: ["bushcraft"],
-      stageRange: [1, 9],
+      visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
       sortBy: "firstName",
     });
 
@@ -143,7 +153,7 @@ describe("OASHeatMapVue render contract", () => {
     expect(sections[0].patrolGroups[0].members[0].cells[0].kind).toBe("bar-complete");
   });
 
-  it("slices columns to the requested stageRange", () => {
+  it("slices columns to the requested visibleStages", () => {
     const rows = [makeRow({ stage: 1 }), makeRow({ stage: 5, memberId: "member-1", inputId: "stage5" })];
     const members = [makeMember()];
 
@@ -152,14 +162,30 @@ describe("OASHeatMapVue render contract", () => {
       trunkStageCounts: { bushcraft: 5 },
       members,
       visibleStreams: ["bushcraft"],
-      stageRange: [1, 2],
+      visibleStages: [1, 2],
       sortBy: "firstName",
     });
 
     expect(vm.allStages).toEqual([1, 2]);
   });
 
-  it("shows a deterministic codename instead of the member's real name when useCodenames is on", () => {
+  it("slices columns to a true multi-select, not a contiguous range — non-adjacent stages show only those stages", () => {
+    const rows = [makeRow({ stage: 1, inputId: "stage1" }), makeRow({ stage: 3, inputId: "stage3" }), makeRow({ stage: 5, inputId: "stage5" })];
+    const members = [makeMember()];
+
+    const vm = mountLogic({
+      items: rows,
+      trunkStageCounts: { bushcraft: 5 },
+      members,
+      visibleStreams: ["bushcraft"],
+      visibleStages: [1, 5],
+      sortBy: "firstName",
+    });
+
+    expect(vm.allStages).toEqual([1, 5]);
+  });
+
+  it("shows a deterministic codename instead of the member's real name when nameFormat is codename", () => {
     const rows = [makeRow()];
     const members = [makeMember({ id: "member-1", first_name: "Alex", last_name: "Scout" })];
 
@@ -168,9 +194,9 @@ describe("OASHeatMapVue render contract", () => {
       trunkStageCounts: { bushcraft: 3 },
       members,
       visibleStreams: ["bushcraft"],
-      stageRange: [1, 9],
+      visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
       sortBy: "firstName",
-      useCodenames: true,
+      nameFormat: "codename",
     });
 
     const sections = vm.sections as Array<{ patrolGroups: Array<{ members: Array<{ displayName: string }> }> }>;
@@ -188,7 +214,7 @@ describe("OASHeatMapVue render contract", () => {
       trunkStageCounts: { bushcraft: 3 },
       members,
       visibleStreams: ["bushcraft"],
-      stageRange: [1, 9],
+      visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
       sortBy: "firstName",
       selectedPatrols: ["Eagles"],
     });
@@ -206,18 +232,20 @@ describe("OASHeatMapVue render contract", () => {
       trunkStageCounts: { bushcraft: 3 },
       members,
       visibleStreams: ["bushcraft"],
-      stageRange: [1, 9],
+      visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
       sortBy: "firstName",
       breakByPatrol: true,
+      selectedPatrols: ["Eagles", "Wolves"],
     });
 
     const sections = vm.sections as Array<{ patrolGroups: Array<{ patrolName: string; members: Array<{ displayName: string }> }> }>;
     expect(sections[0].patrolGroups.map((g) => g.patrolName)).toEqual(["Eagles", "Wolves"]);
   });
 
-  // Surfaced in the UI as "Hide complete/not started"; the state key keeps its original name so
-  // the persisted localStorage filters stay readable.
-  it("hides fully-complete and not-started stage bars (but keeps in-progress squares) when onlyInProgress is on", () => {
+  // The old combined "Hide complete/not started" checkbox was split into two independent Show
+  // dropdown options, inverted to positive (default-on) selections — see
+  // .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
+  it("hides a fully-complete stage bar when showAwarded is off", () => {
     const rows = [makeRow({ inputId: "a", answered: true, awarded: true }), makeRow({ inputId: "b", answered: true, awarded: true })];
     const members = [makeMember()];
 
@@ -226,16 +254,58 @@ describe("OASHeatMapVue render contract", () => {
       trunkStageCounts: { bushcraft: 3 },
       members,
       visibleStreams: ["bushcraft"],
-      stageRange: [1, 9],
+      visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
       sortBy: "firstName",
-      onlyInProgress: true,
+      showAwarded: false,
     });
 
     const sections = vm.sections as Array<{ patrolGroups: Array<{ members: Array<{ cells: Array<{ kind: string }> }> }> }>;
     expect(sections[0].patrolGroups[0].members[0].cells[0].kind).toBe("empty");
   });
 
-  describe("hideAnswered", () => {
+  it("hides a not-started stage bar when showNotStarted is off, per the user's definition of 'not started' (zero answered/awarded I-Statements in that stage)", () => {
+    const rows = [makeRow({ inputId: "a", answered: false, awarded: false })];
+    const members = [makeMember()];
+
+    const vm = mountLogic({
+      items: rows,
+      trunkStageCounts: { bushcraft: 3 },
+      members,
+      visibleStreams: ["bushcraft"],
+      visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+      sortBy: "firstName",
+      showNotStarted: false,
+    });
+
+    const sections = vm.sections as Array<{ patrolGroups: Array<{ members: Array<{ cells: Array<{ kind: string }> }> }> }>;
+    expect(sections[0].patrolGroups[0].members[0].cells[0].kind).toBe("empty");
+  });
+
+  // Regression test: an earlier pass wrongly let showNotStarted also suppress individual
+  // unanswered squares inside a stage that has SOME progress — the user clarified "not started"
+  // means only a whole stage with zero progress anywhere, never a square within an in-progress
+  // stage. showNotStarted must have no effect once a stage reaches the "squares" branch.
+  it("never hides individual unanswered squares inside an in-progress stage, even when showNotStarted is off", () => {
+    const rows = [makeRow({ inputId: "answered", answered: true, awarded: false }), makeRow({ inputId: "unanswered", answered: false, awarded: false })];
+    const members = [makeMember()];
+
+    const vm = mountLogic({
+      items: rows,
+      trunkStageCounts: { bushcraft: 3 },
+      members,
+      visibleStreams: ["bushcraft"],
+      visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+      sortBy: "firstName",
+      showNotStarted: false,
+    });
+
+    const sections = vm.sections as Array<{ patrolGroups: Array<{ members: Array<{ cells: Array<{ kind: string; squares?: Array<{ stateClass: string }> }> }> }> }>;
+    const cell = sections[0].patrolGroups[0].members[0].cells[0];
+    expect(cell.kind).toBe("squares");
+    expect((cell.squares ?? []).map((s) => s.stateClass)).toEqual(["oas-heatmap-square-answered", "oas-heatmap-square-unanswered"]);
+  });
+
+  describe("showAnswered (off hides answered-but-unawarded squares)", () => {
     type CellShape = { kind: string; squares?: Array<{ inputId: string; stateClass: string; groupClass: string }> };
 
     function firstCell(props: MountProps): CellShape {
@@ -244,12 +314,12 @@ describe("OASHeatMapVue render contract", () => {
       return sections[0].patrolGroups[0].members[0].cells[0];
     }
 
-    const baseProps = { trunkStageCounts: { bushcraft: 3 }, members: [makeMember()], visibleStreams: ["bushcraft"], stageRange: [1, 9] as [number, number], sortBy: "firstName" as const };
+    const baseProps = { trunkStageCounts: { bushcraft: 3 }, members: [makeMember()], visibleStreams: ["bushcraft"], visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9] as [number, number], sortBy: "firstName" as const };
 
     it("hides answered-but-unawarded squares in place, leaving awarded and untouched ones visible", () => {
       const rows = [makeRow({ inputId: "awarded", answered: true, awarded: true }), makeRow({ inputId: "answered", answered: true, awarded: false }), makeRow({ inputId: "untouched", answered: false, awarded: false })];
 
-      const cell = firstCell({ ...baseProps, items: rows, hideAnswered: true });
+      const cell = firstCell({ ...baseProps, items: rows, showAnswered: false });
 
       expect(cell.kind).toBe("squares");
       // Every square survives — only the answered one's state class changes, so the visible
@@ -258,10 +328,10 @@ describe("OASHeatMapVue render contract", () => {
       expect((cell.squares ?? []).map((s) => s.stateClass)).toEqual(["oas-heatmap-square-awarded", "oas-heatmap-square-hidden", "oas-heatmap-square-unanswered"]);
     });
 
-    it("leaves every square visible when off", () => {
+    it("leaves every square visible when on", () => {
       const rows = [makeRow({ inputId: "awarded", answered: true, awarded: true }), makeRow({ inputId: "answered", answered: true, awarded: false }), makeRow({ inputId: "untouched", answered: false, awarded: false })];
 
-      const cell = firstCell({ ...baseProps, items: rows, hideAnswered: false });
+      const cell = firstCell({ ...baseProps, items: rows, showAnswered: true });
 
       expect((cell.squares ?? []).map((s) => s.stateClass)).toEqual(["oas-heatmap-square-awarded", "oas-heatmap-square-answered", "oas-heatmap-square-unanswered"]);
     });
@@ -269,7 +339,7 @@ describe("OASHeatMapVue render contract", () => {
     it("keeps a stage's full square count even when every one of them is hidden", () => {
       const rows = [makeRow({ inputId: "a", answered: true, awarded: false }), makeRow({ inputId: "b", answered: true, awarded: false })];
 
-      const cell = firstCell({ ...baseProps, items: rows, hideAnswered: true });
+      const cell = firstCell({ ...baseProps, items: rows, showAnswered: false });
 
       expect(cell.kind).toBe("squares");
       expect((cell.squares ?? []).map((s) => s.stateClass)).toEqual(["oas-heatmap-square-hidden", "oas-heatmap-square-hidden"]);
@@ -278,13 +348,13 @@ describe("OASHeatMapVue render contract", () => {
     it("leaves the complete bar alone — hiding answered squares must not touch the bars", () => {
       const rows = [makeRow({ inputId: "a", answered: true, awarded: true }), makeRow({ inputId: "b", answered: true, awarded: true })];
 
-      expect(firstCell({ ...baseProps, items: rows, hideAnswered: true }).kind).toBe("bar-complete");
+      expect(firstCell({ ...baseProps, items: rows, showAnswered: false }).kind).toBe("bar-complete");
     });
 
     it("leaves the not-started bar alone", () => {
       const rows = [makeRow({ inputId: "a", answered: false, awarded: false })];
 
-      expect(firstCell({ ...baseProps, items: rows, hideAnswered: true }).kind).toBe("bar-unstarted");
+      expect(firstCell({ ...baseProps, items: rows, showAnswered: false }).kind).toBe("bar-unstarted");
     });
 
     it("leaves group-start borders exactly where they are when squares are hidden", () => {
@@ -296,42 +366,44 @@ describe("OASHeatMapVue render contract", () => {
         makeRow({ inputId: "do-a", inputGroup: "Do", answered: false, awarded: false }),
       ];
 
-      const groupClassesWith = (hideAnswered: boolean) => (firstCell({ ...baseProps, items: rows, hideAnswered }).squares ?? []).map((s) => s.groupClass);
+      const groupClassesWith = (showAnswered: boolean) => (firstCell({ ...baseProps, items: rows, showAnswered }).squares ?? []).map((s) => s.groupClass);
 
-      expect(groupClassesWith(true)).toEqual(["", "", "oas-heatmap-square-group-start"]);
-      expect(groupClassesWith(true)).toEqual(groupClassesWith(false));
+      expect(groupClassesWith(false)).toEqual(["", "", "oas-heatmap-square-group-start"]);
+      expect(groupClassesWith(false)).toEqual(groupClassesWith(true));
     });
   });
 
-  // Surfaced in the UI as "Hide empty top stages".
-  describe("hideEmptyTopColumns", () => {
-    function stagesFor(rows: OASProgressionRow[], hideEmptyTopColumns: boolean): number[] {
-      const vm = mountLogic({ items: rows, trunkStageCounts: { bushcraft: 9 }, members: [makeMember()], visibleStreams: ["bushcraft"], stageRange: [1, 9], sortBy: "firstName", hideEmptyTopColumns });
+  // Surfaced in the UI as the Show dropdown's "Empty top stages" option.
+  describe("showEmptyTopStages", () => {
+    function stagesFor(rows: OASProgressionRow[], showEmptyTopStages: boolean): number[] {
+      const vm = mountLogic({ items: rows, trunkStageCounts: { bushcraft: 9 }, members: [makeMember()], visibleStreams: ["bushcraft"], visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9], sortBy: "firstName", showEmptyTopStages });
       return vm.allStages as number[];
     }
 
-    it("trims empty top stages down to 2, keeping stages 1 and 2 on screen", () => {
-      // Progress only in stage 1, so stages 3-9 are all trimmable; 2 survives as the floor.
+    it("trims empty top stages down to 1, keeping only stage 1 on screen", () => {
+      // Progress only in stage 1, so stages 2-9 are all trimmable; 1 survives as the floor
+      // (lowered from 2 to 1 — DEV_NOTES.md: "can hide empty stages down to 2, inclusively. So
+      // only stage 1 must be shown").
       const rows = [makeRow({ stage: 1, inputId: "s1", answered: true }), ...[2, 3, 4, 5, 6, 7, 8, 9].map((stage) => makeRow({ stage, inputId: "s" + stage }))];
 
-      expect(stagesFor(rows, true)).toEqual([1, 2]);
+      expect(stagesFor(rows, false)).toEqual([1]);
     });
 
     it("stops trimming at the highest stage with progress", () => {
       const rows = [makeRow({ stage: 1, inputId: "s1", answered: true }), makeRow({ stage: 5, inputId: "s5", answered: true }), ...[2, 3, 4, 6, 7, 8, 9].map((stage) => makeRow({ stage, inputId: "s" + stage }))];
 
-      expect(stagesFor(rows, true)).toEqual([1, 2, 3, 4, 5]);
+      expect(stagesFor(rows, false)).toEqual([1, 2, 3, 4, 5]);
     });
 
-    it("leaves every stage in place when off", () => {
+    it("leaves every stage in place when on", () => {
       const rows = [makeRow({ stage: 1, inputId: "s1", answered: true }), ...[2, 3, 4, 5, 6, 7, 8, 9].map((stage) => makeRow({ stage, inputId: "s" + stage }))];
 
-      expect(stagesFor(rows, false)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      expect(stagesFor(rows, true)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     });
   });
 
-  // Surfaced in the UI as "Hide empty skills"; driven by showEmptySections (its inverse).
-  describe("hideEmptyStreams", () => {
+  // Surfaced in the UI as the Show dropdown's "Empty skills" option.
+  describe("showEmptySkillRows", () => {
     // Paddling forks into Canoeing/Kayaking after its trunk; bushcraft never forks.
     const forkedRows = [
       makeRow({ stream: "paddling", branch: "paddling", stage: 1, inputId: "trunk" }),
@@ -339,8 +411,8 @@ describe("OASHeatMapVue render contract", () => {
       makeRow({ stream: "paddling", branch: "kayaking", stage: 4, inputId: "kayak", answered: true }),
     ];
 
-    function sectionTitlesFor(rows: OASProgressionRow[], visibleStreams: string[], trunkStageCounts: Record<string, number>, showEmptySections: boolean): string[] {
-      const vm = mountLogic({ items: rows, trunkStageCounts, members: [makeMember()], visibleStreams, stageRange: [1, 9], sortBy: "firstName", showEmptySections });
+    function sectionTitlesFor(rows: OASProgressionRow[], visibleStreams: string[], trunkStageCounts: Record<string, number>, showEmptySkillRows: boolean): string[] {
+      const vm = mountLogic({ items: rows, trunkStageCounts, members: [makeMember()], visibleStreams, visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9], sortBy: "firstName", showEmptySkillRows });
       return (vm.sections as Array<{ title: string }>).map((s) => s.title);
     }
 
@@ -375,6 +447,59 @@ describe("OASHeatMapVue render contract", () => {
 
       expect(titles.length).toBeGreaterThan(0);
       expect(titles).toContain("Paddling — Kayaking");
+    });
+  });
+
+  /**
+   * Regression tests for three bugs specific to Group by Member (groupBy: "member"), which uses
+   * the memberSections computed rather than sections — found via live testing and fixed
+   * together, since memberSections had drifted from sections' own filtering/sorting entirely.
+   * See .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
+   */
+  describe("memberSections (Group by Member)", () => {
+    function memberTitlesFor(props: Partial<MountProps> & Pick<MountProps, "items" | "members">): string[] {
+      const vm = mountLogic({
+        trunkStageCounts: { bushcraft: 3 },
+        visibleStreams: ["bushcraft"],
+        visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        sortBy: "firstName",
+        groupBy: "member",
+        ...props,
+      } as MountProps);
+      return (vm.memberSections as Array<{ title: string }>).map((s) => s.title);
+    }
+
+    it("filters by selectedPatrols the same way sections (Group by Skill) does, including UNASSIGNED_PATROL for unassigned members", () => {
+      const rows = [makeRow({ memberId: "m1", memberName: "Alex Scout", patrolName: "Eagles" }), makeRow({ memberId: "m2", memberName: "Sam Ranger", patrolName: null, inputId: "b" })];
+      const members = [makeMember({ id: "m1", patrol: { id: "p1", name: "Eagles" } }), makeMember({ id: "m2", first_name: "Sam", last_name: "Ranger", patrol: null })];
+
+      // Only the unassigned member should show — this is exactly the case the old hand-rolled
+      // filter (section.patrolName !== null && ...) got wrong: it could never match
+      // UNASSIGNED_PATROL, so an unassigned member could never be selected back in.
+      expect(memberTitlesFor({ items: rows, members, selectedPatrols: [UNASSIGNED_PATROL] })).toEqual(["Sam Ranger"]);
+    });
+
+    it("shows nobody when selectedPatrols is empty, matching Group by Skill's own 'empty = show nothing' rule", () => {
+      const rows = [makeRow({ memberId: "m1", memberName: "Alex Scout", patrolName: null })];
+      const members = [makeMember({ id: "m1" })];
+
+      expect(memberTitlesFor({ items: rows, members, selectedPatrols: [] })).toEqual([]);
+    });
+
+    it("sorts by first name, replacing the old fixed alphabetical-by-display-title sort", () => {
+      // The displayed name comes from the Terrain member record (first_name/last_name via
+      // groupRowsForHeatMap), not makeRow's own memberName field — override both there.
+      const rows = [makeRow({ memberId: "m1", patrolName: null }), makeRow({ memberId: "m2", patrolName: null, inputId: "b" })];
+      const members = [makeMember({ id: "m1", first_name: "Zara", last_name: "Adams" }), makeMember({ id: "m2", first_name: "Amy", last_name: "Zebra" })];
+
+      expect(memberTitlesFor({ items: rows, members, selectedPatrols: [UNASSIGNED_PATROL], sortBy: "firstName" })).toEqual(["Amy Zebra", "Zara Adams"]);
+    });
+
+    it("sorts by last name when requested", () => {
+      const rows = [makeRow({ memberId: "m1", patrolName: null }), makeRow({ memberId: "m2", patrolName: null, inputId: "b" })];
+      const members = [makeMember({ id: "m1", first_name: "Amy", last_name: "Adams" }), makeMember({ id: "m2", first_name: "Zara", last_name: "Young" })];
+
+      expect(memberTitlesFor({ items: rows, members, selectedPatrols: [UNASSIGNED_PATROL], sortBy: "lastName" })).toEqual(["Amy Adams", "Zara Young"]);
     });
   });
 });

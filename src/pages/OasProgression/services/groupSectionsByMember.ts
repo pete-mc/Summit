@@ -28,7 +28,10 @@ export interface MemberSkillRow {
 
 export interface MemberSectionView {
   memberId: string;
+  /** Convenience display/search string — see OASProgressionRow.memberName's own comment on why sorting/initials must use firstName/lastName instead. */
   memberName: string;
+  firstName: string;
+  lastName: string;
   patrolName: string | null;
   skillRows: MemberSkillRow[];
 }
@@ -59,6 +62,8 @@ export function groupSectionsByMember(sectionsBySkill: Record<string, SkillHeatM
           entry = {
             memberId: member.memberId,
             memberName: member.memberName,
+            firstName: member.firstName,
+            lastName: member.lastName,
             patrolName: member.patrolName,
             skillRows: [],
           };

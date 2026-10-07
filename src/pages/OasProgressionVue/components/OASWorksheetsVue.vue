@@ -280,7 +280,10 @@
   max-width: 28px;
   height: 140px;
   padding: 6px 2px;
-  font-weight: var(--summit-font-weight-semibold);
+  /* A bare <th> is bold by the browser's own UA stylesheet — this holds an actual member name
+     (unlike the other header cells above, which are page/group titles), so it's stated normal
+     explicitly rather than left to inherit that default. */
+  font-weight: normal;
 }
 
 /*
@@ -468,7 +471,6 @@
   background: var(--color-white, #fff);
   border-right: 2px solid var(--summit-color-border-default);
   border-bottom: 1px solid var(--summit-color-border-subtle);
-  font-weight: var(--summit-font-weight-semibold);
   white-space: nowrap;
 }
 

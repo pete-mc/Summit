@@ -4,6 +4,7 @@ import * as path from "path";
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 const HEAT_MAP = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASHeatMapVue.vue"), "utf8");
 const FILTERS = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASProgressionFiltersVue.vue"), "utf8");
+const FILTERS_TS = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASProgressionFiltersVue.ts"), "utf8");
 const EXPORT = fs.readFileSync(path.resolve(REPO_ROOT, "src/components/gridExport.ts"), "utf8");
 
 describe("OAS heat map — group by Skill or Member", () => {
@@ -68,8 +69,11 @@ describe("OAS filters — the Group by control", () => {
     expect(FILTERS).toContain("groupByOptions");
   });
 
-  it("hides the patrol divider checkbox when grouped by member", () => {
-    // Leaving an inert control on screen is worse than removing it.
-    expect(FILTERS).toContain(`filters.groupBy !== 'member'`);
+  it("hides the Break-by-patrol Show-dropdown item when grouped by member", () => {
+    // Leaving an inert control on screen is worse than removing it. Moved from the template
+    // (a v-if on a checkbox) into OASProgressionFiltersVue.ts's showOptions computed when
+    // Break-by-patrol relocated into the Show dropdown — see
+    // .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
+    expect(FILTERS_TS).toContain(`filters.groupBy !== "member"`);
   });
 });

@@ -26,6 +26,12 @@ See .claude/AGENTS.md for agent policy.
 See .claude/DESIGN.md before adding or changing any UI — covers Summit's existing
 design tokens/CSS conventions and what Terrain (the host site) is built with.
 
+## MEMBER NAME HANDLING
+
+See .claude/NAME_RESOLUTION.md before writing any code that sorts, formats, or displays a
+Terrain member's name, on any page — Terrain's real API gives separate first_name/last_name
+fields; never concatenate them and re-split the combined string later.
+
 ## PROJECT SETUP
 
 Before anything else, check whether the development environment is setup and operational before any new code is written. The user has never used this type of stack or created an Edge extension before.

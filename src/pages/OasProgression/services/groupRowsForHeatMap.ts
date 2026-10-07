@@ -19,7 +19,10 @@ export interface HeatMapStage {
 
 export interface SectionMemberRow {
   memberId: string;
+  /** Convenience display/search string — see OASProgressionRow.memberName's own comment on why sorting/initials must use firstName/lastName instead. */
   memberName: string;
+  firstName: string;
+  lastName: string;
   patrolName: string | null;
   /** The member's highest AWARDED stage within THIS section only (base section: trunk stages only; a stream section: that stream's own stages only). */
   highestStage: number | null;
@@ -93,7 +96,10 @@ function highestStageOf(stages: HeatMapStage[]): number | null {
 export function groupRowsForHeatMap(rows: OASProgressionRow[], trunkStageCounts: Record<string, number>, members: TerrainUnitMember[]): Record<string, SkillHeatMapData> {
   const result: Record<string, SkillHeatMapData> = {};
 
-  const memberOrder = members.slice().sort((a, b) => (a.first_name + " " + a.last_name).localeCompare(b.first_name + " " + b.last_name));
+  // Base ordering only — every downstream view re-sorts via sortMembers()/the user's own Sort By
+  // choice, so this just needs to be stable. Matches the previous concatenated-string sort's own
+  // tie-break order (first name primary) rather than introducing an unrequested change.
+  const memberOrder = members.slice().sort((a, b) => a.first_name.localeCompare(b.first_name) || a.last_name.localeCompare(b.last_name));
 
   const bySkill = new Map<string, OASProgressionRow[]>();
   rows.forEach((row) => {
@@ -146,6 +152,8 @@ export function groupRowsForHeatMap(rows: OASProgressionRow[], trunkStageCounts:
         return {
           memberId: member.id,
           memberName: member.first_name + " " + member.last_name,
+          firstName: member.first_name,
+          lastName: member.last_name,
           patrolName: member.patrol?.name ?? null,
           highestStage: highestStageOf(stages),
           stages,

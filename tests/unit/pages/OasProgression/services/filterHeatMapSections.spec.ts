@@ -1,4 +1,14 @@
-import { filterMembersByPatrol, groupMembersByPatrol, collectPatrolNames, sliceStagesToRange, formatStageProgress, sortMembers } from "@/pages/OasProgression/services/filterHeatMapSections";
+import {
+  filterMembersByPatrol,
+  groupMembersByPatrol,
+  collectPatrolNames,
+  hasUnassignedMembers,
+  UNASSIGNED_PATROL,
+  sliceStagesToRange,
+  sliceStagesToVisible,
+  formatStageProgress,
+  sortMembers,
+} from "@/pages/OasProgression/services/filterHeatMapSections";
 import type { HeatMapStage, HeatMapSection, SectionMemberRow } from "@/pages/OasProgression/services/groupRowsForHeatMap";
 
 function makeStage(overrides: Partial<HeatMapStage> = {}): HeatMapStage {
@@ -13,6 +23,8 @@ function makeMemberRow(overrides: Partial<SectionMemberRow> = {}): SectionMember
   return {
     memberId: "m1",
     memberName: "Alex Scout",
+    firstName: "Alex",
+    lastName: "Scout",
     patrolName: null,
     highestStage: null,
     stages: [],
@@ -44,6 +56,28 @@ describe("filterMembersByPatrol", () => {
   it("excludes members with no patrol when any patrol filter is active", () => {
     const noPatrol = makeMemberRow({ memberId: "m1", patrolName: null });
     expect(filterMembersByPatrol([noPatrol], ["Kookaburras"])).toEqual([]);
+  });
+
+  // UNASSIGNED_PATROL is the Patrol filter dropdown's explicit "Unassigned" item — selecting it
+  // should match members with no patrol, same as selecting a real patrol name matches members
+  // in that patrol. See .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md's note on the
+  // Patrol filter fix (a unit with one named patrol plus unassigned members previously had no
+  // way to filter to "just the unassigned ones", or even to combine both).
+  it("matches members with no patrol when UNASSIGNED_PATROL is selected", () => {
+    const kooka = makeMemberRow({ memberId: "m1", patrolName: "Kookaburras" });
+    const noPatrol = makeMemberRow({ memberId: "m2", patrolName: null });
+
+    expect(filterMembersByPatrol([kooka, noPatrol], [UNASSIGNED_PATROL])).toEqual([noPatrol]);
+  });
+
+  it("combines a real patrol and UNASSIGNED_PATROL in one selection", () => {
+    const kooka = makeMemberRow({ memberId: "m1", patrolName: "Kookaburras" });
+    const wombat = makeMemberRow({ memberId: "m2", patrolName: "Wombats" });
+    const noPatrol = makeMemberRow({ memberId: "m3", patrolName: null });
+
+    const result = filterMembersByPatrol([kooka, wombat, noPatrol], ["Kookaburras", UNASSIGNED_PATROL]);
+
+    expect(result).toEqual([kooka, noPatrol]);
   });
 });
 
@@ -105,6 +139,45 @@ describe("sliceStagesToRange", () => {
 
   it("returns an empty array when a stream's stages are entirely above the range", () => {
     expect(sliceStagesToRange([6, 7, 8], [1, 3])).toEqual([]);
+  });
+});
+
+describe("sliceStagesToVisible", () => {
+  it("keeps only the selected stages, in the source list's own order", () => {
+    expect(sliceStagesToVisible([1, 2, 3, 4, 5, 6], [2, 4, 6])).toEqual([2, 4, 6]);
+  });
+
+  it("is a true multi-select, not a contiguous range — non-adjacent selections skip what's between them", () => {
+    expect(sliceStagesToVisible([1, 2, 3, 4, 5], [1, 5])).toEqual([1, 5]);
+  });
+
+  it("returns an empty array when none of the selected stages are present", () => {
+    expect(sliceStagesToVisible([1, 2, 3], [7, 8])).toEqual([]);
+  });
+
+  it("returns an empty array when nothing is selected", () => {
+    expect(sliceStagesToVisible([1, 2, 3], [])).toEqual([]);
+  });
+});
+
+describe("hasUnassignedMembers", () => {
+  it("is false when every member has a patrol", () => {
+    const sections = [makeSection([makeMemberRow({ patrolName: "Eagles" }), makeMemberRow({ memberId: "m2", patrolName: "Eagles" })])];
+    expect(hasUnassignedMembers(sections)).toBe(false);
+  });
+
+  it("is true when at least one member has no patrol", () => {
+    const sections = [makeSection([makeMemberRow({ patrolName: "Eagles" }), makeMemberRow({ memberId: "m2", patrolName: null })])];
+    expect(hasUnassignedMembers(sections)).toBe(true);
+  });
+
+  it("checks across every section, not just the first", () => {
+    const sections = [makeSection([makeMemberRow({ patrolName: "Eagles" })]), makeSection([makeMemberRow({ memberId: "m2", patrolName: null })], { skill: "camping" })];
+    expect(hasUnassignedMembers(sections)).toBe(true);
+  });
+
+  it("is false for an empty list of sections", () => {
+    expect(hasUnassignedMembers([])).toBe(false);
   });
 });
 
@@ -178,9 +251,9 @@ describe("formatStageProgress", () => {
 
 describe("sortMembers", () => {
   it("sorts by last name, falling back to first name on a tie", () => {
-    const zara = makeMemberRow({ memberId: "m1", memberName: "Zara Anderson" });
-    const alex = makeMemberRow({ memberId: "m2", memberName: "Alex Baker" });
-    const sam = makeMemberRow({ memberId: "m3", memberName: "Sam Anderson" });
+    const zara = makeMemberRow({ memberId: "m1", firstName: "Zara", lastName: "Anderson" });
+    const alex = makeMemberRow({ memberId: "m2", firstName: "Alex", lastName: "Baker" });
+    const sam = makeMemberRow({ memberId: "m3", firstName: "Sam", lastName: "Anderson" });
 
     const result = sortMembers([zara, alex, sam], "lastName");
 
@@ -188,16 +261,29 @@ describe("sortMembers", () => {
   });
 
   it("sorts by first name", () => {
-    const zara = makeMemberRow({ memberId: "m1", memberName: "Zara Anderson" });
-    const alex = makeMemberRow({ memberId: "m2", memberName: "Alex Baker" });
+    const zara = makeMemberRow({ memberId: "m1", firstName: "Zara", lastName: "Anderson" });
+    const alex = makeMemberRow({ memberId: "m2", firstName: "Alex", lastName: "Baker" });
 
     const result = sortMembers([zara, alex], "firstName");
 
     expect(result.map((m) => m.memberId)).toEqual(["m2", "m1"]);
   });
 
+  // Regression: the old implementation re-split a combined "first last" string on whitespace,
+  // which was lossy for a multi-word last name (e.g. only "Berg" would be recovered from "Van
+  // Der Berg"). Sorting on the real, separate lastName field fixes this.
+  it("sorts correctly on a multi-word last name, unlike the old whitespace-split approach", () => {
+    const vanDerBerg = makeMemberRow({ memberId: "m1", firstName: "Anne", lastName: "Van Der Berg" });
+    const anderson = makeMemberRow({ memberId: "m2", firstName: "Zara", lastName: "Anderson" });
+
+    const result = sortMembers([vanDerBerg, anderson], "lastName");
+
+    // "Anderson" < "Van Der Berg" alphabetically — would have wrongly sorted as "Berg" < "Anderson" if lastName were re-derived from splitting a combined string.
+    expect(result.map((m) => m.memberId)).toEqual(["m2", "m1"]);
+  });
+
   it("does not mutate the input array", () => {
-    const members = [makeMemberRow({ memberId: "m1", memberName: "Zara" }), makeMemberRow({ memberId: "m2", memberName: "Alex" })];
+    const members = [makeMemberRow({ memberId: "m1", firstName: "Zara" }), makeMemberRow({ memberId: "m2", firstName: "Alex" })];
     const original = [...members];
 
     sortMembers(members, "firstName");

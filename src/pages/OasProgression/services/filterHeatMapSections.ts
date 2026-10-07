@@ -1,6 +1,11 @@
 import type { HeatMapSection, SectionMemberRow } from "./groupRowsForHeatMap";
 
-const UNASSIGNED_PATROL = "Unassigned";
+/**
+ * Sentinel value representing "no patrol" as a selectable Patrol-filter item — exported so the
+ * Heat Map's Patrol dropdown can offer it alongside real patrol names. See
+ * .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md's note on the Patrol filter fix.
+ */
+export const UNASSIGNED_PATROL = "Unassigned";
 
 export interface PatrolGroup {
   patrolName: string;
@@ -24,12 +29,17 @@ export interface PatrolGroupOf<T extends HasPatrolName> {
  */
 export const OAS_SKILLS = ["bushcraft", "bushwalking", "camping", "aquatics", "boating", "paddling", "alpine", "cycling", "vertical"];
 
-/** Filters a section's members down to only those in one of the selected patrols. Empty selection = no filter. */
+/**
+ * Filters a section's members down to only those in one of the selected patrols. Empty
+ * selection = no filter (shows everyone, including unassigned members). A selection containing
+ * UNASSIGNED_PATROL matches members with no patrol (patrolName === null) — see that constant's
+ * own comment.
+ */
 export function filterMembersByPatrol<T extends HasPatrolName>(members: T[], selectedPatrols: string[]): T[] {
   if (selectedPatrols.length === 0) {
     return members;
   }
-  return members.filter((m) => m.patrolName !== null && selectedPatrols.includes(m.patrolName));
+  return members.filter((m) => (m.patrolName === null ? selectedPatrols.includes(UNASSIGNED_PATROL) : selectedPatrols.includes(m.patrolName)));
 }
 
 /**
@@ -78,10 +88,37 @@ export function collectPatrolNames(sections: HeatMapSection[]): string[] {
   return Array.from(names).sort((a, b) => a.localeCompare(b));
 }
 
-/** Slices a list of stage numbers down to those within [min, max] (inclusive). Streams with a lower max simply end up with fewer/no columns past their own range — no special-casing needed since this just filters the stage list already computed for that stream/section. */
+/**
+ * True if at least one member across these sections has no patrol (patrolName === null) —
+ * i.e. would show up as "Unassigned" if "Break by patrol" were on. Used alongside
+ * collectPatrolNames() to decide whether the Patrol filter control has any real choice to
+ * offer: with exactly one named patrol and no unassigned members, every member is already in
+ * that one patrol, so there is nothing left to narrow between — see
+ * .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md's note on the Patrol filter bug.
+ */
+export function hasUnassignedMembers(sections: HeatMapSection[]): boolean {
+  return sections.some((section) => section.members.some((member) => member.patrolName === null));
+}
+
+/** Slices a list of stage numbers down to those within [min, max] (inclusive). Streams with a lower max simply end up with fewer/no columns past their own range — no special-casing needed since this just filters the stage list already computed for that stream/section. Used by the legacy React OAS Progression page (OASHeatMap.tsx), which still has separate "Stage from"/"Stage to" controls — the Vue page's equivalent is sliceStagesToVisible below. */
 export function sliceStagesToRange(allStages: number[], stageRange: [number, number]): number[] {
   const [min, max] = stageRange;
   return allStages.filter((stage) => stage >= min && stage <= max);
+}
+
+/**
+ * Slices a list of stage numbers down to the ones the user has selected to see, via the Vue
+ * OAS Progression page's combined "Show"-style stage multi-select (replaces that page's old
+ * separate "Stage from"/"Stage to" range controls — see
+ * .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md). Selection is a true multi-select, not
+ * a contiguous range: picking stages 2 and 5 shows only those two, nothing between. Streams with
+ * fewer stages than selected simply end up with fewer/no columns past their own range — no
+ * special-casing needed since this just filters the stage list already computed for that
+ * stream/section.
+ */
+export function sliceStagesToVisible(allStages: number[], visibleStages: number[]): number[] {
+  const visibleSet = new Set(visibleStages);
+  return allStages.filter((stage) => visibleSet.has(stage));
 }
 
 export interface StageProgressDisplay {
@@ -167,17 +204,6 @@ export function formatStageProgress(highestStage: number | null, stages: Section
 
 export type MemberSortBy = "lastName" | "firstName" | "stageProgress";
 
-/** Exported for OASWorksheetsVue's own member sort (.claude/OASWorksheets/PLAN_STAGE_1.md §2) — name-splitting rules stay in one place rather than growing a second copy. */
-export function lastNameOf(memberName: string): string {
-  const parts = memberName.trim().split(/\s+/);
-  return parts.length > 1 ? parts[parts.length - 1] : memberName;
-}
-
-/** Exported for OASWorksheetsVue — see lastNameOf's comment above. */
-export function firstNameOf(memberName: string): string {
-  return memberName.trim().split(/\s+/)[0] ?? memberName;
-}
-
 /**
  * The stage value a member should be sorted/ranked by, matching what's actually displayed: for a
  * stream section this is null (sorts last, same as "no progress") whenever the section is gated
@@ -226,10 +252,10 @@ export function sortMembers(members: SectionMemberRow[], sortBy: MemberSortBy, i
   const sorted = members.slice();
   switch (sortBy) {
     case "lastName":
-      sorted.sort((a, b) => lastNameOf(a.memberName).localeCompare(lastNameOf(b.memberName)) || firstNameOf(a.memberName).localeCompare(firstNameOf(b.memberName)));
+      sorted.sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
       break;
     case "firstName":
-      sorted.sort((a, b) => firstNameOf(a.memberName).localeCompare(firstNameOf(b.memberName)) || lastNameOf(a.memberName).localeCompare(lastNameOf(b.memberName)));
+      sorted.sort((a, b) => a.firstName.localeCompare(b.firstName) || a.lastName.localeCompare(b.lastName));
       break;
     case "stageProgress":
       sorted.sort((a, b) => {

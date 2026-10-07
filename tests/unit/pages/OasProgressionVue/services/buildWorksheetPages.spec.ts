@@ -1,8 +1,15 @@
 import { buildWorksheetPages, splitPageIntoColumnBatches, transposeWorksheetPage, splitTransposedPageIntoColumnBatches, type BuildWorksheetPagesOptions, type WorksheetPage } from "@/pages/OasProgressionVue/services/buildWorksheetPages";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import { getCodename } from "@/pages/OasProgression/services/getCodename";
+import { UNASSIGNED_PATROL } from "@/pages/OasProgression/services/filterHeatMapSections";
 
+// firstName/lastName default to a split of memberName purely as test-fixture convenience (most
+// of these tests only care about member identity/ordering, not real name-splitting edge cases —
+// those are covered directly in getMemberDisplayName.spec.ts and filterHeatMapSections.spec.ts).
+// Pass firstName/lastName explicitly when a test needs a specific sort order.
 function makeRow(overrides: Partial<OASProgressionRow> = {}): OASProgressionRow {
+  const memberName = overrides.memberName ?? "Alba Sayer";
+  const [firstName, ...rest] = memberName.split(" ");
   return {
     unitId: "u1",
     stream: "bushcraft",
@@ -12,7 +19,9 @@ function makeRow(overrides: Partial<OASProgressionRow> = {}): OASProgressionRow 
     inputId: "a",
     iStatement: "I know why it is important to stick to trails when outdoors.",
     memberId: "m1",
-    memberName: "Alba Sayer",
+    memberName,
+    firstName,
+    lastName: rest.join(" "),
     patrolName: null,
     answered: false,
     awarded: false,
@@ -21,13 +30,16 @@ function makeRow(overrides: Partial<OASProgressionRow> = {}): OASProgressionRow 
   };
 }
 
+// selectedPatrols now behaves like every other Worksheets filter: [] means "show nothing," not
+// "show everyone" (see .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md). makeRow's own
+// default member is unassigned (patrolName: null), so default to [UNASSIGNED_PATROL] here;
+// tests using a real patrol name override this explicitly.
 const DEFAULT_OPTIONS: BuildWorksheetPagesOptions = {
   visibleSkills: ["bushcraft", "bushwalking", "camping"],
-  stageRange: [1, 9],
-  selectedPatrols: [],
+  visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  selectedPatrols: [UNASSIGNED_PATROL],
   memberFilter: "",
-  hideLastName: false,
-  useCodenames: false,
+  nameFormat: "full",
   breakByPatrol: false,
   hideCompleted: false,
   sortBy: "firstName",
@@ -100,7 +112,7 @@ describe("buildWorksheetPages", () => {
   it("drops whole pages outside the stage range, not individual rows", () => {
     const rows = [makeRow({ stage: 1, inputId: "a1" }), makeRow({ stage: 5, inputId: "a5" })];
 
-    const result = buildWorksheetPages(rows, options({ stageRange: [1, 3] }));
+    const result = buildWorksheetPages(rows, options({ visibleStages: [1, 2, 3] }));
 
     expect(result.pages.map((p) => p.stage)).toEqual([1]);
   });
@@ -113,30 +125,23 @@ describe("buildWorksheetPages", () => {
     expect(result.pages.map((p) => p.skill)).toEqual(["bushcraft"]);
   });
 
-  it("resolves codenames the same way getCodename does, and hides last name otherwise", () => {
+  it("resolves codenames and first-name-only via the Names format option", () => {
     const rows = [makeRow({ memberId: "m1", memberName: "Alba Sayer" })];
 
-    const codenamed = buildWorksheetPages(rows, options({ useCodenames: true }));
+    const codenamed = buildWorksheetPages(rows, options({ nameFormat: "codename" }));
     expect(codenamed.members[0].displayName).toBe(getCodename("m1"));
 
-    const hiddenLastName = buildWorksheetPages(rows, options({ hideLastName: true }));
-    expect(hiddenLastName.members[0].displayName).toBe("Alba");
-  });
-
-  it("prefers codenames over hide-last-name when both are set", () => {
-    const rows = [makeRow({ memberId: "m1", memberName: "Alba Sayer" })];
-
-    const result = buildWorksheetPages(rows, options({ useCodenames: true, hideLastName: true }));
-
-    expect(result.members[0].displayName).toBe(getCodename("m1"));
+    const firstNameOnly = buildWorksheetPages(rows, options({ nameFormat: "first" }));
+    expect(firstNameOnly.members[0].displayName).toBe("Alba");
   });
 
   it("populates patrolGroups only when breakByPatrol is on", () => {
     const rows = [makeRow({ memberId: "m1", patrolName: "Wombats" }), makeRow({ memberId: "m2", patrolName: "Kookaburras" })];
+    const bothPatrols = options({ selectedPatrols: ["Wombats", "Kookaburras"] });
 
-    expect(buildWorksheetPages(rows, options()).patrolGroups).toBeNull();
+    expect(buildWorksheetPages(rows, bothPatrols).patrolGroups).toBeNull();
 
-    const grouped = buildWorksheetPages(rows, options({ breakByPatrol: true }));
+    const grouped = buildWorksheetPages(rows, { ...bothPatrols, breakByPatrol: true });
     expect(grouped.patrolGroups?.map((g) => g.patrolName)).toEqual(["Kookaburras", "Wombats"]);
   });
 
@@ -145,11 +150,12 @@ describe("buildWorksheetPages", () => {
     // patrol" must reorder `members` itself, not just label it, or the rendered column order
     // would silently disagree with the patrol-span header built from patrolGroups.
     const rows = [makeRow({ memberId: "m1", memberName: "Alba", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
+    const bothPatrols = options({ selectedPatrols: ["Wombats", "Kookaburras"] });
 
-    const unordered = buildWorksheetPages(rows, options());
+    const unordered = buildWorksheetPages(rows, bothPatrols);
     expect(unordered.members.map((m) => m.memberId)).toEqual(["m1", "m2", "m3"]); // firstName order
 
-    const byPatrol = buildWorksheetPages(rows, options({ breakByPatrol: true }));
+    const byPatrol = buildWorksheetPages(rows, { ...bothPatrols, breakByPatrol: true });
     // Kookaburras before Wombats (alphabetical), m1/m3 keep their relative order within Wombats.
     expect(byPatrol.members.map((m) => m.memberId)).toEqual(["m2", "m1", "m3"]);
     expect(byPatrol.patrolGroups?.flatMap((g) => g.members.map((m) => m.memberId))).toEqual(byPatrol.members.map((m) => m.memberId));
@@ -192,7 +198,7 @@ describe("buildWorksheetPages", () => {
         makeRow({ stage: 2, memberId: "m2", inputId: "b1" }),
       ];
 
-      const result = buildWorksheetPages(rows, options({ hideCompleted: true, stageRange: [1, 2] }));
+      const result = buildWorksheetPages(rows, options({ hideCompleted: true, visibleStages: [1, 2] }));
 
       const stage1 = result.pages.find((p) => p.stage === 1)!;
       const stage2 = result.pages.find((p) => p.stage === 2)!;
@@ -370,7 +376,7 @@ describe("transposeWorksheetPage", () => {
 
   it("preserves patrol order in rows, since it transposes page.members as-is (already patrol-ordered when breakByPatrol is on)", () => {
     const rows = [makeRow({ memberId: "m1", memberName: "Alba", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
-    const page = buildWorksheetPages(rows, options({ breakByPatrol: true })).pages[0];
+    const page = buildWorksheetPages(rows, options({ selectedPatrols: ["Wombats", "Kookaburras"], breakByPatrol: true })).pages[0];
 
     const transposed = transposeWorksheetPage(page);
 

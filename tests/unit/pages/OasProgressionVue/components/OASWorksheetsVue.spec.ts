@@ -23,8 +23,13 @@ import {
 } from "@/pages/OasProgressionVue/services/worksheetPrintPageSize";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
+import { UNASSIGNED_PATROL } from "@/pages/OasProgression/services/filterHeatMapSections";
 
+// firstName/lastName default to a split of memberName purely as test-fixture convenience — see
+// buildWorksheetPages.spec.ts's identical fixture for why.
 function makeRow(overrides: Partial<OASProgressionRow> = {}): OASProgressionRow {
+  const memberName = overrides.memberName ?? "Alba Sayer";
+  const [firstName, ...rest] = memberName.split(" ");
   return {
     unitId: "u1",
     stream: "bushcraft",
@@ -34,7 +39,9 @@ function makeRow(overrides: Partial<OASProgressionRow> = {}): OASProgressionRow 
     inputId: "a",
     iStatement: "I know why it is important to stick to trails when outdoors.",
     memberId: "m1",
-    memberName: "Alba Sayer",
+    memberName,
+    firstName,
+    lastName: rest.join(" "),
     patrolName: null,
     answered: false,
     awarded: false,
@@ -48,23 +55,25 @@ function makeFilters(overrides: Partial<OASProgressionVueFilterState> = {}): OAS
     viewMode: "worksheets",
     groupBy: "skill",
     memberFilter: "",
-    hideLastName: false,
-    useCodenames: false,
+    nameFormat: "full",
     selectedPatrols: [],
     breakByPatrol: false,
-    hideEmptyStreams: false,
-    hideEmptyTopColumns: false,
-    onlyInProgress: false,
-    hideAnswered: false,
+    showEmptySkillRows: true,
+    showEmptyTopStages: true,
+    showAwarded: true,
+    showNotStarted: true,
+    showAnswered: true,
     visibleStreams: [],
-    stageRange: [1, 9],
+    visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     sortBy: "firstName",
     worksheetVisibleSkills: ["bushcraft"],
-    worksheetStageRange: [1, 9],
-    worksheetHideLastName: false,
-    worksheetUseCodenames: false,
+    worksheetVisibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    worksheetNameFormat: "full",
+    // Default test members are unassigned (makeRow's patrolName: null) — same reasoning as
+    // buildWorksheetPages.spec.ts's own DEFAULT_OPTIONS.selectedPatrols.
+    worksheetSelectedPatrols: [UNASSIGNED_PATROL],
     worksheetBreakByPatrol: false,
-    worksheetHideCompleted: false,
+    worksheetShowCompleted: true,
     worksheetLayout: "membersAsColumns",
     ...overrides,
   };
@@ -112,7 +121,7 @@ describe("OASWorksheetsVue computed", () => {
 
   it("passes worksheet* filter keys through to buildWorksheetPages unchanged", () => {
     const rows = [makeRow({ stage: 1 }), makeRow({ stage: 5 })];
-    const context = { items: rows, filters: makeFilters({ worksheetStageRange: [1, 3] }), availablePatrols: [] };
+    const context = { items: rows, filters: makeFilters({ worksheetVisibleStages: [1, 2, 3] }), availablePatrols: [] };
 
     const pageSet = computed.pageSet.call(context);
 
@@ -427,7 +436,7 @@ describe("OASWorksheetsVue computed", () => {
       const rows = [makeRow({ memberId: "m1", patrolName: "Wombats" }), makeRow({ memberId: "m2", patrolName: "Kookaburras" })];
       const context: { items: OASProgressionRow[]; filters: OASProgressionVueFilterState; availablePatrols: string[]; pageSet?: unknown } = {
         items: rows,
-        filters: makeFilters({ worksheetBreakByPatrol: false }),
+        filters: makeFilters({ worksheetBreakByPatrol: false, worksheetSelectedPatrols: ["Wombats", "Kookaburras"] }),
         availablePatrols: ["Wombats", "Kookaburras"],
       };
       const pageSet = computed.pageSet.call(context);
@@ -442,7 +451,7 @@ describe("OASWorksheetsVue computed", () => {
       const rows = [makeRow({ memberId: "m1", memberName: "Alba", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
       const context: { items: OASProgressionRow[]; filters: OASProgressionVueFilterState; availablePatrols: string[]; pageSet?: unknown } = {
         items: rows,
-        filters: makeFilters({ worksheetBreakByPatrol: true }),
+        filters: makeFilters({ worksheetBreakByPatrol: true, worksheetSelectedPatrols: ["Wombats", "Kookaburras"] }),
         availablePatrols: ["Wombats", "Kookaburras"],
       };
       const pageSet = computed.pageSet.call(context);
@@ -465,9 +474,13 @@ describe("OASWorksheetsVue computed", () => {
   describe("patrolBorderClassesForPage", () => {
     // Calls `this.patrolSpansForPage(...)` internally — the fixture context needs that method
     // bound onto it too, not just `pageSet`, to behave like a real Vue instance.
+    //
+    // worksheetSelectedPatrols defaults to the given availablePatrols (matching how
+    // OasProgressionVueContent.ts's watcher would have already resolved it against real patrol
+    // data by the time a real page renders) unless filterOverrides supplies its own.
     function makeContext(rows: OASProgressionRow[], filterOverrides: Partial<OASProgressionVueFilterState> = {}, availablePatrols: string[] = []) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const context: any = { items: rows, filters: makeFilters(filterOverrides), availablePatrols, patrolSpansForPage: methods.patrolSpansForPage };
+      const context: any = { items: rows, filters: makeFilters({ worksheetSelectedPatrols: availablePatrols, ...filterOverrides }), availablePatrols, patrolSpansForPage: methods.patrolSpansForPage };
       context.pageSet = computed.pageSet.call(context);
       return context;
     }
@@ -551,7 +564,7 @@ describe("OASWorksheetsVue computed", () => {
     function makeTransposedContext(rows: OASProgressionRow[], breakByPatrol: boolean) {
       const context: { items: OASProgressionRow[]; filters: OASProgressionVueFilterState; availablePatrols: string[]; pageSet?: unknown } = {
         items: rows,
-        filters: makeFilters({ worksheetBreakByPatrol: breakByPatrol }),
+        filters: makeFilters({ worksheetBreakByPatrol: breakByPatrol, worksheetSelectedPatrols: ["Wombats", "Kookaburras", UNASSIGNED_PATROL] }),
         availablePatrols: ["Wombats", "Kookaburras"],
       };
       context.pageSet = computed.pageSet.call(context);
@@ -643,6 +656,20 @@ describe("TEMPORARY DEV AID — large-unit preview via localStorage (delete alon
       expect(duplicate.answered).toBe(true);
       expect(duplicate.awarded).toBe(true);
       expect(duplicate.date).toBe("2024-02-03");
+    });
+
+    it("gives each duplicate a distinct lastName (not just memberName), kept in sync with each other — sorting/display reads lastName directly, not memberName", () => {
+      const items = [makeRow({ memberId: "m1", memberName: "Alba Sayer" })];
+
+      const result = duplicateMembersForDevPreview(items, 2);
+
+      const dup1 = result.find((r) => r.memberId === "m1-dev1")!;
+      const dup2 = result.find((r) => r.memberId === "m1-dev2")!;
+      expect(dup1.lastName).not.toBe("Sayer");
+      expect(dup1.lastName).not.toBe(dup2.lastName);
+      expect(dup1.firstName).toBe("Alba");
+      expect(dup1.memberName).toBe(`${dup1.firstName} ${dup1.lastName}`);
+      expect(dup2.memberName).toBe(`${dup2.firstName} ${dup2.lastName}`);
     });
   });
 

@@ -8,23 +8,22 @@ function makeFilters(overrides: Partial<OASProgressionVueFilterState> = {}): OAS
     viewMode: "heatmap",
     groupBy: "skill",
     memberFilter: "",
-    hideLastName: false,
-    useCodenames: false,
+    nameFormat: "full",
     selectedPatrols: [],
     breakByPatrol: false,
-    hideEmptyStreams: false,
-    hideEmptyTopColumns: false,
-    onlyInProgress: false,
-    hideAnswered: false,
+    showEmptySkillRows: true,
+    showEmptyTopStages: true,
+    showAwarded: true,
+    showNotStarted: true,
+    showAnswered: true,
     visibleStreams: ["bushcraft", "bushwalking"],
-    stageRange: [1, 9],
+    visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     sortBy: "firstName",
     worksheetVisibleSkills: ["bushcraft", "bushwalking"],
-    worksheetStageRange: [1, 9],
-    worksheetHideLastName: false,
-    worksheetUseCodenames: false,
+    worksheetVisibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    worksheetNameFormat: "full",
     worksheetBreakByPatrol: false,
-    worksheetHideCompleted: false,
+    worksheetShowCompleted: true,
     worksheetLayout: "membersAsColumns",
     ...overrides,
   };
@@ -36,7 +35,7 @@ describe("OASProgressionVueFilterPersistence", () => {
   });
 
   it("round-trips filter state through localStorage", () => {
-    const filters = makeFilters({ hideLastName: true, selectedPatrols: ["Kookaburras"], stageRange: [3, 6] });
+    const filters = makeFilters({ nameFormat: "first", selectedPatrols: ["Kookaburras"], visibleStages: [3, 4, 5, 6] });
 
     saveOASProgressionVueFilters(filters);
 

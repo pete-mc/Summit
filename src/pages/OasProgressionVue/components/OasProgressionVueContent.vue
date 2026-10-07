@@ -59,6 +59,8 @@
         <OASProgressionFiltersVue
           :filters="filters"
           :available-patrols="availablePatrols"
+          :patrol-filter-options="patrolFilterOptions"
+          :can-filter-by-patrol="canFilterByPatrol"
           @update:filters="onFiltersUpdate"
           @reset="onResetFilters"
         />
@@ -69,17 +71,17 @@
           :trunk-stage-counts="trunkStageCounts"
           :members="members"
           :visible-streams="filters.visibleStreams"
-          :stage-range="filters.stageRange"
+          :visible-stages="filters.visibleStages"
           :sort-by="filters.sortBy"
-          :show-empty-sections="!filters.hideEmptyStreams"
+          :show-empty-skill-rows="filters.showEmptySkillRows"
           :member-filter="filters.memberFilter"
-          :hide-last-name="filters.hideLastName"
-          :use-codenames="filters.useCodenames"
-          :selected-patrols="filters.selectedPatrols"
+          :name-format="filters.nameFormat"
+          :selected-patrols="filters.selectedPatrols || []"
           :break-by-patrol="filters.breakByPatrol"
-          :hide-empty-top-columns="filters.hideEmptyTopColumns"
-          :only-in-progress="filters.onlyInProgress"
-          :hide-answered="filters.hideAnswered"
+          :show-empty-top-stages="filters.showEmptyTopStages"
+          :show-awarded="filters.showAwarded"
+          :show-not-started="filters.showNotStarted"
+          :show-answered="filters.showAnswered"
           :group-by="filters.groupBy"
         />
       </template>
@@ -90,6 +92,8 @@
         <OASWorksheetFiltersVue
           :filters="filters"
           :available-patrols="availablePatrols"
+          :patrol-filter-options="patrolFilterOptions"
+          :can-filter-by-patrol="canFilterByPatrol"
           @update:filters="onFiltersUpdate"
           @reset="onResetFilters"
         />

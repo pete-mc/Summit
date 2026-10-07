@@ -2,6 +2,23 @@
   <div class="oas-vue-filter-panel">
     <div class="oas-heatmap-controls">
       <v-select
+        v-if="canFilterByPatrol"
+        :value="filters.worksheetSelectedPatrols || []"
+        :items="patrolFilterOptions"
+        label="Patrol"
+        multiple
+        dense
+        hide-details
+        style="max-width: 220px"
+        class="oas-vue-filter-select"
+        @change="patch({ worksheetSelectedPatrols: $event })"
+      >
+        <template #selection="{ index }">
+          <span v-if="index === 0" class="oas-vue-select-summary">{{ (filters.worksheetSelectedPatrols || []).length }} selected</span>
+        </template>
+      </v-select>
+
+      <v-select
         :value="filters.worksheetVisibleSkills"
         :items="skillOptions"
         item-text="text"
@@ -20,25 +37,20 @@
       </v-select>
 
       <v-select
-        :value="filters.worksheetStageRange[0]"
+        :value="filters.worksheetVisibleStages"
         :items="stageOptions"
-        label="Stage from"
+        label="Stages"
+        multiple
         dense
         hide-details
-        style="max-width: 100px"
+        style="max-width: 140px"
         class="oas-vue-filter-select"
-        @change="onStageMinChange"
-      ></v-select>
-      <v-select
-        :value="filters.worksheetStageRange[1]"
-        :items="stageOptions"
-        label="Stage to"
-        dense
-        hide-details
-        style="max-width: 100px"
-        class="oas-vue-filter-select"
-        @change="onStageMaxChange"
-      ></v-select>
+        @change="patch({ worksheetVisibleStages: $event })"
+      >
+        <template #selection="{ index }">
+          <span v-if="index === 0" class="oas-vue-select-summary">{{ filters.worksheetVisibleStages.length }} selected</span>
+        </template>
+      </v-select>
 
       <v-select
         :value="filters.worksheetLayout"
@@ -53,37 +65,28 @@
         @change="patch({ worksheetLayout: $event })"
       ></v-select>
 
-      <fieldset class="oas-heatmap-display-group">
-        <legend class="oas-heatmap-filter-label oas-vue-filter-heading-match">Display</legend>
-        <v-checkbox :input-value="filters.worksheetUseCodenames" label="Use codenames" dense hide-details @change="onUseCodenamesChange"></v-checkbox>
-        <v-checkbox
-          :input-value="filters.worksheetHideLastName"
-          :disabled="filters.worksheetUseCodenames"
-          label="Hide last name"
-          dense
-          hide-details
-          @change="patch({ worksheetHideLastName: $event })"
-        ></v-checkbox>
-        <!-- Hidden when there is nothing to group by — matches OASProgressionFiltersVue's own
-             "Break by patrol" visibility rule. -->
-        <v-checkbox v-if="availablePatrols.length > 0" :input-value="filters.worksheetBreakByPatrol" label="Break by patrol" dense hide-details @change="patch({ worksheetBreakByPatrol: $event })"></v-checkbox>
-        <v-checkbox :input-value="filters.worksheetHideCompleted" label="Hide completed" dense hide-details @change="patch({ worksheetHideCompleted: $event })"></v-checkbox>
-      </fieldset>
+      <NameFormatSelect :value="filters.worksheetNameFormat" @input="patch({ worksheetNameFormat: $event })" />
+
+      <v-select
+        :value="showSelection"
+        :items="showOptions"
+        item-text="text"
+        item-value="value"
+        label="Show"
+        multiple
+        dense
+        hide-details
+        style="max-width: 220px"
+        class="oas-vue-filter-select"
+        :menu-props="{ contentClass: 'oas-vue-show-menu' }"
+        @change="onShowChange"
+      >
+        <template #selection="{ index }">
+          <span v-if="index === 0" class="oas-vue-select-summary">{{ showSelection.length }} selected</span>
+        </template>
+      </v-select>
 
       <v-btn text color="primary" @click="resetFilters">Reset filters</v-btn>
-    </div>
-
-    <div class="oas-vue-selected-skills">
-      <v-chip
-        v-for="skill in filters.worksheetVisibleSkills"
-        :key="skill"
-        close
-        small
-        class="oas-vue-skill-chip"
-        @click:close="patch({ worksheetVisibleSkills: filters.worksheetVisibleSkills.filter((s) => s !== skill) })"
-      >
-        {{ (skillOptions.find((o) => o.value === skill) || {}).text || skill }}
-      </v-chip>
     </div>
   </div>
 </template>
@@ -103,37 +106,6 @@
   font-family: var(--oas-vue-font-family);
 }
 
-.oas-vue-selected-skills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.oas-vue-skill-chip {
-  margin: 0;
-}
-
-.oas-heatmap-display-group {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  column-gap: 20px;
-  row-gap: 4px;
-  border: none;
-  padding: 0;
-  margin: 0;
-}
-
-.oas-heatmap-display-group ::v-deep .v-input--checkbox {
-  margin-top: 0;
-  padding-top: 0;
-  flex: 0 0 auto;
-}
-
-.oas-heatmap-display-group ::v-deep .v-input--selection-controls__input {
-  margin-right: 12px !important;
-}
-
 /*
  * Same shared heading values as OASProgressionFiltersVue's identical rule — see that file's long
  * comment for the full "why" (measured live off Terrain's Skills label, not re-derived from
@@ -142,22 +114,6 @@
  * design (PLAN_STAGE_3.md §3), and this specific rule set has already drifted once when assumed
  * "the same" without being stated explicitly in each place.
  */
-.oas-vue-filter-heading-match {
-  color: var(--color-scouts-medium-blue, #00348d) !important;
-  font-size: var(--oas-vue-font-size-heading) !important;
-  font-family: var(--oas-vue-font-family) !important;
-  font-weight: normal !important;
-  letter-spacing: -0.01em !important;
-  padding: 0;
-  border: 0;
-}
-
-.oas-heatmap-display-group legend.oas-vue-filter-heading-match {
-  font-size: 15px !important;
-  display: inline-block !important;
-  width: auto !important;
-}
-
 .oas-vue-filter-select ::v-deep .v-label {
   color: var(--color-scouts-medium-blue, #00348d) !important;
   font-size: var(--oas-vue-font-size-heading) !important;
