@@ -1,4 +1,13 @@
-import { applyAchievementsToMatrix, buildBlankMatrix, flattenOASTemplate, flattenOASTree, getTrunkStageCount, parseTerrainAnswerDate, type OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
+import {
+  applyAchievementsToMatrix,
+  buildBlankMatrix,
+  flattenOASTemplate,
+  flattenOASTree,
+  getTrunkStageCount,
+  isOASCacheKeyForStream,
+  parseTerrainAnswerDate,
+  type OASProgressionRow,
+} from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { OASTemplate, OASTree, TerrainAchievements, TerrainUnitMember } from "@/types/terrainTypes";
 
 function makeMember(overrides: Partial<TerrainUnitMember> = {}): TerrainUnitMember {
@@ -364,5 +373,23 @@ describe("getTrunkStageCount", () => {
     };
 
     expect(getTrunkStageCount(tree)).toBe(0);
+  });
+});
+
+describe("isOASCacheKeyForStream", () => {
+  it("matches tree and template keys for the given stream", () => {
+    const matches = isOASCacheKeyForStream("bushwalking");
+
+    expect(matches("tree.bushwalking")).toBe(true);
+    expect(matches("template.bushwalking")).toBe(true);
+    expect(matches("tree.camping")).toBe(false);
+  });
+
+  it("matches achievements keys by their stream segment, not unitId", () => {
+    const matches = isOASCacheKeyForStream("bushwalking");
+
+    expect(matches("achievements.unit-1.bushwalking.core.2")).toBe(true);
+    expect(matches("achievements.bushwalking.bushwalking.core.2")).toBe(true);
+    expect(matches("achievements.unit-1.camping.core.2")).toBe(false);
   });
 });

@@ -1,4 +1,4 @@
-const OAS_CACHE_KEY_PREFIX = "summit.oas.cache.";
+const CACHE_KEY_PREFIX = "summit.cache.";
 
 interface CacheEntry<T> {
   cachedAt: number;
@@ -6,7 +6,7 @@ interface CacheEntry<T> {
 }
 
 function cacheKey(key: string): string {
-  return OAS_CACHE_KEY_PREFIX + key;
+  return CACHE_KEY_PREFIX + key;
 }
 
 export function saveCached<T>(key: string, value: T): void {
@@ -41,22 +41,22 @@ export function loadCached<T>(key: string, maxAgeMs: number): T | null {
   }
 }
 
-export function clearCache(streamFilter?: string): void {
+/**
+ * Clears cache entries. With no filter, clears every Summit cache entry regardless of
+ * feature. With a filter, each caller tests its own un-prefixed key (whatever shape it
+ * chose when calling saveCached) rather than this module trying to parse every feature's
+ * key format.
+ */
+export function clearCache(filter?: (key: string) => boolean): void {
   try {
     const keysToRemove: string[] = [];
     for (let i = 0; i < window.localStorage.length; i += 1) {
       const key = window.localStorage.key(i);
-      if (!key || !key.startsWith(OAS_CACHE_KEY_PREFIX)) {
+      if (!key || !key.startsWith(CACHE_KEY_PREFIX)) {
         continue;
       }
-      if (streamFilter) {
-        const suffix = key.slice(OAS_CACHE_KEY_PREFIX.length);
-        const segments = suffix.split(".");
-        // "tree.{stream}" | "template.{stream}" | "achievements.{unitId}.{stream}.{branch}.{stage}"
-        const streamSegment = segments[0] === "achievements" ? segments[2] : segments[1];
-        if (streamSegment !== streamFilter) {
-          continue;
-        }
+      if (filter && !filter(key.slice(CACHE_KEY_PREFIX.length))) {
+        continue;
       }
       keysToRemove.push(key);
     }

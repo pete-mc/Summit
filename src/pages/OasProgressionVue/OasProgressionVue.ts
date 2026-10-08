@@ -1,7 +1,7 @@
 import Vue from "vue";
 import { defineComponent } from "vue";
 import OasProgressionVueContent from "./components/OasProgressionVueContent.vue";
-import { fetchAllOASProgression, fetchOASProgressionForStream, type OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
+import { fetchAllOASProgression, fetchOASProgressionForStream, isOASCacheKeyForStream, type OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import { fetchUnitMembers } from "@/services";
 import { TerrainState, clearCache, createLogger } from "@/helpers";
 import { TerrainRootState } from "@/types/terrainState";
@@ -133,7 +133,7 @@ export default defineComponent({
     },
     async reloadStream(stream: string) {
       try {
-        clearCache(stream);
+        clearCache(isOASCacheKeyForStream(stream));
         const unitId = TerrainState.getUnitID();
         const members = (await fetchUnitMembers()).filter((m) => m.unit.duty != "adult_leader");
         this.members = members;

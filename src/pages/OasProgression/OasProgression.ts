@@ -1,7 +1,7 @@
 import React from "react";
 import { Root, createRoot } from "react-dom/client";
 import { defineComponent } from "vue";
-import { fetchAllOASProgression, fetchOASProgressionForStream, type OASProgressionRow } from "./services/buildOASProgressionRows";
+import { fetchAllOASProgression, fetchOASProgressionForStream, isOASCacheKeyForStream, type OASProgressionRow } from "./services/buildOASProgressionRows";
 import { OasProgressionTable } from "./components/OasProgression";
 import { fetchUnitMembers } from "@/services";
 import { TerrainState, clearCache, createLogger } from "@/helpers";
@@ -90,7 +90,7 @@ export default defineComponent({
     },
     async reloadStream(stream: string) {
       try {
-        clearCache(stream);
+        clearCache(isOASCacheKeyForStream(stream));
         const unitId = TerrainState.getUnitID();
         const members = (await fetchUnitMembers()).filter((m) => m.unit.duty != "adult_leader");
         this.members = members;

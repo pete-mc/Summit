@@ -5,6 +5,18 @@ import { loadCached, saveCached } from "@/helpers";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * Matches this module's own cache key shapes for a given stream:
+ * "tree.{stream}" | "template.{stream}" | "achievements.{unitId}.{stream}.{branch}.{stage}"
+ */
+export function isOASCacheKeyForStream(stream: string): (key: string) => boolean {
+  return (key: string) => {
+    const segments = key.split(".");
+    const streamSegment = segments[0] === "achievements" ? segments[2] : segments[1];
+    return streamSegment === stream;
+  };
+}
+
 export interface FlattenedIStatement {
   inputId: string;
   iStatement: string;

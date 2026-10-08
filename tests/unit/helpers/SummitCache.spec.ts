@@ -1,6 +1,6 @@
-import { clearCache, loadCached, saveCached } from "@/helpers/OASTemplateCache";
+import { clearCache, loadCached, saveCached } from "@/helpers/SummitCache";
 
-describe("OASTemplateCache", () => {
+describe("SummitCache", () => {
   beforeEach(() => {
     window.localStorage.clear();
   });
@@ -33,21 +33,22 @@ describe("OASTemplateCache", () => {
   });
 
   it("returns null and does not throw when localStorage holds malformed JSON", () => {
-    window.localStorage.setItem("summit.oas.cache.tree.bushwalking", "{not valid json");
+    window.localStorage.setItem("summit.cache.tree.bushwalking", "{not valid json");
 
     expect(loadCached("tree.bushwalking", 24 * 60 * 60 * 1000)).toBeNull();
   });
 
   it("returns null when localStorage holds a value missing cachedAt", () => {
-    window.localStorage.setItem("summit.oas.cache.tree.bushwalking", JSON.stringify({ value: { foo: "bar" } }));
+    window.localStorage.setItem("summit.cache.tree.bushwalking", JSON.stringify({ value: { foo: "bar" } }));
 
     expect(loadCached("tree.bushwalking", 24 * 60 * 60 * 1000)).toBeNull();
   });
 
-  it("clearCache() with no argument removes every OAS cache entry", () => {
+  it("clearCache() with no argument removes every Summit cache entry, from any feature", () => {
     saveCached("tree.bushwalking", { a: 1 });
     saveCached("template.bushwalking", { b: 1 });
     saveCached("achievements.unit-1.camping.core.2", []);
+    saveCached("milestones.template.123", { d: 1 });
     window.localStorage.setItem("some.other.key", "untouched");
 
     clearCache();
@@ -55,22 +56,17 @@ describe("OASTemplateCache", () => {
     expect(loadCached("tree.bushwalking", 24 * 60 * 60 * 1000)).toBeNull();
     expect(loadCached("template.bushwalking", 24 * 60 * 60 * 1000)).toBeNull();
     expect(loadCached("achievements.unit-1.camping.core.2", 24 * 60 * 60 * 1000)).toBeNull();
+    expect(loadCached("milestones.template.123", 24 * 60 * 60 * 1000)).toBeNull();
     expect(window.localStorage.getItem("some.other.key")).toBe("untouched");
   });
 
-  it("clearCache(stream) removes only entries for that stream, leaving other streams intact", () => {
+  it("clearCache(filter) removes only entries the filter matches, leaving others intact", () => {
     saveCached("tree.bushwalking", { a: 1 });
-    saveCached("template.bushwalking", { b: 1 });
-    saveCached("achievements.unit-1.bushwalking.core.2", []);
-    saveCached("tree.camping", { c: 1 });
-    saveCached("achievements.unit-1.camping.core.2", []);
+    saveCached("milestones.template.123", { b: 1 });
 
-    clearCache("bushwalking");
+    clearCache((key) => key.startsWith("tree."));
 
     expect(loadCached("tree.bushwalking", 24 * 60 * 60 * 1000)).toBeNull();
-    expect(loadCached("template.bushwalking", 24 * 60 * 60 * 1000)).toBeNull();
-    expect(loadCached("achievements.unit-1.bushwalking.core.2", 24 * 60 * 60 * 1000)).toBeNull();
-    expect(loadCached("tree.camping", 24 * 60 * 60 * 1000)).toEqual({ c: 1 });
-    expect(loadCached("achievements.unit-1.camping.core.2", 24 * 60 * 60 * 1000)).toEqual([]);
+    expect(loadCached("milestones.template.123", 24 * 60 * 60 * 1000)).toEqual({ b: 1 });
   });
 });
