@@ -25,11 +25,11 @@
         Hand-written thead: the stage-group row uses colspan to span several stage columns under
         one label, which Vuetify's own header renderer (one <th> per header entry) cannot express.
 
-        Deliberately WITHOUT the .oas-heatmap-thead class: that class exists only to paint the
-        header Summit green (index.css), and Terrain does not style table headers at all —
-        confirmed from its own Computed panel. Leaving it off lets Vuetify's default show through
-        (12px, 60% black, 32px tall in dense mode), which is what "match Terrain" actually means
-        here. The class stays in index.css for the legacy React page, which still uses it.
+        Deliberately WITHOUT a thead class that paints the header Summit green: Terrain does not
+        style table headers at all — confirmed from its own Computed panel. Leaving it unstyled
+        lets Vuetify's default show through (12px, 60% black, 32px tall in dense mode), which is
+        what "match Terrain" actually means here. (The legacy React page's .oas-heatmap-thead rule
+        did this; it was removed from index.css along with that page's other dead CSS.)
       -->
       <template #header>
         <thead>

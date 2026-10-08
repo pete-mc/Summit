@@ -6,8 +6,10 @@ These are notes for the developer only. They should not be considered by an AI A
 
 ## GUI
 
-- Needs border left and right = 0
-  .oas-heatmap-skill-title-row td
+## PDF
+
+- Create standard PDF Layout
+  - Headers 7 footers including: Section Symbol, Page title, Group Name, Unit Name, Date Generated (As of)
 
 ## Table Layout
 
@@ -30,6 +32,8 @@ The system can’t record that a youth member has had the achievement awarded to
 
 ## OAS Progression
 
-## I - Statements
+### Heat Map
 
-- Filter area doesn't have same space below it, as per OAS Progession, Present Awards etc. This layout should be standard for every page we make.
+### Worksheets:
+
+## I - Statements

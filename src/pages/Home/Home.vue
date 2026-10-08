@@ -33,7 +33,6 @@
 
     <h3>Development tools</h3>
     <ul>
-        <li><router-link to="/summit/reports/oasprogression-legacy">OAS Progression (legacy)</router-link> &mdash; the original version of the OAS Progression report, kept for reference.</li>
         <li><router-link to="/summit/tools/presentawards-legacy">Present Awards (legacy)</router-link> &mdash; the original version of the Present Awards tool, kept for reference.</li>
     </ul>
     </div>

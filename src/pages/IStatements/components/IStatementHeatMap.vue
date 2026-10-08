@@ -26,9 +26,9 @@
         stream label, which Vuetify's own header renderer (one <th> per header entry) cannot
         express.
 
-        Deliberately WITHOUT the .oas-heatmap-thead class, matching OASHeatMapVue: that class
-        paints the header Summit green, and Terrain does not style table headers at all. The
-        class stays in index.css for the legacy React OAS page, which still uses it.
+        Deliberately WITHOUT a thead class that paints the header Summit green, matching
+        OASHeatMapVue: Terrain does not style table headers at all. (The legacy React OAS page's
+        .oas-heatmap-thead rule did this; it was removed from index.css along with that page.)
       -->
       <template #header>
         <thead>

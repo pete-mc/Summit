@@ -15,8 +15,11 @@ Vuetify build of OAS Progression proved out well enough (see
 `.claude/OASProgression/PLAN_VUE.md`) that it replaced the original React page as the
 one linked from Summit's nav menu — see `src/router/SummitRouter.ts`, where
 `/summit/reports/oasprogression` and `/summit/tools/PresentAwards` route to the Vue
-components, and the React originals survive only at unlinked `-legacy` routes for
-reference. I Statements was built Vue-first and has no React equivalent at all.
+components. OAS Progression's React original has since been deleted outright (its
+shared, non-UI service layer survives under `src/pages/OasProgression/services/`,
+still imported by the Vue page and I Statements — only the React components/route were
+removed); Present Awards' React original still survives at an unlinked `-legacy` route
+for reference. I Statements was built Vue-first and has no React equivalent at all.
 
 React (18.2) is **not** gone — it's still live and routed for pages that haven't been
 rebuilt: `Home`, `MilestoneReport`, `OasReport`, `PeakAward`, `Topo`,
@@ -116,8 +119,9 @@ pages). For new/Vue work see the next section.
 (see `.claude/OASProgression/PLAN_VUE.md`), evaluating whether Vuetify was worth
 adopting more broadly — it was, and Vuetify is now the default for new pages (see
 above). `OasProgressionVue` became the primary OAS Progression page (route
-`/summit/reports/oasprogression`); the original React version lives on unlinked at
-`/summit/reports/oasprogression-legacy` as a reference. It does not use Summit's
+`/summit/reports/oasprogression`); the original React version has since been deleted
+outright, rather than kept unlinked like Present Awards' legacy page — see the top of
+this file. It does not use Summit's
 `--summit-*` tokens; it has its own small type scale, defined once as CSS custom
 properties on `.oas-vue-content` in
 [`OasProgressionVueContent.vue`](../src/pages/OasProgressionVue/components/OasProgressionVueContent.vue):

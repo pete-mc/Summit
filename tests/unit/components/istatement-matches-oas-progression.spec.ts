@@ -60,10 +60,10 @@ describe("I Statements heat map — the green header is gone", () => {
     expect(withoutComments(I_HEAT_MAP)).not.toContain("oas-heatmap-thead");
   });
 
-  it("keeps .oas-heatmap-thead in index.css for the legacy React page", () => {
-    // Still used by src/pages/OasProgression/components/OASHeatMap.tsx.
-    expect(INDEX_CSS).toContain(".oas-heatmap-thead th");
-    expect(read("src/pages/OasProgression/components/OASHeatMap.tsx")).toContain("oas-heatmap-thead");
+  it("no longer defines .oas-heatmap-thead in index.css", () => {
+    // Only the legacy React OAS page (removed) ever used this class; the CSS cleanup pass
+    // removed the now-dead rule along with the rest of that page's dropped selectors.
+    expect(INDEX_CSS).not.toContain(".oas-heatmap-thead");
   });
 
   it("gives the sticky header an explicit opaque background", () => {

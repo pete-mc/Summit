@@ -75,14 +75,9 @@ was fixed; if you see a function that splits a name string on whitespace anywher
 codebase going forward, it is very likely solving a problem that carrying `firstName`/
 `lastName` through from the start would avoid entirely.
 
-The legacy React OAS Progression page (`src/pages/OasProgression/components/OASHeatMap.tsx`,
-unlinked at `/summit/reports/oasprogression-legacy`, not actively developed — see
-`.claude/DESIGN.md`) still has its own, simpler version of this pattern
-(`memberName.split(" ")[0]` for its "hide last name" display option). It was left alone
-deliberately — per this project's own convention, a still-active-but-frozen React page gets
-small matching fixes only if it's being touched for another reason, not rewritten as an
-incidental side effect of a Vue-side fix. If you do touch that file for something else, prefer
-fixing it to match this rule rather than extending the old pattern.
+The legacy React OAS Progression page that used to have its own, simpler version of this pattern
+has since been deleted entirely (see `.claude/DESIGN.md`) — this history is kept only in case an
+old commit/plan is cross-referenced against current guidance.
 
 ## For future Vue pages (I Statements, Present Awards, anything new)
 
