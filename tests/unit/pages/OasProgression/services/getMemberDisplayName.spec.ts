@@ -5,37 +5,37 @@ import { getCodename } from "@/pages/OasProgression/services/getCodename";
  * Takes firstName/lastName directly (Terrain's own real, separate fields) rather than a combined
  * name string re-split on whitespace — see .claude/OASProgression/NAME_RESOLUTION.md. This is why
  * every case below passes firstName/lastName as two separate arguments rather than one combined
- * "Alba Sayer" string the function would have to guess how to split.
+ * "Amy Scout" string the function would have to guess how to split.
  */
 describe("getMemberDisplayName", () => {
   it("returns the full name (first + last) for 'full'", () => {
-    expect(getMemberDisplayName("Alba", "Sayer", "m1", "full")).toBe("Alba Sayer");
+    expect(getMemberDisplayName("Amy", "Scout", "m1", "full")).toBe("Amy Scout");
   });
 
   it("returns only the first name for 'first'", () => {
-    expect(getMemberDisplayName("Alba", "Sayer", "m1", "first")).toBe("Alba");
+    expect(getMemberDisplayName("Amy", "Scout", "m1", "first")).toBe("Amy");
   });
 
   it("formats as FirstName.L for 'firstInitialLast'", () => {
-    expect(getMemberDisplayName("Alba", "Sayer", "m1", "firstInitialLast")).toBe("Alba.S");
+    expect(getMemberDisplayName("Amy", "Scout", "m1", "firstInitialLast")).toBe("Amy.S");
   });
 
   it("formats as F.LastName for 'firstLastInitial'", () => {
-    expect(getMemberDisplayName("Alba", "Sayer", "m1", "firstLastInitial")).toBe("A.Sayer");
+    expect(getMemberDisplayName("Amy", "Scout", "m1", "firstLastInitial")).toBe("A.Scout");
   });
 
   it("resolves the deterministic codename for 'codename', matching getCodename", () => {
-    expect(getMemberDisplayName("Alba", "Sayer", "m1", "codename")).toBe(getCodename("m1"));
+    expect(getMemberDisplayName("Amy", "Scout", "m1", "codename")).toBe(getCodename("m1"));
   });
 
   it("falls back to 'Scout' for the initial-style formats when there is no last name", () => {
-    expect(getMemberDisplayName("Alba", "", "m1", "firstInitialLast")).toBe("Scout");
-    expect(getMemberDisplayName("Alba", "", "m1", "firstLastInitial")).toBe("Scout");
+    expect(getMemberDisplayName("Amy", "", "m1", "firstInitialLast")).toBe("Scout");
+    expect(getMemberDisplayName("Amy", "", "m1", "firstLastInitial")).toBe("Scout");
   });
 
   it("'first' and 'full' still work sensibly when there is no last name", () => {
-    expect(getMemberDisplayName("Alba", "", "m1", "first")).toBe("Alba");
-    expect(getMemberDisplayName("Alba", "", "m1", "full")).toBe("Alba");
+    expect(getMemberDisplayName("Amy", "", "m1", "first")).toBe("Amy");
+    expect(getMemberDisplayName("Amy", "", "m1", "full")).toBe("Amy");
   });
 
   // Regression: the previous implementation re-split a combined "first last" string on

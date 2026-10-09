@@ -16,16 +16,16 @@ A toggle changing how the heat map is organised, and matching grouping on the ta
 **Group by Skill** (today's layout, stays the default): a section per skill, listing every member.
 Answers *"how is the unit doing at Bushwalking?"*
 
-**Group by Member** (new): a section per member, listing their skills. Answers *"what has Alba
+**Group by Member** (new): a section per member, listing their skills. Answers *"what has Amy
 done across everything?"* — which is the question asked when talking to one member.
 
 ```
-Alba Sayer                         1  2  3  4  5
+Amy Scout                         1  2  3  4  5
   🥾 Bushwalking      ▓▓▓░░  ░░░  ░
   ⛺ Camping          ▓▓▓▓▓  ▓▓░  ░
   🛶 Paddling         ░░░░░  ░░░  ░
 
-Juanita Richardson                 1  2  3  4  5
+Jess Example                 1  2  3  4  5
   🥾 Bushwalking      ▓▓░░░  ░░░  ░
 ```
 

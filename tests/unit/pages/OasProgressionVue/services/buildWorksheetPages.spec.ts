@@ -8,7 +8,7 @@ import { UNASSIGNED_PATROL } from "@/pages/OasProgression/services/filterHeatMap
 // those are covered directly in getMemberDisplayName.spec.ts and filterHeatMapSections.spec.ts).
 // Pass firstName/lastName explicitly when a test needs a specific sort order.
 function makeRow(overrides: Partial<OASProgressionRow> = {}): OASProgressionRow {
-  const memberName = overrides.memberName ?? "Alba Sayer";
+  const memberName = overrides.memberName ?? "Amy Scout";
   const [firstName, ...rest] = memberName.split(" ");
   return {
     unitId: "u1",
@@ -64,7 +64,7 @@ describe("buildWorksheetPages", () => {
   });
 
   it("gives a member with no progress in a Skill/Stage a column with all-null cells (decision 1)", () => {
-    const rows = [makeRow({ memberId: "m1", memberName: "Alba Sayer", stage: 1, inputId: "a1", answered: true, date: "2024-02-03" }), makeRow({ memberId: "m2", memberName: "Juanita Richardson", stage: 1, inputId: "a1" })];
+    const rows = [makeRow({ memberId: "m1", memberName: "Amy Scout", stage: 1, inputId: "a1", answered: true, date: "2024-02-03" }), makeRow({ memberId: "m2", memberName: "Jess Example", stage: 1, inputId: "a1" })];
 
     const result = buildWorksheetPages(rows, options());
 
@@ -76,7 +76,7 @@ describe("buildWorksheetPages", () => {
   });
 
   it("uses identical members, in identical order, across every page in the set", () => {
-    const rows = [makeRow({ memberId: "m1", memberName: "Alba Sayer", stage: 1, inputId: "a1" }), makeRow({ memberId: "m2", memberName: "Juanita Richardson", stage: 4, branch: "pioneering", inputId: "a4" })];
+    const rows = [makeRow({ memberId: "m1", memberName: "Amy Scout", stage: 1, inputId: "a1" }), makeRow({ memberId: "m2", memberName: "Jess Example", stage: 4, branch: "pioneering", inputId: "a4" })];
 
     const result = buildWorksheetPages(rows, options());
 
@@ -95,9 +95,9 @@ describe("buildWorksheetPages", () => {
 
   it("keeps cells index-aligned with members", () => {
     const rows = [
-      makeRow({ memberId: "m1", memberName: "Alba", inputId: "a1" }),
-      makeRow({ memberId: "m2", memberName: "Juanita", inputId: "a1", answered: true, date: "2024-02-03" }),
-      makeRow({ memberId: "m3", memberName: "Phoebe", inputId: "a1" }),
+      makeRow({ memberId: "m1", memberName: "Amy", inputId: "a1" }),
+      makeRow({ memberId: "m2", memberName: "Jess", inputId: "a1", answered: true, date: "2024-02-03" }),
+      makeRow({ memberId: "m3", memberName: "Nora", inputId: "a1" }),
     ];
 
     const result = buildWorksheetPages(rows, options());
@@ -126,13 +126,13 @@ describe("buildWorksheetPages", () => {
   });
 
   it("resolves codenames and first-name-only via the Names format option", () => {
-    const rows = [makeRow({ memberId: "m1", memberName: "Alba Sayer" })];
+    const rows = [makeRow({ memberId: "m1", memberName: "Amy Scout" })];
 
     const codenamed = buildWorksheetPages(rows, options({ nameFormat: "codename" }));
     expect(codenamed.members[0].displayName).toBe(getCodename("m1"));
 
     const firstNameOnly = buildWorksheetPages(rows, options({ nameFormat: "first" }));
-    expect(firstNameOnly.members[0].displayName).toBe("Alba");
+    expect(firstNameOnly.members[0].displayName).toBe("Amy");
   });
 
   it("populates patrolGroups only when breakByPatrol is on", () => {
@@ -149,7 +149,7 @@ describe("buildWorksheetPages", () => {
     // Members are columns on a worksheet (the opposite axis from the heat map) — "break by
     // patrol" must reorder `members` itself, not just label it, or the rendered column order
     // would silently disagree with the patrol-span header built from patrolGroups.
-    const rows = [makeRow({ memberId: "m1", memberName: "Alba", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
+    const rows = [makeRow({ memberId: "m1", memberName: "Amy", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
     const bothPatrols = options({ selectedPatrols: ["Wombats", "Kookaburras"] });
 
     const unordered = buildWorksheetPages(rows, bothPatrols);
@@ -208,9 +208,9 @@ describe("buildWorksheetPages", () => {
 
     it("keeps cells index-aligned after narrowing out the middle member", () => {
       const rows = [
-        makeRow({ memberId: "m1", memberName: "Alba", inputId: "a1" }),
-        makeRow({ memberId: "m2", memberName: "Juanita", inputId: "a1", awarded: true, answered: true }),
-        makeRow({ memberId: "m3", memberName: "Phoebe", inputId: "a1", answered: true, date: "2024-02-03" }),
+        makeRow({ memberId: "m1", memberName: "Amy", inputId: "a1" }),
+        makeRow({ memberId: "m2", memberName: "Jess", inputId: "a1", awarded: true, answered: true }),
+        makeRow({ memberId: "m3", memberName: "Nora", inputId: "a1", answered: true, date: "2024-02-03" }),
       ];
 
       const result = buildWorksheetPages(rows, options({ hideCompleted: true }));
@@ -339,8 +339,8 @@ describe("splitPageIntoColumnBatches", () => {
 describe("transposeWorksheetPage", () => {
   it("turns members into rows and I-Statements into columns", () => {
     const rows = [
-      makeRow({ memberId: "m1", memberName: "Alba", inputGroup: "Plan", inputId: "p1" }),
-      makeRow({ memberId: "m1", memberName: "Alba", inputGroup: "Do", inputId: "d1" }),
+      makeRow({ memberId: "m1", memberName: "Amy", inputGroup: "Plan", inputId: "p1" }),
+      makeRow({ memberId: "m1", memberName: "Amy", inputGroup: "Do", inputId: "d1" }),
       makeRow({ memberId: "m2", memberName: "Beth", inputGroup: "Plan", inputId: "p1" }),
       makeRow({ memberId: "m2", memberName: "Beth", inputGroup: "Do", inputId: "d1" }),
     ];
@@ -365,7 +365,7 @@ describe("transposeWorksheetPage", () => {
   });
 
   it("keeps each row's cells aligned with `columns`, not the original per-member cell order", () => {
-    const rows = [makeRow({ memberId: "m1", memberName: "Alba", inputId: "a1", answered: true, date: "2024-02-03" }), makeRow({ memberId: "m2", memberName: "Beth", inputId: "a1" })];
+    const rows = [makeRow({ memberId: "m1", memberName: "Amy", inputId: "a1", answered: true, date: "2024-02-03" }), makeRow({ memberId: "m2", memberName: "Beth", inputId: "a1" })];
     const page = buildWorksheetPages(rows, options()).pages[0];
 
     const transposed = transposeWorksheetPage(page);
@@ -375,7 +375,7 @@ describe("transposeWorksheetPage", () => {
   });
 
   it("preserves patrol order in rows, since it transposes page.members as-is (already patrol-ordered when breakByPatrol is on)", () => {
-    const rows = [makeRow({ memberId: "m1", memberName: "Alba", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
+    const rows = [makeRow({ memberId: "m1", memberName: "Amy", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
     const page = buildWorksheetPages(rows, options({ selectedPatrols: ["Wombats", "Kookaburras"], breakByPatrol: true })).pages[0];
 
     const transposed = transposeWorksheetPage(page);

@@ -186,7 +186,7 @@ against live unit data.
 
 ## Post-review fix — awarded status must override stale per-cell answer matching
 
-User-reported (via `.claude/DEV_NOTES.md`, example: Alba Survival Stage 4):
+User-reported (via `.claude/DEV_NOTES.md`, example: Amy Survival Stage 4):
 a level already Awarded to a member sometimes rendered as individual
 i-statement squares (some grey/unanswered) instead of the solid green
 "complete" bar.

@@ -60,7 +60,7 @@ rotated).
 │         │  Plan     │   Do  │Review│ Verify   │  <- group-band header row (spans its columns)
 │ Member  │St1│St2│St3│St4│St5│ St6  │  St7      │  <- I-Statement header row, TEXT ROTATED
 ├─────────┼───┼───┼───┼───┼───┼──────┼───────────┤
-│ Alba    │[x]│03/.│.. │.. │.. │ ..   │  ..       │
+│ Amy    │[x]│03/.│.. │.. │.. │ ..   │  ..       │
 │ Beth    │.. │.. │.. │.. │.. │ ..   │  ..       │
 │ ... (40 rows, unbounded) ...
 ```

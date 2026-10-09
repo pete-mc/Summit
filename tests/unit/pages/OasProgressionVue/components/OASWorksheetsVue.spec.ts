@@ -28,7 +28,7 @@ import { UNASSIGNED_PATROL } from "@/pages/OasProgression/services/filterHeatMap
 // firstName/lastName default to a split of memberName purely as test-fixture convenience — see
 // buildWorksheetPages.spec.ts's identical fixture for why.
 function makeRow(overrides: Partial<OASProgressionRow> = {}): OASProgressionRow {
-  const memberName = overrides.memberName ?? "Alba Sayer";
+  const memberName = overrides.memberName ?? "Amy Scout";
   const [firstName, ...rest] = memberName.split(" ");
   return {
     unitId: "u1",
@@ -272,7 +272,7 @@ describe("OASWorksheetsVue computed", () => {
     // Fixed, standing in for "whatever the ResizeObserver measured" — see columnsLayoutPages' own
     // SCREEN_WIDTH_PX comment above for why a fixed value (not the pre-mount fallback) is used here.
     const SCREEN_WIDTH_PX = PRINT_USABLE_WIDTH_PX;
-    // Every fixture below uses a single member, "Alba Sayer" (makeRow's own default memberName) —
+    // Every fixture below uses a single member, "Amy Scout" (makeRow's own default memberName) —
     // the member-name column width is MEASURED now (memberNameColumnWidthPx), not a fixed constant,
     // so MAX_FITTING_SCREEN must be computed against that same real name via the real component
     // logic's own maxFittingTransposedColumns, not assumed.
@@ -448,7 +448,7 @@ describe("OASWorksheetsVue computed", () => {
     });
 
     it("returns one span per patrol, column counts summing to the page's member count, in the same order as the columns", () => {
-      const rows = [makeRow({ memberId: "m1", memberName: "Alba", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
+      const rows = [makeRow({ memberId: "m1", memberName: "Amy", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
       const context: { items: OASProgressionRow[]; filters: OASProgressionVueFilterState; availablePatrols: string[]; pageSet?: unknown } = {
         items: rows,
         filters: makeFilters({ worksheetBreakByPatrol: true, worksheetSelectedPatrols: ["Wombats", "Kookaburras"] }),
@@ -499,7 +499,7 @@ describe("OASWorksheetsVue computed", () => {
     it("flags only the first and last column of each patrol group, not every column in it", () => {
       // Columns end up [m2 (Kookaburras, 1 member), m1 (Wombats), m3 (Wombats)] — see the
       // patrolSpansForPage test above for why.
-      const rows = [makeRow({ memberId: "m1", memberName: "Alba", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
+      const rows = [makeRow({ memberId: "m1", memberName: "Amy", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
       const context = makeContext(rows, { worksheetBreakByPatrol: true }, ["Wombats", "Kookaburras"]);
       const page = context.pageSet.pages[0] as WorksheetPage;
 
@@ -582,7 +582,7 @@ describe("OASWorksheetsVue computed", () => {
     it("places a divider before the first row and before each patrol change, not on every row", () => {
       // Row order ends up [m2 (Kookaburras), m1 (Wombats), m3 (Wombats)] — same patrol ordering
       // buildWorksheetPages already applies to columns, now read as rows (Layout B).
-      const rows = [makeRow({ memberId: "m1", memberName: "Alba", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
+      const rows = [makeRow({ memberId: "m1", memberName: "Amy", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
       const { context, transposed } = makeTransposedContext(rows, true);
 
       expect(methods.patrolDividerBeforeRow.call(context, transposed, 0)).toBe("Kookaburras");
@@ -632,7 +632,7 @@ describe("TEMPORARY DEV AID — large-unit preview via localStorage (delete alon
     });
 
     it("multiplies the member count accordingly, with distinct synthesized memberIds", () => {
-      const items = [makeRow({ memberId: "m1", memberName: "Alba Sayer" }), makeRow({ memberId: "m2", memberName: "Beth Example" })];
+      const items = [makeRow({ memberId: "m1", memberName: "Amy Scout" }), makeRow({ memberId: "m2", memberName: "Beth Example" })];
 
       const result = duplicateMembersForDevPreview(items, 3);
 
@@ -659,15 +659,15 @@ describe("TEMPORARY DEV AID — large-unit preview via localStorage (delete alon
     });
 
     it("gives each duplicate a distinct lastName (not just memberName), kept in sync with each other — sorting/display reads lastName directly, not memberName", () => {
-      const items = [makeRow({ memberId: "m1", memberName: "Alba Sayer" })];
+      const items = [makeRow({ memberId: "m1", memberName: "Amy Scout" })];
 
       const result = duplicateMembersForDevPreview(items, 2);
 
       const dup1 = result.find((r) => r.memberId === "m1-dev1")!;
       const dup2 = result.find((r) => r.memberId === "m1-dev2")!;
-      expect(dup1.lastName).not.toBe("Sayer");
+      expect(dup1.lastName).not.toBe("Scout");
       expect(dup1.lastName).not.toBe(dup2.lastName);
-      expect(dup1.firstName).toBe("Alba");
+      expect(dup1.firstName).toBe("Amy");
       expect(dup1.memberName).toBe(`${dup1.firstName} ${dup1.lastName}`);
       expect(dup2.memberName).toBe(`${dup2.firstName} ${dup2.lastName}`);
     });

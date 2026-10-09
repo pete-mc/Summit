@@ -122,7 +122,7 @@ Structure, reproducing the xlsx layout:
 
 ```
 ┌─────────┬──────────────────────────┬─────────┬─────────┬─────────┐
-│         │ Stage 5 - Bushwalking    │ Alba    │ Juanita │ Phoebe  │  <- thead
+│         │ Stage 5 - Bushwalking    │ Amy    │ Jess │ Nora  │  <- thead
 ├─────────┼──────────────────────────┼─────────┼─────────┼─────────┤
 │         │ I know how to identify…  │  [    ] │03/02/24 │  [    ] │
 │  Plan   │ I know how to purify…    │  [    ] │03/02/24 │  [    ] │  <- rowspan
