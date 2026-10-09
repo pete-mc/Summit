@@ -48,6 +48,17 @@ export interface OASProgressionRow {
   answered: boolean;
   awarded: boolean;
   date: string | null;
+  /**
+   * The section this cell's achievement was recorded against (Terrain's own `achievement.section`
+   * on the underlying TerrainAchievements record) — null for a blank/unanswered cell, where there
+   * is no achievement to read it from. Used to tell apart progress made in a member's CURRENT
+   * section from progress made in an earlier (lower) section before they moved up, e.g. for the
+   * Peak Award Summary tab's Progressions/Special counts, which must only count the current
+   * section's own achievements — see buildPeakAwardSummaryRows.ts and
+   * .claude/OASProgression/PLAN_PEAK_AWARD_SUMMARY.md. Not used by the heat map, which
+   * deliberately shows a member's whole OAS history regardless of section.
+   */
+  section: string | null;
 }
 
 export function flattenOASTemplate(template: OASTemplate): FlattenedIStatement[] {
@@ -97,6 +108,7 @@ export function buildBlankMatrix(unitId: string, stream: string, branch: string,
         answered: false,
         awarded: false,
         date: null,
+        section: null,
       });
     });
   });
@@ -190,6 +202,9 @@ export function applyAchievementsToMatrix(matrix: OASProgressionRow[], achieveme
 
     if (isInProgress) {
       applyAnswersToMemberRows(memberRows, achievement, null);
+      memberRows.forEach((row) => {
+        row.section = achievement.section;
+      });
       return;
     }
 
@@ -203,6 +218,7 @@ export function applyAchievementsToMatrix(matrix: OASProgressionRow[], achieveme
         row.answered = true;
         row.awarded = true;
         row.date = importedDate;
+        row.section = achievement.section;
       });
       return;
     }
@@ -219,6 +235,7 @@ export function applyAchievementsToMatrix(matrix: OASProgressionRow[], achieveme
       if (!row.date) {
         row.date = achievement.status_updated;
       }
+      row.section = achievement.section;
     });
   });
 

@@ -8,16 +8,25 @@ import OASWorksheetsVue from "./OASWorksheetsVue.vue";
 import SummitLoadingState from "@/components/SummitLoadingState.vue";
 import { filterOASProgressionRows } from "./OASProgressionTableVue";
 import { groupRowsForHeatMap } from "@/pages/OasProgression/services/groupRowsForHeatMap";
-import { collectPatrolNames, hasUnassignedMembers, UNASSIGNED_PATROL, OAS_SKILLS } from "@/pages/OasProgression/services/filterHeatMapSections";
+import { buildPeakAwardSummaryRows, sortPeakAwardSummaryRows, type PeakAwardMemberRow } from "@/pages/OasProgression/services/buildPeakAwardSummaryRows";
+import { PEAK_AWARD_REQUIREMENTS, type PeakAwardRequirement } from "@/pages/OasProgression/data/peakAwardRequirements";
+import { collectPatrolNames, hasUnassignedMembers, filterMembersByPatrol, UNASSIGNED_PATROL, OAS_SKILLS } from "@/pages/OasProgression/services/filterHeatMapSections";
 import { loadOASProgressionVueFilters, saveOASProgressionVueFilters, type OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
 import { exportElementToPdf, exportGridToExcel, exportGridToPdf, type GridExportColumn, type GridExportRow } from "@/components/gridExport";
 import { createLogger } from "@/helpers";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
+import type { TerrainAchievementsSection } from "@/shared";
+import OASPeakAwardSummaryFiltersVue from "./OASPeakAwardSummaryFiltersVue.vue";
+import OASPeakAwardSummaryVue from "./OASPeakAwardSummaryVue.vue";
 
 const logger = createLogger("OasProgressionVueContent");
 
 interface HeatMapVueInstance {
+  getExportTable(): HTMLTableElement | undefined;
+}
+
+interface SummaryVueInstance {
   getExportTable(): HTMLTableElement | undefined;
 }
 
@@ -42,7 +51,15 @@ const TABLE_EXPORT_COLUMNS: GridExportColumn[] = [
 const MAX_STAGE = 9;
 
 const DEFAULT_FILTERS: OASProgressionVueFilterState = {
-  viewMode: "heatmap",
+  // Summary is the first tab (DEV_NOTES.md: "Make it the first tab") and now the default landing
+  // tab for anyone who has never customized their filters — a returning user's own saved viewMode
+  // is unaffected, since loadInitialFilters spreads stored values over these defaults.
+  viewMode: "summary",
+  summaryMemberFilter: "",
+  summaryNameFormat: "full",
+  // Same null = "not yet resolved" sentinel as selectedPatrols below.
+  summarySelectedPatrols: null,
+  summarySortBy: "firstName",
   // Skill-first is the original layout, so an existing user sees no change on upgrade.
   groupBy: "skill",
   memberFilter: "",
@@ -83,10 +100,36 @@ const DEFAULT_FILTERS: OASProgressionVueFilterState = {
 // Exhaustive list of valid viewMode values, kept separately from the type so a present-but-invalid
 // stored value (as opposed to a missing key, which the DEFAULT_FILTERS spread already covers) can
 // be detected and corrected rather than selecting no tab at all — see PLAN_STAGE_2.md §5.
-const VALID_VIEW_MODES: OASProgressionVueFilterState["viewMode"][] = ["heatmap", "table", "worksheets"];
+const VALID_VIEW_MODES: OASProgressionVueFilterState["viewMode"][] = ["summary", "heatmap", "table", "worksheets"];
+
+/**
+ * Which filter keys belong to each tab — used by onResetFilters so "Reset filters" on one tab's
+ * own filter bar only resets THAT tab's filters, not every tab's at once. Table has no entry: its
+ * column filters live in tableColumnFilters (a separate piece of state), not this filters object,
+ * and it has no "Reset filters" button of its own. Each list is exhaustive for its view: every key
+ * in OASProgressionVueFilterState other than `viewMode` itself (which this mechanism never
+ * touches — see onViewModeTabChange's own comment on why) belongs to exactly one of these three.
+ */
+const SUMMARY_FILTER_KEYS = ["summaryMemberFilter", "summaryNameFormat", "summarySelectedPatrols", "summarySortBy"] as const;
+const HEATMAP_FILTER_KEYS = [
+  "groupBy",
+  "memberFilter",
+  "nameFormat",
+  "selectedPatrols",
+  "breakByPatrol",
+  "showEmptySkillRows",
+  "showEmptyTopStages",
+  "showAwarded",
+  "showNotStarted",
+  "showAnswered",
+  "visibleStreams",
+  "visibleStages",
+  "sortBy",
+] as const;
+const WORKSHEETS_FILTER_KEYS = ["worksheetVisibleSkills", "worksheetVisibleStages", "worksheetNameFormat", "worksheetSelectedPatrols", "worksheetBreakByPatrol", "worksheetShowCompleted", "worksheetLayout"] as const;
 
 export function sanitiseViewMode(viewMode: unknown): OASProgressionVueFilterState["viewMode"] {
-  return VALID_VIEW_MODES.includes(viewMode as OASProgressionVueFilterState["viewMode"]) ? (viewMode as OASProgressionVueFilterState["viewMode"]) : "heatmap";
+  return VALID_VIEW_MODES.includes(viewMode as OASProgressionVueFilterState["viewMode"]) ? (viewMode as OASProgressionVueFilterState["viewMode"]) : "summary";
 }
 
 function loadInitialFilters(): OASProgressionVueFilterState {
@@ -100,11 +143,14 @@ function loadInitialFilters(): OASProgressionVueFilterState {
 
 export default defineComponent({
   name: "OasProgressionVueContent",
-  components: { OASHeatMapVue, OASProgressionFiltersVue, OASProgressionTableVue, OASWorksheetFiltersVue, OASWorksheetsVue, SummitLoadingState },
+  components: { OASHeatMapVue, OASPeakAwardSummaryFiltersVue, OASPeakAwardSummaryVue, OASProgressionFiltersVue, OASProgressionTableVue, OASWorksheetFiltersVue, OASWorksheetsVue, SummitLoadingState },
   props: {
     items: { type: Array as PropType<OASProgressionRow[]>, required: true },
     trunkStageCounts: { type: Object as PropType<Record<string, number>>, required: true },
     members: { type: Array as PropType<TerrainUnitMember[]>, required: true },
+    /** The unit's current section — undefined when Terrain hasn't resolved one yet. Picks which
+     *  PeakAwardRequirement the Summary tab applies; see OasProgressionVue.ts's own comment. */
+    section: { type: String as PropType<TerrainAchievementsSection | undefined>, default: undefined },
     // Vue 2 has no built-in constructor check for Set (only Object/Array/etc.), so `type` is
     // omitted here rather than declared as Object — a Set fails that check at runtime and logs
     // a spurious "[Vue warn]: Invalid prop" despite being exactly the value passed in.
@@ -181,6 +227,39 @@ export default defineComponent({
     tableFilteredItems(): OASProgressionRow[] {
       return filterOASProgressionRows(this.items, this.tableColumnFilters);
     },
+    /**
+     * The active section's Peak Award rule, or undefined when the section hasn't resolved yet
+     * (TerrainState.getSectionName() returned nothing) — gates the Summary tab's table in favour
+     * of an explicit "could not determine section" message, rather than guessing a section and
+     * showing a confidently wrong gap to a leader.
+     */
+    peakAwardRequirement(): PeakAwardRequirement | undefined {
+      return this.section ? PEAK_AWARD_REQUIREMENTS[this.section] : undefined;
+    },
+    /**
+     * "4 above Stage 3"-style text shown below the Special header, the same way Core Skills shows
+     * its skill names below its own header — describes the condition itself (not any one member's
+     * progress toward it, which is the "X of Y" text inside each member's own cell instead).
+     */
+    specialConditionText(): string {
+      const special = this.peakAwardRequirement?.special;
+      return special ? `${special.minCount} above Stage ${special.minStage - 1}` : "";
+    },
+    /** Pure per-member aggregation — same OASProgressionRow[] the heat map renders from, no new fetching. */
+    peakAwardSummaryRows(): PeakAwardMemberRow[] {
+      if (!this.peakAwardRequirement || !this.section) {
+        return [];
+      }
+      return buildPeakAwardSummaryRows(this.items, this.members, this.peakAwardRequirement, this.section);
+    },
+    /** Member/Patrol/Sort filters applied, matching the heat map's own filter semantics (empty patrol selection = show nothing). */
+    filteredPeakAwardSummaryRows(): PeakAwardMemberRow[] {
+      const needle = this.filters.summaryMemberFilter.trim().toLowerCase();
+      const nameFiltered = needle ? this.peakAwardSummaryRows.filter((row) => row.memberName.toLowerCase().includes(needle)) : this.peakAwardSummaryRows;
+      const selectedPatrols = this.filters.summarySelectedPatrols ?? [];
+      const patrolFiltered = selectedPatrols.length === 0 ? [] : filterMembersByPatrol(nameFiltered, selectedPatrols);
+      return sortPeakAwardSummaryRows(patrolFiltered, this.filters.summarySortBy);
+    },
   },
   watch: {
     filters: {
@@ -211,6 +290,9 @@ export default defineComponent({
       if (this.filters.worksheetSelectedPatrols === null) {
         resolved.worksheetSelectedPatrols = newOptions;
       }
+      if (this.filters.summarySelectedPatrols === null) {
+        resolved.summarySelectedPatrols = newOptions;
+      }
       if (Object.keys(resolved).length > 0) {
         this.filters = { ...this.filters, ...resolved };
       }
@@ -230,18 +312,42 @@ export default defineComponent({
       this.filters = { ...this.filters, viewMode };
     },
     onResetFilters() {
-      // Matches the React page's own resetFilters: viewMode is a page-level display choice, not
-      // a "filter" to reset, so it survives a reset.
+      // Resets only the CURRENTLY ACTIVE tab's own filters, not the whole shared filters object —
+      // each tab's "Reset filters" button is scoped to that tab alone (per the user's own
+      // instruction: "Pressing 'reset filters' on tab resets filters on all tabs. They should all
+      // be separate"). viewMode itself is never touched, matching the React page's own
+      // resetFilters: it's a page-level display choice, not a "filter" to reset.
       //
-      // selectedPatrols/worksheetSelectedPatrols are resolved here directly rather than left as
-      // null for the patrolFilterOptions watcher to pick up: patrol data was already loaded
-      // before this reset ran, so patrolFilterOptions's VALUE doesn't change when filters reset
-      // — Vue's watcher only fires on an actual change, so it would never fire and both would
-      // stay null (which reads as "show nothing" downstream) forever. Resolving synchronously
-      // here, the same way the watcher would, fixes "Patrol filter does not default to all ON
-      // when reset" — see .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
+      // Table has no key list (its own filters live in tableColumnFilters, not this object) and
+      // no "Reset filters" button in the template to ever call this while viewMode === "table" —
+      // falls through to resetting nothing, rather than guessing another tab's keys, if it
+      // somehow is.
+      const keysToReset: readonly (keyof OASProgressionVueFilterState)[] =
+        this.filters.viewMode === "summary" ? SUMMARY_FILTER_KEYS : this.filters.viewMode === "worksheets" ? WORKSHEETS_FILTER_KEYS : this.filters.viewMode === "heatmap" ? HEATMAP_FILTER_KEYS : [];
+
+      const resetValues: Partial<OASProgressionVueFilterState> = {};
+      keysToReset.forEach((key) => {
+        (resetValues as Record<string, unknown>)[key] = DEFAULT_FILTERS[key];
+      });
+
+      // The relevant Patrol filter (selectedPatrols / worksheetSelectedPatrols /
+      // summarySelectedPatrols — whichever this tab owns) is resolved here directly rather than
+      // left as DEFAULT_FILTERS' own `null`: patrol data was already loaded before this reset
+      // ran, so patrolFilterOptions's VALUE doesn't change when filters reset — Vue's watcher
+      // only fires on an actual change, so it would never fire and the field would stay null
+      // (which reads as "show nothing" downstream) forever. Resolving synchronously here, the
+      // same way the watcher would, fixes "Patrol filter does not default to all ON when reset"
+      // — see .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
       const resolvedPatrols = this.patrolFilterOptions.length > 0 ? this.patrolFilterOptions : null;
-      this.filters = { ...DEFAULT_FILTERS, viewMode: this.filters.viewMode, selectedPatrols: resolvedPatrols, worksheetSelectedPatrols: resolvedPatrols };
+      if (this.filters.viewMode === "summary") {
+        resetValues.summarySelectedPatrols = resolvedPatrols;
+      } else if (this.filters.viewMode === "worksheets") {
+        resetValues.worksheetSelectedPatrols = resolvedPatrols;
+      } else if (this.filters.viewMode === "heatmap") {
+        resetValues.selectedPatrols = resolvedPatrols;
+      }
+
+      this.filters = { ...this.filters, ...resetValues };
     },
     async onReloadAllClick() {
       this.isReloading = true;
@@ -271,6 +377,30 @@ export default defineComponent({
         this.exportFeedback = "PDF export complete";
       } catch (e) {
         logger.error("PDF export failed:", e);
+        const message = e instanceof Error ? e.message : "Unknown error";
+        this.exportFeedback = `PDF export failed: ${message}`;
+      }
+    },
+    async onSummaryPdfExportClick() {
+      const summary = this.$refs.summary as unknown as SummaryVueInstance | undefined;
+      const table = summary?.getExportTable();
+      if (!table) {
+        return;
+      }
+
+      try {
+        // Portrait, unlike the Heat Map's landscape — Summary is a flat, narrower table (no
+        // per-stage column fan-out), so it reads better tall than wide. See the user's own
+        // request (2026-10-09).
+        await exportElementToPdf({
+          element: table,
+          fileName: "OASPeakAwardSummaryVue.pdf",
+          title: "Terrain | Summit - OAS Progression Summary",
+          orientation: "portrait",
+        });
+        this.exportFeedback = "PDF export complete";
+      } catch (e) {
+        logger.error("Summary PDF export failed:", e);
         const message = e instanceof Error ? e.message : "Unknown error";
         this.exportFeedback = `PDF export failed: ${message}`;
       }

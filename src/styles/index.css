@@ -23,8 +23,10 @@
   --summit-focus-ring-width: 2px;
 
   --summit-color-status-unanswered: #edebe9;
-  --summit-color-status-answered: #7d6694;
-  --summit-color-status-awarded: #b3c9b3;
+  /* --summit-color-status-answered: #7d6694; */
+  --summit-color-status-answered: #ecb206;
+  /* --summit-color-status-awarded: #b3c9b3; */
+  --summit-color-status-awarded: var(--summit-color-bg-primary);
 }
 
 .editor-container {
@@ -393,13 +395,11 @@ nav:has(* a[href*="/terrain"]) * .NavMenu__expansion-panel-content,
 nav:has(* a[href*="/terrain"]) * .NavMenu__expansion-panel,
 .NavMenu__menu-group:has(* a[href*="/summit"]),
 div.NavMenu__menu-group:has(* a[href*="/summit/"]) * .NavMenu__expansion-panel,
-div.NavMenu__menu-group:has(* a[href*="/summit/"]) * div.NavMenu__subitem-content
-{
-  background: #004C00 !important;
+div.NavMenu__menu-group:has(* a[href*="/summit/"]) * div.NavMenu__subitem-content {
+  background: #004c00 !important;
   border-bottom: 1px solid #004100 !important;
   border-top: 0px solid #004100 !important;
 }
-
 
 nav:has(* a[href*="/terrain"]) * .NavMenu__expansion-panel:hover,
 nav:has(* a[href*="/terrain"]) * .NavMenu__secondary-link:hover,
@@ -413,16 +413,14 @@ div.NavMenu__expansion-panel.v-menu-group--active:has(* a[href*="/summit/"]) > .
   background: #006600 !important;
 }
 
-div.NavMenu__expansion-panel.v-menu-group--active:has(* a[href*="/summit/"]) * a.v-list-item--active > .NavMenu__subitem-content
-{
+div.NavMenu__expansion-panel.v-menu-group--active:has(* a[href*="/summit/"]) * a.v-list-item--active > .NavMenu__subitem-content {
   background: #197419 !important;
 }
 
 div.v-menu-group__header:has(* a[href*="/summit/"]),
 div.v-menu-group__header:has(> a[href*="/summit/"]),
-div.v-menu-group__items:has(* a[href*="/summit/"])
-{
-  background: #004C00 !important;
+div.v-menu-group__items:has(* a[href*="/summit/"]) {
+  background: #004c00 !important;
 }
 
 div.v-menu-group__header:has(> a[href*="/summit/"]):hover,
@@ -431,30 +429,28 @@ a.NavMenu__sub-subitem[href*="/summit/"]:hover {
   background-color: #006600 !important;
 }
 
-
-div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-content:hover{
+div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-content:hover {
   background: #006600 !important;
   cursor: default;
 }
-
 
 /* .e-grid .e-headercell {
   background-color: #004C00; 
   color: #fff;
 } */
 
-.summit-btn { 
-  background: linear-gradient(97.08deg,#004C00,#197419) !important;
+.summit-btn {
+  background: linear-gradient(97.08deg, #004c00, #197419) !important;
 }
-.summit-menu { 
-  background: #004C00 !important;
+.summit-menu {
+  background: #004c00 !important;
   border-bottom-color: #197419 !important;
   border-top-color: #197419 !important;
 }
 
 .summit-menu-outline {
-  border: 1px solid #004C00 !important;
-  color: #004C00 !important;
+  border: 1px solid #004c00 !important;
+  color: #004c00 !important;
 }
 .summit-menu:hover {
   background-color: #197419 !important;
@@ -703,5 +699,3 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   background: var(--summit-color-bg-muted);
   border-bottom: 1px solid var(--summit-color-border-subtle);
 }
-
-

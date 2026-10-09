@@ -3,6 +3,8 @@
 // options object under test can be required — each child is covered by its own logic tests. See
 // tests/unit/pages/PresentAwardsVue/PresentAwardsVueContent.spec.ts for the same pattern.
 jest.mock("@/pages/OasProgressionVue/components/OASHeatMapVue.vue", () => ({ __esModule: true, default: { name: "OASHeatMapVue", render: () => null } }), { virtual: true });
+jest.mock("@/pages/OasProgressionVue/components/OASPeakAwardSummaryFiltersVue.vue", () => ({ __esModule: true, default: { name: "OASPeakAwardSummaryFiltersVue", render: () => null } }), { virtual: true });
+jest.mock("@/pages/OasProgressionVue/components/OASPeakAwardSummaryVue.vue", () => ({ __esModule: true, default: { name: "OASPeakAwardSummaryVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/OasProgressionVue/components/OASProgressionFiltersVue.vue", () => ({ __esModule: true, default: { name: "OASProgressionFiltersVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/OasProgressionVue/components/OASProgressionTableVue.vue", () => ({ __esModule: true, default: { name: "OASProgressionTableVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/OasProgressionVue/components/OASWorksheetFiltersVue.vue", () => ({ __esModule: true, default: { name: "OASWorksheetFiltersVue", render: () => null } }), { virtual: true });
@@ -26,6 +28,10 @@ import { saveOASProgressionVueFilters, type OASProgressionVueFilterState } from 
 function makeStoredFilters(overrides: Partial<OASProgressionVueFilterState> = {}): OASProgressionVueFilterState {
   return {
     viewMode: "heatmap",
+    summaryMemberFilter: "",
+    summaryNameFormat: "full",
+    summarySelectedPatrols: [],
+    summarySortBy: "firstName",
     groupBy: "skill",
     memberFilter: "",
     nameFormat: "full",
@@ -60,15 +66,16 @@ function loadFiltersViaComponentData(): OASProgressionVueFilterState {
 
 describe("sanitiseViewMode", () => {
   it("passes through a recognised viewMode unchanged", () => {
+    expect(sanitiseViewMode("summary")).toBe("summary");
     expect(sanitiseViewMode("table")).toBe("table");
     expect(sanitiseViewMode("heatmap")).toBe("heatmap");
     expect(sanitiseViewMode("worksheets")).toBe("worksheets");
   });
 
-  it("falls back to heatmap for an unrecognised value", () => {
-    expect(sanitiseViewMode("bogus")).toBe("heatmap");
-    expect(sanitiseViewMode(undefined)).toBe("heatmap");
-    expect(sanitiseViewMode(null)).toBe("heatmap");
+  it("falls back to summary for an unrecognised value", () => {
+    expect(sanitiseViewMode("bogus")).toBe("summary");
+    expect(sanitiseViewMode(undefined)).toBe("summary");
+    expect(sanitiseViewMode(null)).toBe("summary");
   });
 });
 
@@ -89,10 +96,10 @@ describe("OasProgressionVueContent view mode", () => {
     expect(loadFiltersViaComponentData().viewMode).toBe("worksheets");
   });
 
-  it("sanitises a present-but-invalid persisted viewMode back to heatmap rather than selecting nothing", () => {
+  it("sanitises a present-but-invalid persisted viewMode back to summary rather than selecting nothing", () => {
     saveOASProgressionVueFilters(makeStoredFilters({ viewMode: "bogus" as OASProgressionVueFilterState["viewMode"] }));
 
-    expect(loadFiltersViaComponentData().viewMode).toBe("heatmap");
+    expect(loadFiltersViaComponentData().viewMode).toBe("summary");
   });
 
   it("onViewModeTabChange stores the tab's own value string, not an index", () => {
@@ -108,36 +115,104 @@ describe("OasProgressionVueContent view mode", () => {
   it("onResetFilters leaves viewMode untouched", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const methods = (OasProgressionVueContent as any).methods;
-    const context = { filters: makeStoredFilters({ viewMode: "table", memberFilter: "someone" }), patrolFilterOptions: [] };
+    const context = { filters: makeStoredFilters({ viewMode: "heatmap", memberFilter: "someone" }), patrolFilterOptions: [] };
 
     methods.onResetFilters.call(context);
 
-    expect(context.filters.viewMode).toBe("table");
+    expect(context.filters.viewMode).toBe("heatmap");
     expect(context.filters.memberFilter).toBe("");
   });
 
-  // Worksheets defaults are now narrowed (Camping / stage 1 only — DEV_NOTES.md: "To limit
-  // processing overhead"), not "everything" — set up a "before reset" state that differs from
-  // those defaults so the test actually demonstrates a reset, not a coincidental match.
-  it("onResetFilters resets worksheet* keys too, since one shared reset covers the whole filter object", () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const methods = (OasProgressionVueContent as any).methods;
-    const context = {
-      filters: makeStoredFilters({
-        viewMode: "worksheets",
-        worksheetVisibleSkills: ["bushcraft", "bushwalking"],
-        worksheetVisibleStages: [3, 4, 5],
-        worksheetShowCompleted: false,
-      }),
-      patrolFilterOptions: [],
-    };
+  // Regression coverage for the user's own report (2026-10-09): "Pressing 'reset filters' on
+  // [one] tab resets filters on all tabs. They should all be separate." Each tab's own filter
+  // bar calls the same onResetFilters method, so it must look at the CURRENTLY ACTIVE viewMode
+  // and only touch that tab's own keys, leaving every other tab's filters exactly as the user
+  // left them.
+  describe("onResetFilters only resets the currently active tab's own filters", () => {
+    it("resets Heat Map's own keys while leaving Summary/Worksheets untouched", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const methods = (OasProgressionVueContent as any).methods;
+      const context = {
+        filters: makeStoredFilters({
+          viewMode: "heatmap",
+          memberFilter: "someone",
+          sortBy: "lastName",
+          summaryMemberFilter: "someone else",
+          worksheetVisibleSkills: ["bushcraft", "bushwalking"],
+        }),
+        patrolFilterOptions: [],
+      };
 
-    methods.onResetFilters.call(context);
+      methods.onResetFilters.call(context);
 
-    expect(context.filters.viewMode).toBe("worksheets");
-    expect(context.filters.worksheetVisibleSkills).toEqual(["camping"]);
-    expect(context.filters.worksheetVisibleStages).toEqual([1]);
-    expect(context.filters.worksheetShowCompleted).toBe(true);
+      expect(context.filters.memberFilter).toBe("");
+      expect(context.filters.sortBy).toBe("firstName");
+      // Untouched — belong to other tabs.
+      expect(context.filters.summaryMemberFilter).toBe("someone else");
+      expect(context.filters.worksheetVisibleSkills).toEqual(["bushcraft", "bushwalking"]);
+    });
+
+    it("resets Summary's own keys while leaving Heat Map/Worksheets untouched", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const methods = (OasProgressionVueContent as any).methods;
+      const context = {
+        filters: makeStoredFilters({
+          viewMode: "summary",
+          summaryMemberFilter: "someone",
+          summarySortBy: "lastName",
+          memberFilter: "someone else",
+          worksheetShowCompleted: false,
+        }),
+        patrolFilterOptions: [],
+      };
+
+      methods.onResetFilters.call(context);
+
+      expect(context.filters.summaryMemberFilter).toBe("");
+      expect(context.filters.summarySortBy).toBe("firstName");
+      // Untouched — belong to other tabs.
+      expect(context.filters.memberFilter).toBe("someone else");
+      expect(context.filters.worksheetShowCompleted).toBe(false);
+    });
+
+    // Worksheets defaults are now narrowed (Camping / stage 1 only — DEV_NOTES.md: "To limit
+    // processing overhead"), not "everything" — set up a "before reset" state that differs from
+    // those defaults so the test actually demonstrates a reset, not a coincidental match.
+    it("resets Worksheets' own keys while leaving Heat Map/Summary untouched", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const methods = (OasProgressionVueContent as any).methods;
+      const context = {
+        filters: makeStoredFilters({
+          viewMode: "worksheets",
+          worksheetVisibleSkills: ["bushcraft", "bushwalking"],
+          worksheetVisibleStages: [3, 4, 5],
+          worksheetShowCompleted: false,
+          memberFilter: "someone",
+          summaryMemberFilter: "someone else",
+        }),
+        patrolFilterOptions: [],
+      };
+
+      methods.onResetFilters.call(context);
+
+      expect(context.filters.worksheetVisibleSkills).toEqual(["camping"]);
+      expect(context.filters.worksheetVisibleStages).toEqual([1]);
+      expect(context.filters.worksheetShowCompleted).toBe(true);
+      // Untouched — belong to other tabs.
+      expect(context.filters.memberFilter).toBe("someone");
+      expect(context.filters.summaryMemberFilter).toBe("someone else");
+    });
+
+    it("resets nothing when called on the Table tab, which owns no keys in this filter object", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const methods = (OasProgressionVueContent as any).methods;
+      const context = { filters: makeStoredFilters({ viewMode: "table", memberFilter: "someone", summaryMemberFilter: "someone else" }), patrolFilterOptions: [] };
+
+      methods.onResetFilters.call(context);
+
+      expect(context.filters.memberFilter).toBe("someone");
+      expect(context.filters.summaryMemberFilter).toBe("someone else");
+    });
   });
 
   it("defaults selectedPatrols to null for a new user — 'not yet resolved', not 'show nothing'", () => {
@@ -151,32 +226,48 @@ describe("OasProgressionVueContent view mode", () => {
     expect(loadFiltersViaComponentData().worksheetSelectedPatrols).toBeNull();
   });
 
-  // onResetFilters resolves selectedPatrols/worksheetSelectedPatrols synchronously from
-  // patrolFilterOptions rather than leaving them null for the watcher — patrol data was
-  // already loaded before a reset runs, so patrolFilterOptions's VALUE doesn't change and the
-  // watcher would never fire. See .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md's
-  // note on the Patrol-reset bug. Both fields resolve to the SAME list — Heat Map and
-  // Worksheets share one member roster, just presented two ways.
-  it("onResetFilters resolves both selectedPatrols and worksheetSelectedPatrols to the full patrolFilterOptions list immediately, not null", () => {
+  // Same null-sentinel default again for the Summary tab's own Patrol filter — see
+  // .claude/OASProgression/PLAN_PEAK_AWARD_SUMMARY.md.
+  it("defaults summarySelectedPatrols to null for a new user too", () => {
+    expect(loadFiltersViaComponentData().summarySelectedPatrols).toBeNull();
+  });
+
+  // onResetFilters resolves ONLY the active tab's own Patrol filter synchronously from
+  // patrolFilterOptions rather than leaving it null for the watcher — patrol data was already
+  // loaded before a reset runs, so patrolFilterOptions's VALUE doesn't change and the watcher
+  // would never fire. See .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md's note on the
+  // Patrol-reset bug. The OTHER two tabs' Patrol selections are untouched — same per-tab scoping
+  // as every other key (see the describe block above).
+  it("onResetFilters resolves only the active tab's own Patrol filter, leaving the other two untouched", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const methods = (OasProgressionVueContent as any).methods;
-    const context = { filters: makeStoredFilters({ selectedPatrols: ["Eagles"], worksheetSelectedPatrols: ["Wolves"] }), patrolFilterOptions: ["Eagles", "Wolves", "Unassigned"] };
+    const context = {
+      filters: makeStoredFilters({ viewMode: "heatmap", selectedPatrols: ["Eagles"], worksheetSelectedPatrols: ["Wolves"], summarySelectedPatrols: ["Eagles"] }),
+      patrolFilterOptions: ["Eagles", "Wolves", "Unassigned"],
+    };
 
     methods.onResetFilters.call(context);
 
     expect(context.filters.selectedPatrols).toEqual(["Eagles", "Wolves", "Unassigned"]);
-    expect(context.filters.worksheetSelectedPatrols).toEqual(["Eagles", "Wolves", "Unassigned"]);
+    // Untouched — belong to other tabs.
+    expect(context.filters.worksheetSelectedPatrols).toEqual(["Wolves"]);
+    expect(context.filters.summarySelectedPatrols).toEqual(["Eagles"]);
   });
 
-  it("onResetFilters falls back to null for both when there are no patrol options yet (data hasn't loaded)", () => {
+  it("onResetFilters falls back to null for the active tab's own Patrol filter when there are no patrol options yet (data hasn't loaded)", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const methods = (OasProgressionVueContent as any).methods;
-    const context = { filters: makeStoredFilters({ selectedPatrols: ["Eagles"], worksheetSelectedPatrols: ["Eagles"] }), patrolFilterOptions: [] };
+    const context = {
+      filters: makeStoredFilters({ viewMode: "worksheets", selectedPatrols: ["Eagles"], worksheetSelectedPatrols: ["Eagles"], summarySelectedPatrols: ["Eagles"] }),
+      patrolFilterOptions: [],
+    };
 
     methods.onResetFilters.call(context);
 
-    expect(context.filters.selectedPatrols).toBeNull();
     expect(context.filters.worksheetSelectedPatrols).toBeNull();
+    // Untouched — belong to other tabs.
+    expect(context.filters.selectedPatrols).toEqual(["Eagles"]);
+    expect(context.filters.summarySelectedPatrols).toEqual(["Eagles"]);
   });
 });
 
@@ -236,13 +327,25 @@ describe("OasProgressionVueContent — selectedPatrols: null resolution", () => 
     expect(context.filters.worksheetSelectedPatrols).toEqual(["Eagles", "Wolves", "Unassigned"]); // newly resolved
   });
 
-  it("resolves both selectedPatrols and worksheetSelectedPatrols together when both are still null", () => {
-    const context = { filters: makeStoredFilters({ selectedPatrols: null, worksheetSelectedPatrols: null }) };
+  it("resolves selectedPatrols, worksheetSelectedPatrols and summarySelectedPatrols together when all three are still null", () => {
+    const context = { filters: makeStoredFilters({ selectedPatrols: null, worksheetSelectedPatrols: null, summarySelectedPatrols: null }) };
 
     patrolFilterOptionsWatcher.call(context, ["Eagles", "Wolves"]);
 
     expect(context.filters.selectedPatrols).toEqual(["Eagles", "Wolves"]);
     expect(context.filters.worksheetSelectedPatrols).toEqual(["Eagles", "Wolves"]);
+    expect(context.filters.summarySelectedPatrols).toEqual(["Eagles", "Wolves"]);
+  });
+
+  // summarySelectedPatrols resolves independently too, matching the worksheet/heat-map split above.
+  it("resolves summarySelectedPatrols independently of the other two", () => {
+    const context = { filters: makeStoredFilters({ selectedPatrols: ["Eagles"], worksheetSelectedPatrols: ["Wolves"], summarySelectedPatrols: null }) };
+
+    patrolFilterOptionsWatcher.call(context, ["Eagles", "Wolves", "Unassigned"]);
+
+    expect(context.filters.selectedPatrols).toEqual(["Eagles"]); // untouched — already resolved
+    expect(context.filters.worksheetSelectedPatrols).toEqual(["Wolves"]); // untouched — already resolved
+    expect(context.filters.summarySelectedPatrols).toEqual(["Eagles", "Wolves", "Unassigned"]); // newly resolved
   });
 });
 

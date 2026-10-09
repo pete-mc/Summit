@@ -133,10 +133,18 @@
 /*
  * Vuetify's table defaults to width: 100%. The heat map is a wide grid inside a horizontal
  * scroller, so it must size to its content instead.
+ *
+ * The border below is duplicated onto the <table> itself, not just its wrapper div: the PDF
+ * export (OasProgressionVueContent.ts's onPdfExportClick) rasterizes getExportTable()'s own
+ * <table> element directly via getExportTable(), which returns the table, not the wrapper div
+ * around it — a wrapper-only border is invisible to that capture, leaving the exported PDF with
+ * no visible frame around the table's content. On screen the two borders sit flush against each
+ * other (border-collapse means no visible double line), so this is a no-op for the live page.
  */
 .oas-heatmap-data-table ::v-deep > .v-data-table__wrapper > table {
   width: max-content;
   border-collapse: collapse;
+  border: 1px solid var(--color-light-charcoal, #e5e9ec);
 }
 
 /*

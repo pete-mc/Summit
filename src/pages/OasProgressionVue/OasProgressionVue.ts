@@ -6,6 +6,7 @@ import { fetchUnitMembers } from "@/services";
 import { TerrainState, clearCache, createLogger } from "@/helpers";
 import { TerrainRootState } from "@/types/terrainState";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
+import type { TerrainAchievementsSection } from "@/shared";
 
 const logger = createLogger("OasProgressionVue");
 const CONCURRENCY = 6;
@@ -34,6 +35,7 @@ interface ContentInstance {
   items: OASProgressionRow[];
   trunkStageCounts: Record<string, number>;
   members: TerrainUnitMember[];
+  section: TerrainAchievementsSection | undefined;
   loadingStreams: Set<string>;
   loadError: boolean;
   $mount(el: HTMLElement): void;
@@ -53,6 +55,13 @@ function data() {
     loadError: false,
     trunkStageCounts: {} as Record<string, number>,
     members: [] as TerrainUnitMember[],
+    /**
+     * The current unit's section — a Terrain "unit" is a single section (one Cub unit, one Scout
+     * unit, etc.), so every member fetched above shares this same value. Used by the Summary tab
+     * to pick which section's Peak Award requirement applies; undefined when Terrain hasn't
+     * resolved a section for the active profile (see TerrainState.getSectionName()).
+     */
+    section: undefined as TerrainAchievementsSection | undefined,
   };
 }
 
@@ -105,6 +114,7 @@ export default defineComponent({
       try {
         this.loadError = false;
         const unitId = TerrainState.getUnitID();
+        this.section = TerrainState.getSectionName() as TerrainAchievementsSection | undefined;
         const members = (await fetchUnitMembers()).filter((m) => m.unit.duty != "adult_leader");
         this.members = members;
 
@@ -168,6 +178,7 @@ export default defineComponent({
           items: this.items,
           trunkStageCounts: this.trunkStageCounts,
           members: this.members,
+          section: this.section,
           loadingStreams: this.loadingStreams,
           loadError: this.loadError,
           totalStreams: ALL_STREAMS.length,
@@ -182,6 +193,7 @@ export default defineComponent({
       this.contentInstance.items = items;
       this.contentInstance.trunkStageCounts = this.trunkStageCounts;
       this.contentInstance.members = this.members;
+      this.contentInstance.section = this.section;
       this.contentInstance.loadingStreams = this.loadingStreams;
       this.contentInstance.loadError = this.loadError;
     },

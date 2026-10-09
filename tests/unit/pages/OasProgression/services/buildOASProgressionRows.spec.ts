@@ -187,6 +187,33 @@ describe("applyAchievementsToMatrix", () => {
     expect(result.every((r) => r.answered && r.awarded && r.date === "2019-05-01")).toBe(true);
   });
 
+  it("stamps every cell with the achievement's own section, for an awarded record", () => {
+    const matrix = blankMatrixFor([makeMember()]);
+    const achievement = makeAchievement({ status: "awarded" as TerrainAchievements["status"], section: "venturer" as TerrainAchievements["section"] });
+
+    const result = applyAchievementsToMatrix(matrix, [achievement]);
+
+    expect(result.every((r) => r.section === "venturer")).toBe(true);
+  });
+
+  it("stamps section for an in-progress record too, not just awarded", () => {
+    const matrix = blankMatrixFor([makeMember()]);
+    const achievement = makeAchievement({ status: "draft_review" as TerrainAchievements["status"], section: "scout" as TerrainAchievements["section"], answers: { abc123_verifiedDate: "18/11/2020" } });
+
+    const result = applyAchievementsToMatrix(matrix, [achievement]);
+
+    expect(result.every((r) => r.section === "scout")).toBe(true);
+  });
+
+  it("leaves section null on a cell with no matching achievement at all", () => {
+    const matrix = blankMatrixFor([makeMember({ id: "m1" }), makeMember({ id: "m2" })]);
+    const achievement = makeAchievement({ member_id: "m1", status: "awarded" as TerrainAchievements["status"], section: "venturer" as TerrainAchievements["section"] });
+
+    const result = applyAchievementsToMatrix(matrix, [achievement]);
+
+    expect(result.filter((r) => r.memberId === "m2").every((r) => r.section === null)).toBe(true);
+  });
+
   it("awarded with empty/missing answers and no imported: stamps every cell with status_updated", () => {
     const matrix = blankMatrixFor([makeMember()]);
     const achievement = makeAchievement({

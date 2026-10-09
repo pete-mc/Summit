@@ -139,6 +139,24 @@ describe("OasProgressionVueContent render contract", () => {
     expect(templateSource).toContain("onPdfExportClick");
   });
 
+  it("Summary tab PDF export follows the same getExportTable()/exportElementToPdf pattern as the Heat Map's, but in portrait (2026-10-09)", () => {
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
+    expect(tsSource).toContain("summary?.getExportTable()");
+    expect(tsSource).not.toContain("$refs.summaryTable");
+
+    const summarySource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASPeakAwardSummaryVue.ts"), "utf8");
+    expect(summarySource).toContain("getExportTable()");
+
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
+    expect(templateSource).toContain('ref="summary"');
+    expect(templateSource).toContain("onSummaryPdfExportClick");
+
+    // Portrait, unlike the Heat Map's landscape — Summary is a flat, narrower table with no
+    // per-stage column fan-out, so it reads better tall than wide.
+    const exportMethodSource = tsSource.slice(tsSource.indexOf("async onSummaryPdfExportClick()"), tsSource.indexOf("async onSummaryPdfExportClick()") + 1000);
+    expect(exportMethodSource).toContain('orientation: "portrait"');
+  });
+
   it("VueStage 4: the reload button shows a loading state while reloading, matching the plan's nicer-than-original affordance", () => {
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
     expect(tsSource).toContain("isReloading");
@@ -194,8 +212,15 @@ describe("OasProgressionVueContent render contract", () => {
   });
 
   it("VueStage 5: resetting filters preserves the current viewMode (a display choice, not a filter)", () => {
+    // onResetFilters no longer spreads `{ ...DEFAULT_FILTERS, viewMode: this.filters.viewMode }`
+    // wholesale — see .claude/OASProgression/PLAN_PEAK_AWARD_SUMMARY.md's "Reset filters" fix
+    // (2026-10-09): each tab's own "Reset filters" button now only resets THAT tab's own keys,
+    // not every tab's filters at once. viewMode itself is still never assigned a new value by
+    // onResetFilters (confirmed by source: it builds a `resetValues` patch and spreads it onto
+    // `this.filters`, never touching `viewMode`), which is the actual invariant this test checks.
     const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
-    expect(source).toContain("viewMode: this.filters.viewMode");
+    const resetMethodSource = source.slice(source.indexOf("onResetFilters()"), source.indexOf("async onReloadAllClick"));
+    expect(resetMethodSource).not.toContain("viewMode:");
   });
 
   it("VueStage 5 fixes: header row gets PDF + Excel export buttons for the Table view", () => {

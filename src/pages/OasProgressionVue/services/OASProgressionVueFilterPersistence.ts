@@ -1,7 +1,18 @@
 import type { NameFormat } from "@/pages/OasProgression/services/getMemberDisplayName";
 
 export interface OASProgressionVueFilterState {
-  viewMode: "heatmap" | "table" | "worksheets";
+  viewMode: "summary" | "heatmap" | "table" | "worksheets";
+  /**
+   * Summary tab's own filters — deliberately separate from the heat map's equivalents below (same
+   * reasoning as the Worksheets view's own separate worksheet* keys: narrowing one view must not
+   * silently narrow another). "progress" (not the heat map's "stageProgress") sorts by the
+   * Progress column's own score — see sortPeakAwardSummaryRows in buildPeakAwardSummaryRows.ts.
+   */
+  summaryMemberFilter: string;
+  summaryNameFormat: NameFormat;
+  /** Same null-until-resolved sentinel as selectedPatrols below. */
+  summarySelectedPatrols: string[] | null;
+  summarySortBy: "firstName" | "lastName" | "progress";
   /**
    * Heat map only: "skill" keeps the original skill-first layout, "member" inverts it.
    * Defaults to "skill".

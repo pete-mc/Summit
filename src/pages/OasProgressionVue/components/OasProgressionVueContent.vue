@@ -6,7 +6,8 @@
         <v-spacer></v-spacer>
         <!-- Exports need something to act on; hidden until a stream lands. -->
         <template v-if="hasContent">
-          <v-btn v-if="filters.viewMode === 'heatmap'" outlined color="primary" class="oas-vue-pill-btn" @click="onPdfExportClick">PDF Export</v-btn>
+          <v-btn v-if="filters.viewMode === 'summary'" outlined color="primary" class="oas-vue-pill-btn" @click="onSummaryPdfExportClick">PDF Export</v-btn>
+          <v-btn v-else-if="filters.viewMode === 'heatmap'" outlined color="primary" class="oas-vue-pill-btn" @click="onPdfExportClick">PDF Export</v-btn>
           <template v-else-if="filters.viewMode === 'table'">
             <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onTableExcelExportClick">Excel Export</v-btn>
             <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onTablePdfExportClick">PDF Export</v-btn>
@@ -33,6 +34,7 @@
         VItemGroup.js's `getValue()` (`item.value === undefined ? i : item.value`) for why.
       -->
       <v-tabs v-if="hasContent" :value="filters.viewMode" grow height="40" color="primary" background-color="grey lighten-5" @change="onViewModeTabChange">
+        <v-tab tab-value="summary">Summary</v-tab>
         <v-tab tab-value="heatmap">Heatmap</v-tab>
         <v-tab tab-value="table">Table</v-tab>
         <!-- Labelled "Worksheets", not "OAS Worksheets" — the page itself is already titled OAS
@@ -54,6 +56,33 @@
       />
 
       <div v-if="exportFeedback" role="status" class="data-grid-export-feedback">{{ exportFeedback }}</div>
+
+      <template v-if="hasContent && filters.viewMode === 'summary'">
+        <!--
+          No PeakAwardRequirement means Terrain hasn't resolved a section for the active profile
+          (TerrainState.getSectionName() returned nothing) — shown instead of guessing a section
+          and displaying a confidently wrong Peak Award gap. See peakAwardRequirement's own
+          comment in OasProgressionVueContent.ts.
+        -->
+        <p v-if="!peakAwardRequirement" class="oas-peak-award-summary-no-section">Could not determine this unit's section.</p>
+        <template v-else>
+          <OASPeakAwardSummaryFiltersVue
+            :filters="filters"
+            :patrol-filter-options="patrolFilterOptions"
+            :can-filter-by-patrol="canFilterByPatrol"
+            @update:filters="onFiltersUpdate"
+            @reset="onResetFilters"
+          />
+
+          <OASPeakAwardSummaryVue
+            ref="summary"
+            :rows="filteredPeakAwardSummaryRows"
+            :name-format="filters.summaryNameFormat"
+            :has-special="!!peakAwardRequirement.special"
+            :special-condition-text="specialConditionText"
+          />
+        </template>
+      </template>
 
       <template v-if="hasContent && filters.viewMode === 'heatmap'">
         <OASProgressionFiltersVue
@@ -164,5 +193,11 @@
 .oas-vue-content ::v-deep .v-tab {
   text-transform: none;
   letter-spacing: normal;
+}
+
+.oas-peak-award-summary-no-section {
+  color: var(--summit-color-text-primary, #2a2a2a);
+  font-size: var(--oas-vue-font-size-body);
+  font-family: var(--oas-vue-font-family);
 }
 </style>
