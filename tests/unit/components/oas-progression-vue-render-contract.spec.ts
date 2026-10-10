@@ -139,9 +139,12 @@ describe("OasProgressionVueContent render contract", () => {
     expect(templateSource).toContain("onPdfExportClick");
   });
 
-  it("Summary tab PDF export follows the same getExportTable()/exportElementToPdf pattern as the Heat Map's, but in portrait (2026-10-09)", () => {
+  it("Summary tab prints through summit-print's SummitPrintButton, asking the summary for its table via getExportTable() (.claude/Print/PLAN_STAGE_1.md)", () => {
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
-    expect(tsSource).toContain("summary?.getExportTable()");
+    // Asked for rather than reached into: a ref on a v-data-table resolves to the component
+    // instance, not an element.
+    expect(tsSource).toContain("?.getExportTable()");
+    expect(tsSource).toContain("summaryPrintTarget()");
     expect(tsSource).not.toContain("$refs.summaryTable");
 
     const summarySource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASPeakAwardSummaryVue.ts"), "utf8");
@@ -149,12 +152,9 @@ describe("OasProgressionVueContent render contract", () => {
 
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(templateSource).toContain('ref="summary"');
-    expect(templateSource).toContain("onSummaryPdfExportClick");
-
-    // Portrait, unlike the Heat Map's landscape — Summary is a flat, narrower table with no
-    // per-stage column fan-out, so it reads better tall than wide.
-    const exportMethodSource = tsSource.slice(tsSource.indexOf("async onSummaryPdfExportClick()"), tsSource.indexOf("async onSummaryPdfExportClick()") + 1000);
-    expect(exportMethodSource).toContain('orientation: "portrait"');
+    expect(templateSource).toMatch(/<SummitPrintButton v-if="filters\.viewMode === 'summary'" profile="peak-award-summary" :target="summaryPrintTarget"/);
+    // The old snapdom export is no longer wired to any button (kept in the .ts until the cleanup stage).
+    expect(templateSource).not.toContain("onSummaryPdfExportClick");
   });
 
   it("VueStage 4: the reload button shows a loading state while reloading, matching the plan's nicer-than-original affordance", () => {

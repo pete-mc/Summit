@@ -6,6 +6,9 @@ import OASProgressionTableVue from "./OASProgressionTableVue.vue";
 import OASWorksheetFiltersVue from "./OASWorksheetFiltersVue.vue";
 import OASWorksheetsVue from "./OASWorksheetsVue.vue";
 import SummitLoadingState from "@/components/SummitLoadingState.vue";
+import SummitPrintButton from "@/components/SummitPrintButton.vue";
+import { buildSummaryPrintMeta } from "@/pages/OasProgressionVue/services/oasPrintMeta";
+import type { MetaEntry } from "@/print/summitPrint";
 import { filterOASProgressionRows } from "./OASProgressionTableVue";
 import { groupRowsForHeatMap } from "@/pages/OasProgression/services/groupRowsForHeatMap";
 import { buildPeakAwardSummaryRows, sortPeakAwardSummaryRows, type PeakAwardMemberRow } from "@/pages/OasProgression/services/buildPeakAwardSummaryRows";
@@ -143,7 +146,7 @@ function loadInitialFilters(): OASProgressionVueFilterState {
 
 export default defineComponent({
   name: "OasProgressionVueContent",
-  components: { OASHeatMapVue, OASPeakAwardSummaryFiltersVue, OASPeakAwardSummaryVue, OASProgressionFiltersVue, OASProgressionTableVue, OASWorksheetFiltersVue, OASWorksheetsVue, SummitLoadingState },
+  components: { OASHeatMapVue, OASPeakAwardSummaryFiltersVue, OASPeakAwardSummaryVue, OASProgressionFiltersVue, OASProgressionTableVue, OASWorksheetFiltersVue, OASWorksheetsVue, SummitLoadingState, SummitPrintButton },
   props: {
     items: { type: Array as PropType<OASProgressionRow[]>, required: true },
     trunkStageCounts: { type: Object as PropType<Record<string, number>>, required: true },
@@ -259,6 +262,10 @@ export default defineComponent({
       const selectedPatrols = this.filters.summarySelectedPatrols ?? [];
       const patrolFiltered = selectedPatrols.length === 0 ? [] : filterMembersByPatrol(nameFiltered, selectedPatrols);
       return sortPeakAwardSummaryRows(patrolFiltered, this.filters.summarySortBy);
+    },
+    /** The Summary filters in effect, for the printout's header line. */
+    summaryPrintMeta(): MetaEntry[] {
+      return buildSummaryPrintMeta(this.filters, this.patrolFilterOptions, this.canFilterByPatrol);
     },
   },
   watch: {
@@ -381,6 +388,12 @@ export default defineComponent({
         this.exportFeedback = `PDF export failed: ${message}`;
       }
     },
+    /** The Summary table for SummitPrintButton — read at click time, after Vuetify has rendered it. */
+    summaryPrintTarget(): HTMLTableElement | undefined {
+      return (this.$refs.summary as unknown as SummaryVueInstance | undefined)?.getExportTable();
+    },
+    // No longer wired to a button — replaced by SummitPrintButton (.claude/Print/PLAN.md). Kept
+    // until the new print path is proven, then removed in the cleanup stage.
     async onSummaryPdfExportClick() {
       const summary = this.$refs.summary as unknown as SummaryVueInstance | undefined;
       const table = summary?.getExportTable();

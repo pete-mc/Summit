@@ -10,6 +10,7 @@ jest.mock("@/pages/OasProgressionVue/components/OASProgressionTableVue.vue", () 
 jest.mock("@/pages/OasProgressionVue/components/OASWorksheetFiltersVue.vue", () => ({ __esModule: true, default: { name: "OASWorksheetFiltersVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/OasProgressionVue/components/OASWorksheetsVue.vue", () => ({ __esModule: true, default: { name: "OASWorksheetsVue", render: () => null } }), { virtual: true });
 jest.mock("@/components/SummitLoadingState.vue", () => ({ __esModule: true, default: { name: "SummitLoadingState", render: () => null } }), { virtual: true });
+jest.mock("@/components/SummitPrintButton.vue", () => ({ __esModule: true, default: { name: "SummitPrintButton", render: () => null } }), { virtual: true });
 
 // gridExport's top-level jsPDF/xlsx imports are ESM that Jest cannot parse — mocked here the same
 // way PresentAwardsVueContent.spec.ts does, since nothing in this spec exercises export behaviour.
