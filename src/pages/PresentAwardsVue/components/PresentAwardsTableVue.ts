@@ -13,6 +13,20 @@ export interface DataTableHeader {
   filterType?: "text" | "select";
   /** Columns with no underlying data (the checkbox) opt out of filtering entirely. */
   filterable?: boolean;
+  /** Vuetify header options: class on the <th>, and on each body <td> in this column. */
+  class?: string;
+  cellClass?: string;
+  /** Vuetify header option: text alignment for the header and its cells. */
+  align?: "start" | "center" | "end";
+}
+
+/** Marks the Present (tick-box) column so the printout can drop it by class, not position. */
+export const PRESENT_HEADER_CLASS = "present-awards-present-header";
+export const PRESENT_CELL_CLASS = "present-awards-present-cell";
+
+/** Vuetify 2.7's own v-data-table instance state used by prepareForPrint (see VDataTable.js openCache). */
+interface VuetifyDataTable {
+  openCache: Record<string, boolean>;
 }
 
 /** What the rest of the page (and the storage event) speaks. */
@@ -59,20 +73,26 @@ export function toDisplayDate(pickerDate: string): string {
   return moment(pickerDate, PICKER_DATE_FORMAT, true).format(DISPLAY_DATE_FORMAT);
 }
 
-const HEADERS: DataTableHeader[] = [
+/** Exported for the printout's filter line, so it uses the table's own column names. */
+export const HEADERS: DataTableHeader[] = [
   { text: "Name", value: "member" },
   // Only ~10 achievement types exist and SummitAchievement already normalises them for display,
   // so a dropdown is both short and exhaustive. Award is deliberately left as a text box: there
   // is one distinct value per badge, which would make an unusable dropdown.
   { text: "Type", value: "type", filterType: "select" },
-  { text: "Award", value: "achievementName" },
-  // Artwork only — nothing to sort or filter on, and no header text (the images speak for
-  // themselves and a label would widen the column past the icons).
-  { text: "", value: "badge", sortable: false, filterable: false },
+  // Artwork only — nothing to sort or filter on. Sits before Award and is labelled "Badge"
+  // (user, 2026-10-11), on screen and in print. Narrow and right-aligned, with the padding between
+  // it and Award trimmed, so the badge sits right beside the award name it illustrates — see the
+  // .present-awards-badge-cell / .present-awards-award-cell rules in the .vue.
+  { text: "Badge", value: "badge", sortable: false, filterable: false, align: "end", class: "present-awards-badge-header", cellClass: "present-awards-badge-cell" },
+  { text: "Award", value: "achievementName", class: "present-awards-award-header", cellClass: "present-awards-award-cell" },
   { text: "Date", value: "dateAwarded", sort: compareDisplayDates },
   { text: "Presented", value: "presented", sort: compareDisplayDates, filterType: "select" },
-  { text: "Present", value: "present", sortable: false, filterable: false },
+  { text: "Present", value: "present", sortable: false, filterable: false, class: PRESENT_HEADER_CLASS, cellClass: PRESENT_CELL_CLASS },
 ];
+
+/** Rows per page until the user picks another from the table footer. */
+export const DEFAULT_ITEMS_PER_PAGE = 25;
 
 /** Values stored in columnFilters.presented — not substrings of the underlying data. */
 export const PRESENTED_FILTER_YES = "presented";
@@ -150,6 +170,10 @@ export default defineComponent({
       headers: HEADERS,
       /** Per-row open state for the date-picker menus, keyed by achievement id. */
       openDateMenus: {} as Record<string, boolean>,
+      // Bound with .sync rather than literals so prepareForPrint() can show every row and then
+      // put the user's own paging back.
+      itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
+      page: 1,
     };
   },
   computed: {
@@ -175,9 +199,6 @@ export default defineComponent({
      */
     renderedHeaders(): DataTableHeader[] {
       return this.headers.filter((header) => !this.groupBy.includes(header.value));
-    },
-    hasActiveColumnFilters(): boolean {
-      return Object.values(this.columnFilters).some((value) => value.trim() !== "");
     },
     /**
      * Outstanding award count per member name, across ALL filtered rows.
@@ -269,8 +290,39 @@ export default defineComponent({
     onColumnFilterInput(field: string, value: string) {
       this.$emit("update:columnFilters", { ...this.columnFilters, [field]: value });
     },
-    onClearFiltersClick() {
-      this.$emit("update:columnFilters", {});
+    /**
+     * Puts every row in the DOM for summit-print, which prints only what is rendered
+     * (.claude/Print/PLAN_STAGE_4.md): all rows on one page, every member group open. Returns a
+     * restore() that puts the user's paging and collapsed groups back.
+     *
+     * Groups: Vuetify 2.7 keeps each group's open state in the table's own `openCache`, keyed by
+     * group name; a group not in it yet defaults to open, and a collapsed group's rows aren't in
+     * the DOM at all (VDataTable.js genGroupedRows/genDefaultGroupedRow).
+     */
+    async prepareForPrint(): Promise<() => void> {
+      const savedPaging = { itemsPerPage: this.itemsPerPage, page: this.page };
+      const table = this.$refs.table as unknown as VuetifyDataTable | undefined;
+      const savedGroups = table ? { ...table.openCache } : {};
+
+      this.itemsPerPage = -1;
+      this.page = 1;
+      await this.$nextTick(); // groups from other pages register themselves (as open) on render
+      if (table) {
+        Object.keys(table.openCache).forEach((group) => this.$set(table.openCache, group, true));
+        await this.$nextTick();
+      }
+
+      return () => {
+        if (table) {
+          Object.keys(savedGroups).forEach((group) => this.$set(table.openCache, group, savedGroups[group]));
+        }
+        this.itemsPerPage = savedPaging.itemsPerPage;
+        this.page = savedPaging.page;
+      };
+    },
+    /** The <table> for summit-print. A method, since a ref on v-data-table is a component, not an element. */
+    getPrintTable(): HTMLTableElement | undefined {
+      return (this.$el as HTMLElement | undefined)?.querySelector(".present-awards-data-table table") ?? undefined;
     },
   },
 });

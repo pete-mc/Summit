@@ -26,5 +26,9 @@ export default defineComponent({
     patch(change: Partial<PresentAwardsDisplayFilters>) {
       this.$emit("update:filters", { ...this.filters, ...change });
     },
+    /** The page owns the defaults, so this only asks — same contract as the OAS filter bars. */
+    resetFilters() {
+      this.$emit("reset");
+    },
   },
 });

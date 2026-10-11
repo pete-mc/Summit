@@ -4,6 +4,9 @@ import SummitAchievement from "@/pages/PresentAwards/models/SummitAchievement";
 import PresentAwardsTableVue from "./PresentAwardsTableVue.vue";
 import PresentAwardsFiltersVue from "./PresentAwardsFiltersVue.vue";
 import SummitLoadingState from "@/components/SummitLoadingState.vue";
+import SummitPrintButton from "@/components/SummitPrintButton.vue";
+import { buildPresentAwardsPrintMeta } from "../services/presentAwardsPrintMeta";
+import type { MetaEntry } from "@/print/summitPrint";
 import type { PresentAwardsDisplayFilters } from "./PresentAwardsFiltersVue";
 import { filterPresentAwardRows, NOT_PRESENTED } from "./PresentAwardsTableVue";
 import { DEFAULT_FILTERS, loadPresentAwardsVueFilters, savePresentAwardsVueFilters, type PresentAwardsVueFilterState } from "../services/PresentAwardsVueFilterPersistence";
@@ -11,6 +14,12 @@ import { exportGridToExcel, exportGridToPdf, type GridExportColumn, type GridExp
 import { createLogger } from "@/helpers";
 
 const logger = createLogger("PresentAwardsVueContent");
+
+/** What the content component asks of the table for printing (PresentAwardsTableVue's methods). */
+interface PresentAwardsTablePrintApi {
+  prepareForPrint(): Promise<() => void>;
+  getPrintTable(): HTMLTableElement | undefined;
+}
 
 const FEEDBACK_TIMEOUT_MS = 4000;
 /** Longer, because a merge notice reports something the user did not already know. */
@@ -50,7 +59,7 @@ function loadInitialFilters(): PresentAwardsVueFilterState {
  */
 export default defineComponent({
   name: "PresentAwardsVueContent",
-  components: { PresentAwardsTableVue, PresentAwardsFiltersVue, SummitLoadingState },
+  components: { PresentAwardsTableVue, PresentAwardsFiltersVue, SummitLoadingState, SummitPrintButton },
   props: {
     items: { type: Array as PropType<SummitAchievement[]>, default: () => [] },
     loadState: { type: String, default: "loading" },
@@ -135,6 +144,10 @@ export default defineComponent({
     filteredItems(): SummitAchievement[] {
       return filterPresentAwardRows(this.visibleItems, this.columnFilters, (item) => this.presentedValueFor(item));
     },
+    /** The column filters in effect, for the printout's header line (.claude/Print/PLAN_STAGE_4.md). */
+    presentAwardsPrintMeta(): MetaEntry[] {
+      return buildPresentAwardsPrintMeta(this.columnFilters);
+    },
     hasUnsavedEdits(): boolean {
       const stored = this.items.filter((item) => item.presented !== "No");
       if (stored.length !== this.selectedIds.size) return true;
@@ -207,6 +220,17 @@ export default defineComponent({
       this.groupByMember = filters.groupByMember;
       this.persistFilters();
     },
+    /**
+     * "Reset filters": everything back to a first visit — display options (Group by member On,
+     * Show previously presented Off) and every column filter (user, 2026-10-11). Edit state (ticks,
+     * dates) is not a filter and is left alone.
+     */
+    onResetFilters() {
+      this.columnFilters = { ...DEFAULT_FILTERS.columnFilters };
+      this.showPreviouslyPresented = DEFAULT_FILTERS.showPreviouslyPresented;
+      this.groupByMember = DEFAULT_FILTERS.groupByMember;
+      this.persistFilters();
+    },
     showFeedback(message: string, timeoutMs: number = FEEDBACK_TIMEOUT_MS) {
       if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
       this.feedback = message;
@@ -242,6 +266,17 @@ export default defineComponent({
         this.showFeedback(`Excel export failed: ${e instanceof Error ? e.message : "Unknown error"}`);
       }
     },
+    /** The awards table for SummitPrintButton — read at click time, after prepareForPrint has rendered every row. */
+    presentAwardsPrintTarget(): HTMLTableElement | undefined {
+      return (this.$refs.table as unknown as PresentAwardsTablePrintApi | undefined)?.getPrintTable();
+    },
+    /** Show every row and open every group for printing; returns the restore (see PresentAwardsTableVue.prepareForPrint). */
+    async preparePresentAwardsPrint(): Promise<(() => void) | void> {
+      const table = this.$refs.table as unknown as PresentAwardsTablePrintApi | undefined;
+      return table ? table.prepareForPrint() : undefined;
+    },
+    // No longer wired to a button — replaced by SummitPrintButton (.claude/Print/PLAN_STAGE_4.md).
+    // Kept until the new print path is proven, then removed in the cleanup stage.
     onPdfExportClick() {
       try {
         exportGridToPdf({

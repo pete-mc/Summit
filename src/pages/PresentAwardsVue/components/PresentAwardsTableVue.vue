@@ -1,15 +1,16 @@
 <template>
   <div class="present-awards-table-panel">
-    <div class="oas-vue-clear-filters-row">
-      <v-btn v-if="hasActiveColumnFilters" text small color="primary" class="oas-vue-clear-filters-btn" @click="onClearFiltersClick">Clear filters</v-btn>
-    </div>
-
+    <!-- No "Clear filters" link here: the filter bar's "Reset filters" clears column filters too
+         (user, 2026-10-11). -->
+    <!-- items-per-page/page are .sync-bound so printing can show every row, then restore them (prepareForPrint). -->
     <v-data-table
+      ref="table"
       :headers="headers"
       :items="filteredItems"
       :group-by="groupBy"
       dense
-      :items-per-page="25"
+      :items-per-page.sync="itemsPerPage"
+      :page.sync="page"
       :footer-props="{ itemsPerPageOptions: [10, 25, 50, 100, -1] }"
       class="present-awards-data-table"
     >
@@ -138,15 +139,27 @@
   padding: 0 16px;
 }
 
-/* Fixed height so the table doesn't jump as "Clear filters" appears and disappears. */
-.oas-vue-clear-filters-row {
-  min-height: 30px;
-  display: flex;
-  align-items: center;
+/*
+ * Badge column: about 62px (the "Badge" header word plus 14px + 8px padding), with the badge pushed
+ * right so it sits ~16px from the award name it illustrates. That's halfway between the original
+ * ~72px column and the 52px first attempt, which the user found too thin (2026-10-12). Same selector
+ * shape as the padding rule above, so these win by source order rather than losing on specificity
+ * (see DESIGN.md "Sticky table cells" on the trap).
+ */
+.present-awards-data-table ::v-deep > .v-data-table__wrapper > table > tbody > tr > td.present-awards-badge-cell,
+.present-awards-data-table ::v-deep > .v-data-table__wrapper > table > thead > tr > th.present-awards-badge-header {
+  padding: 0 8px 0 14px;
+  width: 1%; /* shrink to content: the header word or the widest badge */
 }
 
-.oas-vue-clear-filters-btn {
-  align-self: flex-start;
+.present-awards-data-table ::v-deep > .v-data-table__wrapper > table > tbody > tr > td.present-awards-award-cell,
+.present-awards-data-table ::v-deep > .v-data-table__wrapper > table > thead > tr > th.present-awards-award-header {
+  padding-left: 8px;
+}
+
+.present-awards-data-table ::v-deep td.present-awards-badge-cell .present-awards-badge-icon,
+.present-awards-data-table ::v-deep td.present-awards-badge-cell .present-awards-badge-placeholder {
+  margin-left: auto;
 }
 
 .oas-vue-column-filter-row th {

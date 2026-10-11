@@ -72,7 +72,11 @@ function setZoom(el: HTMLElement, zoom: number): void {
 }
 
 function overflows(table: HTMLTableElement, available: number): boolean {
-  if (table.getBoundingClientRect().width > available + 1) return true;
+  // No tolerance on the table's own width: `available` is already rounded DOWN from the page's
+  // fractional printable width (e.g. 702.99 -> 702 for A4 portrait, normal margins), so allowing
+  // +1px let a 703px table through that then spilled past the page and lost its right border
+  // (seen live on Present Awards, 2026-10-11).
+  if (table.getBoundingClientRect().width > available) return true;
   // Fixed-layout tables clip inside cells instead of growing, so the table-width check alone misses it.
   const cells = Array.from(table.querySelectorAll<HTMLElement>("th, td"));
   return cells.some((c) => c.scrollWidth > c.clientWidth + 1);

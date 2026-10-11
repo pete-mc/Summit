@@ -41,6 +41,12 @@ export default defineComponent({
     /** Extra placeholder values; override the Terrain-derived {unit}/{group}/{section} if given. */
     vars: { type: Object as PropType<Record<string, string>>, default: undefined },
     label: { type: String, default: "Print / PDF" },
+    /**
+     * Optional: get the table ready to print (e.g. show every row and open every group, since only
+     * rendered rows print) and return a function that puts it back. The restore always runs, even
+     * if printing fails or is cancelled.
+     */
+    prepare: { type: Function as PropType<() => Promise<(() => void) | void>>, default: undefined },
   },
   data() {
     return {
@@ -61,10 +67,12 @@ export default defineComponent({
   methods: {
     async go() {
       this.busy = true;
+      let restore: (() => void) | void = undefined;
       try {
         savePrintSettings(this.profile, this.settings);
         this.open = false;
         await this.$nextTick(); // let the dialog close before the print preview opens
+        if (this.prepare) restore = await this.prepare();
 
         const source = this.target();
         if (!source) throw new Error("there is nothing to print yet");
@@ -90,6 +98,13 @@ export default defineComponent({
         logger.error("Print failed:", err);
         this.showWarning(`Could not prepare the printout: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
+        if (restore) {
+          try {
+            restore();
+          } catch (err) {
+            logger.error("Could not restore the table after printing:", err);
+          }
+        }
         this.busy = false;
       }
     },

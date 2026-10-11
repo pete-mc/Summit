@@ -9,6 +9,7 @@ import type { TerrainAchievements, TerrainUnitMember } from "@/types/terrainType
 jest.mock("@/pages/PresentAwardsVue/components/PresentAwardsTableVue.vue", () => ({ __esModule: true, default: { name: "PresentAwardsTableVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/PresentAwardsVue/components/PresentAwardsFiltersVue.vue", () => ({ __esModule: true, default: { name: "PresentAwardsFiltersVue", render: () => null } }), { virtual: true });
 jest.mock("@/components/SummitLoadingState.vue", () => ({ __esModule: true, default: { name: "SummitLoadingState", render: () => null } }), { virtual: true });
+jest.mock("@/components/SummitPrintButton.vue", () => ({ __esModule: true, default: { name: "SummitPrintButton", render: () => null } }), { virtual: true });
 
 // gridExport's top-level jsPDF/xlsx imports are ESM that Jest cannot parse, so it is mocked here
 // as the other grid tests do. Mocking it also lets these assert what reaches the exporters.
@@ -388,6 +389,19 @@ describe("PresentAwardsVueContent — filter persistence", () => {
     window.localStorage.setItem("summit.presentAwardsVue.filters", JSON.stringify({ groupByMember: false }));
 
     expect(mountContent([makeItem("a")]).groupByMember).toBe(false);
+  });
+
+  it("Reset filters puts everything back to a first visit — grouping On, previously presented Off, no column filters — and saves it", () => {
+    const content = mountContent([makeItem("a")]);
+    content.onDisplayFiltersUpdate({ groupByMember: false, showPreviouslyPresented: true });
+    content.onColumnFiltersUpdate({ member: "Alex", type: "OAS" });
+
+    content.onResetFilters();
+
+    expect(content.groupByMember).toBe(true);
+    expect(content.showPreviouslyPresented).toBe(false);
+    expect(content.columnFilters).toEqual({});
+    expect(JSON.parse(window.localStorage.getItem("summit.presentAwardsVue.filters") as string)).toEqual({ columnFilters: {}, groupByMember: true, showPreviouslyPresented: false });
   });
 });
 

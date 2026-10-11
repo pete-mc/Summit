@@ -27,7 +27,11 @@ Footers are drawn with CSS page-margin boxes (`@page { @bottom-left { … } }`).
 - Split printouts repeat only the first column (Member) on every part. The Heatmap's Stage column no longer repeats; it prints on part 1 only.
 - This applies to the Heatmap (`repeatColumns` 2 → 1) and the Summary (already 1, now stated explicitly) "at this time". It's a profile setting, so it's easy to change back.
 
-## Status (2026-10-11): built, awaiting live check
+## Status (2026-10-11): done, committed as `8ce6df4`
+
+The user confirmed in Edge: with Edge's own "Headers and footers" unticked, only Summit's footer remains.
+
+### Build notes
 
 - `npm test`: 981/982 passing (the 1 failure is the known UNC smoke test). Lint is clean, and the build succeeds.
 - Splitting is now unit-tested by stubbing element widths, because jsdom has no layout engine. The tests confirm:

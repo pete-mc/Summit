@@ -10,7 +10,9 @@
         -->
         <template v-if="hasContent">
           <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onExcelExportClick">Excel Export</v-btn>
-          <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onPdfExportClick">PDF Export</v-btn>
+          <!-- summit-print (.claude/Print/PLAN_STAGE_4.md) replaces the old jsPDF "PDF Export"; the old
+               handler stays in the .ts, unwired, until the new path is proven. -->
+          <SummitPrintButton profile="present-awards" :target="presentAwardsPrintTarget" :prepare="preparePresentAwardsPrint" :meta="presentAwardsPrintMeta" />
           <v-btn depressed class="oas-vue-pill-btn present-awards-save-btn" :loading="isSaving" :disabled="isSaving" @click="onSaveClick">Save Changes</v-btn>
         </template>
         <v-btn icon title="Refresh data" :loading="isReloading" :disabled="isReloading" @click="onReloadClick"><v-icon>mdi-refresh</v-icon></v-btn>
@@ -39,9 +41,10 @@
         loading". That is the reported bug: the state was known, nothing displayed it.
       -->
       <template v-if="hasContent">
-        <PresentAwardsFiltersVue :filters="displayFilters" @update:filters="onDisplayFiltersUpdate" />
+        <PresentAwardsFiltersVue :filters="displayFilters" @update:filters="onDisplayFiltersUpdate" @reset="onResetFilters" />
 
         <PresentAwardsTableVue
+          ref="table"
           :items="visibleItems"
           :selected-ids="selectedIds"
           :presented-dates="presentedDates"

@@ -5,6 +5,18 @@
         <legend class="oas-heatmap-filter-label oas-vue-filter-heading-match">Display</legend>
         <v-checkbox :input-value="filters.groupByMember" label="Group by member" dense hide-details @change="patch({ groupByMember: $event })"></v-checkbox>
         <v-checkbox :input-value="filters.showPreviouslyPresented" label="Show previously presented" dense hide-details @change="patch({ showPreviouslyPresented: $event })"></v-checkbox>
+        <!--
+          Same text button as the OAS Progression filter bars, last in the row like theirs. Resets
+          everything on this page — display options AND column filters (user, 2026-10-11); it
+          replaced the table's own "Clear filters" link.
+
+          Inside the fieldset rather than after it: placed after it, the button landed on a line
+          of its own (seen live 2026-10-11) — most likely the shared `.oas-heatmap-display-group
+          legend { width: 100% }` rule (index.css) making the fieldset claim the whole row, though
+          not confirmed in DevTools. As the fieldset's last flex item it sits to the right of the
+          checkboxes regardless of the cause.
+        -->
+        <v-btn text color="primary" @click="resetFilters">Reset filters</v-btn>
       </fieldset>
     </div>
   </div>

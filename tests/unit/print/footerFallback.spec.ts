@@ -83,6 +83,28 @@ describe("fallback footer in the print document", () => {
   });
 });
 
+describe("fit has no width tolerance (right edge fix, 2026-10-11)", () => {
+  it("treats a table even 1px wider than the printable width as overflowing, and shrinks it", () => {
+    const doc = new DOMParser().parseFromString(buildPrintDocument({ source: mountHeatmap(), profile: "skill-heatmap", vars: VARS, generated: GENERATED }), "text/html");
+    Object.defineProperty(doc.body, "clientWidth", { value: 702 }); // A4 portrait, normal margins (702.99 rounded down)
+    // jsdom silently drops the (non-standard) CSS zoom property, so record what the code sets.
+    const zoomOf = new Map<CSSStyleDeclaration, number>();
+    const realSetProperty = CSSStyleDeclaration.prototype.setProperty;
+    jest.spyOn(CSSStyleDeclaration.prototype, "setProperty").mockImplementation(function (this: CSSStyleDeclaration, name: string, value: string | null, priority?: string) {
+      if (name === "zoom") zoomOf.set(this, parseFloat(String(value)));
+      return realSetProperty.call(this, name, value, priority);
+    });
+    jest.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+      const zoom = zoomOf.get((this as HTMLElement).style) ?? 1;
+      const width = (this as HTMLTableElement).tHead ? 703 * zoom : 0;
+      return { width, height: 0, top: 0, left: 0, right: width, bottom: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
+    });
+    const result = layoutTable(doc, { layout: "fit", minZoom: 0.7 });
+    expect(result.zoom).toBeLessThan(1);
+    expect(result.overflow).toBe(false);
+  });
+});
+
 describe("split printouts (widths stubbed — jsdom has no layout engine)", () => {
   /** Each column is 100px wide; the page is 350px, so at most 3 columns fit per part. */
   function layOut(footer: "margin-box" | "table") {

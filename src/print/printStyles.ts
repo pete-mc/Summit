@@ -70,8 +70,11 @@ html, body {
 .summit-print-meta dd { display: inline; margin: 0 0 0 1.5mm; }
 
 /* ---------- Table ---------- */
+/* 1pt short of full width: with collapsed borders, half of the outer border sits OUTSIDE the
+   table's box, so a 100%-wide table puts its right edge in the page margin, where it isn't drawn
+   (right edge missing on Present Awards, A4 portrait/normal margins, 2026-10-11). */
 table.summit-print-table {
-  width: 100%;
+  width: calc(100% - 1pt);
   border-collapse: collapse;
 }
 table.summit-print-table.summit-print-fixed { table-layout: fixed; }
