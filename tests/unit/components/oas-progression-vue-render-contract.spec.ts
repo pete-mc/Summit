@@ -119,16 +119,14 @@ describe("OasProgressionVueContent render contract", () => {
     expect(source).not.toMatch(/<v-[a-z]/);
   });
 
-  it("VueStage 4: PDF export reuses the shared gridExport service, asking the heat map for its table rather than reaching into its refs", () => {
+  it("Heatmap prints through summit-print's SummitPrintButton, asking the heat map for its table rather than reaching into its refs (.claude/Print/PLAN_STAGE_2.md)", () => {
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
-    expect(tsSource).toContain('from "@/components/gridExport"');
-    expect(tsSource).toContain("exportElementToPdf");
 
     // getExportTable() rather than $refs.exportTable: a ref on a v-data-table resolves to the
-    // component instance, not an element, and that failure is silent — exportElementToPdf finds
-    // no <tr>s and produces an empty PDF rather than throwing. The method keeps the caller
-    // working whichever way the heat map renders its table.
-    expect(tsSource).toContain("heatMap?.getExportTable()");
+    // component instance, not an element, and that failure is silent — the printout would find no
+    // table. The method keeps the caller working whichever way the heat map renders its table.
+    expect(tsSource).toContain("heatMapPrintTarget()");
+    expect(tsSource).toContain("?.getExportTable()");
     expect(tsSource).not.toContain("$refs.exportTable");
 
     const heatMapSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASHeatMapVue.ts"), "utf8");
@@ -136,7 +134,9 @@ describe("OasProgressionVueContent render contract", () => {
 
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(templateSource).toContain('ref="heatMap"');
-    expect(templateSource).toContain("onPdfExportClick");
+    expect(templateSource).toMatch(/<SummitPrintButton v-else-if="filters\.viewMode === 'heatmap'" profile="skill-heatmap" :target="heatMapPrintTarget"/);
+    // The old snapdom export is no longer wired to any button (kept in the .ts until the cleanup stage).
+    expect(templateSource).not.toContain("onPdfExportClick");
   });
 
   it("Summary tab prints through summit-print's SummitPrintButton, asking the summary for its table via getExportTable() (.claude/Print/PLAN_STAGE_1.md)", () => {
@@ -241,11 +241,13 @@ describe("OasProgressionVueContent render contract", () => {
     const headerRow = templateSource.slice(templateSource.indexOf('<div class="oas-progression-view-row">'), templateSource.indexOf("</div>", templateSource.indexOf('<div class="oas-progression-view-row">')));
 
     const excelIndex = headerRow.indexOf("onTableExcelExportClick");
-    const heatmapPdfIndex = headerRow.indexOf("onPdfExportClick");
+    const heatmapPdfIndex = headerRow.indexOf('profile="skill-heatmap"');
     const tablePdfIndex = headerRow.indexOf("onTablePdfExportClick");
     const refreshIndex = headerRow.indexOf("onReloadAllClick");
 
     expect(refreshIndex).toBeGreaterThan(-1);
+    // Guard: a missing button's index is -1, which would pass every "less than" check below.
+    expect(heatmapPdfIndex).toBeGreaterThan(-1);
     // Left to right: [Excel Export,] PDF Export, Refresh (rightmost). The view-mode toggle used to
     // sit between PDF Export and Refresh here; it is now the v-tabs strip below this row entirely
     // (see .claude/OASWorksheets/PLAN_STAGE_2.md §2 — a full-width row of its own, not another item

@@ -7,7 +7,7 @@ import OASWorksheetFiltersVue from "./OASWorksheetFiltersVue.vue";
 import OASWorksheetsVue from "./OASWorksheetsVue.vue";
 import SummitLoadingState from "@/components/SummitLoadingState.vue";
 import SummitPrintButton from "@/components/SummitPrintButton.vue";
-import { buildSummaryPrintMeta } from "@/pages/OasProgressionVue/services/oasPrintMeta";
+import { buildHeatmapPrintMeta, buildSummaryPrintMeta } from "@/pages/OasProgressionVue/services/oasPrintMeta";
 import type { MetaEntry } from "@/print/summitPrint";
 import { filterOASProgressionRows } from "./OASProgressionTableVue";
 import { groupRowsForHeatMap } from "@/pages/OasProgression/services/groupRowsForHeatMap";
@@ -267,6 +267,10 @@ export default defineComponent({
     summaryPrintMeta(): MetaEntry[] {
       return buildSummaryPrintMeta(this.filters, this.patrolFilterOptions, this.canFilterByPatrol);
     },
+    /** The Heatmap filters in effect, for the printout's header line. */
+    heatmapPrintMeta(): MetaEntry[] {
+      return buildHeatmapPrintMeta(this.filters, this.patrolFilterOptions, this.canFilterByPatrol);
+    },
   },
   watch: {
     filters: {
@@ -364,6 +368,12 @@ export default defineComponent({
         this.isReloading = false;
       }
     },
+    /** The Heatmap table for SummitPrintButton — read at click time, after Vuetify has rendered it. */
+    heatMapPrintTarget(): HTMLTableElement | undefined {
+      return (this.$refs.heatMap as unknown as HeatMapVueInstance | undefined)?.getExportTable();
+    },
+    // No longer wired to a button — replaced by SummitPrintButton (.claude/Print/PLAN.md). Kept
+    // until the new print path is proven, then removed in the cleanup stage.
     async onPdfExportClick() {
       const heatMap = this.$refs.heatMap as unknown as HeatMapVueInstance | undefined;
       // Asked for rather than reached into: how the heat map renders its table is its own

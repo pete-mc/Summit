@@ -1,5 +1,6 @@
 import type { PrintProfile } from "../summitPrint";
 import { columnCount } from "../printFit";
+import { SQUARE_COLOUR_PROPS, stripInlineSizes } from "./heatmapShared";
 
 /**
  * OAS Progression → Summary tab (OASPeakAwardSummaryVue).
@@ -18,23 +19,6 @@ export function peakAwardSummaryWidths(table: HTMLTableElement): number[] | null
   return null;
 }
 
-const SQUARE_PROPS = [
-  "background-color",
-  "border-top-color",
-  "border-right-color",
-  "border-bottom-color",
-  "border-left-color",
-  "border-top-style",
-  "border-right-style",
-  "border-bottom-style",
-  "border-left-style",
-  "border-top-width",
-  "border-right-width",
-  "border-bottom-width",
-  "border-left-width",
-  "border-radius",
-];
-
 const peakAwardSummary: PrintProfile = {
   name: "peak-award-summary",
   tableSelector: ".oas-heatmap-data-table table",
@@ -51,16 +35,13 @@ const peakAwardSummary: PrintProfile = {
   // Colours and shapes come from the live screen CSS so the print matches the app; sizes are set
   // in print units below instead.
   copyComputed: [
-    { selector: ".oas-heatmap-square", props: SQUARE_PROPS },
+    { selector: ".oas-heatmap-square", props: SQUARE_COLOUR_PROPS },
     { selector: ".oas-heatmap-stage-bar", props: ["background-color", "border-radius"] },
   ],
 
   transform(table) {
     // Screen pixel sizes (the bar's inline width from barWidthPx, square sizes) don't belong on paper.
-    Array.from(table.querySelectorAll<HTMLElement>(".oas-heatmap-stage-bar, .oas-heatmap-square")).forEach((el) => {
-      el.style.removeProperty("width");
-      el.style.removeProperty("height");
-    });
+    stripInlineSizes(table, ".oas-heatmap-stage-bar, .oas-heatmap-square");
   },
 
   css: `

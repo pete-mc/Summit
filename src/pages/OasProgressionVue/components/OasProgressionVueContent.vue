@@ -6,10 +6,10 @@
         <v-spacer></v-spacer>
         <!-- Exports need something to act on; hidden until a stream lands. -->
         <template v-if="hasContent">
-          <!-- summit-print (.claude/Print/PLAN.md) replaces the old snapdom "PDF Export" here; the
-               old handler stays in the .ts, unwired, until the new path is proven. -->
+          <!-- summit-print (.claude/Print/PLAN.md) replaces the old snapdom "PDF Export" on Summary
+               and Heatmap; the old handlers stay in the .ts, unwired, until the new path is proven. -->
           <SummitPrintButton v-if="filters.viewMode === 'summary'" profile="peak-award-summary" :target="summaryPrintTarget" :meta="summaryPrintMeta" />
-          <v-btn v-else-if="filters.viewMode === 'heatmap'" outlined color="primary" class="oas-vue-pill-btn" @click="onPdfExportClick">PDF Export</v-btn>
+          <SummitPrintButton v-else-if="filters.viewMode === 'heatmap'" profile="skill-heatmap" :target="heatMapPrintTarget" :meta="heatmapPrintMeta" />
           <template v-else-if="filters.viewMode === 'table'">
             <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onTableExcelExportClick">Excel Export</v-btn>
             <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onTablePdfExportClick">PDF Export</v-btn>
