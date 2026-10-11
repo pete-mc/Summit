@@ -31,6 +31,9 @@ const peakAwardSummary: PrintProfile = {
   },
 
   columnWidths: peakAwardSummaryWidths,
+  // Only Member repeats on split parts (user, 2026-10-11, "at this time"). Stated rather than left
+  // to the module default, so the choice is visible here.
+  repeatColumns: 1,
 
   // Colours and shapes come from the live screen CSS so the print matches the app; sizes are set
   // in print units below instead.

@@ -17,7 +17,8 @@
  *   - waits for fonts and images to load before measuring the layout
  */
 import { BASE_PRINT_CSS } from "./printStyles";
-import { layoutTable, cssContent, type LayoutOptions, type LayoutResult, type PrintLayout } from "./printFit";
+import { layoutTable, cssContent, columnCount, type LayoutOptions, type LayoutResult, type PrintLayout } from "./printFit";
+import { footerMode as detectFooterMode, type FooterMode } from "./printSupport";
 import { collectPrintFontCss, declaredPrintWeights, PRINT_FONT_FAMILY } from "./printFonts";
 import { createLogger } from "@/helpers/Logger";
 import { SUMMIT_PRINT_PROFILES } from "./profiles";
@@ -162,6 +163,12 @@ export interface PrintOptions {
   logo?: string | null;
   /** @font-face CSS for the print document; collected from Terrain's page when omitted. */
   fontCss?: string;
+  /**
+   * How footers are drawn: CSS page-margin boxes (Chromium 131+), or a repeating <tfoot> row for
+   * browsers without them (.claude/Print/PLAN_STAGE_3.md). buildPrintDocument defaults to
+   * margin boxes; printTable detects the browser when this is omitted.
+   */
+  footerMode?: FooterMode;
 }
 
 const DEFAULT_PAGE_SETTINGS: PageSettings = { pageSize: "A4", orientation: "landscape", margins: "normal", layout: "fit" };
@@ -285,9 +292,13 @@ export function buildPrintDocument(o: PrintOptions): string {
   table.classList.add("summit-print-table", `summit-print-profile-${profile.name}`);
 
   const { header, footer } = resolveHeaderFooter(o);
+  const mode = o.footerMode ?? "margin-box";
+  if (mode === "table") appendFallbackFooter(table, footer);
 
+  // In fallback mode the margin boxes are left out entirely, so forcing the fallback in a modern
+  // browser (for testing) doesn't print two footers.
   const slot = (name: string, text: string) =>
-    text
+    text && mode === "margin-box"
       ? `
   @bottom-${name} {
     content: ${cssContent(text)};
@@ -334,7 +345,7 @@ ${profile.css}</style>
  * closes — whether the user printed, saved or cancelled (the browser doesn't say which).
  */
 export async function printTable(o: PrintOptions): Promise<LayoutResult> {
-  const options: PrintOptions = { ...o, generated: o.generated ?? new Date(), fontCss: o.fontCss ?? collectPrintFontCss(document) };
+  const options: PrintOptions = { ...o, generated: o.generated ?? new Date(), fontCss: o.fontCss ?? collectPrintFontCss(document), footerMode: o.footerMode ?? detectFooterMode() };
   const html = buildPrintDocument(options);
   const { page, fit } = layoutOptions(options);
   return printViaSrcdoc(html, page, fit, declaredPrintWeights(options.fontCss || ""));
@@ -429,6 +440,7 @@ export function layoutOptions(o: PrintOptions): { page: ResolvedPage; fit: Layou
       // Centre footer on split parts: "<center> · Part {part} of {parts}". {part}/{parts} are
       // filled in per part by layoutTable().
       partFooter: resolveHeaderFooter(o).partFooter,
+      footerMode: o.footerMode ?? "margin-box",
     },
   };
 }
@@ -565,6 +577,35 @@ function cleanClone(table: HTMLTableElement, stripTooltips: boolean): void {
   }
   // Vuetify adds empty <col>s; drop them so our widths (or auto layout) win.
   Array.from(table.querySelectorAll("colgroup")).forEach((c) => c.remove());
+}
+
+/** {page}/{pages} only work in margin boxes (CSS page counters), so the fallback footer can't show them. */
+export function hasPageCounter(text: string): boolean {
+  return /\{pages?\}/.test(text);
+}
+
+/**
+ * The footer for browsers without page-margin boxes: a <tfoot> row, which browsers repeat at the
+ * foot of the table on every printed page (.claude/Print/PLAN_STAGE_3.md). Same left/centre/right
+ * slots as the real footer; a slot containing a page counter is left empty.
+ */
+function appendFallbackFooter(table: HTMLTableElement, footer: ResolvedHeaderFooter["footer"]): void {
+  const doc = table.ownerDocument;
+  const tfoot = table.createTFoot();
+  tfoot.className = "summit-print-tfoot";
+  const row = tfoot.insertRow();
+  const cell = doc.createElement("td");
+  cell.colSpan = Math.max(1, columnCount(table));
+  const box = doc.createElement("div");
+  box.className = "summit-print-foot";
+  (["left", "center", "right"] as const).forEach((slot) => {
+    const span = doc.createElement("span");
+    span.className = `summit-print-foot-${slot}`;
+    span.textContent = hasPageCounter(footer[slot]) ? "" : footer[slot];
+    box.appendChild(span);
+  });
+  cell.appendChild(box);
+  row.appendChild(cell);
 }
 
 function applyColumnWidths(table: HTMLTableElement, widths: Array<number | string>): void {

@@ -11,8 +11,8 @@ import { SQUARE_COLOUR_PROPS, stripInlineSizes } from "./heatmapShared";
  * Layouts:
  *   fit   – one page wide. Square strips wrap, one line per Plan/Do/Review group, so each
  *           in-progress cell becomes a small block of lines.
- *   split – squares stay on one line at full size; the stage columns are split across as many
- *           page-wide parts as needed, with Member and Stage repeated on every part.
+ *   split – squares stay on one line at full size; the columns are split across as many
+ *           page-wide parts as needed, with Member repeated on every part.
  */
 const NAME_WEIGHT = 12;
 const STAGE_WEIGHT = 5.5;
@@ -34,7 +34,8 @@ const skillHeatmap: PrintProfile = {
   defaults: { pageSize: "A4", orientation: "landscape", margins: "normal", layout: "fit" },
 
   columnWidths: skillHeatmapWidths,
-  repeatColumns: 2,
+  // Only Member repeats on split parts; Stage prints on part 1 only (user, 2026-10-11, "at this time").
+  repeatColumns: 1,
   bandLabel: "Stages {first} – {last}",
   minZoom: 0.7,
 

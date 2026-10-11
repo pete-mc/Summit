@@ -25,6 +25,7 @@
             In the next dialog choose a printer, or <strong>Save as PDF</strong>. Leave paper size and scale at their defaults, and untick
             <strong>Headers and footers</strong>.
           </p>
+          <p v-if="lacksFooterSupport" class="text-caption mt-2 mb-0">This browser can't print page numbers — update Edge to version 131 or later for full footers.</p>
         </v-card-text>
         <v-card-actions>
           <v-spacer />

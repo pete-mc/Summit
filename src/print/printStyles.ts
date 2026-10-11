@@ -15,7 +15,6 @@ export const BASE_PRINT_CSS = `
   --summit-print-font: ${PRINT_FONT_STACK};
   --summit-print-border: #b9bec4;
   --summit-print-head-bg: #eceff2;
-  --summit-print-zebra: #f7f8f9;
 }
 
 * {
@@ -95,7 +94,25 @@ table.summit-print-table th {
   font-size: 8.5pt;
   line-height: 1.2;
 }
-table.summit-print-table tbody tr:nth-child(even) > td { background: var(--summit-print-zebra); }
+/* No zebra striping: rows print on white (user, 2026-10-11). Alternating grey obscured the
+   patrol title rows when "Break by patrol" was on. A profile that wants striping adds its own. */
+table.summit-print-table tbody td { background: #fff; }
+
+/* ---------- Fallback footer (browsers without page-margin boxes) ----------
+   A <tfoot> row: repeated at the foot of the table on every printed page. No page numbers —
+   CSS page counters only work in margin boxes. See .claude/Print/PLAN_STAGE_3.md. */
+table.summit-print-table tfoot.summit-print-tfoot { display: table-footer-group; }
+table.summit-print-table tfoot.summit-print-tfoot td {
+  border: 0;
+  border-top: 0.5pt solid var(--summit-print-border);
+  padding: 1.5mm 0 0;
+  background: #fff;
+  font-size: 7.5pt;
+  font-weight: 400;
+  color: #555;
+}
+.summit-print-foot { display: flex; justify-content: space-between; gap: 4mm; }
+.summit-print-foot-center { flex: 1 1 auto; text-align: center; }
 
 /* ---------- Wide tables split into column bands ---------- */
 .summit-print-band + .summit-print-band { break-before: page; }

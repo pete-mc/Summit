@@ -33,6 +33,8 @@ export interface LayoutOptions {
   bandLabel?: string;
   /** Centre footer on split parts; {part}, {parts}, {page}, {pages}. */
   partFooter?: string;
+  /** "table" = the <tfoot> fallback footer for browsers without page-margin boxes. */
+  footerMode?: "margin-box" | "table";
 }
 
 export interface LayoutResult {
@@ -45,7 +47,7 @@ export const PRINT_TABLE_SELECTOR = "table.summit-print-table";
 const FOOTER_FONT = '7.5pt "SummitPrintSans", arial, sans-serif';
 
 export function layoutTable(doc: Document, options: LayoutOptions = {}): LayoutResult {
-  const { layout = "fit", minZoom = 0.6, repeatColumns = 1, step = 0.025, bandLabel = "Columns {first} – {last}", partFooter = "Part {part} of {parts}" } = options;
+  const { layout = "fit", minZoom = 0.6, repeatColumns = 1, step = 0.025, bandLabel = "Columns {first} – {last}", partFooter = "Part {part} of {parts}", footerMode = "margin-box" } = options;
   let splitZoom = options.splitZoom ?? 1;
 
   const table = doc.querySelector<HTMLTableElement>(PRINT_TABLE_SELECTOR);
@@ -58,7 +60,7 @@ export function layoutTable(doc: Document, options: LayoutOptions = {}): LayoutR
     // Too wide even at minZoom: fall through to splitting at minZoom.
     splitZoom = minZoom;
   }
-  return splitIntoBands(doc, table, available, { zoom: splitZoom, repeatColumns, bandLabel, partFooter });
+  return splitIntoBands(doc, table, available, { zoom: splitZoom, repeatColumns, bandLabel, partFooter, footerMode });
 }
 
 // ---------------------------------------------------------------------------
@@ -98,9 +100,15 @@ interface BandOptions {
   repeatColumns: number;
   bandLabel: string;
   partFooter: string;
+  footerMode: "margin-box" | "table";
 }
 
-function splitIntoBands(doc: Document, original: HTMLTableElement, available: number, { zoom, repeatColumns, bandLabel, partFooter }: BandOptions): LayoutResult {
+/** The part's centre footer text, e.g. "Generated … · Part 2 of 3". */
+function partFooterText(partFooter: string, part: number, parts: number): string {
+  return partFooter.replace(/\{part\}/g, String(part)).replace(/\{parts\}/g, String(parts));
+}
+
+function splitIntoBands(doc: Document, original: HTMLTableElement, available: number, { zoom, repeatColumns, bandLabel, partFooter, footerMode }: BandOptions): LayoutResult {
   // Fixed % widths suit one-page layouts; for bands let each column size to its content so wide
   // columns get the room and narrow ones don't waste it.
   original.querySelector("colgroup")?.remove();
@@ -150,6 +158,11 @@ function splitIntoBands(doc: Document, original: HTMLTableElement, available: nu
     label.textContent = `Part ${i + 1} of ${bandCount}  ·  ${cols}`;
     const t = sliceColumns(original, fixed.concat(g));
     setZoom(t, zoom);
+    // Fallback footer: the part number goes in this part's own <tfoot> instead of a named @page.
+    const footCenter = t.querySelector(".summit-print-foot-center");
+    if (footerMode === "table" && footCenter && partFooter && !/\{pages?\}/.test(partFooter)) {
+      footCenter.textContent = partFooterText(partFooter, i + 1, bandCount);
+    }
     section.append(label, t);
     frag.appendChild(section);
   });
@@ -160,21 +173,23 @@ function splitIntoBands(doc: Document, original: HTMLTableElement, available: nu
   const firstBand = doc.querySelector(".summit-print-band");
   if (header && firstBand) firstBand.prepend(header);
 
-  // Per-band footer ("Part 2 of 3") using named pages.
+  // Per-band footer ("Part 2 of 3") using named pages — margin-box mode only; the fallback put it
+  // in each part's <tfoot> above.
   const style = doc.createElement("style");
-  style.textContent = !partFooter
-    ? ""
-    : chosen
-        .map(
-          (_, i) => `@page summit-band-${i + 1} {
+  style.textContent =
+    !partFooter || footerMode === "table"
+      ? ""
+      : chosen
+          .map(
+            (_, i) => `@page summit-band-${i + 1} {
   @bottom-center {
-    content: ${cssContent(partFooter.replace(/\{part\}/g, String(i + 1)).replace(/\{parts\}/g, String(bandCount)))};
+    content: ${cssContent(partFooterText(partFooter, i + 1, bandCount))};
     font: ${FOOTER_FONT}; color: #555;
     vertical-align: middle;
   }
 }`,
-        )
-        .join("\n");
+          )
+          .join("\n");
   doc.head.appendChild(style);
   doc.documentElement.dataset.summitPrintBands = String(bandCount);
   return { zoom, overflow, bands: bandCount };

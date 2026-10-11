@@ -3,6 +3,7 @@ import type { PropType } from "vue";
 import { getPrintProfile, printTable, PAGE_SIZES, type MetaEntry, type PageSettings, type PrintFooter, type PrintHeader } from "@/print/summitPrint";
 import { getTerrainPrintContext } from "@/print/printContext";
 import { loadPrintSettings, savePrintSettings } from "@/print/printSettings";
+import { browserLacksFooterSupport } from "@/print/printSupport";
 import { createLogger } from "@/helpers/Logger";
 
 const logger = createLogger("SummitPrintButton");
@@ -48,6 +49,8 @@ export default defineComponent({
       warn: false,
       warnText: "",
       settings: initialPrintSettings(this.profile),
+      // Only a genuinely older browser — not the DevTools test switch (.claude/Print/PLAN_STAGE_3.md).
+      lacksFooterSupport: browserLacksFooterSupport(),
       pageSizes: Object.keys(PAGE_SIZES),
       marginItems: [
         { text: "Normal", value: "normal" },

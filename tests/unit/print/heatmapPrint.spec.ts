@@ -1,5 +1,6 @@
 import { buildPrintDocument, getPrintProfile, resolveHeaderFooter } from "@/print/summitPrint";
 import { skillHeatmapWidths } from "@/print/profiles/skillHeatmap";
+import { BASE_PRINT_CSS } from "@/print/printStyles";
 import { buildHeatmapPrintMeta } from "@/pages/OasProgressionVue/services/oasPrintMeta";
 import type { OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
 
@@ -59,7 +60,7 @@ describe("skill-heatmap profile", () => {
     expect(profile.header.title).toBe("OAS Progression - Heatmap");
     const r = resolveHeaderFooter({ source: document.body, profile: "skill-heatmap", vars: VARS, generated: GENERATED });
     expect(r.header.meta.map((m) => m.label)).toEqual(["Generated"]);
-    expect(profile.repeatColumns).toBe(2);
+    expect(profile.repeatColumns).toBe(1); // Member only (user, 2026-10-11)
     expect(profile.defaults.orientation).toBe("landscape");
   });
 
@@ -87,6 +88,13 @@ describe("skill-heatmap profile", () => {
     expect(kinds).toEqual(["square", "square", "break", "square"]);
     // The live table is untouched.
     expect(host.querySelectorAll(".oas-sq-break")).toHaveLength(0);
+  });
+
+  it("prints every row on white — no zebra striping (user, 2026-10-11)", () => {
+    expect(BASE_PRINT_CSS).not.toMatch(/nth-child/);
+    expect(BASE_PRINT_CSS).toMatch(/table\.summit-print-table tbody td \{ background: #fff; \}/);
+    // Title and patrol bands are more specific than the white rule, so they keep their tint.
+    expect(getPrintProfile("skill-heatmap").css).toMatch(/tr\.oas-heatmap-patrol-title-row > td \{\s*background: #f0f3f6;/);
   });
 
   it("keeps hidden squares invisible and title/patrol rows with the row beneath", () => {
