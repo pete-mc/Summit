@@ -74,8 +74,8 @@ over hard-coded values.
 --summit-focus-ring-width: 2px;
 
 --summit-color-status-unanswered: #edebe9;  /* heat-map: not started */
---summit-color-status-answered: #7d6694;    /* heat-map: in progress */
---summit-color-status-awarded: #b3c9b3;     /* heat-map: complete */
+--summit-color-status-answered: #ecb206;    /* heat-map: in progress (yellow) */
+--summit-color-status-awarded: var(--summit-color-bg-primary); /* heat-map: complete (Summit green #004c00) */
 ```
 
 Brand green (`#004c00`, hover `#006600`) is Summit's identity color — used for primary
@@ -84,7 +84,11 @@ left nav. Don't introduce a second "primary" brand color; extend the palette wit
 `--summit-color-*` tokens in the same naming style if a new semantic color is needed.
 
 The three `--summit-color-status-*` tokens above are the heat-map square's colour
-states. There is a fourth state class, `.oas-heatmap-square-hidden` (the OAS
+states. **Changed with the OAS Summary tab (commit `f5e766d`):** in progress went from
+purple `#7d6694` to yellow `#ecb206`, and complete from pale green `#b3c9b3` to Summit's
+brand green via `var(--summit-color-bg-primary)`. The old values are still in
+`index.css` as comments. The OAS heat map, the Summary tab, I Statements and their
+printouts all follow these tokens, so changing a colour here changes all of them. There is a fourth state class, `.oas-heatmap-square-hidden` (the OAS
 Progression page's "Hide answered" filter), which correctly has **no** token: it sets
 `visibility: hidden` and clears the border so the square holds its slot while showing
 nothing. Note that `.oas-heatmap-square` carries the border independently of the state
@@ -158,9 +162,9 @@ with an editable `v-data-table`. Two extra conventions come from it, both in
   `--summit-font-weight-semibold` for the label, rather than a border or a heavier rule.
 
 The I Statements heat-map does use Summit's `--summit-*` tokens for colour (unlike the
-OAS Vue page, which leans on Vuetify's theme): its purple square reuses
-`--summit-color-status-answered`, the same purple as the OAS heat-map's in-progress
-state, rather than introducing a second near-identical purple. Its header/border
+OAS Vue page, which leans on Vuetify's theme): its in-progress square reuses
+`--summit-color-status-answered`, the same colour (now yellow) as the OAS heat-map's
+in-progress state, rather than introducing a second near-identical colour. Its header/border
 colours likewise come from the `--summit-color-*` palette. Note that its stage-number
 header sets `color` explicitly — without that, the numbers inherit a pale grey from
 Terrain's own table CSS and are effectively invisible against the muted background.
@@ -173,10 +177,20 @@ didn't have one (see "How these values were determined" below) and near-identica
 elements silently drifted out of sync as a result.
 
 **Deliberately left outside the scale** (not oversights — each has an independent
-reason to differ): `.oas-vue-pill-btn` (the PDF/Excel/Show-Table/Refresh buttons)
-matches Terrain's own distinct button component, which happens to also be 14px but
-for unrelated reasons (`font-weight: 600`, different semantics); Vuetify icon sizes
+reason to differ): the pill buttons (Print / PDF, Excel Export, Save, Reset) match
+Terrain's own distinct button component, which happens to also be 14px but for
+unrelated reasons (`font-weight: 600`, different semantics); Vuetify icon sizes
 (`.v-icon`) are a separate concern from text sizing.
+
+**Pill buttons: always `<SummitPillButton>`** (`src/components/SummitPillButton.vue`,
+added 2026-10-12). It reproduces Terrain's own button, read from Terrain's DevTools:
+`.medium` (14px/600, 35px high, min-width 80px, padding `0 18px`, radius 25px), plus
+`variant="minor"` (the default: outlined, `--color-base-blue` on white) or
+`variant="major"` (filled `--color-scouts-medium-blue`, white text). Terrain's classes
+can't be used directly, because its rules are scoped to its own component
+(`.major[data-v-ac713568]`). This component replaced four scoped copies of an
+`.oas-vue-pill-btn` rule, one of which never reached its button. It's guarded by
+`tests/unit/components/summit-pill-button.spec.ts`.
 
 **How these values were determined, and how to add a new one:** every value in this
 scale was read directly from Terrain's live DevTools Computed panel — Terrain's own
@@ -242,7 +256,7 @@ Two things worth knowing:
   slightly different near-blacks doing the same job. New text on a Vuetify page should prefer
   Terrain's.
 - **Terrain has nine official OAS stage colours.** The heat map currently colours by *state*
-  (`--summit-color-status-unanswered/answered/awarded` — grey/purple/green), not by stage. Using
+  (`--summit-color-status-unanswered/answered/awarded` — grey/yellow/green), not by stage. Using
   Terrain's scale instead would be a deliberate design change, not a tidy-up; noted here so the
   option is known rather than rediscovered.
 

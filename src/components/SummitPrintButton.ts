@@ -5,6 +5,7 @@ import { getTerrainPrintContext } from "@/print/printContext";
 import { loadPrintSettings, savePrintSettings } from "@/print/printSettings";
 import { browserLacksFooterSupport } from "@/print/printSupport";
 import { createLogger } from "@/helpers/Logger";
+import SummitPillButton from "@/components/SummitPillButton.vue";
 
 const logger = createLogger("SummitPrintButton");
 
@@ -27,6 +28,7 @@ export function initialPrintSettings(profile: string): PageSettings {
  */
 export default defineComponent({
   name: "SummitPrintButton",
+  components: { SummitPillButton },
   props: {
     /** Registered profile name, see src/print/profiles/. */
     profile: { type: String, required: true },

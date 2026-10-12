@@ -9,6 +9,7 @@ import type { TerrainAchievements, TerrainUnitMember } from "@/types/terrainType
 jest.mock("@/pages/PresentAwardsVue/components/PresentAwardsTableVue.vue", () => ({ __esModule: true, default: { name: "PresentAwardsTableVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/PresentAwardsVue/components/PresentAwardsFiltersVue.vue", () => ({ __esModule: true, default: { name: "PresentAwardsFiltersVue", render: () => null } }), { virtual: true });
 jest.mock("@/components/SummitLoadingState.vue", () => ({ __esModule: true, default: { name: "SummitLoadingState", render: () => null } }), { virtual: true });
+jest.mock("@/components/SummitPillButton.vue", () => ({ __esModule: true, default: { name: "SummitPillButton", render: () => null } }), { virtual: true });
 jest.mock("@/components/SummitPrintButton.vue", () => ({ __esModule: true, default: { name: "SummitPrintButton", render: () => null } }), { virtual: true });
 
 // gridExport's top-level jsPDF/xlsx imports are ESM that Jest cannot parse, so it is mocked here

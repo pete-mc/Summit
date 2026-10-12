@@ -70,7 +70,7 @@
       </fieldset>
 
       <v-spacer></v-spacer>
-      <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="$emit('reset')">Reset</v-btn>
+      <SummitPillButton @click="$emit('reset')">Reset</SummitPillButton>
     </div>
   </div>
 </template>

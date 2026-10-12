@@ -34,7 +34,19 @@ The user may revamp this tab, so:
 - It waits for the fonts (capped) before `print()`. Previously it printed on `load`/500 ms, whatever the fonts were doing.
 - `waitForPrintFonts` moves into `printFonts.ts` so both print paths share it.
 
-## E. Pill buttons (item 3), waiting on the user
+## E. Pill buttons (item 3): built 2026-10-12, awaiting live check
+
+- **Result:** the user pasted Terrain's live rules. Both `.minor[data-v-ac713568]` and `.major[data-v-ac713568]` are **scoped** to Terrain's own Button component, so the classes can't be reused, and the values are copied instead.
+- **New `src/components/SummitPillButton.vue` (+ .ts):** it wraps `v-btn` and passes all attributes and listeners through.
+  - `.medium` shape: 14px/600, 35px, min-width 80px, `0 18px`, radius 25px.
+  - `variant="minor"`, the default: outlined in `--color-base-blue` on white.
+  - `variant="major"`: filled `--color-scouts-medium-blue`, white text.
+  - Colours go through v-btn's `color` prop (Vuetify accepts `var(--…)`), so Present Awards' green Save (`!important`) still overrides `major`.
+- **Replaces the four scoped `.oas-vue-pill-btn` copies:** OasProgressionVueContent, PresentAwardsVueContent, IStatementsContent and SummitPrintButton.
+  - **Behaviour change:** the I Statements **Reset** button now actually gets the pill look. Its rule lived in the parent's scoped CSS and never reached it.
+- Guarded by `tests/unit/components/summit-pill-button.spec.ts`. DESIGN.md is updated.
+
+### Original note
 - The user suggested Terrain's own `medium minor` (outlined) / `medium major` (filled) button classes.
 - Those rules aren't in the captured Terrain assets (`docs/terrain.scouts.com.au/` has no `.major`/`.minor` selectors), and the live button carries Terrain's scoped attribute (`data-v-ac713568`).
 - **Needs the live selectors** before choosing an approach:

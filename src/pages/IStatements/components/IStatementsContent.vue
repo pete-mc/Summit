@@ -50,17 +50,6 @@
   padding: 8px 0;
 }
 
-.oas-vue-pill-btn.v-btn {
-  font-size: 14px;
-  font-weight: 600;
-  height: 35px !important;
-  min-width: 80px;
-  padding: 0 18px;
-  border-radius: 25px;
-  text-transform: none;
-  letter-spacing: normal;
-}
-
 /* .istatement-error went with the error markup — that now lives in SummitLoadingState.vue. */
 .istatement-warning {
   font-family: var(--oas-vue-font-family);

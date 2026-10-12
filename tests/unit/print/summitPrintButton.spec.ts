@@ -1,5 +1,6 @@
 // The button's .ts is testable on its own (the .vue template isn't parsed by Jest). printTable is
 // mocked: the real one needs a browser print dialog.
+jest.mock("@/components/SummitPillButton.vue", () => ({ __esModule: true, default: { name: "SummitPillButton", render: () => null } }), { virtual: true });
 jest.mock("@/print/summitPrint", () => {
   const actual = jest.requireActual("@/print/summitPrint");
   return { __esModule: true, ...actual, printTable: jest.fn() };

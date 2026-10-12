@@ -5,6 +5,7 @@ import PresentAwardsTableVue from "./PresentAwardsTableVue.vue";
 import PresentAwardsFiltersVue from "./PresentAwardsFiltersVue.vue";
 import SummitLoadingState from "@/components/SummitLoadingState.vue";
 import SummitPrintButton from "@/components/SummitPrintButton.vue";
+import SummitPillButton from "@/components/SummitPillButton.vue";
 import { buildPresentAwardsPrintMeta } from "../services/presentAwardsPrintMeta";
 import type { MetaEntry } from "@/print/summitPrint";
 import type { PresentAwardsDisplayFilters } from "./PresentAwardsFiltersVue";
@@ -59,7 +60,7 @@ function loadInitialFilters(): PresentAwardsVueFilterState {
  */
 export default defineComponent({
   name: "PresentAwardsVueContent",
-  components: { PresentAwardsTableVue, PresentAwardsFiltersVue, SummitLoadingState, SummitPrintButton },
+  components: { PresentAwardsTableVue, PresentAwardsFiltersVue, SummitLoadingState, SummitPillButton, SummitPrintButton },
   props: {
     items: { type: Array as PropType<SummitAchievement[]>, default: () => [] },
     loadState: { type: String, default: "loading" },

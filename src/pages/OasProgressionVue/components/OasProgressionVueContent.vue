@@ -10,10 +10,10 @@
           <SummitPrintButton v-if="filters.viewMode === 'summary'" profile="peak-award-summary" :target="summaryPrintTarget" :meta="summaryPrintMeta" />
           <SummitPrintButton v-else-if="filters.viewMode === 'heatmap'" profile="skill-heatmap" :target="heatMapPrintTarget" :meta="heatmapPrintMeta" />
           <template v-else-if="filters.viewMode === 'table'">
-            <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onTableExcelExportClick">Excel Export</v-btn>
+            <SummitPillButton @click="onTableExcelExportClick">Excel Export</SummitPillButton>
             <SummitPrintButton profile="oas-table" :target="tablePrintTarget" :prepare="prepareTablePrint" :meta="tablePrintMeta" />
           </template>
-          <v-btn v-else-if="filters.viewMode === 'worksheets'" outlined color="primary" class="oas-vue-pill-btn" @click="onWorksheetPrintClick">Print</v-btn>
+          <SummitPillButton v-else-if="filters.viewMode === 'worksheets'" @click="onWorksheetPrintClick">Print</SummitPillButton>
         </template>
         <v-btn icon title="Refresh data" :loading="isReloading" :disabled="isReloading" @click="onReloadAllClick"><v-icon>mdi-refresh</v-icon></v-btn>
       </div>
@@ -157,25 +157,6 @@
   --oas-vue-font-size-body: 14px;
   --oas-vue-font-family: NunitoSans-regular, arial, sans-serif;
   padding: 8px 0;
-}
-
-/*
- * Matches Terrain's own bordered "pill" button look (e.g. Approvals page's "View printable
- * version" button, a real .minor.medium button) — confirmed live via DevTools Computed panel:
- * font-size 14px, font-weight 600, height 35px, min-width 80px, padding 0 18px,
- * border-radius 25px. `outlined color="primary"` already gets the 1px border + blue
- * text/border from our Vuetify theme (see src/vuetifySetup.ts) — this overrides only the
- * sizing/shape Vuetify's own outlined variant doesn't match by default.
- */
-.oas-vue-pill-btn.v-btn {
-  font-size: 14px;
-  font-weight: 600;
-  height: 35px !important;
-  min-width: 80px;
-  padding: 0 18px;
-  border-radius: 25px;
-  text-transform: none;
-  letter-spacing: normal;
 }
 
 /*

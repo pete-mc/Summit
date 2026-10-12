@@ -1,6 +1,6 @@
 <template>
   <span class="summit-print-button">
-    <v-btn outlined color="primary" class="oas-vue-pill-btn" :disabled="busy" @click="open = true">{{ label }}</v-btn>
+    <SummitPillButton :disabled="busy" @click="open = true">{{ label }}</SummitPillButton>
 
     <v-dialog v-model="open" max-width="380">
       <v-card>
@@ -41,22 +41,3 @@
 
 <script lang="ts" src="./SummitPrintButton.ts"></script>
 
-<style scoped>
-/*
- * Same pill look as the page toolbars' other buttons. A scoped .oas-vue-pill-btn rule in a parent
- * page can't reach a v-btn rendered inside this component, so the rule is restated here. NOTE:
- * this is now the fourth copy (OasProgressionVueContent, PresentAwardsVueContent,
- * IStatementsContent each declare their own) — consolidating them is a separate follow-up, see
- * .claude/Print/PLAN_STAGE_1.md.
- */
-.oas-vue-pill-btn.v-btn {
-  font-size: 14px;
-  font-weight: 600;
-  height: 35px !important;
-  min-width: 80px;
-  padding: 0 18px;
-  border-radius: 25px;
-  text-transform: none;
-  letter-spacing: normal;
-}
-</style>

@@ -9,11 +9,11 @@
           them clickable during the load offered an empty spreadsheet and a save of nothing.
         -->
         <template v-if="hasContent">
-          <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onExcelExportClick">Excel Export</v-btn>
+          <SummitPillButton @click="onExcelExportClick">Excel Export</SummitPillButton>
           <!-- summit-print (.claude/Print/PLAN_STAGE_4.md) replaces the old jsPDF "PDF Export"; the old
                handler stays in the .ts, unwired, until the new path is proven. -->
           <SummitPrintButton profile="present-awards" :target="presentAwardsPrintTarget" :prepare="preparePresentAwardsPrint" :meta="presentAwardsPrintMeta" />
-          <v-btn depressed class="oas-vue-pill-btn present-awards-save-btn" :loading="isSaving" :disabled="isSaving" @click="onSaveClick">Save Changes</v-btn>
+          <SummitPillButton variant="major" class="present-awards-save-btn" :loading="isSaving" :disabled="isSaving" @click="onSaveClick">Save Changes</SummitPillButton>
         </template>
         <v-btn icon title="Refresh data" :loading="isReloading" :disabled="isReloading" @click="onReloadClick"><v-icon>mdi-refresh</v-icon></v-btn>
       </div>
@@ -79,13 +79,6 @@
 }
 
 /*
- * Matches Terrain's own bordered "pill" button look — confirmed live via DevTools Computed panel:
- * font-size 14px, font-weight 600, height 35px, min-width 80px, padding 0 18px,
- * border-radius 25px. `outlined color="primary"` already supplies the 1px border + blue
- * text/border from our Vuetify theme (see src/vuetifySetup.ts); this overrides only the
- * sizing/shape Vuetify's outlined variant doesn't match by default.
- */
-/*
  * Let the action buttons wrap rather than overflow on a narrow window, and separate them from the
  * Display filter box below — without the bottom margin the export buttons sit directly on the
  * filter panel's top edge.
@@ -117,14 +110,4 @@
   opacity: 0.6;
 }
 
-.oas-vue-pill-btn.v-btn {
-  font-size: 14px;
-  font-weight: 600;
-  height: 35px !important;
-  min-width: 80px;
-  padding: 0 18px;
-  border-radius: 25px;
-  text-transform: none;
-  letter-spacing: normal;
-}
 </style>

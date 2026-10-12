@@ -7,6 +7,7 @@ import OASWorksheetFiltersVue from "./OASWorksheetFiltersVue.vue";
 import OASWorksheetsVue from "./OASWorksheetsVue.vue";
 import SummitLoadingState from "@/components/SummitLoadingState.vue";
 import SummitPrintButton from "@/components/SummitPrintButton.vue";
+import SummitPillButton from "@/components/SummitPillButton.vue";
 import { buildHeatmapPrintMeta, buildOasTablePrintMeta, buildSummaryPrintMeta } from "@/pages/OasProgressionVue/services/oasPrintMeta";
 import type { MetaEntry } from "@/print/summitPrint";
 import { filterOASProgressionRows } from "./OASProgressionTableVue";
@@ -152,7 +153,7 @@ function loadInitialFilters(): OASProgressionVueFilterState {
 
 export default defineComponent({
   name: "OasProgressionVueContent",
-  components: { OASHeatMapVue, OASPeakAwardSummaryFiltersVue, OASPeakAwardSummaryVue, OASProgressionFiltersVue, OASProgressionTableVue, OASWorksheetFiltersVue, OASWorksheetsVue, SummitLoadingState, SummitPrintButton },
+  components: { OASHeatMapVue, OASPeakAwardSummaryFiltersVue, OASPeakAwardSummaryVue, OASProgressionFiltersVue, OASProgressionTableVue, OASWorksheetFiltersVue, OASWorksheetsVue, SummitLoadingState, SummitPillButton, SummitPrintButton },
   props: {
     items: { type: Array as PropType<OASProgressionRow[]>, required: true },
     trunkStageCounts: { type: Object as PropType<Record<string, number>>, required: true },

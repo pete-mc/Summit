@@ -2,9 +2,11 @@ import { defineComponent, type PropType } from "vue";
 import { OAS_STREAMS } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import { ALL_STAGES, type IStatementFilters } from "../services/filterIStatementMatrix";
 import { titleCaseSegment } from "../services/buildIStatementMatrix";
+import SummitPillButton from "@/components/SummitPillButton.vue";
 
 export default defineComponent({
   name: "IStatementFilters",
+  components: { SummitPillButton },
   props: {
     filters: { type: Object as PropType<IStatementFilters>, required: true },
   },
