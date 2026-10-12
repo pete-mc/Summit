@@ -10,8 +10,7 @@
         -->
         <template v-if="hasContent">
           <SummitPillButton @click="onExcelExportClick">Excel Export</SummitPillButton>
-          <!-- summit-print (.claude/Print/PLAN_STAGE_4.md) replaces the old jsPDF "PDF Export"; the old
-               handler stays in the .ts, unwired, until the new path is proven. -->
+          <!-- Prints through summit-print (.claude/Print/PLAN_STAGE_4.md). -->
           <SummitPrintButton profile="present-awards" :target="presentAwardsPrintTarget" :prepare="preparePresentAwardsPrint" :meta="presentAwardsPrintMeta" />
           <SummitPillButton variant="major" class="present-awards-save-btn" :loading="isSaving" :disabled="isSaving" @click="onSaveClick">Save Changes</SummitPillButton>
         </template>
