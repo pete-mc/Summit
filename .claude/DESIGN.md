@@ -18,8 +18,9 @@ one linked from Summit's nav menu — see `src/router/SummitRouter.ts`, where
 components. OAS Progression's React original has since been deleted outright (its
 shared, non-UI service layer survives under `src/pages/OasProgression/services/`,
 still imported by the Vue page and I Statements — only the React components/route were
-removed); Present Awards' React original still survives at an unlinked `-legacy` route
-for reference. I Statements was built Vue-first and has no React equivalent at all.
+removed). Present Awards' React original went the same way on 2026-10-12: its page and
+`-legacy` route were deleted, while its model and storage service survive under
+`src/pages/PresentAwards/models/` and `services/` for the Vue page. I Statements was built Vue-first and has no React equivalent at all.
 
 React (18.2) is **not** gone — it's still live and routed for pages that haven't been
 rebuilt: `Home`, `MilestoneReport`, `OasReport`, `PeakAward`, `Topo`,
@@ -98,8 +99,7 @@ transparent background leaves an empty outline behind.
 ## Component conventions (React pages)
 
 These apply to the still-active React pages (`Home`, `MilestoneReport`, `OasReport`,
-`PeakAward`, `Topo`, `SummitCalendar`, `DisplayOptions`, and the unlinked `-legacy`
-pages). For new/Vue work see the next section.
+`PeakAward`, `Topo`, `SummitCalendar`, `DisplayOptions`). For new/Vue work see the next section.
 
 - Functional components, typed props via `interface` + `React.FC<Props>`. See
   [`SimpleDropdown.tsx`](../src/components/SimpleDropdown.tsx) for the canonical
@@ -124,8 +124,7 @@ pages). For new/Vue work see the next section.
 adopting more broadly — it was, and Vuetify is now the default for new pages (see
 above). `OasProgressionVue` became the primary OAS Progression page (route
 `/summit/reports/oasprogression`); the original React version has since been deleted
-outright, rather than kept unlinked like Present Awards' legacy page — see the top of
-this file. It does not use Summit's
+outright, as Present Awards' later was too — see the top of this file. It does not use Summit's
 `--summit-*` tokens; it has its own small type scale, defined once as CSS custom
 properties on `.oas-vue-content` in
 [`OasProgressionVueContent.vue`](../src/pages/OasProgressionVue/components/OasProgressionVueContent.vue):
