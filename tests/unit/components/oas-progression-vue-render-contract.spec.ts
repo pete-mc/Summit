@@ -153,10 +153,21 @@ describe("OasProgressionVueContent render contract", () => {
 
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(templateSource).toContain('ref="summary"');
-    expect(templateSource).toMatch(/<SummitPrintButton v-if="filters\.viewMode === 'summary'" profile="peak-award-summary" :target="summaryPrintTarget"/);
+    expect(templateSource).toMatch(/<template v-if="filters\.viewMode === 'summary'">[\s\S]*?<SummitPrintButton profile="peak-award-summary" :target="summaryPrintTarget"[\s\S]*?<\/template>/);
     // The old snapdom export is gone (.claude/Print/PLAN_STAGE_5.md §B).
     expect(templateSource).not.toContain("onSummaryPdfExportClick");
     expect(tsSource).not.toContain("onSummaryPdfExportClick");
+  });
+
+  it("Summary tab has its own formatted Excel Export beside Print / PDF (.claude/Excel/PLAN_STAGE_1.md)", () => {
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
+    expect(templateSource).toMatch(/<template v-if="filters\.viewMode === 'summary'">[\s\S]*?@click="onSummaryExcelExportClick">Excel Export<\/SummitPillButton>[\s\S]*?<SummitPrintButton profile="peak-award-summary"/);
+
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
+    // Exports the rows on screen, with the printout's header wording.
+    expect(tsSource).toContain("rows: this.filteredPeakAwardSummaryRows");
+    expect(tsSource).toContain('resolveExcelHeader("peak-award-summary", this.summaryPrintMeta');
+    expect(tsSource).toContain('buildExcelFileName(["OAS Progression", "Summary", context.vars.unit], generated)');
   });
 
   it("VueStage 4: the reload button shows a loading state while reloading, matching the plan's nicer-than-original affordance", () => {

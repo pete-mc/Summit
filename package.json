@@ -63,6 +63,7 @@
     "react-datepicker": "^9.1.0",
     "react-dom": "^18.2.0",
     "vuetify": "^2.7.2",
+    "write-excel-file": "^4.1.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

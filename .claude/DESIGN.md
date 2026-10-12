@@ -466,6 +466,23 @@ unreliable. `jsPDF` survives **only** behind the React `DataGrid.tsx`; don't use
 - Fonts: Terrain's Nunito Sans is borrowed into the print document at real weights
   (`printFonts.ts`). `printWorksheets.ts` uses the same helper.
 
+## Excel export: use summit-excel
+
+**Added 2026-10-12, in progress.** Formatted spreadsheets go through `summit-excel` (`src/excel/`,
+library `write-excel-file`). The plan and decisions are in `.claude/Excel/PLAN.md` and its stage files.
+So far it covers only the OAS Summary tab. Other Excel buttons still use the plain `xlsx` dump in
+`gridExport.ts` until their stage.
+
+- **Built from the page's row data, not the screen DOM**, so numbers stay numbers. One builder per
+  table in `src/excel/sheets/`.
+- **Header wording comes from the same summit-print profile** (`resolveExcelHeader`), so the
+  spreadsheet and the printout say the same thing. Below it: the section logo, then the table.
+- **Colours are fixed hex copies** of the screen's status tokens (`EXCEL_COLOURS` in
+  `summitExcel.ts`), because Excel can't read CSS variables. **If you change
+  `--summit-color-status-*` in `index.css`, change `EXCEL_COLOURS` too.**
+- File name: `Summit - {Page} - {View} - {Unit} - {yyyymmdd}.xlsx`.
+- The title block, the table header and the Member column are frozen.
+
 ## Verification
 
 No build step needed to check this file — it's documentation. When adding new shared

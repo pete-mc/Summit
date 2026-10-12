@@ -257,7 +257,7 @@ export function resolvePage({ pageSize = "A4", orientation = "landscape", margin
   };
 }
 
-function settingsFor(o: PrintOptions, profile: ResolvedProfile) {
+function settingsFor(o: HeaderFooterOptions, profile: ResolvedProfile) {
   return {
     pageSize: o.pageSize ?? profile.defaults.pageSize,
     orientation: o.orientation ?? profile.defaults.orientation,
@@ -453,7 +453,13 @@ export interface ResolvedHeaderFooter {
 
 const KEPT_PLACEHOLDERS = ["page", "pages", "part", "parts"];
 
-export function resolveHeaderFooter(o: PrintOptions): ResolvedHeaderFooter {
+/**
+ * Everything resolveHeaderFooter reads: the print options minus the table itself, so the Excel
+ * export (src/excel/) can produce the same header wording without a table to print.
+ */
+export type HeaderFooterOptions = Omit<PrintOptions, "source">;
+
+export function resolveHeaderFooter(o: HeaderFooterOptions): ResolvedHeaderFooter {
   const profile = getPrintProfile(o.profile);
   const opts = settingsFor(o, profile);
   const callHeader: PrintHeader = typeof o.header === "string" ? { title: o.header } : o.header || {};

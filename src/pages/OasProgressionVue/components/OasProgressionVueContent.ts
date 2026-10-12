@@ -17,6 +17,9 @@ import { PEAK_AWARD_REQUIREMENTS, type PeakAwardRequirement } from "@/pages/OasP
 import { collectPatrolNames, hasUnassignedMembers, filterMembersByPatrol, UNASSIGNED_PATROL, OAS_SKILLS } from "@/pages/OasProgression/services/filterHeatMapSections";
 import { loadOASProgressionVueFilters, saveOASProgressionVueFilters, type OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
 import { exportGridToExcel, type GridExportColumn, type GridExportRow } from "@/components/gridExport";
+import { buildExcelFileName, downloadWorkbook, loadSectionLogoImage, resolveExcelHeader } from "@/excel/summitExcel";
+import { buildPeakAwardSummarySheet } from "@/excel/sheets/peakAwardSummary";
+import { getTerrainPrintContext } from "@/print/printContext";
 import { createLogger } from "@/helpers";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
@@ -174,6 +177,7 @@ export default defineComponent({
     return {
       filters: loadInitialFilters() as OASProgressionVueFilterState,
       isReloading: false,
+      isExcelExporting: false,
       exportFeedback: "",
       tableColumnFilters: {} as Record<string, string>,
     };
@@ -409,6 +413,34 @@ export default defineComponent({
         logger.error("Table Excel export failed:", e);
         const message = e instanceof Error ? e.message : "Unknown error";
         this.exportFeedback = `Excel export failed: ${message}`;
+      }
+    },
+    /**
+     * Summary tab → formatted spreadsheet (.claude/Excel/PLAN_STAGE_1.md): the rows on screen, the
+     * printout's header wording, and the section logo. Built from the same rows the table renders.
+     */
+    async onSummaryExcelExportClick() {
+      const requirement = this.peakAwardRequirement;
+      if (!requirement) return;
+      this.isExcelExporting = true;
+      try {
+        const generated = new Date();
+        const context = getTerrainPrintContext();
+        const sheet = buildPeakAwardSummarySheet({
+          rows: this.filteredPeakAwardSummaryRows,
+          requirement,
+          nameFormat: this.filters.summaryNameFormat,
+          specialConditionText: this.specialConditionText,
+          header: resolveExcelHeader("peak-award-summary", this.summaryPrintMeta, context.vars, generated),
+          logo: await loadSectionLogoImage(context.logo),
+        });
+        await downloadWorkbook(sheet, buildExcelFileName(["OAS Progression", "Summary", context.vars.unit], generated));
+        this.exportFeedback = "Excel export complete";
+      } catch (e) {
+        logger.error("Summary Excel export failed:", e);
+        this.exportFeedback = `Excel export failed: ${e instanceof Error ? e.message : "Unknown error"}`;
+      } finally {
+        this.isExcelExporting = false;
       }
     },
     /**

@@ -7,7 +7,11 @@
         <!-- Exports need something to act on; hidden until a stream lands. -->
         <template v-if="hasContent">
           <!-- Summary, Heatmap and Table print through summit-print (.claude/Print/PLAN.md). -->
-          <SummitPrintButton v-if="filters.viewMode === 'summary'" profile="peak-award-summary" :target="summaryPrintTarget" :meta="summaryPrintMeta" />
+          <template v-if="filters.viewMode === 'summary'">
+            <!-- Formatted spreadsheet through summit-excel (.claude/Excel/PLAN.md); needs a resolved section. -->
+            <SummitPillButton v-if="peakAwardRequirement" :loading="isExcelExporting" :disabled="isExcelExporting" @click="onSummaryExcelExportClick">Excel Export</SummitPillButton>
+            <SummitPrintButton profile="peak-award-summary" :target="summaryPrintTarget" :meta="summaryPrintMeta" />
+          </template>
           <SummitPrintButton v-else-if="filters.viewMode === 'heatmap'" profile="skill-heatmap" :target="heatMapPrintTarget" :meta="heatmapPrintMeta" />
           <template v-else-if="filters.viewMode === 'table'">
             <SummitPillButton @click="onTableExcelExportClick">Excel Export</SummitPillButton>
