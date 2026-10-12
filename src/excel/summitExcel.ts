@@ -25,8 +25,12 @@ export const EXCEL_COLOURS = {
   met: "#ecb206",
   /** Box not met: --summit-color-status-unanswered. */
   notMet: "#edebe9",
-  /** Header rule: --summit-color-border-default. */
-  headerBorder: "#d3d9de",
+  /** Header rule and the not-started bar's outline: --summit-color-border-default. */
+  headerBorder: "#c8c6c4",
+  /** Section title rows (skill or member): --summit-color-status-unanswered, as on screen. */
+  sectionRow: "#edebe9",
+  /** Patrol title rows: --summit-color-bg-muted. */
+  patrolRow: "#f3f2f1",
   /** Meta line text. */
   muted: "#555555",
 };

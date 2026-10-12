@@ -470,11 +470,13 @@ unreliable. `jsPDF` survives **only** behind the React `DataGrid.tsx`; don't use
 
 **Added 2026-10-12, in progress.** Formatted spreadsheets go through `summit-excel` (`src/excel/`,
 library `write-excel-file`). The plan and decisions are in `.claude/Excel/PLAN.md` and its stage files.
-So far it covers only the OAS Summary tab. Other Excel buttons still use the plain `xlsx` dump in
-`gridExport.ts` until their stage.
+So far it covers the OAS Summary and Heatmap tabs. Other Excel buttons still use the plain `xlsx`
+dump in `gridExport.ts` until their stage.
 
 - **Built from the page's row data, not the screen DOM**, so numbers stay numbers. One builder per
-  table in `src/excel/sheets/`.
+  table in `src/excel/sheets/`. Where the screen already works out the view (the Heatmap's layout,
+  filters and hidden squares), ask the component for it (`getExportView()`) rather than
+  re-deriving it.
 - **Header wording comes from the same summit-print profile** (`resolveExcelHeader`), so the
   spreadsheet and the printout say the same thing. Below it: the section logo, then the table.
 - **Colours are fixed hex copies** of the screen's status tokens (`EXCEL_COLOURS` in

@@ -92,11 +92,16 @@ function trimEmptyTrailingStages(allStages: number[], sections: HeatMapSection[]
   return allStages.slice(0, cutoff);
 }
 
-interface StageCellView {
+/** What a square shows. "hidden" = switched off by a Show filter; it keeps its place but draws nothing. */
+export type SquareState = "awarded" | "answered" | "unanswered" | "hidden";
+
+export interface StageCellView {
   kind: "empty" | "bar-complete" | "bar-unstarted" | "squares";
   title?: string;
   squares?: Array<{
     inputId: string;
+    /** Plain state for the Excel export (src/excel/sheets/skillHeatmap.ts); stateClass is derived from it. */
+    state: SquareState;
     stateClass: string;
     groupClass: string;
     title: string;
@@ -128,13 +133,13 @@ function buildStageCellView(stage: HeatMapStage | undefined, showAwarded: boolea
    */
   const squares = stage.cells.map((cell, index) => {
     const inProgressCell = cell.answered && !cell.awarded;
-    const stateClass =
-      (!showAnswered && inProgressCell) || (!showAwarded && cell.awarded) ? "oas-heatmap-square-hidden" : cell.awarded ? "oas-heatmap-square-awarded" : cell.answered ? "oas-heatmap-square-answered" : "oas-heatmap-square-unanswered";
+    const state: SquareState = (!showAnswered && inProgressCell) || (!showAwarded && cell.awarded) ? "hidden" : cell.awarded ? "awarded" : cell.answered ? "answered" : "unanswered";
     const isNewGroup = index === 0 || stage.cells[index - 1].inputGroup !== cell.inputGroup;
     const groupClass = isNewGroup && index > 0 ? "oas-heatmap-square-group-start" : "";
     return {
       inputId: cell.inputId,
-      stateClass,
+      state,
+      stateClass: `oas-heatmap-square-${state}`,
       groupClass,
       title: `${cell.inputGroup}: ${cell.iStatement}${cell.date ? ` (${cell.date})` : ""}`,
     };
@@ -142,7 +147,7 @@ function buildStageCellView(stage: HeatMapStage | undefined, showAwarded: boolea
   return { kind: "squares", squares };
 }
 
-interface MemberRowView {
+export interface MemberRowView {
   memberId: string;
   displayName: string;
   stageDisplay: string;
@@ -185,6 +190,25 @@ interface MemberSectionViewModel {
   title: string;
   patrolName: string | null;
   skillRows: MemberSkillRowView[];
+}
+
+/**
+ * The heat map as the Excel export sees it (.claude/Excel/PLAN_STAGE_2.md): both layouts flattened
+ * to sections → groups → rows, already filtered, sorted and with hidden squares marked, exactly as
+ * rendered. Built from the same computed properties as the screen, so the two can't drift.
+ */
+export interface HeatMapExportView {
+  /** Header of the first column: "Member", or "Skill" when grouped by member. */
+  firstColumnHeader: string;
+  /** The stage columns on screen, in order. */
+  stages: number[];
+  sections: Array<{
+    title: string;
+    /** Member layout only: the member's patrol, shown after their name. */
+    patrolName: string | null;
+    /** Patrol sub-groups (Break by patrol); one group with patrolName "" otherwise. */
+    groups: Array<{ patrolName: string; rows: Array<{ label: string; view: MemberRowView }> }>;
+  }>;
 }
 
 interface SectionView {
@@ -390,6 +414,29 @@ export default defineComponent({
      */
     getExportTable(): HTMLTableElement | undefined {
       return (this.$el as HTMLElement | undefined)?.querySelector("table") ?? undefined;
+    },
+    /** The rendered heat map as data, for the Excel export. See HeatMapExportView. */
+    getExportView(): HeatMapExportView {
+      if (this.isGroupedByMember) {
+        return {
+          firstColumnHeader: "Skill",
+          stages: this.allStages,
+          sections: this.memberSections.map((section) => ({
+            title: section.title,
+            patrolName: section.patrolName,
+            groups: [{ patrolName: "", rows: section.skillRows.map((row) => ({ label: row.title, view: row })) }],
+          })),
+        };
+      }
+      return {
+        firstColumnHeader: "Member",
+        stages: this.allStages,
+        sections: this.sections.map((section) => ({
+          title: section.title,
+          patrolName: null,
+          groups: section.patrolGroups.map((group) => ({ patrolName: group.patrolName, rows: group.members.map((member) => ({ label: member.displayName, view: member })) })),
+        })),
+      };
     },
   },
 });

@@ -134,10 +134,19 @@ describe("OasProgressionVueContent render contract", () => {
 
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(templateSource).toContain('ref="heatMap"');
-    expect(templateSource).toMatch(/<SummitPrintButton v-else-if="filters\.viewMode === 'heatmap'" profile="skill-heatmap" :target="heatMapPrintTarget"/);
+    expect(templateSource).toMatch(/<template v-else-if="filters\.viewMode === 'heatmap'">[\s\S]*?<SummitPrintButton profile="skill-heatmap" :target="heatMapPrintTarget"[\s\S]*?<\/template>/);
     // The old snapdom export is gone (.claude/Print/PLAN_STAGE_5.md §B).
     expect(templateSource).not.toContain("onPdfExportClick");
     expect(tsSource).not.toContain("onPdfExportClick");
+  });
+
+  it("Heatmap tab has its own formatted Excel Export beside Print / PDF, built from the heat map's rendered view (.claude/Excel/PLAN_STAGE_2.md)", () => {
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
+    expect(templateSource).toMatch(/<template v-else-if="filters\.viewMode === 'heatmap'">[\s\S]*?@click="onHeatmapExcelExportClick">Excel Export<\/SummitPillButton>[\s\S]*?<SummitPrintButton profile="skill-heatmap"/);
+
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
+    expect(tsSource).toContain('this.runExcelExport("Heatmap", "skill-heatmap", this.heatmapPrintMeta');
+    expect(tsSource).toContain("heatMap.getExportView()");
   });
 
   it("Summary tab prints through summit-print's SummitPrintButton, asking the summary for its table via getExportTable() (.claude/Print/PLAN_STAGE_1.md)", () => {
@@ -166,8 +175,10 @@ describe("OasProgressionVueContent render contract", () => {
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
     // Exports the rows on screen, with the printout's header wording.
     expect(tsSource).toContain("rows: this.filteredPeakAwardSummaryRows");
-    expect(tsSource).toContain('resolveExcelHeader("peak-award-summary", this.summaryPrintMeta');
-    expect(tsSource).toContain('buildExcelFileName(["OAS Progression", "Summary", context.vars.unit], generated)');
+    expect(tsSource).toContain('this.runExcelExport("Summary", "peak-award-summary", this.summaryPrintMeta');
+    // Shared by every tab: printout header wording, and the agreed file name.
+    expect(tsSource).toContain("resolveExcelHeader(printProfile, meta, context.vars, generated)");
+    expect(tsSource).toContain('buildExcelFileName(["OAS Progression", viewName, context.vars.unit], generated)');
   });
 
   it("VueStage 4: the reload button shows a loading state while reloading, matching the plan's nicer-than-original affordance", () => {

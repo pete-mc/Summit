@@ -62,6 +62,7 @@ interface MountProps {
   showAnswered?: boolean;
   showEmptyTopStages?: boolean;
   showEmptySkillRows?: boolean;
+  groupBy?: "skill" | "member" | "none";
 }
 
 /**
@@ -500,6 +501,51 @@ describe("OASHeatMapVue render contract", () => {
       const members = [makeMember({ id: "m1", first_name: "Amy", last_name: "Adams" }), makeMember({ id: "m2", first_name: "Zara", last_name: "Young" })];
 
       expect(memberTitlesFor({ items: rows, members, selectedPatrols: [UNASSIGNED_PATROL], sortBy: "lastName" })).toEqual(["Amy Adams", "Zara Young"]);
+    });
+  });
+
+  /** The Excel export's view of the heat map (.claude/Excel/PLAN_STAGE_2.md): both layouts, as rendered. */
+  describe("getExportView", () => {
+    type ExportView = {
+      firstColumnHeader: string;
+      stages: number[];
+      sections: Array<{ title: string; patrolName: string | null; groups: Array<{ patrolName: string; rows: Array<{ label: string; view: { cells: Array<{ kind: string; squares?: Array<{ state: string }> }> } }> }> }>;
+    };
+    const exportView = (vm: Record<string, unknown>) => (vm.getExportView as () => ExportView)();
+
+    const rows = [makeRow({ memberId: "m1", inputId: "a", answered: true, awarded: true }), makeRow({ memberId: "m1", inputId: "b", answered: true }), makeRow({ memberId: "m1", inputId: "c" }), makeRow({ memberId: "m2", inputId: "a" })];
+    const members = [makeMember({ id: "m1", first_name: "Alex", last_name: "Scout", patrol: { id: "p1", name: "Eagles" } }), makeMember({ id: "m2", first_name: "Sam", last_name: "Ranger", patrol: { id: "p2", name: "Wolves" } })];
+    const base = { items: rows, members, trunkStageCounts: { bushcraft: 3 }, visibleStreams: ["bushcraft"], visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9], sortBy: "firstName" as const, selectedPatrols: ["Eagles", "Wolves"] };
+
+    it("by skill: Member column, one row per member, square states as rendered", () => {
+      const view = exportView(mountLogic(base));
+      expect(view.firstColumnHeader).toBe("Member");
+      expect(view.stages[0]).toBe(1);
+      expect(view.sections.map((s) => s.title)).toEqual(["Bushcraft"]);
+      const group = view.sections[0].groups[0];
+      expect(group.patrolName).toBe("");
+      expect(group.rows.map((r) => r.label)).toEqual(["Alex Scout", "Sam Ranger"]);
+      expect((group.rows[0].view.cells[0].squares ?? []).map((s) => s.state)).toEqual(["awarded", "answered", "unanswered"]);
+    });
+
+    it("by skill with Break by patrol: one group per patrol", () => {
+      const view = exportView(mountLogic({ ...base, breakByPatrol: true }));
+      expect(view.sections[0].groups.map((g) => g.patrolName)).toEqual(["Eagles", "Wolves"]);
+    });
+
+    it("marks squares hidden by a Show filter as 'hidden'", () => {
+      const view = exportView(mountLogic({ ...base, showAnswered: false }));
+      expect((view.sections[0].groups[0].rows[0].view.cells[0].squares ?? []).map((s) => s.state)).toEqual(["awarded", "hidden", "unanswered"]);
+    });
+
+    it("by member: Skill column, a section per member carrying their patrol", () => {
+      const view = exportView(mountLogic({ ...base, groupBy: "member" }));
+      expect(view.firstColumnHeader).toBe("Skill");
+      expect(view.sections.map((s) => [s.title, s.patrolName])).toEqual([
+        ["Alex Scout", "Eagles"],
+        ["Sam Ranger", "Wolves"],
+      ]);
+      expect(view.sections[0].groups[0].rows.map((r) => r.label)).toEqual(["Bushcraft"]);
     });
   });
 });

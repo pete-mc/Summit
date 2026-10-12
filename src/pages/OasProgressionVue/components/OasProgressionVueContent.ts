@@ -17,8 +17,11 @@ import { PEAK_AWARD_REQUIREMENTS, type PeakAwardRequirement } from "@/pages/OasP
 import { collectPatrolNames, hasUnassignedMembers, filterMembersByPatrol, UNASSIGNED_PATROL, OAS_SKILLS } from "@/pages/OasProgression/services/filterHeatMapSections";
 import { loadOASProgressionVueFilters, saveOASProgressionVueFilters, type OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
 import { exportGridToExcel, type GridExportColumn, type GridExportRow } from "@/components/gridExport";
-import { buildExcelFileName, downloadWorkbook, loadSectionLogoImage, resolveExcelHeader } from "@/excel/summitExcel";
+import { buildExcelFileName, downloadWorkbook, loadSectionLogoImage, resolveExcelHeader, type ExcelHeader, type ExcelSheet } from "@/excel/summitExcel";
 import { buildPeakAwardSummarySheet } from "@/excel/sheets/peakAwardSummary";
+import { buildSkillHeatmapSheet } from "@/excel/sheets/skillHeatmap";
+import type { Image } from "write-excel-file/browser";
+import type { HeatMapExportView } from "./OASHeatMapVue";
 import { getTerrainPrintContext } from "@/print/printContext";
 import { createLogger } from "@/helpers";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
@@ -31,6 +34,7 @@ const logger = createLogger("OasProgressionVueContent");
 
 interface HeatMapVueInstance {
   getExportTable(): HTMLTableElement | undefined;
+  getExportView(): HeatMapExportView;
 }
 
 interface SummaryVueInstance {
@@ -422,22 +426,41 @@ export default defineComponent({
     async onSummaryExcelExportClick() {
       const requirement = this.peakAwardRequirement;
       if (!requirement) return;
-      this.isExcelExporting = true;
-      try {
-        const generated = new Date();
-        const context = getTerrainPrintContext();
-        const sheet = buildPeakAwardSummarySheet({
+      await this.runExcelExport("Summary", "peak-award-summary", this.summaryPrintMeta, (header, logo) =>
+        buildPeakAwardSummarySheet({
           rows: this.filteredPeakAwardSummaryRows,
           requirement,
           nameFormat: this.filters.summaryNameFormat,
           specialConditionText: this.specialConditionText,
-          header: resolveExcelHeader("peak-award-summary", this.summaryPrintMeta, context.vars, generated),
-          logo: await loadSectionLogoImage(context.logo),
-        });
-        await downloadWorkbook(sheet, buildExcelFileName(["OAS Progression", "Summary", context.vars.unit], generated));
+          header,
+          logo,
+        }),
+      );
+    },
+    /**
+     * Heatmap tab → formatted spreadsheet (.claude/Excel/PLAN_STAGE_2.md): the heat map's own
+     * rendered view (layout, filters, sort, hidden squares), asked for like the print table is.
+     */
+    async onHeatmapExcelExportClick() {
+      const heatMap = this.$refs.heatMap as unknown as HeatMapVueInstance | undefined;
+      if (!heatMap) return;
+      await this.runExcelExport("Heatmap", "skill-heatmap", this.heatmapPrintMeta, (header, logo) => buildSkillHeatmapSheet({ view: heatMap.getExportView(), header, logo }));
+    },
+    /**
+     * Shared by every tab's Excel Export: one timestamp for the header and the file name, the
+     * printout's header wording for `printProfile`, the section logo, then the download.
+     */
+    async runExcelExport(viewName: string, printProfile: string, meta: MetaEntry[], build: (header: ExcelHeader, logo: Image | null) => ExcelSheet) {
+      this.isExcelExporting = true;
+      try {
+        const generated = new Date();
+        const context = getTerrainPrintContext();
+        const header = resolveExcelHeader(printProfile, meta, context.vars, generated);
+        const sheet = build(header, await loadSectionLogoImage(context.logo));
+        await downloadWorkbook(sheet, buildExcelFileName(["OAS Progression", viewName, context.vars.unit], generated));
         this.exportFeedback = "Excel export complete";
       } catch (e) {
-        logger.error("Summary Excel export failed:", e);
+        logger.error(`${viewName} Excel export failed:`, e);
         this.exportFeedback = `Excel export failed: ${e instanceof Error ? e.message : "Unknown error"}`;
       } finally {
         this.isExcelExporting = false;

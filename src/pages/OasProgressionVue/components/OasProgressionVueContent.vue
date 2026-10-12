@@ -12,7 +12,10 @@
             <SummitPillButton v-if="peakAwardRequirement" :loading="isExcelExporting" :disabled="isExcelExporting" @click="onSummaryExcelExportClick">Excel Export</SummitPillButton>
             <SummitPrintButton profile="peak-award-summary" :target="summaryPrintTarget" :meta="summaryPrintMeta" />
           </template>
-          <SummitPrintButton v-else-if="filters.viewMode === 'heatmap'" profile="skill-heatmap" :target="heatMapPrintTarget" :meta="heatmapPrintMeta" />
+          <template v-else-if="filters.viewMode === 'heatmap'">
+            <SummitPillButton :loading="isExcelExporting" :disabled="isExcelExporting" @click="onHeatmapExcelExportClick">Excel Export</SummitPillButton>
+            <SummitPrintButton profile="skill-heatmap" :target="heatMapPrintTarget" :meta="heatmapPrintMeta" />
+          </template>
           <template v-else-if="filters.viewMode === 'table'">
             <SummitPillButton @click="onTableExcelExportClick">Excel Export</SummitPillButton>
             <SummitPrintButton profile="oas-table" :target="tablePrintTarget" :prepare="prepareTablePrint" :meta="tablePrintMeta" />
