@@ -196,7 +196,10 @@ describe("OASProgressionTableVue render contract", () => {
 
   it("rows-per-page dropdown offers 10/25/50/100/All, matching the table's own default of 25 (fixes the dropdown defaulting to Vuetify's stock 5/10/15/All list, which had no 25 entry)", () => {
     const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASProgressionTableVue.vue"), "utf8");
-    expect(source).toContain(':items-per-page="25"');
+    // .sync-bound (so printing can show every row and restore), defaulting to 25.
+    expect(source).toContain(':items-per-page.sync="itemsPerPage"');
+    const ts = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASProgressionTableVue.ts"), "utf8");
+    expect(ts).toContain("export const DEFAULT_ITEMS_PER_PAGE = 25;");
     expect(source).toContain("itemsPerPageOptions: [10, 25, 50, 100, -1]");
   });
 });

@@ -46,8 +46,8 @@
       </template>
 
       <!--
-        Hand-written tbody: v-data-table emits a single <tbody>, but each skill section needs its
-        own so the PDF export can paginate on section boundaries.
+        Hand-written tbody: v-data-table emits a single <tbody>, but each skill section gets its
+        own, opening with its title row (which the printout keeps with the rows beneath it).
       -->
       <!--
         Grouped by member: the heading is the person, the rows are their skills, and the skill
@@ -134,12 +134,11 @@
  * Vuetify's table defaults to width: 100%. The heat map is a wide grid inside a horizontal
  * scroller, so it must size to its content instead.
  *
- * The border below is duplicated onto the <table> itself, not just its wrapper div: the PDF
- * export (OasProgressionVueContent.ts's onPdfExportClick) rasterizes getExportTable()'s own
- * <table> element directly via getExportTable(), which returns the table, not the wrapper div
- * around it — a wrapper-only border is invisible to that capture, leaving the exported PDF with
- * no visible frame around the table's content. On screen the two borders sit flush against each
- * other (border-collapse means no visible double line), so this is a no-op for the live page.
+ * The border below is duplicated onto the <table> itself, not just its wrapper div. It was added
+ * for the old snapdom PDF export (removed 2026-10-12, .claude/Print/PLAN_STAGE_5.md), which
+ * captured the <table> alone. It is kept: whether it is truly invisible on screen next to the
+ * wrapper's own border hasn't been checked live, so removing it is a visual change of its own,
+ * not part of that cleanup. summit-print doesn't need it (it draws its own frame).
  */
 .oas-heatmap-data-table ::v-deep > .v-data-table__wrapper > table {
   width: max-content;

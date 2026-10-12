@@ -59,12 +59,15 @@ describe("PresentAwardsTableVue render contract", () => {
     expect(TEMPLATE).toContain("opacity: 1 !important");
   });
 
-  it("renders a badge icon with a placeholder fallback", () => {
-    // A missing icon must still occupy the cell, or the column goes gappy and stops being
-    // scannable — which is the entire point of it.
-    expect(TEMPLATE).toContain("#item.badge");
+  it("renders a badge icon (with a placeholder fallback) inside the Award cell, before the name", () => {
+    // Part of the Award column rather than a column of its own (user, 2026-10-12). A missing icon
+    // must still occupy its fixed-width slot, or the award names stop lining up.
+    expect(TEMPLATE).toContain("#item.achievementName");
+    expect(TEMPLATE).not.toContain("#item.badge");
+    expect(TEMPLATE).toContain("present-awards-badge-slot");
     expect(TEMPLATE).toContain("present-awards-badge-icon");
     expect(TEMPLATE).toContain("present-awards-badge-placeholder");
+    expect(TEMPLATE.indexOf("present-awards-badge-slot")).toBeLessThan(TEMPLATE.indexOf("present-awards-award-name"));
   });
 
   it("builds the filter row and group colspan from the rendered headers, not the raw ones", () => {

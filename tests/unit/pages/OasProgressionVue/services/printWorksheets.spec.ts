@@ -1,3 +1,11 @@
+// Terrain's stylesheets don't exist in jsdom, so the borrowed-font lookup is stubbed with what it
+// returns on the real page: Nunito Sans re-declared as SummitPrintSans (.claude/Print/PLAN_STAGE_5.md §D).
+const FAKE_FONT_CSS = '@font-face { font-family: "SummitPrintSans"; font-weight: 400; src: url("https://terrain.example/_nuxt/fonts/R.woff2"); }';
+jest.mock("@/print/printFonts", () => {
+  const actual = jest.requireActual("@/print/printFonts");
+  return { __esModule: true, ...actual, collectPrintFontCss: jest.fn(() => FAKE_FONT_CSS) };
+});
+
 import { printWorksheets } from "@/pages/OasProgressionVue/services/printWorksheets";
 
 /** A minimal stand-in for the Window object printWorksheets writes into and prints. */
@@ -81,22 +89,32 @@ describe("printWorksheets", () => {
     expect(written).not.toContain("size: A4 landscape");
   });
 
-  it("calls print() exactly once, even if both onload and the fallback timeout fire", () => {
+  // Printing waits (asynchronously) for the borrowed fonts first, so these advance timers with the
+  // async variant, which also lets that wait settle.
+  it("calls print() exactly once, even if both onload and the fallback timeout fire", async () => {
     printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
 
     fakeWindow.onload?.();
-    jest.advanceTimersByTime(1000);
+    await jest.advanceTimersByTimeAsync(1000);
 
     expect(fakeWindow.print).toHaveBeenCalledTimes(1);
   });
 
-  it("does not call print() via the fallback timeout if the window was closed first", () => {
+  it("does not call print() via the fallback timeout if the window was closed first", async () => {
     printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
 
     fakeWindow.closed = true;
-    jest.advanceTimersByTime(1000);
+    await jest.advanceTimersByTimeAsync(1000);
 
     expect(fakeWindow.print).not.toHaveBeenCalled();
+  });
+
+  it("borrows Terrain's Nunito Sans into the print window and uses it, so the sheets don't print in Arial", () => {
+    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
+
+    const written = fakeWindow.document.write.mock.calls[0][0] as string;
+    expect(written).toContain(FAKE_FONT_CSS);
+    expect(written).toContain('font-family: "SummitPrintSans", NunitoSans-regular, arial, sans-serif;');
   });
 
   it("opens the window with the configured popup name", () => {

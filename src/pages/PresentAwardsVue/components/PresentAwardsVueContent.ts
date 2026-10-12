@@ -10,7 +10,7 @@ import type { MetaEntry } from "@/print/summitPrint";
 import type { PresentAwardsDisplayFilters } from "./PresentAwardsFiltersVue";
 import { filterPresentAwardRows, NOT_PRESENTED } from "./PresentAwardsTableVue";
 import { DEFAULT_FILTERS, loadPresentAwardsVueFilters, savePresentAwardsVueFilters, type PresentAwardsVueFilterState } from "../services/PresentAwardsVueFilterPersistence";
-import { exportGridToExcel, exportGridToPdf, type GridExportColumn, type GridExportRow } from "@/components/gridExport";
+import { exportGridToExcel, type GridExportColumn, type GridExportRow } from "@/components/gridExport";
 import { createLogger } from "@/helpers";
 
 const logger = createLogger("PresentAwardsVueContent");
@@ -274,23 +274,6 @@ export default defineComponent({
     async preparePresentAwardsPrint(): Promise<(() => void) | void> {
       const table = this.$refs.table as unknown as PresentAwardsTablePrintApi | undefined;
       return table ? table.prepareForPrint() : undefined;
-    },
-    // No longer wired to a button — replaced by SummitPrintButton (.claude/Print/PLAN_STAGE_4.md).
-    // Kept until the new print path is proven, then removed in the cleanup stage.
-    onPdfExportClick() {
-      try {
-        exportGridToPdf({
-          fileName: "Awards.pdf",
-          title: "Terrain | Summit - Awards Completed",
-          rows: this.exportRows(),
-          columns: TABLE_EXPORT_COLUMNS,
-          orientation: "landscape",
-        });
-        this.showFeedback("PDF export complete");
-      } catch (e) {
-        logger.error("PDF export failed:", e);
-        this.showFeedback(`PDF export failed: ${e instanceof Error ? e.message : "Unknown error"}`);
-      }
     },
     async onReloadClick() {
       // Reloading re-seeds the selection and dates from fresh data, so any unsaved ticks would

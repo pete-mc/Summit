@@ -6,13 +6,12 @@
         <v-spacer></v-spacer>
         <!-- Exports need something to act on; hidden until a stream lands. -->
         <template v-if="hasContent">
-          <!-- summit-print (.claude/Print/PLAN.md) replaces the old snapdom "PDF Export" on Summary
-               and Heatmap; the old handlers stay in the .ts, unwired, until the new path is proven. -->
+          <!-- Summary, Heatmap and Table print through summit-print (.claude/Print/PLAN.md). -->
           <SummitPrintButton v-if="filters.viewMode === 'summary'" profile="peak-award-summary" :target="summaryPrintTarget" :meta="summaryPrintMeta" />
           <SummitPrintButton v-else-if="filters.viewMode === 'heatmap'" profile="skill-heatmap" :target="heatMapPrintTarget" :meta="heatmapPrintMeta" />
           <template v-else-if="filters.viewMode === 'table'">
             <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onTableExcelExportClick">Excel Export</v-btn>
-            <v-btn outlined color="primary" class="oas-vue-pill-btn" @click="onTablePdfExportClick">PDF Export</v-btn>
+            <SummitPrintButton profile="oas-table" :target="tablePrintTarget" :prepare="prepareTablePrint" :meta="tablePrintMeta" />
           </template>
           <v-btn v-else-if="filters.viewMode === 'worksheets'" outlined color="primary" class="oas-vue-pill-btn" @click="onWorksheetPrintClick">Print</v-btn>
         </template>
@@ -117,7 +116,7 @@
         />
       </template>
 
-      <OASProgressionTableVue v-if="hasContent && filters.viewMode === 'table'" :items="items" :column-filters.sync="tableColumnFilters" />
+      <OASProgressionTableVue v-if="hasContent && filters.viewMode === 'table'" ref="table" :items="items" :column-filters.sync="tableColumnFilters" />
 
       <template v-if="hasContent && filters.viewMode === 'worksheets'">
         <OASWorksheetFiltersVue

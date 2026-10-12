@@ -12,7 +12,6 @@ module.exports = {
   coverageDirectory: '<rootDir>/coverage',
   coverageReporters: ['text', 'text-summary', 'lcov', 'html'],
   moduleNameMapper: {
-    '^@zumer/snapdom$': '<rootDir>/tests/unit/mocks/zumerSnapdomStub.ts',
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/tests/unit/setup/jest.setup.ts'],

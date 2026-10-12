@@ -50,20 +50,10 @@ table.summit-print-profile-present-awards td { vertical-align: middle; }
 }
 .summit-print-profile-present-awards .present-awards-badge-icon { object-fit: contain; }
 
-/* Narrow badge column, badge pushed right beside the award name it illustrates (~16px / 4.2mm gap
-   on screen: 2.1mm each side here). User, 2026-10-11/12. Same classes the screen uses (Vuetify
-   header class/cellClass), so print and screen match. */
-table.summit-print-profile-present-awards th.present-awards-badge-header,
-table.summit-print-profile-present-awards td.present-awards-badge-cell {
-  width: 1%;
-  padding-left: 3.7mm;
-  padding-right: 2.1mm;
-  text-align: right;
-}
-table.summit-print-profile-present-awards th.present-awards-award-header,
-table.summit-print-profile-present-awards td.present-awards-award-cell { padding-left: 2.1mm; }
-.summit-print-profile-present-awards td.present-awards-badge-cell .present-awards-badge-icon,
-.summit-print-profile-present-awards td.present-awards-badge-cell .present-awards-badge-placeholder { margin-left: auto; }
+/* Award cell: badge then name on one line, every badge centred in a slot as wide as the widest
+   (additional award) artwork so the names line up — same structure as the screen (user, 2026-10-12). */
+.summit-print-profile-present-awards .present-awards-award { display: flex; align-items: center; gap: 2.1mm; }
+.summit-print-profile-present-awards .present-awards-badge-slot { flex: 0 0 10.3mm; display: flex; justify-content: center; }
 .summit-print-profile-present-awards .present-awards-badge-icon--wide { width: 10.3mm; }
 .summit-print-profile-present-awards .present-awards-badge-placeholder {
   border: 0.5pt dashed #c8c6c4;

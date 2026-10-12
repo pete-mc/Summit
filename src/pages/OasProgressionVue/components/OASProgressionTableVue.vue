@@ -4,7 +4,16 @@
       <v-btn v-if="hasActiveColumnFilters" text small color="primary" class="oas-vue-clear-filters-btn" @click="onClearFiltersClick">Clear filters</v-btn>
     </div>
 
-    <v-data-table :headers="headers" :items="filteredItems" dense :items-per-page="25" :footer-props="{ itemsPerPageOptions: [10, 25, 50, 100, -1] }" class="oas-vue-data-table">
+    <!-- items-per-page/page are .sync-bound so printing can show every row, then restore them (prepareForPrint). -->
+    <v-data-table
+      :headers="headers"
+      :items="filteredItems"
+      dense
+      :items-per-page.sync="itemsPerPage"
+      :page.sync="page"
+      :footer-props="{ itemsPerPageOptions: [10, 25, 50, 100, -1] }"
+      class="oas-vue-data-table"
+    >
       <template #body.prepend>
         <tr class="oas-vue-column-filter-row">
           <th v-for="header in headers" :key="header.value">

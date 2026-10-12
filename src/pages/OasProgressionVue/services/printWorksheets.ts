@@ -1,8 +1,9 @@
 /**
  * Prints the Worksheets view by opening its already-rendered tables in a brand-new, blank window
- * and calling print() there — NOT by reusing gridExport's exportElementToPdf.
+ * and calling print() there — NOT by rasterising it (Summit's old snapdom exportElementToPdf, since
+ * removed — .claude/Print/PLAN_STAGE_5.md).
  *
- * See .claude/OASWorksheets/PLAN_STAGE_4.md §3 for why: exportElementToPdf rasterizes its element
+ * See .claude/OASWorksheets/PLAN_STAGE_4.md §3 for why: that export rasterized its element
  * to a single JPEG canvas and slices that into pages, which is the wrong shape here (a worksheet
  * set is many independent tables, each needing a real repeating <thead> via
  * `display: table-header-group` — only possible on a genuine <table>, not a bitmap slice — and
@@ -16,9 +17,17 @@
  * no Terrain chrome, no cascade fight, nothing to hide.
  */
 
+import { collectPrintFontCss, declaredPrintWeights, waitForPrintFonts } from "@/print/printFonts";
 import { PRINT_PAGE_MARGIN_MM, STATEMENT_COLUMN_WRAP_WIDTH_PRINT_PX, TRANSPOSED_COLUMN_WRAP_WIDTH_PRINT_PX, TRANSPOSED_COLUMN_WIDTH_PRINT_PX } from "./worksheetPrintPageSize";
 
 const PRINT_WINDOW_NAME = "oasWorksheetsPrint";
+
+/**
+ * SummitPrintSans is Terrain's Nunito Sans re-declared at real weights (printFonts.ts), so the
+ * sheets' font-weight: 600 headers use the true semibold face. NunitoSans-regular stays next as
+ * the same family the on-screen measurement (WORKSHEET_FONT_FAMILY) uses.
+ */
+const WORKSHEET_PRINT_FONT_STACK = '"SummitPrintSans", NunitoSans-regular, arial, sans-serif';
 
 export type WorksheetPrintOrientation = "landscape" | "portrait";
 
@@ -36,13 +45,14 @@ export type WorksheetPrintOrientation = "landscape" | "portrait";
  * `@page` size line varies.
  */
 /** Exported so a static preview/fixture (e.g. a large-unit test page outside the real extension) can reuse the exact print appearance rather than hand-duplicating it. */
-export function buildPrintStylesheet(orientation: WorksheetPrintOrientation): string {
+export function buildPrintStylesheet(orientation: WorksheetPrintOrientation, fontCss = ""): string {
   return `
+    ${fontCss}
     @page { size: A4 ${orientation}; margin: ${PRINT_PAGE_MARGIN_MM}mm; }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: NunitoSans-regular, arial, sans-serif;
+      font-family: ${WORKSHEET_PRINT_FONT_STACK};
       /* Print-specific exception to the --oas-vue-font-size-body 14px scale (DESIGN.md) — a
          printed form is a different medium, not a drifting screen size; 10pt is normal for one
          and leaves more room for member columns. */
@@ -56,7 +66,7 @@ export function buildPrintStylesheet(orientation: WorksheetPrintOrientation): st
       margin: 0 0 10px 0;
       padding: 6px 14px;
       font-size: 10pt;
-      font-family: NunitoSans-regular, arial, sans-serif;
+      font-family: ${WORKSHEET_PRINT_FONT_STACK};
       cursor: pointer;
       border: 1px solid #c8c6c4;
       border-radius: 4px;
@@ -227,6 +237,9 @@ export function printWorksheets(options: PrintWorksheetsOptions): boolean {
   printWindow.focus();
 
   const tablesHtml = options.pageTables.map((table) => table.outerHTML).join("\n");
+  // Terrain's Nunito Sans, borrowed into the print window (a new window gets none of Terrain's
+  // @font-face rules, so this used to print in Arial) — the same mechanism as summit-print.
+  const fontCss = collectPrintFontCss(document);
 
   printWindow.document.open();
   printWindow.document.write(`<!doctype html>
@@ -234,7 +247,7 @@ export function printWorksheets(options: PrintWorksheetsOptions): boolean {
 <head>
 <meta charset="utf-8">
 <title>${options.documentTitle}</title>
-<style>${buildPrintStylesheet(options.orientation)}</style>
+<style>${buildPrintStylesheet(options.orientation, fontCss)}</style>
 </head>
 <body>
 <!--
@@ -255,11 +268,17 @@ ${tablesHtml}
   // content is fully parsed in some browsers — the `printed` guard stops both paths firing print()
   // if `load` does end up winning the race.
   let printed = false;
-  const triggerPrint = () => {
+  const triggerPrint = async () => {
     if (printed || printWindow.closed) {
       return;
     }
     printed = true;
+    // Fonts load asynchronously after the document is written — wait (capped) so the sheets print
+    // in Nunito Sans rather than whatever had loaded by `load`/500ms.
+    await waitForPrintFonts(printWindow.document, declaredPrintWeights(fontCss));
+    if (printWindow.closed) {
+      return;
+    }
     printWindow.focus();
     printWindow.print();
   };

@@ -12,7 +12,8 @@ interface DataTableHeader {
   filterType?: "text" | "select";
 }
 
-const HEADERS: DataTableHeader[] = [
+/** Exported for the printout's filter line, so it uses the table's own column names. */
+export const HEADERS: DataTableHeader[] = [
   { text: "Member", value: "memberName" },
   { text: "Skill", value: "stream", filterType: "select" },
   { text: "Stream", value: "branch", filterType: "select" },
@@ -26,7 +27,11 @@ const HEADERS: DataTableHeader[] = [
 
 const MAX_STAGE = 9;
 const STAGE_OPTIONS = Array.from({ length: MAX_STAGE }, (_, i) => ({ text: String(i + 1), value: String(i + 1) }));
-const YES_NO_OPTIONS = [
+/** Rows per page until the user picks another from the table footer. */
+export const DEFAULT_ITEMS_PER_PAGE = 25;
+
+/** Exported so the printout's filter line can show "Yes"/"No" rather than the stored "true"/"false". */
+export const YES_NO_OPTIONS = [
   { text: "Yes", value: "true" },
   { text: "No", value: "false" },
 ];
@@ -65,6 +70,10 @@ export default defineComponent({
   data() {
     return {
       headers: HEADERS,
+      // Bound with .sync rather than literals so prepareForPrint() can show every row and then
+      // put the user's own paging back.
+      itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
+      page: 1,
     };
   },
   computed: {
@@ -109,6 +118,25 @@ export default defineComponent({
     },
     onClearFiltersClick() {
       this.$emit("update:columnFilters", {});
+    },
+    /**
+     * Puts every row in the DOM for summit-print, which prints only what is rendered: all rows on
+     * one page. Returns a restore() that puts the user's paging back. Kept deliberately simple —
+     * this tab may be reworked (.claude/Print/PLAN_STAGE_5.md §C).
+     */
+    async prepareForPrint(): Promise<() => void> {
+      const saved = { itemsPerPage: this.itemsPerPage, page: this.page };
+      this.itemsPerPage = -1;
+      this.page = 1;
+      await this.$nextTick();
+      return () => {
+        this.itemsPerPage = saved.itemsPerPage;
+        this.page = saved.page;
+      };
+    },
+    /** The <table> for summit-print. A method, since a ref on v-data-table is a component, not an element. */
+    getPrintTable(): HTMLTableElement | undefined {
+      return (this.$el as HTMLElement | undefined)?.querySelector(".oas-vue-data-table table") ?? undefined;
     },
   },
 });

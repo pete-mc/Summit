@@ -371,7 +371,7 @@ export default defineComponent({
 
     /**
      * v-data-table requires an `items` array, but the rows are rendered from `sections` in the
-     * body slot — one <tbody> per skill section, which the PDF export paginates on, where
+     * body slot — one <tbody> per skill section (each opening with its title row), where
      * v-data-table emits only one. An entry per rendered member row keeps the component's own
      * bookkeeping (empty-state detection, item counts) consistent with what is on screen.
      */
@@ -381,13 +381,12 @@ export default defineComponent({
   },
   methods: {
     /**
-     * The <table> element the PDF export measures row geometry from.
+     * The <table> element summit-print clones for the Heatmap printout.
      *
-     * A method rather than the `$refs.exportTable` the caller used to read directly: a ref on a
-     * v-data-table resolves to the Vue component instance, not an element, and that failure would
-     * be silent — exportElementToPdf would find no <tr>s and emit an empty PDF rather than
-     * throwing. Asking the component for its table keeps the caller working regardless of how
-     * this one renders internally.
+     * A method rather than a `$refs` read by the caller: a ref on a v-data-table resolves to the
+     * Vue component instance, not an element, and that failure would be silent — the printout
+     * would find no table. Asking the component for its table keeps the caller working regardless
+     * of how this one renders internally.
      */
     getExportTable(): HTMLTableElement | undefined {
       return (this.$el as HTMLElement | undefined)?.querySelector("table") ?? undefined;

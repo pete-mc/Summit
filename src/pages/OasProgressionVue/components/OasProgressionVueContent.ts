@@ -7,7 +7,7 @@ import OASWorksheetFiltersVue from "./OASWorksheetFiltersVue.vue";
 import OASWorksheetsVue from "./OASWorksheetsVue.vue";
 import SummitLoadingState from "@/components/SummitLoadingState.vue";
 import SummitPrintButton from "@/components/SummitPrintButton.vue";
-import { buildHeatmapPrintMeta, buildSummaryPrintMeta } from "@/pages/OasProgressionVue/services/oasPrintMeta";
+import { buildHeatmapPrintMeta, buildOasTablePrintMeta, buildSummaryPrintMeta } from "@/pages/OasProgressionVue/services/oasPrintMeta";
 import type { MetaEntry } from "@/print/summitPrint";
 import { filterOASProgressionRows } from "./OASProgressionTableVue";
 import { groupRowsForHeatMap } from "@/pages/OasProgression/services/groupRowsForHeatMap";
@@ -15,7 +15,7 @@ import { buildPeakAwardSummaryRows, sortPeakAwardSummaryRows, type PeakAwardMemb
 import { PEAK_AWARD_REQUIREMENTS, type PeakAwardRequirement } from "@/pages/OasProgression/data/peakAwardRequirements";
 import { collectPatrolNames, hasUnassignedMembers, filterMembersByPatrol, UNASSIGNED_PATROL, OAS_SKILLS } from "@/pages/OasProgression/services/filterHeatMapSections";
 import { loadOASProgressionVueFilters, saveOASProgressionVueFilters, type OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
-import { exportElementToPdf, exportGridToExcel, exportGridToPdf, type GridExportColumn, type GridExportRow } from "@/components/gridExport";
+import { exportGridToExcel, type GridExportColumn, type GridExportRow } from "@/components/gridExport";
 import { createLogger } from "@/helpers";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
@@ -37,8 +37,14 @@ interface WorksheetsVueInstance {
   printCurrentPages(): boolean;
 }
 
+/** What this component asks of the Table tab for printing (OASProgressionTableVue's methods). */
+interface TableVueInstance {
+  prepareForPrint(): Promise<() => void>;
+  getPrintTable(): HTMLTableElement | undefined;
+}
+
 // Matches OASProgressionTableVue.ts's own column set (same flat row shape), so the Table view's
-// PDF/Excel export lines up with what's actually shown on screen.
+// Excel export lines up with what's actually shown on screen.
 const TABLE_EXPORT_COLUMNS: GridExportColumn[] = [
   { key: "memberName", header: "Member" },
   { key: "stream", header: "Skill" },
@@ -267,6 +273,10 @@ export default defineComponent({
     summaryPrintMeta(): MetaEntry[] {
       return buildSummaryPrintMeta(this.filters, this.patrolFilterOptions, this.canFilterByPatrol);
     },
+    /** The Table tab's column filters in effect, for the printout's header line. */
+    tablePrintMeta(): MetaEntry[] {
+      return buildOasTablePrintMeta(this.tableColumnFilters);
+    },
     /** The Heatmap filters in effect, for the printout's header line. */
     heatmapPrintMeta(): MetaEntry[] {
       return buildHeatmapPrintMeta(this.filters, this.patrolFilterOptions, this.canFilterByPatrol);
@@ -372,77 +382,18 @@ export default defineComponent({
     heatMapPrintTarget(): HTMLTableElement | undefined {
       return (this.$refs.heatMap as unknown as HeatMapVueInstance | undefined)?.getExportTable();
     },
-    // No longer wired to a button — replaced by SummitPrintButton (.claude/Print/PLAN.md). Kept
-    // until the new print path is proven, then removed in the cleanup stage.
-    async onPdfExportClick() {
-      const heatMap = this.$refs.heatMap as unknown as HeatMapVueInstance | undefined;
-      // Asked for rather than reached into: how the heat map renders its table is its own
-      // business, and a ref would resolve to a component instance rather than an element if it
-      // ever renders through v-data-table.
-      const table = heatMap?.getExportTable();
-      if (!table) {
-        return;
-      }
-
-      try {
-        await exportElementToPdf({
-          element: table,
-          fileName: "OASProgressionHeatMapVue.pdf",
-          title: "Terrain | Summit - OAS Progression Heat Map",
-          orientation: "landscape",
-        });
-        this.exportFeedback = "PDF export complete";
-      } catch (e) {
-        logger.error("PDF export failed:", e);
-        const message = e instanceof Error ? e.message : "Unknown error";
-        this.exportFeedback = `PDF export failed: ${message}`;
-      }
-    },
     /** The Summary table for SummitPrintButton — read at click time, after Vuetify has rendered it. */
     summaryPrintTarget(): HTMLTableElement | undefined {
       return (this.$refs.summary as unknown as SummaryVueInstance | undefined)?.getExportTable();
     },
-    // No longer wired to a button — replaced by SummitPrintButton (.claude/Print/PLAN.md). Kept
-    // until the new print path is proven, then removed in the cleanup stage.
-    async onSummaryPdfExportClick() {
-      const summary = this.$refs.summary as unknown as SummaryVueInstance | undefined;
-      const table = summary?.getExportTable();
-      if (!table) {
-        return;
-      }
-
-      try {
-        // Portrait, unlike the Heat Map's landscape — Summary is a flat, narrower table (no
-        // per-stage column fan-out), so it reads better tall than wide. See the user's own
-        // request (2026-10-09).
-        await exportElementToPdf({
-          element: table,
-          fileName: "OASPeakAwardSummaryVue.pdf",
-          title: "Terrain | Summit - OAS Progression Summary",
-          orientation: "portrait",
-        });
-        this.exportFeedback = "PDF export complete";
-      } catch (e) {
-        logger.error("Summary PDF export failed:", e);
-        const message = e instanceof Error ? e.message : "Unknown error";
-        this.exportFeedback = `PDF export failed: ${message}`;
-      }
+    /** The Table tab's table for SummitPrintButton — read after prepareTablePrint has rendered every row. */
+    tablePrintTarget(): HTMLTableElement | undefined {
+      return (this.$refs.table as unknown as TableVueInstance | undefined)?.getPrintTable();
     },
-    onTablePdfExportClick() {
-      try {
-        exportGridToPdf({
-          fileName: "OASProgressionVue.pdf",
-          title: "Terrain | Summit - OAS Progression",
-          rows: this.tableFilteredItems as unknown as GridExportRow[],
-          columns: TABLE_EXPORT_COLUMNS,
-          orientation: "landscape",
-        });
-        this.exportFeedback = "PDF export complete";
-      } catch (e) {
-        logger.error("Table PDF export failed:", e);
-        const message = e instanceof Error ? e.message : "Unknown error";
-        this.exportFeedback = `PDF export failed: ${message}`;
-      }
+    /** Show every Table-tab row for printing (only rendered rows print); returns the restore. */
+    async prepareTablePrint(): Promise<(() => void) | void> {
+      const table = this.$refs.table as unknown as TableVueInstance | undefined;
+      return table ? table.prepareForPrint() : undefined;
     },
     onTableExcelExportClick() {
       try {
@@ -461,9 +412,8 @@ export default defineComponent({
     },
     /**
      * Opens a brand-new window containing the Worksheets view's own already-rendered tables and
-     * prints it — NOT exportElementToPdf, which rasterizes to a single bitmap and does not fit a
-     * multi-page, repeating-header tabular document. See printWorksheets.ts's own comment and
-     * .claude/OASWorksheets/PLAN_STAGE_4.md §3 for the full reasoning.
+     * prints it — real HTML, not a rasterised image of the page. See printWorksheets.ts's own
+     * comment and .claude/OASWorksheets/PLAN_STAGE_4.md §3 for the full reasoning.
      */
     onWorksheetPrintClick() {
       const worksheets = this.$refs.worksheets as unknown as WorksheetsVueInstance | undefined;

@@ -19,7 +19,7 @@
 import { BASE_PRINT_CSS } from "./printStyles";
 import { layoutTable, cssContent, columnCount, type LayoutOptions, type LayoutResult, type PrintLayout } from "./printFit";
 import { footerMode as detectFooterMode, type FooterMode } from "./printSupport";
-import { collectPrintFontCss, declaredPrintWeights, PRINT_FONT_FAMILY } from "./printFonts";
+import { collectPrintFontCss, declaredPrintWeights, PRINT_FONT_FAMILY, waitForPrintFonts } from "./printFonts";
 import { createLogger } from "@/helpers/Logger";
 import { SUMMIT_PRINT_PROFILES } from "./profiles";
 
@@ -367,17 +367,6 @@ function makeHiddenFrame(widthPx: number): HTMLIFrameElement {
   return f;
 }
 
-/** Fit/zoom measurements depend on real font metrics, so the fonts must load first. */
-async function waitForFonts(doc: Document, weights: number[]): Promise<void> {
-  if (!doc.fonts) return;
-  try {
-    await Promise.all(weights.map((w) => doc.fonts.load(`${w} 10pt "${PRINT_FONT_FAMILY}"`)));
-    await doc.fonts.ready;
-  } catch (err) {
-    logger.warn("Print fonts did not load; continuing with the fallback font.", err);
-  }
-}
-
 /** Logos and icons must be loaded before print() or they can print blank. Capped so a dead URL can't hang the print. */
 function waitForImages(doc: Document, timeoutMs = 4000): Promise<void> {
   const pending = Array.from(doc.images).filter((img) => !img.complete);
@@ -405,7 +394,8 @@ function printViaSrcdoc(html: string, page: ResolvedPage, fit: LayoutOptions, fo
         if (t && win.getComputedStyle(t).borderCollapse !== "collapse") {
           throw new Error("print styles were blocked by the page's security policy (CSP)");
         }
-        await waitForFonts(doc, fontWeights);
+        // Fit/zoom measurements depend on real font metrics, so the fonts must load first.
+        await waitForPrintFonts(doc, fontWeights);
         await waitForImages(doc);
         const result = layoutTable(doc, fit);
         const done = () => {

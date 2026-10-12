@@ -82,6 +82,23 @@ export function declaredPrintWeights(css: string): number[] {
   return weights;
 }
 
+/**
+ * Wait until the print document's fonts have loaded — layout measured (or printed) before then
+ * uses the fallback font's metrics. Capped, so a font that never arrives can't hang the print;
+ * either way printing goes ahead (in the fallback font, at worst). Shared by summit-print and
+ * printWorksheets.
+ */
+export async function waitForPrintFonts(doc: Document, weights: number[], timeoutMs = 4000): Promise<void> {
+  if (!doc.fonts || weights.length === 0) return;
+  // Caught on the load itself, not around the race: a failure arriving after the timeout has
+  // already won would otherwise be an unhandled rejection.
+  const loaded = (async () => {
+    await Promise.all(weights.map((w) => doc.fonts.load(`${w} 10pt "${PRINT_FONT_FAMILY}"`)));
+    await doc.fonts.ready;
+  })().catch((err) => logger.warn("Print fonts did not load; continuing with the fallback font.", err));
+  await Promise.race([loaded, new Promise<void>((resolve) => setTimeout(resolve, timeoutMs))]);
+}
+
 /** Walk the live page's stylesheets for Terrain's Nunito Sans @font-face rules. */
 export function findTerrainFontFaces(doc: Document = document): FoundFontFace[] {
   const found: FoundFontFace[] = [];

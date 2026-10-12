@@ -412,6 +412,47 @@ Write every rule in such a block at the same shape (`::v-deep thead th.my-class`
 by source order rather than by an accident of specificity. `IStatementHeatMap.vue` does this and
 says so in a comment covering the whole block.
 
+## Printing and PDF: use summit-print
+
+**Added 2026-10-12.** Every printable table goes through `summit-print` (`src/print/`, button
+`src/components/SummitPrintButton.vue`). Its full design and history are in `.claude/Print/PLAN.md`
+and `PLAN_STAGE_1..5.md`.
+
+It prints a cleaned **clone of the real on-screen table** in an isolated print document, laid out
+by Edge's own print engine. Text stays selectable, header rows repeat, rows never split, and the
+user chooses page size, orientation, margins and fit-or-split. "Save as PDF" in Edge's dialog is
+the PDF path; there's no separate PDF library.
+
+Don't add other print or PDF mechanisms. The rasterising snapdom export was removed for being
+unreliable. `jsPDF` survives **only** behind the React `DataGrid.tsx`; don't use it from Vue pages.
+
+**To make a table printable:**
+
+1. Add a profile in `src/print/profiles/` and list it in `profiles/index.ts`.
+   - Don't register by import side effect: package.json's `sideEffects` list lets webpack drop it.
+2. Put `<SummitPrintButton profile="…" :target="…" :meta="…" />` in the page's button row. `target`
+   is a method returning the `<table>`; ask the component for it, since a ref on `v-data-table` is
+   a component, not an element.
+3. If the table pages or collapses groups, pass `:prepare` (show every row, return a restore). Only
+   rendered rows print. See `PresentAwardsTableVue.prepareForPrint`.
+
+**Profile rules:**
+
+- Scope every CSS rule with `.summit-print-profile-<name>`.
+- Sizes are in print units (mm/pt) in the profile's `css`. Colours come from the screen via
+  `copyComputed`.
+- Remove screen-only parts (filter rows, buttons, tick boxes) in `transform`.
+- **Header conventions (user decisions):**
+  - title "Page - View", e.g. "OAS Progression - Heatmap";
+  - subtitle `{group} · {unit}`;
+  - the section logo;
+  - no Section line;
+  - a meta line listing **only filters that narrow what's shown**, and only when set (never sort
+    order or layout).
+- Rows print on white (no zebra). Split printouts repeat only the first (Member) column.
+- Fonts: Terrain's Nunito Sans is borrowed into the print document at real weights
+  (`printFonts.ts`). `printWorksheets.ts` uses the same helper.
+
 ## Verification
 
 No build step needed to check this file — it's documentation. When adding new shared

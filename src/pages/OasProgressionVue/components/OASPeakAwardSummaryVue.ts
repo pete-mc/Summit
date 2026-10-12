@@ -193,7 +193,7 @@ export default defineComponent({
       return `${width}px`;
     },
     /**
-     * The <table> element the PDF export measures row geometry from — same contract as
+     * The <table> element summit-print clones for the Summary printout — same contract as
      * OASHeatMapVue's own getExportTable(): a method rather than a ref read directly, since a ref
      * on a v-data-table resolves to the Vue component instance, not an element.
      */

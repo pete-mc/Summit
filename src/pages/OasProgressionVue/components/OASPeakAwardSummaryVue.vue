@@ -79,12 +79,10 @@
 }
 
 /*
- * The border lives on BOTH the table and its wrapper div, not just the wrapper: the PDF export
- * (OasProgressionVueContent.ts's onSummaryPdfExportClick) rasterizes getExportTable()'s own
- * <table> element directly, not the wrapper div around it — a wrapper-only border is invisible to
- * that capture, so the exported PDF showed the table's content running edge-to-edge with no frame
- * at all. On screen the two borders sit flush against each other (table's border-collapse means
- * there's no visible double line), so this is a no-op for the live page and fixes the export only.
+ * The border lives on BOTH the table and its wrapper div. It was added for the old snapdom PDF
+ * export (removed 2026-10-12, .claude/Print/PLAN_STAGE_5.md), which captured the <table> alone.
+ * Kept for the same reason as OASHeatMapVue.vue's copy: removing it is a visual change to judge
+ * live, not part of that cleanup. summit-print doesn't need it (it draws its own frame).
  */
 .oas-heatmap-data-table ::v-deep > .v-data-table__wrapper > table {
   width: max-content;

@@ -2,6 +2,7 @@ import type { MetaEntry } from "@/print/summitPrint";
 import type { OASProgressionVueFilterState } from "./OASProgressionVueFilterPersistence";
 import { skillTitle } from "@/pages/OasProgressionVue/components/OASHeatMapVue";
 import { OAS_SKILLS } from "@/pages/OasProgression/services/filterHeatMapSections";
+import { HEADERS as TABLE_HEADERS, YES_NO_OPTIONS } from "@/pages/OasProgressionVue/components/OASProgressionTableVue";
 
 const MAX_STAGE = 9;
 
@@ -59,5 +60,25 @@ export function buildHeatmapPrintMeta(filters: OASProgressionVueFilterState, pat
 
   const hidden = HIDDEN_LABELS.filter((h) => filters[h.key] === false).map((h) => h.text);
   if (hidden.length) meta.push({ label: "Hidden", value: hidden.join(", ") });
+  return meta;
+}
+
+/**
+ * The Table tab's column filters in effect (.claude/Print/PLAN_STAGE_5.md §C) — only those that are
+ * set, labelled with the table's own column names. Answered/Awarded store "true"/"false", printed
+ * as their dropdown's Yes/No; other dropdowns print their value; text boxes read `contains "…"`.
+ */
+export function buildOasTablePrintMeta(columnFilters: Record<string, string>): MetaEntry[] {
+  const meta: MetaEntry[] = [];
+  for (const header of TABLE_HEADERS) {
+    const value = (columnFilters[header.value] ?? "").trim();
+    if (!value) continue;
+    if (header.filterType !== "select") {
+      meta.push({ label: header.text, value: `contains "${value}"` });
+      continue;
+    }
+    const yesNo = header.value === "answered" || header.value === "awarded" ? YES_NO_OPTIONS.filter((o) => o.value === value)[0] : undefined;
+    meta.push({ label: header.text, value: yesNo ? yesNo.text : value });
+  }
   return meta;
 }

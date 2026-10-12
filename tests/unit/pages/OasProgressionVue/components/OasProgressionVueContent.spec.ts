@@ -16,9 +16,7 @@ jest.mock("@/components/SummitPrintButton.vue", () => ({ __esModule: true, defau
 // way PresentAwardsVueContent.spec.ts does, since nothing in this spec exercises export behaviour.
 jest.mock("@/components/gridExport", () => ({
   __esModule: true,
-  exportElementToPdf: jest.fn(),
   exportGridToExcel: jest.fn(),
-  exportGridToPdf: jest.fn(),
 }));
 
 import OasProgressionVueContent, { sanitiseViewMode } from "@/pages/OasProgressionVue/components/OasProgressionVueContent";

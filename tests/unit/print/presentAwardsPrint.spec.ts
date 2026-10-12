@@ -19,19 +19,18 @@ function mountGroupedAwards(): HTMLElement {
 <div class="present-awards-table-panel"><div class="v-data-table present-awards-data-table"><div class="v-data-table__wrapper">
   <table>
     <thead><tr>
-      <th class="text-start">Type</th><th class="text-start">Badge</th><th class="text-start">Award</th><th class="text-start">Date</th><th class="text-start">Presented</th>
+      <th class="text-start">Type</th><th class="text-start">Award</th><th class="text-start">Date</th><th class="text-start">Presented</th>
       <th class="text-start ${PRESENT_HEADER_CLASS}">Present</th>
     </tr></thead>
     <tbody>
-      <tr class="oas-vue-column-filter-row"><th><input></th><th><input></th><th></th><th><input></th><th><input></th><th></th></tr>
-      <tr class="v-row-group__header"><td colspan="6" class="present-awards-group-header">
+      <tr class="oas-vue-column-filter-row"><th><input></th><th><input></th><th><input></th><th><input></th><th></th></tr>
+      <tr class="v-row-group__header"><td colspan="5" class="present-awards-group-header">
         <button class="v-btn present-awards-group-toggle"><i class="mdi-chevron-down"></i></button>
         <span class="present-awards-group-label">Member A (1 not presented)</span>
       </td></tr>
       <tr>
         <td>OAS</td>
-        <td><img class="present-awards-badge-icon" src="chrome-extension://abc/images/oas.png" alt="Camping" title="Camping"></td>
-        <td>Camping Stage 2</td>
+        <td><span class="present-awards-award"><span class="present-awards-badge-slot"><img class="present-awards-badge-icon" src="chrome-extension://abc/images/oas.png" alt=""></span><span class="present-awards-award-name">Camping Stage 2</span></span></td>
         <td>01/09/2026</td><td>No</td>
         <td class="${PRESENT_CELL_CLASS}"><div class="v-simple-checkbox"></div></td>
       </tr>
@@ -65,19 +64,18 @@ describe("present-awards profile", () => {
     expect(table.querySelector(".present-awards-group-toggle")).toBeNull();
     expect(table.querySelector(".present-awards-group-label")?.textContent).toBe("Member A (1 not presented)");
     expect(table.querySelector("img.present-awards-badge-icon")).not.toBeNull();
-    // The group header now spans the 5 remaining columns, not the old 6.
-    expect((table.querySelector("td.present-awards-group-header") as HTMLTableCellElement).colSpan).toBe(5);
-    expect(table.querySelectorAll("thead th")).toHaveLength(5);
+    // The group header now spans the 4 remaining columns, not the old 5.
+    expect((table.querySelector("td.present-awards-group-header") as HTMLTableCellElement).colSpan).toBe(4);
+    expect(table.querySelectorAll("thead th")).toHaveLength(4);
     // The live table is untouched.
     expect(host.querySelectorAll(`.${PRESENT_CELL_CLASS}`)).toHaveLength(1);
   });
 });
 
-describe("Present Awards columns (user, 2026-10-11)", () => {
-  it("puts a 'Badge'-labelled column before Award, on screen and therefore in print", () => {
-    const values = HEADERS.map((h) => h.value);
-    expect(values.indexOf("badge")).toBe(values.indexOf("achievementName") - 1);
-    expect(HEADERS.filter((h) => h.value === "badge")[0].text).toBe("Badge");
+describe("Present Awards columns (user, 2026-10-11/12)", () => {
+  it("has no separate badge column — the badge is part of the Award cell", () => {
+    expect(HEADERS.map((h) => h.value)).not.toContain("badge");
+    expect(HEADERS.map((h) => h.text)).not.toContain("Badge");
   });
 
   it("has no separate 'Clear filters' link — the filter bar's Reset filters replaces it", () => {
@@ -92,13 +90,10 @@ describe("Present Awards columns (user, 2026-10-11)", () => {
     expect(reset).toBeLessThan(filters.indexOf("</fieldset>"));
   });
 
-  it("keeps the badge column narrow and right-aligned beside the award name, on screen and in print", () => {
-    const badge = HEADERS.filter((h) => h.value === "badge")[0];
-    expect(badge).toMatchObject({ align: "end", class: "present-awards-badge-header", cellClass: "present-awards-badge-cell" });
-    expect(HEADERS.filter((h) => h.value === "achievementName")[0].cellClass).toBe("present-awards-award-cell");
+  it("prints the badge and name on one line, badges in a fixed slot so the names line up", () => {
     const css = getPrintProfile("present-awards").css;
-    expect(css).toMatch(/td\.present-awards-badge-cell \{\s*width: 1%;/);
-    expect(css).toMatch(/td\.present-awards-award-cell \{ padding-left: 2\.1mm; \}/);
+    expect(css).toMatch(/\.present-awards-award \{ display: flex; align-items: center; gap: 2\.1mm; \}/);
+    expect(css).toMatch(/\.present-awards-badge-slot \{ flex: 0 0 10\.3mm;/);
   });
 });
 

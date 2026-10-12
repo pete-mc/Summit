@@ -16,8 +16,6 @@ export interface DataTableHeader {
   /** Vuetify header options: class on the <th>, and on each body <td> in this column. */
   class?: string;
   cellClass?: string;
-  /** Vuetify header option: text alignment for the header and its cells. */
-  align?: "start" | "center" | "end";
 }
 
 /** Marks the Present (tick-box) column so the printout can drop it by class, not position. */
@@ -80,12 +78,9 @@ export const HEADERS: DataTableHeader[] = [
   // so a dropdown is both short and exhaustive. Award is deliberately left as a text box: there
   // is one distinct value per badge, which would make an unusable dropdown.
   { text: "Type", value: "type", filterType: "select" },
-  // Artwork only — nothing to sort or filter on. Sits before Award and is labelled "Badge"
-  // (user, 2026-10-11), on screen and in print. Narrow and right-aligned, with the padding between
-  // it and Award trimmed, so the badge sits right beside the award name it illustrates — see the
-  // .present-awards-badge-cell / .present-awards-award-cell rules in the .vue.
-  { text: "Badge", value: "badge", sortable: false, filterable: false, align: "end", class: "present-awards-badge-header", cellClass: "present-awards-badge-cell" },
-  { text: "Award", value: "achievementName", class: "present-awards-award-header", cellClass: "present-awards-award-cell" },
+  // The badge artwork is drawn inside this cell, before the name (#item.achievementName in the
+  // .vue) — no column of its own (user, 2026-10-12).
+  { text: "Award", value: "achievementName" },
   { text: "Date", value: "dateAwarded", sort: compareDisplayDates },
   { text: "Presented", value: "presented", sort: compareDisplayDates, filterType: "select" },
   { text: "Present", value: "present", sortable: false, filterable: false, class: PRESENT_HEADER_CLASS, cellClass: PRESENT_CELL_CLASS },

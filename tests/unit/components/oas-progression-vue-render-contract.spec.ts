@@ -135,8 +135,9 @@ describe("OasProgressionVueContent render contract", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(templateSource).toContain('ref="heatMap"');
     expect(templateSource).toMatch(/<SummitPrintButton v-else-if="filters\.viewMode === 'heatmap'" profile="skill-heatmap" :target="heatMapPrintTarget"/);
-    // The old snapdom export is no longer wired to any button (kept in the .ts until the cleanup stage).
+    // The old snapdom export is gone (.claude/Print/PLAN_STAGE_5.md §B).
     expect(templateSource).not.toContain("onPdfExportClick");
+    expect(tsSource).not.toContain("onPdfExportClick");
   });
 
   it("Summary tab prints through summit-print's SummitPrintButton, asking the summary for its table via getExportTable() (.claude/Print/PLAN_STAGE_1.md)", () => {
@@ -153,8 +154,9 @@ describe("OasProgressionVueContent render contract", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(templateSource).toContain('ref="summary"');
     expect(templateSource).toMatch(/<SummitPrintButton v-if="filters\.viewMode === 'summary'" profile="peak-award-summary" :target="summaryPrintTarget"/);
-    // The old snapdom export is no longer wired to any button (kept in the .ts until the cleanup stage).
+    // The old snapdom export is gone (.claude/Print/PLAN_STAGE_5.md §B).
     expect(templateSource).not.toContain("onSummaryPdfExportClick");
+    expect(tsSource).not.toContain("onSummaryPdfExportClick");
   });
 
   it("VueStage 4: the reload button shows a loading state while reloading, matching the plan's nicer-than-original affordance", () => {
@@ -223,16 +225,16 @@ describe("OasProgressionVueContent render contract", () => {
     expect(resetMethodSource).not.toContain("viewMode:");
   });
 
-  it("VueStage 5 fixes: header row gets PDF + Excel export buttons for the Table view", () => {
+  it("the Table view gets Excel Export plus summit-print's Print / PDF (the jsPDF export is gone, .claude/Print/PLAN_STAGE_5.md §C)", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
-    expect(templateSource).toContain("onTablePdfExportClick");
     expect(templateSource).toContain("onTableExcelExportClick");
     expect(templateSource).toContain("Excel Export");
+    expect(templateSource).toMatch(/<SummitPrintButton profile="oas-table" :target="tablePrintTarget" :prepare="prepareTablePrint"/);
+    expect(templateSource).not.toContain("onTablePdfExportClick");
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
     expect(tsSource).toContain("exportGridToExcel");
-    expect(tsSource).toContain("exportGridToPdf");
-    expect(tsSource).toContain("onTablePdfExportClick");
+    expect(tsSource).not.toContain("exportGridToPdf");
     expect(tsSource).toContain("onTableExcelExportClick");
   });
 
@@ -242,12 +244,14 @@ describe("OasProgressionVueContent render contract", () => {
 
     const excelIndex = headerRow.indexOf("onTableExcelExportClick");
     const heatmapPdfIndex = headerRow.indexOf('profile="skill-heatmap"');
-    const tablePdfIndex = headerRow.indexOf("onTablePdfExportClick");
+    const tablePdfIndex = headerRow.indexOf('profile="oas-table"');
     const refreshIndex = headerRow.indexOf("onReloadAllClick");
 
     expect(refreshIndex).toBeGreaterThan(-1);
     // Guard: a missing button's index is -1, which would pass every "less than" check below.
     expect(heatmapPdfIndex).toBeGreaterThan(-1);
+    expect(tablePdfIndex).toBeGreaterThan(-1);
+    expect(excelIndex).toBeGreaterThan(-1);
     // Left to right: [Excel Export,] PDF Export, Refresh (rightmost). The view-mode toggle used to
     // sit between PDF Export and Refresh here; it is now the v-tabs strip below this row entirely
     // (see .claude/OASWorksheets/PLAN_STAGE_2.md §2 — a full-width row of its own, not another item

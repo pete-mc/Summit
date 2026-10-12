@@ -5,7 +5,7 @@ const REPO_ROOT = path.resolve(__dirname, "../../..");
 const HEAT_MAP = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASHeatMapVue.vue"), "utf8");
 const FILTERS = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASProgressionFiltersVue.vue"), "utf8");
 const FILTERS_TS = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASProgressionFiltersVue.ts"), "utf8");
-const EXPORT = fs.readFileSync(path.resolve(REPO_ROOT, "src/components/gridExport.ts"), "utf8");
+const PRINT_PROFILE = fs.readFileSync(path.resolve(REPO_ROOT, "src/print/profiles/skillHeatmap.ts"), "utf8");
 
 describe("OAS heat map — group by Skill or Member", () => {
   it("renders a member-first body when grouped by member", () => {
@@ -32,12 +32,13 @@ describe("OAS heat map — group by Skill or Member", () => {
     expect(memberBranch).toContain("oas-heatmap-skill-icon");
   });
 
-  it("reuses the section heading class the PDF export paginates on", () => {
-    // exportElementToPdf breaks pages on SECTION_HEADING_ROW_SELECTOR. The member-grouped heading
-    // reuses .oas-heatmap-skill-title-row precisely so the export keeps working unchanged.
+  it("reuses the section heading class the printout keeps with its rows", () => {
+    // summit-print's skill-heatmap profile keeps .oas-heatmap-skill-title-row with the row beneath
+    // it (break-after: avoid). The member-grouped heading reuses that class, so printing works
+    // unchanged in both group modes.
     const memberBranch = HEAT_MAP.slice(HEAT_MAP.indexOf(`v-if="isGroupedByMember"`), HEAT_MAP.indexOf("v-else #body"));
     expect(memberBranch).toContain("oas-heatmap-skill-title-row");
-    expect(EXPORT).toContain(".oas-heatmap-skill-title-row");
+    expect(PRINT_PROFILE).toContain("tr.oas-heatmap-skill-title-row");
   });
 
   it("shows the member's patrol beside their name rather than as a divider", () => {

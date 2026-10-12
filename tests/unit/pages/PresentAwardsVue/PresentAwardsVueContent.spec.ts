@@ -16,10 +16,9 @@ jest.mock("@/components/SummitPrintButton.vue", () => ({ __esModule: true, defau
 jest.mock("@/components/gridExport", () => ({
   __esModule: true,
   exportGridToExcel: jest.fn(),
-  exportGridToPdf: jest.fn(),
 }));
 
-import { exportGridToExcel, exportGridToPdf } from "@/components/gridExport";
+import { exportGridToExcel } from "@/components/gridExport";
 
 import PresentAwardsVueContent, { DISCARD_EDITS_PROMPT, NOTHING_SELECTED_MESSAGE, SAVED_MESSAGE } from "@/pages/PresentAwardsVue/components/PresentAwardsVueContent";
 
@@ -255,17 +254,6 @@ describe("PresentAwardsVueContent — export", () => {
     expect(options.rows).toHaveLength(1);
     expect(options.columns.map((column: { header: string }) => column.header)).toEqual(["Name", "Type", "Award", "Date", "Presented"]);
     expect(content.feedback).toBe("Excel export complete");
-  });
-
-  it("sends the filtered rows and the React page's title to the PDF exporter", () => {
-    const content = mountContent([makeItem("a")]);
-
-    content.onPdfExportClick();
-
-    const options = (exportGridToPdf as jest.Mock).mock.calls[0][0];
-    expect(options.fileName).toBe("Awards.pdf");
-    expect(options.title).toBe("Terrain | Summit - Awards Completed");
-    expect(content.feedback).toBe("PDF export complete");
   });
 
   it("reports an export failure rather than failing silently", () => {

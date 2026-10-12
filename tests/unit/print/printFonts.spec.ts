@@ -1,4 +1,31 @@
-import { absolutiseFontSrc, buildPrintFontFaces, collectPrintFontCss, declaredPrintWeights, findTerrainFontFaces } from "@/print/printFonts";
+import { absolutiseFontSrc, buildPrintFontFaces, collectPrintFontCss, declaredPrintWeights, findTerrainFontFaces, waitForPrintFonts } from "@/print/printFonts";
+
+describe("waitForPrintFonts", () => {
+  it("loads each declared weight of the print family, then waits for the document's fonts", async () => {
+    const load = jest.fn(async () => []);
+    const doc = { fonts: { load, ready: Promise.resolve() } } as unknown as Document;
+    await waitForPrintFonts(doc, [400, 600]);
+    expect(load.mock.calls.map((c) => (c as unknown[])[0])).toEqual(['400 10pt "SummitPrintSans"', '600 10pt "SummitPrintSans"']);
+  });
+
+  it("gives up after the cap rather than hanging the print when a font never arrives", async () => {
+    jest.useFakeTimers();
+    const doc = { fonts: { load: () => new Promise(() => undefined), ready: new Promise(() => undefined) } } as unknown as Document;
+    const done = jest.fn();
+    const waiting = waitForPrintFonts(doc, [400], 3000).then(done);
+    await jest.advanceTimersByTimeAsync(2999);
+    expect(done).not.toHaveBeenCalled();
+    await jest.advanceTimersByTimeAsync(1);
+    await waiting;
+    expect(done).toHaveBeenCalled();
+    jest.useRealTimers();
+  });
+
+  it("returns at once when there is nothing to wait for", async () => {
+    await expect(waitForPrintFonts({} as Document, [400])).resolves.toBeUndefined();
+    await expect(waitForPrintFonts({ fonts: {} } as unknown as Document, [])).resolves.toBeUndefined();
+  });
+});
 
 const BASE = "https://terrain.scouts.com.au/_nuxt/css/0131ac3.css";
 

@@ -72,13 +72,20 @@
       </template>
 
       <!--
-        Badge artwork. Award types without artwork yet show a neutral placeholder so the column
-        stays aligned and scannable rather than gappy. The title carries the award name, since the
-        icon alone is ambiguous for anyone who does not recognise the artwork.
+        Badge artwork inside the Award cell, just before the award's name (user, 2026-10-12) —
+        connected to the name it illustrates, without a column of its own. Every badge gets the
+        same fixed-width slot so the names line up; award types without artwork yet show a neutral
+        dashed placeholder in it. The image is decorative (alt="", no tooltip): the name beside it
+        says the same thing. Sorting and filtering still use achievementName.
       -->
-      <template #item.badge="{ item }">
-        <img v-if="badgeIconUrl(item)" :src="badgeIconUrl(item)" :alt="item.achievementName" :title="item.achievementName" class="present-awards-badge-icon" :class="{ 'present-awards-badge-icon--wide': isWideBadge(item) }" />
-        <span v-else class="present-awards-badge-placeholder" :title="item.achievementName" aria-hidden="true"></span>
+      <template #item.achievementName="{ item }">
+        <span class="present-awards-award">
+          <span class="present-awards-badge-slot">
+            <img v-if="badgeIconUrl(item)" :src="badgeIconUrl(item)" alt="" class="present-awards-badge-icon" :class="{ 'present-awards-badge-icon--wide': isWideBadge(item) }" />
+            <span v-else class="present-awards-badge-placeholder" aria-hidden="true"></span>
+          </span>
+          <span class="present-awards-award-name">{{ item.achievementName }}</span>
+        </span>
       </template>
 
       <template #item.presented="{ item }">
@@ -139,28 +146,6 @@
   padding: 0 16px;
 }
 
-/*
- * Badge column: about 62px (the "Badge" header word plus 14px + 8px padding), with the badge pushed
- * right so it sits ~16px from the award name it illustrates. That's halfway between the original
- * ~72px column and the 52px first attempt, which the user found too thin (2026-10-12). Same selector
- * shape as the padding rule above, so these win by source order rather than losing on specificity
- * (see DESIGN.md "Sticky table cells" on the trap).
- */
-.present-awards-data-table ::v-deep > .v-data-table__wrapper > table > tbody > tr > td.present-awards-badge-cell,
-.present-awards-data-table ::v-deep > .v-data-table__wrapper > table > thead > tr > th.present-awards-badge-header {
-  padding: 0 8px 0 14px;
-  width: 1%; /* shrink to content: the header word or the widest badge */
-}
-
-.present-awards-data-table ::v-deep > .v-data-table__wrapper > table > tbody > tr > td.present-awards-award-cell,
-.present-awards-data-table ::v-deep > .v-data-table__wrapper > table > thead > tr > th.present-awards-award-header {
-  padding-left: 8px;
-}
-
-.present-awards-data-table ::v-deep td.present-awards-badge-cell .present-awards-badge-icon,
-.present-awards-data-table ::v-deep td.present-awards-badge-cell .present-awards-badge-placeholder {
-  margin-left: auto;
-}
 
 .oas-vue-column-filter-row th {
   padding: 4px 6px;
@@ -223,8 +208,24 @@
 }
 
 /*
- * Badge artwork column. Fixed 28px so every row is the same height whether its badge has artwork
- * or a placeholder, and so a dense row doesn't grow to fit the image.
+ * Award cell: badge, then name, on one line (user, 2026-10-12). The slot is the width of the widest
+ * (additional award) artwork, with each badge centred in it, so every name starts at the same x.
+ */
+.present-awards-award {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--summit-space-sm, 8px);
+}
+
+.present-awards-badge-slot {
+  flex: 0 0 41px;
+  display: flex;
+  justify-content: center;
+}
+
+/*
+ * Badge artwork. Fixed 28px so every row is the same height whether its badge has artwork or a
+ * placeholder, and so a dense row doesn't grow to fit the image.
  */
 .present-awards-badge-icon,
 .present-awards-badge-placeholder {

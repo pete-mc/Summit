@@ -125,6 +125,8 @@ tests/unit/print/*.spec.ts
 
 ## To-do / follow-ups (not tied to a stage)
 
+> Stage 5 (2026-10-12) adds the badge in the Award column, the cleanup (snapdom removed, DESIGN.md "Printing" section), the OAS Table tab print and the Worksheets font. See [PLAN_STAGE_5.md](PLAN_STAGE_5.md). The pill-button item below is in progress there (§E).
+
 - [ ] **Merge the four copies of the rounded "pill" button style (`.oas-vue-pill-btn`).** It is declared separately, as scoped CSS, in `OasProgressionVueContent.vue`, `PresentAwardsVueContent.vue`, `IStatementsContent.vue` and `SummitPrintButton.vue`. That is the drift `DESIGN.md` warns about. It probably also explains why `IStatementFilters.vue`'s Reset button doesn't get the style: the rule lives in its parent's scoped block. Per DESIGN.md "A shared component beats a shared class", the likely fix is a shared `SummitPillButton` component, or one declaration in `index.css`. Check it against the cascade-order warning in DESIGN.md before choosing. Raised by the user on 2026-10-10.
 - [x] Multi-page footers ("Page X of Y" on every page) are confirmed live on the Heatmap (Stage 2, 2026-10-11).
 
