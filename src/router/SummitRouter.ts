@@ -21,8 +21,8 @@ export default class SummitRouter {
     this.router = window.$nuxt.$router;
     this.summitNavMenuItems = [];
     SummitRouter.terrainNavMenuItems = SummitRouter.getTerrainNavMenuItems();
-    this.initRoutes();
     this.initNavMenu();
+    this.initRoutes();
   }
 
   public static getInstance(): SummitRouter {
@@ -32,21 +32,69 @@ export default class SummitRouter {
     return SummitRouter.instance;
   }
 
-  public finaliseSetup(): void {
-    if (SummitRouter.terrainNavMenuItems.length === 0 && window.$nuxt.$store.state.user.username.length != 0) {
+  // Terrain's NavMenu only appears once its async login check finishes, which is usually after
+  // Summit has started. Keep polling until it's there (giving up after ~30s, e.g. on the login
+  // page — the afterEach fallback below picks it up on the first navigation after logging in).
+  public finaliseSetup(attempt = 0): void {
+    if (SummitRouter.terrainNavMenuItems.length === 0 && attempt < 300) {
       setTimeout(() => {
         this.resetMenu();
-        this.finaliseSetup();
+        this.finaliseSetup(attempt + 1);
       }, 100);
     }
   }
 
   public resetMenu(): void {
-    SummitRouter.terrainNavMenuItems = SummitRouter.getTerrainNavMenuItems();
+    this.captureTerrainMenu();
     this.initNavMenu();
+    // Show the right menu for the page we're on — on a full page load of a Summit URL no
+    // navigation happens after the menu appears, so nothing else would switch it.
+    this.applyMenuForRoute(this.router.currentRoute.path);
+  }
+
+  // Snapshot Terrain's own menu items — but only while Terrain's menu is the one on screen.
+  // Snapshotting while the Summit menu is showing would save Summit's items as Terrain's.
+  private captureTerrainMenu(): void {
+    const current = SummitRouter.getTerrainNavMenuItems();
+    if (current.length > 0 && !SummitRouter.isSummitMenu(current)) {
+      SummitRouter.terrainNavMenuItems = current;
+    }
+  }
+
+  private applyMenuForRoute(path: string): void {
+    SummitRouter.switchMenu(path.includes("summit") ? this.summitNavMenuItems : SummitRouter.terrainNavMenuItems);
+  }
+
+  // The Summit menu is the only one with sub-items pointing at Summit pages.
+  private static isSummitMenu(items: NavMenuItem[]): boolean {
+    return items.some((item) => (item.items ?? []).some((sub) => typeof sub.to === "string" && sub.to.startsWith("/summit/")));
   }
 
   private async initRoutes(): Promise<void> {
+    // Register the navigation hooks BEFORE adding routes: each addRoute() makes vue-router
+    // re-run navigation to the current URL, and on a page load of a Summit URL those
+    // re-runs are the only navigations that happen.
+    this.router.beforeEach((to, from, next) => {
+      if (SummitRouter.terrainNavMenuItems.length === 0) {
+        this.captureTerrainMenu();
+        this.initNavMenu();
+      }
+      this.applyMenuForRoute(to.path);
+      next();
+    });
+    this.router.afterEach((to) => {
+      logger.debug("After each");
+      if (this.summitNavMenuItems.length === 0 || SummitRouter.terrainNavMenuItems.length === 0) {
+        setTimeout(() => {
+          this.resetMenu();
+        }, 1000);
+      }
+      window.$nuxt.$nextTick(() => {
+        setTimeout(() => {
+          SummitRouter.pageChecks(to);
+        }, 100);
+      });
+    });
     this.router.addRoute({
       path: "/terrain",
       redirect: "/basecamp",
@@ -90,30 +138,6 @@ export default class SummitRouter {
     this.router.addRoute({
       path: "/summit/reports/Topo",
       component: Topo,
-    });
-    this.router.beforeEach((to, from, next) => {
-      if (to.path.includes("summit")) {
-        SummitRouter.switchMenu(this.summitNavMenuItems);
-      } else {
-        if (SummitRouter.terrainNavMenuItems.length === 0) {
-          this.resetMenu();
-        }
-        SummitRouter.switchMenu(SummitRouter.terrainNavMenuItems);
-      }
-      next();
-    });
-    this.router.afterEach((to) => {
-      logger.debug("After each");
-      if (this.summitNavMenuItems.length === 0 || SummitRouter.terrainNavMenuItems.length === 0) {
-        setTimeout(() => {
-          this.resetMenu();
-        }, 1000);
-      }
-      window.$nuxt.$nextTick(() => {
-        setTimeout(() => {
-          SummitRouter.pageChecks(to);
-        }, 100);
-      });
     });
   }
 
@@ -211,8 +235,11 @@ export default class SummitRouter {
       locked: false,
       roles: [true, false],
     };
-    //check if SummitRouter.terrainNavMenuItems has a item with the title "Terrain | Summit"
-    if (!SummitRouter.terrainNavMenuItems.some((item) => item.title === "Terrain | Summit")) SummitRouter.addMenuItems([SummitNavMenuItem]);
+    // Add the "Terrain | Summit" link to our saved copy of Terrain's menu (not to whatever
+    // menu is on screen, which may be the Summit one); applyMenuForRoute puts it on screen.
+    if (SummitRouter.terrainNavMenuItems.length > 0 && !SummitRouter.terrainNavMenuItems.some((item) => item.title === "Terrain | Summit")) {
+      SummitRouter.terrainNavMenuItems = SummitRouter.terrainNavMenuItems.concat([SummitNavMenuItem]);
+    }
   }
 
   private static getTerrainNavMenuItems(): NavMenuItem[] {
@@ -224,21 +251,9 @@ export default class SummitRouter {
     return [];
   }
 
-  private static addMenuItems(items: NavMenuItem[]): void {
-    window.$nuxt.$nextTick(() => {
-      const navMenuComponent: NavMenuComponent = FindComponent("NavMenu", window.$nuxt.$root as Vue) as NavMenuComponent;
-      if (navMenuComponent != null) {
-        for (let i = 0; i < items.length; i += 1) {
-          navMenuComponent.items.push(items[i]);
-          this.terrainNavMenuItems = Array.from(navMenuComponent.items);
-        }
-        navMenuComponent.$data.drawer = !navMenuComponent.$data.drawer;
-        navMenuComponent.$data.drawer = !navMenuComponent.$data.drawer;
-      }
-    });
-  }
-
   private static switchMenu(items: NavMenuItem[]): void {
+    // An empty list means we haven't captured it yet — leave the menu alone rather than blank it.
+    if (items.length === 0) return;
     window.$nuxt.$nextTick(() => {
       const navMenuComponent: NavMenuComponent = FindComponent("NavMenu", window.$nuxt.$root as Vue) as NavMenuComponent;
       if (navMenuComponent != null) {
