@@ -26,6 +26,9 @@ import type { OASProgressionVueFilterState } from "@/pages/OasProgressionVue/ser
 
 /** Cell state → CSS class, per .claude/OASWorksheets/PLAN_STAGE_1.md's three-state table. Exported so its mapping is independently testable without mounting the component. */
 export function worksheetCellClass(cell: WorksheetCell): string {
+  if (cell.notApplicable) {
+    return "oas-worksheet-cell-na";
+  }
   if (cell.awarded) {
     return "oas-worksheet-cell-awarded";
   }

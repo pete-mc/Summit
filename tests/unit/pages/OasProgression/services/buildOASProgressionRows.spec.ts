@@ -5,7 +5,10 @@ import {
   flattenOASTree,
   getTrunkStageCount,
   isOASCacheKeyForStream,
+  mergeStatementOrder,
+  olderTemplateLinksByMember,
   parseTerrainAnswerDate,
+  type FlattenedIStatement,
   type OASProgressionRow,
 } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { OASTemplate, OASTree, TerrainAchievements, TerrainUnitMember } from "@/types/terrainTypes";
@@ -418,5 +421,79 @@ describe("isOASCacheKeyForStream", () => {
     expect(matches("achievements.unit-1.bushwalking.core.2")).toBe(true);
     expect(matches("achievements.bushwalking.bushwalking.core.2")).toBe(true);
     expect(matches("achievements.unit-1.camping.core.2")).toBe(false);
+  });
+});
+
+// Template-version handling — .claude/OASProgression/PLAN_TEMPLATE_VERSIONS.md. Fixture shape
+// mirrors the real Vertical Stage 3 change: v1 had a "navigation game" statement that v2 dropped.
+function statement(inputId: string, sortIndex: number, inputGroup = "Do"): FlattenedIStatement {
+  return { inputId, iStatement: `I can ${inputId}`, inputGroup, sortIndex };
+}
+const V2_STATEMENTS = [statement("activities", 0), statement("climbed", 1), statement("logbook_up_to_date", 2, "Review")];
+const V1_STATEMENTS = [statement("activities", 0), statement("navigation", 1), statement("climbed", 2), statement("logbook_up_to_date", 3, "Review")];
+
+describe("olderTemplateLinksByMember", () => {
+  it("links a member whose achievement is on an older version to that version's file", () => {
+    const links = olderTemplateLinksByMember([makeAchievement({ member_id: "m1", template: "oas/vertical/3", version: 1 })], 2);
+
+    expect(links.get("m1")).toBe("oas/vertical/3/1.json");
+  });
+
+  it("leaves out members already on the latest version, or with no template/version (e.g. imported)", () => {
+    const links = olderTemplateLinksByMember([makeAchievement({ member_id: "m1", template: "oas/vertical/3", version: 2 }), makeAchievement({ member_id: "m2" })], 2);
+
+    expect(links.size).toBe(0);
+  });
+
+  it("uses the most recently updated achievement when a member has several for one stage", () => {
+    const links = olderTemplateLinksByMember(
+      [
+        makeAchievement({ member_id: "m1", template: "oas/vertical/3", version: 1, status_updated: "2025-01-01T00:00:00.000Z" }),
+        makeAchievement({ member_id: "m1", template: "oas/vertical/3", version: 2, status_updated: "2026-01-01T00:00:00.000Z" }),
+      ],
+      2,
+    );
+
+    expect(links.has("m1")).toBe(false);
+  });
+});
+
+describe("mergeStatementOrder", () => {
+  it("places a statement dropped from latest straight after its predecessor in the older version", () => {
+    const order = mergeStatementOrder(V2_STATEMENTS, [V1_STATEMENTS]);
+
+    const sorted = Array.from(order.keys()).sort((a, b) => order.get(a)! - order.get(b)!);
+    expect(sorted).toEqual(["activities", "navigation", "climbed", "logbook_up_to_date"]);
+  });
+
+  it("puts an older version's first statement first when latest no longer has it", () => {
+    const order = mergeStatementOrder([statement("b", 0)], [[statement("a", 0), statement("b", 1)]]);
+
+    expect(order.get("a")).toBeLessThan(order.get("b")!);
+  });
+
+  it("is just latest's order when there are no older versions", () => {
+    const order = mergeStatementOrder(V2_STATEMENTS, []);
+
+    expect(Array.from(order.entries())).toEqual([
+      ["activities", 0],
+      ["climbed", 1],
+      ["logbook_up_to_date", 2],
+    ]);
+  });
+});
+
+describe("buildBlankMatrix with per-member template versions", () => {
+  it("builds each member's rows from their own statement list and applies an answer to an old-only statement", () => {
+    const members = [makeMember({ id: "m1" }), makeMember({ id: "m2" })];
+    const matrix = buildBlankMatrix("unit-1", "vertical", "vertical", 3, (memberId) => (memberId === "m1" ? V1_STATEMENTS : V2_STATEMENTS), members);
+
+    expect(matrix.filter((r) => r.memberId === "m1").map((r) => r.inputId)).toEqual(["activities", "navigation", "climbed", "logbook_up_to_date"]);
+    expect(matrix.filter((r) => r.memberId === "m2").map((r) => r.inputId)).toEqual(["activities", "climbed", "logbook_up_to_date"]);
+
+    const joined = applyAchievementsToMatrix(matrix, [makeAchievement({ member_id: "m1", status: "in_progress" as TerrainAchievements["status"], answers: { navigation_verifiedDate: "03/12/2025" } })]);
+    const navigation = joined.find((r) => r.memberId === "m1" && r.inputId === "navigation");
+    expect(navigation?.answered).toBe(true);
+    expect(navigation?.date).toBe("2025-12-03");
   });
 });

@@ -1,7 +1,9 @@
 import moment from "moment";
 import { type OASTemplate, type OASTree, type OASTreeNode, type TerrainAchievements, type TerrainUnitMember } from "@/types/terrainTypes";
 import { fetchOASTemplate, fetchOASTree, fetchUnitAchievementsFilterd } from "@/services";
-import { loadCached, saveCached } from "@/helpers";
+import { createLogger, loadCached, saveCached } from "@/helpers";
+
+const logger = createLogger("buildOASProgressionRows");
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -88,10 +90,16 @@ export function flattenOASTemplate(template: OASTemplate): FlattenedIStatement[]
   return flattened;
 }
 
-export function buildBlankMatrix(unitId: string, stream: string, branch: string, stage: number, iStatements: FlattenedIStatement[], members: TerrainUnitMember[]): OASProgressionRow[] {
+/**
+ * `iStatements` is either one list shared by every member, or a per-member lookup — a member who
+ * started a stage on an older template version keeps that version's I-statements (see
+ * .claude/OASProgression/PLAN_TEMPLATE_VERSIONS.md), so members of one stage can differ.
+ */
+export function buildBlankMatrix(unitId: string, stream: string, branch: string, stage: number, iStatements: FlattenedIStatement[] | ((memberId: string) => FlattenedIStatement[]), members: TerrainUnitMember[]): OASProgressionRow[] {
   const matrix: OASProgressionRow[] = [];
   members.forEach((member) => {
-    iStatements.forEach((iStatement) => {
+    const memberStatements = typeof iStatements === "function" ? iStatements(member.id) : iStatements;
+    memberStatements.forEach((iStatement) => {
       matrix.push({
         unitId,
         stream,
@@ -321,19 +329,93 @@ async function getCachedAchievements(unitId: string, stream: string, branch: str
   return fetched;
 }
 
+/**
+ * Which older template file each member's achievement for this stage points at, e.g.
+ * "oas/vertical/3/1.json" — the same `{template}/{version}.json` path Terrain's own loadTemplate()
+ * uses for an existing achievement. A member is left out (→ use latest) when their achievement is
+ * already on the latest version, or carries no template/version at all (e.g. an imported award).
+ * If a member somehow has several achievements for one stage, the most recently updated wins.
+ */
+export function olderTemplateLinksByMember(achievements: TerrainAchievements[], latestVersion: number): Map<string, string> {
+  const newestByMember = new Map<string, TerrainAchievements>();
+  achievements.forEach((achievement) => {
+    const existing = newestByMember.get(achievement.member_id);
+    if (!existing || achievement.status_updated > existing.status_updated) {
+      newestByMember.set(achievement.member_id, achievement);
+    }
+  });
+
+  const links = new Map<string, string>();
+  newestByMember.forEach((achievement, memberId) => {
+    if (achievement.template && typeof achievement.version === "number" && achievement.version !== latestVersion) {
+      links.set(memberId, `${achievement.template}/${achievement.version}.json`);
+    }
+  });
+  return links;
+}
+
+/**
+ * One display order for a stage whose members may be on different template versions: the latest
+ * version's order, with each statement that only exists in an older version inserted straight
+ * after the statement that preceded it in that version (or at the very start, if it was first).
+ * So a statement dropped from the latest version still shows where its own members saw it.
+ */
+export function mergeStatementOrder(latest: FlattenedIStatement[], olderVersions: FlattenedIStatement[][]): Map<string, number> {
+  const order = latest.map((s) => s.inputId);
+  olderVersions.forEach((statements) => {
+    statements.forEach((statement, index) => {
+      if (order.indexOf(statement.inputId) !== -1) {
+        return;
+      }
+      const predecessorIndex = index > 0 ? order.indexOf(statements[index - 1].inputId) : -1;
+      order.splice(predecessorIndex + 1, 0, statement.inputId);
+    });
+  });
+  return new Map(order.map((inputId, index) => [inputId, index]));
+}
+
+/** Fetches each older template version members are on (once per distinct file); a failed fetch falls back to latest for those members. */
+async function loadOlderStatementsByMember(achievements: TerrainAchievements[], latestVersion: number): Promise<{ byMember: Map<string, FlattenedIStatement[]>; versions: FlattenedIStatement[][] }> {
+  const linksByMember = olderTemplateLinksByMember(achievements, latestVersion);
+  const links = Array.from(new Set(Array.from(linksByMember.values())));
+
+  const statementsByLink = new Map<string, FlattenedIStatement[]>();
+  await Promise.all(
+    links.map(async (link) => {
+      const template = await getCachedOASTemplate(link);
+      if (template) {
+        statementsByLink.set(link, flattenOASTemplate(template));
+      } else {
+        logger.warn(`Could not load older template version ${link}; using latest for its members.`);
+      }
+    }),
+  );
+
+  const byMember = new Map<string, FlattenedIStatement[]>();
+  linksByMember.forEach((link, memberId) => {
+    const statements = statementsByLink.get(link);
+    if (statements) {
+      byMember.set(memberId, statements);
+    }
+  });
+  return { byMember, versions: Array.from(statementsByLink.values()) };
+}
+
 export async function fetchOASProgressionForStage(unitId: string, stream: string, branch: string, stage: number, templateLink: string, members: TerrainUnitMember[]): Promise<OASProgressionRow[]> {
   const template = await getCachedOASTemplate(templateLink);
   if (!template) {
     return [];
   }
 
-  const iStatements = flattenOASTemplate(template).sort((a, b) => a.sortIndex - b.sortIndex);
-  const blankMatrix = buildBlankMatrix(unitId, stream, branch, stage, iStatements, members);
+  const latestStatements = flattenOASTemplate(template);
   const achievements = await getCachedAchievements(unitId, stream, branch, stage);
+  const older = await loadOlderStatementsByMember(achievements, template.version);
+
+  const blankMatrix = buildBlankMatrix(unitId, stream, branch, stage, (memberId) => older.byMember.get(memberId) ?? latestStatements, members);
   const joined = applyAchievementsToMatrix(blankMatrix, achievements);
 
-  const sortIndexByInputId = new Map(iStatements.map((s) => [s.inputId, s.sortIndex]));
-  return joined.sort((a, b) => (sortIndexByInputId.get(a.inputId) ?? 0) - (sortIndexByInputId.get(b.inputId) ?? 0));
+  const orderByInputId = mergeStatementOrder(latestStatements, older.versions);
+  return joined.sort((a, b) => (orderByInputId.get(a.inputId) ?? 0) - (orderByInputId.get(b.inputId) ?? 0));
 }
 
 export interface StreamProgressionResult {

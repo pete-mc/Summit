@@ -258,6 +258,30 @@ describe("buildWorksheetPages", () => {
     const rowsOut = result.pages[0].groups[0].rows;
     expect(rowsOut.every((r) => r.cells[0].awarded && r.cells[0].answered)).toBe(true);
   });
+
+  // Members on different template versions of one stage — .claude/OASProgression/PLAN_TEMPLATE_VERSIONS.md.
+  describe("mixed template versions", () => {
+    // m1 started on the older version, which still has "navigation"; m2 is on the latest, which dropped it.
+    const mixedRows = (m2Awarded = false) => [
+      makeRow({ memberId: "m1", memberName: "Amy", inputId: "activities" }),
+      makeRow({ memberId: "m1", memberName: "Amy", inputId: "navigation" }),
+      makeRow({ memberId: "m2", memberName: "Jess", inputId: "activities", awarded: m2Awarded, answered: m2Awarded }),
+    ];
+
+    it("shows the old-only statement, not-applicable for members on the other version", () => {
+      const result = buildWorksheetPages(mixedRows(), options());
+
+      const navigation = result.pages[0].groups[0].rows.find((r) => r.inputId === "navigation")!;
+      expect(navigation.cells[0].notApplicable).toBeUndefined();
+      expect(navigation.cells[1]).toEqual({ date: null, answered: false, awarded: false, notApplicable: true });
+    });
+
+    it("still hides an awarded member under Hide completed when a not-applicable cell is on the page", () => {
+      const result = buildWorksheetPages(mixedRows(true), options({ hideCompleted: true }));
+
+      expect(result.pages[0].members.map((m) => m.memberId)).toEqual(["m1"]);
+    });
+  });
 });
 
 describe("splitPageIntoColumnBatches", () => {

@@ -24,6 +24,13 @@ export interface WorksheetCell {
   date: string | null;
   answered: boolean;
   awarded: boolean;
+  /**
+   * True when this I-Statement isn't part of the template version this member started the stage
+   * on (an older/newer version added or removed it) — rendered with no tick box, so a leader
+   * doesn't tick something that was never this member's requirement. Absent otherwise. See
+   * .claude/OASProgression/PLAN_TEMPLATE_VERSIONS.md.
+   */
+  notApplicable?: true;
 }
 
 /** One I-Statement row, with one cell per member in `WorksheetPage.members` order. */
@@ -158,6 +165,9 @@ interface PageAccumulator {
   // Preserves first-seen (template) order — see PLAN_STAGE_1.md §4 step 5.
   groupOrder: string[];
   groups: Map<string, Map<string, WorksheetRow>>;
+  /** Members with at least one row on this page, and which (inputId, member) cells they filled — used to mark the rest not-applicable. */
+  memberIndicesWithRows: Set<number>;
+  filledCells: Set<string>;
 }
 
 /**
@@ -172,7 +182,9 @@ function isMemberCompleteOnPage(page: WorksheetPage, memberIndex: number): boole
   if (allRows.length === 0) {
     return false;
   }
-  return allRows.every((row) => row.cells[memberIndex]?.awarded === true);
+  // Not-applicable cells (another template version's statements) don't count against completion.
+  const applicableCells = allRows.map((row) => row.cells[memberIndex]).filter((cell) => !cell?.notApplicable);
+  return applicableCells.length > 0 && applicableCells.every((cell) => cell?.awarded === true);
 }
 
 /** Narrows a single page's member columns and cells together, keeping both arrays aligned at every index — see PLAN_STAGE_1.md §4a, the trap this function exists to avoid. */
@@ -227,7 +239,7 @@ export function buildWorksheetPages(rows: OASProgressionRow[], options: BuildWor
     const pageKey = `${row.stream}::${row.branch}::${row.stage}`;
     let page = pageAccumulators.get(pageKey);
     if (!page) {
-      page = { key: pageKey, skill: row.stream, stream: row.branch, stage: row.stage, groupOrder: [], groups: new Map() };
+      page = { key: pageKey, skill: row.stream, stream: row.branch, stage: row.stage, groupOrder: [], groups: new Map(), memberIndicesWithRows: new Set(), filledCells: new Set() };
       pageAccumulators.set(pageKey, page);
     }
 
@@ -249,6 +261,23 @@ export function buildWorksheetPages(rows: OASProgressionRow[], options: BuildWor
       return;
     }
     worksheetRow.cells[memberIndex] = { date: row.date, answered: row.answered, awarded: row.awarded };
+    page.memberIndicesWithRows.add(memberIndex);
+    page.filledCells.add(`${row.inputId}#${memberIndex}`);
+  });
+
+  // A member who has rows on a page but none for one of its statements is on a different template
+  // version of that stage — that cell is not-applicable rather than an empty tick box. A member with
+  // no rows on the page at all keeps the plain blank column (PLAN.md decision 1).
+  pageAccumulators.forEach((page) => {
+    page.groups.forEach((group) => {
+      group.forEach((worksheetRow) => {
+        page.memberIndicesWithRows.forEach((memberIndex) => {
+          if (!page.filledCells.has(`${worksheetRow.inputId}#${memberIndex}`)) {
+            worksheetRow.cells[memberIndex] = { date: null, answered: false, awarded: false, notApplicable: true };
+          }
+        });
+      });
+    });
   });
 
   const builtPages: WorksheetPage[] = Array.from(pageAccumulators.values()).map((acc) => ({

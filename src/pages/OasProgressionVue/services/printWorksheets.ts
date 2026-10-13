@@ -126,6 +126,9 @@ export function buildPrintStylesheet(orientation: WorksheetPrintOrientation, fon
     .oas-worksheet-patrol-group-start { border-left: 2px solid #c8c6c4; }
     .oas-worksheet-patrol-group-end { border-right: 2px solid #c8c6c4; }
     .oas-worksheet-cell-awarded { background: #b3c9b3; }
+    /* Not part of this member's template version of the stage — see OASWorksheetsVue.vue's own rule. */
+    .oas-worksheet-cell-na { background: #f3f2f1; }
+    .oas-worksheet-cell-na-label { font-size: 8pt; color: #748494; }
 
     /*
      * Rotated header text (Layout A's group-band/member-name headers, Layout B's own I-Statement

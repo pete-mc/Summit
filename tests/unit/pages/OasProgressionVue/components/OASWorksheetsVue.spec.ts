@@ -97,6 +97,10 @@ describe("worksheetCellClass", () => {
     // awarded wins even in the (should-not-happen) case where only awarded is true.
     expect(worksheetCellClass(makeCell({ answered: false, awarded: true }))).toBe("oas-worksheet-cell-awarded");
   });
+
+  it("returns the not-applicable class for a statement outside the member's template version", () => {
+    expect(worksheetCellClass(makeCell({ notApplicable: true }))).toBe("oas-worksheet-cell-na");
+  });
 });
 
 describe("formatWorksheetDate", () => {

@@ -72,7 +72,8 @@
                   patrolBorderClassesForPage(view.page)[cellIndex].end ? 'oas-worksheet-patrol-group-end' : '',
                 ]"
               >
-                <span v-if="cell.date" class="oas-worksheet-cell-date">{{ formatWorksheetDate(cell.date) }}</span>
+                <span v-if="cell.notApplicable" class="oas-worksheet-cell-na-label" title="Not part of the version of this stage this member started on">n/a</span>
+                <span v-else-if="cell.date" class="oas-worksheet-cell-date">{{ formatWorksheetDate(cell.date) }}</span>
                 <span v-else class="oas-worksheet-tick-box" aria-hidden="true"></span>
               </td>
             </tr>
@@ -144,7 +145,8 @@
                   groupBorderClassesForPage(view.page)[cellIndex].end ? 'oas-worksheet-patrol-group-end' : '',
                 ]"
               >
-                <span v-if="cell.date" class="oas-worksheet-cell-date">{{ formatWorksheetDate(cell.date) }}</span>
+                <span v-if="cell.notApplicable" class="oas-worksheet-cell-na-label" title="Not part of the version of this stage this member started on">n/a</span>
+                <span v-else-if="cell.date" class="oas-worksheet-cell-date">{{ formatWorksheetDate(cell.date) }}</span>
                 <span v-else class="oas-worksheet-tick-box" aria-hidden="true"></span>
               </td>
             </tr>
@@ -408,6 +410,19 @@
 .oas-worksheet-cell-awarded {
   background: var(--summit-color-status-awarded);
   color: var(--summit-color-text-on-primary, #ffffff);
+}
+
+/*
+ * Not part of the template version this member started the stage on — no tick box, muted so it
+ * reads as "nothing to do here" (PLAN_TEMPLATE_VERSIONS.md decision 6). Print has its own copy.
+ */
+.oas-worksheet-cell-na {
+  background: var(--summit-color-bg-muted);
+}
+
+.oas-worksheet-cell-na-label {
+  font-size: 11px;
+  color: var(--color-neutral-charcoal, #748494);
 }
 
 /* `white-space: nowrap` added live — a date like "03/02/24" could otherwise wrap once its 70px-min-width cell is squeezed (routine once many member columns are packed onto one sheet). */
