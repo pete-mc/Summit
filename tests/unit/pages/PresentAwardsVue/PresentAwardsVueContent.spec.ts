@@ -200,7 +200,7 @@ describe("PresentAwardsVueContent — column filters", () => {
 });
 
 describe("PresentAwardsVueContent — Excel export (.claude/Excel/PLAN_STAGE_3.md)", () => {
-  const VIEW = { grouped: false, groups: [{ label: "", rows: [{ member: "Alex Scout", type: "Intro", award: "Award", dateAwarded: "05/03/2026", presented: "" }] }] };
+  const VIEW = { grouped: false, groups: [{ label: "", rows: [{ member: "Alex Scout", type: "Intro", award: "Award", dateAwarded: "05/03/2026", presented: "", present: false }] }] };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function withTable(content: any) {

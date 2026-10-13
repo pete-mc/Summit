@@ -1,6 +1,6 @@
 import type { Cell, Image, Row } from "write-excel-file/browser";
 import type { HeatMapExportView, MemberRowView, StageCellView } from "@/pages/OasProgressionVue/components/OASHeatMapVue";
-import { buildHeaderBlock, EXCEL_COLOURS, HEADER_BLOCK_ROWS, type ExcelHeader, type ExcelSheet } from "../summitExcel";
+import { buildHeaderBlock, EXCEL_COLOURS, HEADER_BLOCK_ROWS, outlinedBar, type ExcelHeader, type ExcelSheet } from "../summitExcel";
 
 /**
  * OAS Progression → Heatmap tab as a spreadsheet (.claude/Excel/PLAN_STAGE_2.md).
@@ -47,24 +47,6 @@ const SQUARE_FILL: Record<string, string> = {
   unanswered: EXCEL_COLOURS.notMet,
 };
 
-/** Squares are separated by white borders; the green bar's outline uses the same colour. */
-const SQUARE_BORDER = "#ffffff";
-
-/** A bar `width` cells long: one fill, outlined on its outside edge only (no lines inside it). */
-function outlinedBar(width: number, fill: string, outline: string): Cell[] {
-  return Array.from({ length: width }, (_, i) => ({
-    value: "",
-    type: String,
-    backgroundColor: fill,
-    topBorderStyle: "thin" as const,
-    topBorderColor: outline,
-    bottomBorderStyle: "thin" as const,
-    bottomBorderColor: outline,
-    ...(i === 0 ? { leftBorderStyle: "thin" as const, leftBorderColor: outline } : {}),
-    ...(i === width - 1 ? { rightBorderStyle: "thin" as const, rightBorderColor: outline } : {}),
-  }));
-}
-
 /** One stage's cells for one row, exactly `width` long. */
 export function stageCells(cell: StageCellView | undefined, width: number): Cell[] {
   if (!cell || cell.kind === "empty") return nulls(width);
@@ -72,7 +54,7 @@ export function stageCells(cell: StageCellView | undefined, width: number): Cell
     // White outline, the same as a square's border, so the bar is inset like the squares around
     // it. Without it, the white borders of squares above and below nibble its edges unevenly
     // (user, 2026-10-13).
-    return outlinedBar(width, EXCEL_COLOURS.allMet, SQUARE_BORDER);
+    return outlinedBar(width, EXCEL_COLOURS.allMet, EXCEL_COLOURS.squareBorder);
   }
   if (cell.kind === "bar-unstarted") {
     // Outlined in grey like the screen's not-started bar.
@@ -86,7 +68,7 @@ export function stageCells(cell: StageCellView | undefined, width: number): Cell
           type: String,
           backgroundColor: SQUARE_FILL[square.state],
           // White borders read as the gap between squares, as on the Summary sheet.
-          borderColor: SQUARE_BORDER,
+          borderColor: EXCEL_COLOURS.squareBorder,
           borderStyle: "thin" as const,
         },
   );

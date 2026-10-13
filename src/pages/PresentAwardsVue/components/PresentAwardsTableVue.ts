@@ -55,6 +55,15 @@ export function compareDisplayDates(a: unknown, b: unknown): number {
   return left < right ? -1 : 1;
 }
 
+/**
+ * The Presented (Yes/No) column's sort: not presented first, ascending. Compares the stored
+ * `presented` values (a date or "No"), as v-data-table does.
+ */
+export function comparePresentedStatus(a: unknown, b: unknown): number {
+  const isPresented = (value: unknown) => (value && value !== NOT_PRESENTED ? 1 : 0);
+  return isPresented(a) - isPresented(b);
+}
+
 /** "05/03/2026" -> "2026-03-05". Returns undefined for "No"/blank, so the picker opens on today. */
 export function toPickerDate(displayDate: string): string | undefined {
   const parsed = moment(displayDate, DISPLAY_DATE_FORMAT, true);
@@ -82,8 +91,11 @@ export const HEADERS: DataTableHeader[] = [
   // The badge artwork is drawn inside this cell, before the name (#item.achievementName in the
   // .vue) — no column of its own (user, 2026-10-12).
   { text: "Award", value: "achievementName" },
-  { text: "Date", value: "dateAwarded", sort: compareDisplayDates },
-  { text: "Presented", value: "presented", sort: compareDisplayDates, filterType: "select" },
+  { text: "Date Awarded", value: "dateAwarded", sort: compareDisplayDates },
+  // Date Presented, Presented (Yes/No) and Present (tick box) are three separate columns (user,
+  // 2026-10-13). The Yes/No column keeps the `presented` key, so saved Yes/No filters still apply.
+  { text: "Date Presented", value: "presentedDate", sort: compareDisplayDates },
+  { text: "Presented", value: "presented", sort: comparePresentedStatus, filterType: "select" },
   { text: "Present", value: "present", sortable: false, filterable: false, class: PRESENT_HEADER_CLASS, cellClass: PRESENT_CELL_CLASS },
 ];
 
@@ -123,6 +135,8 @@ export interface PresentAwardsExportRow {
   award: string;
   dateAwarded: string;
   presented: string;
+  /** The Present tick box. */
+  present: boolean;
 }
 
 /**
@@ -151,8 +165,8 @@ function toFilterValue(value: unknown): string {
  * ANDs every non-empty column filter together; empty entries mean "no filter on that column".
  * Matches filterOASProgressionRows' semantics, with one special case.
  *
- * `presented` is not a plain value like the other columns — it is either the literal "No" or a
- * DD/MM/YYYY date. Substring matching cannot express "any date", and matching "no" as a substring
+ * `presented` (the Yes/No column) is not a plain value like the other columns — it is either the
+ * literal "No" or a DD/MM/YYYY date. Substring matching cannot express "any date", and matching "no" as a substring
  * would also hit award names containing "no". So this column is matched on meaning rather than
  * text. (The OAS table hit the same class of bug with its Answered/Awarded columns, where typing
  * "yes" matched nothing because the raw value stringified to "true".)
@@ -177,6 +191,10 @@ export function filterPresentAwardRows(
       if (field === "presented") {
         const isPresented = resolvePresented(row).length > 0;
         return needle === PRESENTED_FILTER_YES ? isPresented : !isPresented;
+      }
+      // Date Presented: text search on the date shown, so unsaved dates match too.
+      if (field === "presentedDate") {
+        return resolvePresented(row).toLowerCase().includes(needle);
       }
 
       return toFilterValue((row as unknown as Record<string, unknown>)[field]).includes(needle);
@@ -372,6 +390,7 @@ export default defineComponent({
         award: item.achievementName,
         dateAwarded: item.dateAwarded,
         presented: this.presentedValue(item),
+        present: this.isSelected(item),
       });
       if (!this.groupByMember) {
         return { grouped: false, groups: [{ label: "", rows: sorted.map(toRow) }] };

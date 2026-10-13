@@ -33,7 +33,7 @@ Today, Present Awards' Excel Export is the plain `xlsx` dump (`Awards.xlsx`, fiv
 | 5 | Unsaved edits | **What's on screen:** includes unsaved ticks and dates, as today's export does. |
 | 6 | Highlight | **None.** Plain rows, as in the printout. |
 | 7 | Rows | All rows matching the filters, ignoring paging and collapsed groups, as in the printout. |
-| 8 | Columns | Name (flat only), Type, Award, Date, Presented. The Present tick-box column is left out. |
+| 8 | Columns | Name (flat only), Type, Award, Date Awarded, Date Presented, Presented (Yes/No), Present (☑/☐). Renamed, split and the Present column added 2026-10-13, on screen too (PLAN.md, "Changes after Stage 3"). |
 | 9 | Member header rows | Grey and bold: "Alex Example (2 not presented)", as on screen. **Blank row before each member after the first**, as on the Heatmap. |
 | 10 | Header | Header block, section logo and filter line use the printout's Present Awards wording (`present-awards` profile + `presentAwardsPrintMeta`). The title block, column header and first column are frozen. |
 | 11 | Button | The **existing** Excel Export button now produces this file. |

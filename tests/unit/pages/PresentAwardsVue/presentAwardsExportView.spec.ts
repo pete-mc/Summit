@@ -48,8 +48,14 @@ describe("sortPresentAwardRows (the table's own order)", () => {
     expect(ids(sortPresentAwardRows([NEW, OLD, MID], ["dateAwarded"], [true], false))).toEqual(["new", "mid", "old"]);
   });
 
-  it("sorts not-presented first when Presented is ascending", () => {
+  it("sorts not-presented first when Presented (Yes/No) is ascending", () => {
     expect(ids(sortPresentAwardRows([MID, OLD], ["presented"], [false], false))).toEqual(["old", "mid"]);
+    expect(ids(sortPresentAwardRows([OLD, MID], ["presented"], [true], false))).toEqual(["mid", "old"]);
+  });
+
+  it("sorts Date Presented as a date, not-presented first", () => {
+    expect(ids(sortPresentAwardRows([MID, OLD], ["presentedDate"], [false], false))).toEqual(["old", "mid"]);
+    expect(ids(sortPresentAwardRows([OLD, MID], ["presentedDate"], [true], false))).toEqual(["mid", "old"]);
   });
 
   it("sorts by member first when grouped, then by the chosen column", () => {
@@ -108,8 +114,10 @@ describe("PresentAwardsTableVue.getExportView", () => {
     expect(rows.map((r) => r.presented)).toEqual(["01/07/2025", ""]);
   });
 
-  it("carries the five data columns, not the Present tick-box", () => {
-    const table = mountTable({ items: [NEW], selectedIds: new Set(), groupByMember: false });
-    expect(Object.keys(exportView(table).groups[0].rows[0]).sort()).toEqual(["award", "dateAwarded", "member", "presented", "type"]);
+  it("carries the data columns and the Present tick box", () => {
+    const table = mountTable({ items: [MID, NEW], selectedIds: new Set(["mid"]), groupByMember: false });
+    const rows = exportView(table).groups[0].rows;
+    expect(Object.keys(rows[0]).sort()).toEqual(["award", "dateAwarded", "member", "present", "presented", "type"]);
+    expect(rows.map((r) => r.present)).toEqual([true, false]);
   });
 });

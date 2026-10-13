@@ -135,12 +135,13 @@ function makeMemberRow(overrides: Partial<PeakAwardMemberRow> = {}): PeakAwardMe
 }
 
 describe("buildRowView", () => {
-  it("formats the Progress column text as 'X of Y (Z%)'", () => {
+  it("splits Progress into 'X of Y' and a separate 'Z%' column", () => {
     const row = makeMemberRow({ progressScore: 7, progressTotal: 31, progressPercent: 22 });
 
     const view = buildRowView(row, "full");
 
-    expect(view.progressText).toBe("7 of 31 (22%)");
+    expect(view.progressText).toBe("7 of 31");
+    expect(view.progressPercentText).toBe("22%");
   });
 
   it("formats the Progressions trailing text as 'X of Y'", () => {

@@ -111,4 +111,12 @@ describe("filterPresentAwardRows — the Presented column", () => {
     expect(filterPresentAwardRows(items, { presented: PRESENTED_FILTER_YES, member: "Sam" })).toEqual([]);
     expect(filterPresentAwardRows(items, { presented: PRESENTED_FILTER_YES, member: "Alex" })).toEqual([presented]);
   });
+
+  it("filters Date Presented as text on the date shown, unsaved dates included", () => {
+    const pending = { [notPresented.id]: "09/09/2026" } as Record<string, string>;
+    const resolve = (item: SummitAchievement) => pending[item.id] ?? (item.presented !== "No" ? item.presented : "");
+    expect(filterPresentAwardRows(items, { presentedDate: "09/2026" }, resolve)).toEqual([notPresented]);
+    // Not presented has no date, so "no" matches nothing here.
+    expect(filterPresentAwardRows(items, { presentedDate: "no" })).toEqual([]);
+  });
 });

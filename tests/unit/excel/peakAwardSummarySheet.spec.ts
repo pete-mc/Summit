@@ -58,8 +58,9 @@ function input(overrides: Partial<PeakAwardSummarySheetInput> = {}): PeakAwardSu
   };
 }
 
-// Venturer: Member, Progress, % + 15 core + 12 progressions + text + 4 special + text = 36.
-const VENTURER_COLUMNS = 3 + 15 + 13 + 5;
+// Venturer: Member, Progress, % + 3 skills of (spacer + 5) + spacer + 12 progressions + text +
+// spacer + 4 special + text = 41.
+const VENTURER_COLUMNS = 3 + 3 * 6 + 14 + 6;
 const FIRST_DATA_ROW = HEADER_BLOCK_ROWS + 2;
 
 describe("boxCells", () => {
@@ -68,10 +69,13 @@ describe("boxCells", () => {
     expect(cells.map((c) => c.backgroundColor)).toEqual([EXCEL_COLOURS.met, EXCEL_COLOURS.notMet, EXCEL_COLOURS.notMet]);
   });
 
-  it("turns every box green once the whole group is met (separate cells, not merged)", () => {
-    const cells = boxCells(boxes(3, 3)) as Array<{ backgroundColor: string; columnSpan?: number }>;
+  it("draws a fully met group as one green bar: white outline, no borders inside", () => {
+    const cells = boxCells(boxes(3, 3)) as Array<Record<string, unknown>>;
     expect(cells).toHaveLength(3);
-    expect(cells.every((c) => c.backgroundColor === EXCEL_COLOURS.allMet && !c.columnSpan)).toBe(true);
+    expect(cells.every((c) => c.backgroundColor === EXCEL_COLOURS.allMet && !c.columnSpan && !c.borderColor)).toBe(true);
+    expect(cells.every((c) => c.topBorderColor === EXCEL_COLOURS.squareBorder && c.bottomBorderColor === EXCEL_COLOURS.squareBorder)).toBe(true);
+    expect(cells.map((c) => !!c.leftBorderStyle)).toEqual([true, false, false]);
+    expect(cells.map((c) => !!c.rightBorderStyle)).toEqual([false, false, true]);
   });
 });
 
@@ -94,7 +98,7 @@ describe("buildPeakAwardSummarySheet", () => {
 
   it("puts the Progressions and Special 'X of Y' text after their boxes", () => {
     const row = buildPeakAwardSummarySheet(input()).rows[FIRST_DATA_ROW + 1];
-    expect(row[3 + 15 + 12]).toMatchObject({ value: "9 of 12" });
+    expect(row[34]).toMatchObject({ value: "9 of 12" });
     expect(row[VENTURER_COLUMNS - 1]).toMatchObject({ value: "2 of 4" });
   });
 
@@ -106,19 +110,43 @@ describe("buildPeakAwardSummarySheet", () => {
   it("merges the header like the screen", () => {
     const [top, bottom] = buildPeakAwardSummarySheet(input()).rows.slice(HEADER_BLOCK_ROWS, FIRST_DATA_ROW);
     expect(top[0]).toMatchObject({ value: "Member", rowSpan: 2 });
-    expect(top[3]).toMatchObject({ value: "Core Skills", columnSpan: 15 });
-    expect(top[18]).toMatchObject({ value: "Progressions", rowSpan: 2, columnSpan: 13 });
-    expect(top[31]).toMatchObject({ value: "Special", columnSpan: 5 });
-    expect(bottom[3]).toMatchObject({ value: "Bushcraft", columnSpan: 5 });
-    expect(bottom[8]).toMatchObject({ value: "Bushwalking", columnSpan: 5 });
-    expect(bottom[13]).toMatchObject({ value: "Camping", columnSpan: 5 });
-    expect(bottom[31]).toMatchObject({ value: "4 above Stage 3", columnSpan: 5 });
+    // One Progress header over "X of Y" and %, as on screen.
+    expect(top[1]).toMatchObject({ value: "Progress", rowSpan: 2, columnSpan: 2 });
+    expect(top[2]).toBeNull();
+    // Core Skills spans the three skills and the two spacers between them.
+    expect(top[4]).toMatchObject({ value: "Core Skills", columnSpan: 17 });
+    expect(top[22]).toMatchObject({ value: "Progressions", rowSpan: 2, columnSpan: 13 });
+    expect(top[36]).toMatchObject({ value: "Special", columnSpan: 5 });
+    expect(bottom[4]).toMatchObject({ value: "Bushcraft", columnSpan: 5 });
+    expect(bottom[10]).toMatchObject({ value: "Bushwalking", columnSpan: 5 });
+    expect(bottom[16]).toMatchObject({ value: "Camping", columnSpan: 5 });
+    expect(bottom[36]).toMatchObject({ value: "4 above Stage 3", columnSpan: 5 });
+  });
+
+  it("puts a narrow blank spacer column before each group, as on the Heatmap sheet", () => {
+    const sheet = buildPeakAwardSummarySheet(input());
+    const spacers = [3, 9, 15, 21, 35];
+    const widths = sheet.options.columns as Array<{ width: number }>;
+    spacers.forEach((i) => {
+      expect(widths[i].width).toBe(1);
+      expect(sheet.rows[FIRST_DATA_ROW][i]).toBeNull();
+    });
+    const [top, bottom] = sheet.rows.slice(HEADER_BLOCK_ROWS, FIRST_DATA_ROW);
+    [3, 21, 35].forEach((i) => expect(top[i]).toMatchObject({ value: "", rowSpan: 2 }));
+    [9, 15].forEach((i) => expect(bottom[i]).toMatchObject({ value: "" }));
+  });
+
+  it("draws a fully met skill as one bar and a part-met one as separate boxes", () => {
+    const row = buildPeakAwardSummarySheet(input()).rows[FIRST_DATA_ROW + 1] as Array<Record<string, unknown>>;
+    // Blake: Bushcraft 5 of 5 (bar), Bushwalking 3 of 5 (boxes).
+    expect(row.slice(4, 9).every((c) => c.backgroundColor === EXCEL_COLOURS.allMet && !c.borderColor)).toBe(true);
+    expect(row.slice(10, 15).map((c) => c.backgroundColor)).toEqual([EXCEL_COLOURS.met, EXCEL_COLOURS.met, EXCEL_COLOURS.met, EXCEL_COLOURS.notMet, EXCEL_COLOURS.notMet]);
   });
 
   it("leaves out the Special columns for a section without one", () => {
     const rows = [memberRow("m1", "Alex", "Example", [5, 2, 0], 4, null, SCOUT)];
     const sheet = buildPeakAwardSummarySheet(input({ rows, requirement: SCOUT, specialConditionText: "" }));
-    const width = 3 + 15 + 11;
+    const width = 3 + 3 * 6 + 12;
     sheet.rows.slice(HEADER_BLOCK_ROWS).forEach((r) => expect(r.length).toBe(width));
     expect(sheet.options.columns).toHaveLength(width);
   });
@@ -145,6 +173,6 @@ describe("buildPeakAwardSummarySheet", () => {
     });
     const xml = strFromU8(unzipSync(new Uint8Array(bytes))["xl/worksheets/sheet1.xml"]);
     expect(xml).toContain('<pane ySplit="6" xSplit="1" topLeftCell="B7"');
-    ["A5:A6", "B5:B6", "C5:C6", "D5:R5", "D6:H6", "I6:M6", "N6:R6", "S5:AE6", "AF5:AJ5", "AF6:AJ6"].forEach((ref) => expect(xml).toContain(`<mergeCell ref="${ref}"/>`));
+    ["A5:A6", "B5:C6", "D5:D6", "E5:U5", "E6:I6", "K6:O6", "Q6:U6", "V5:V6", "W5:AI6", "AJ5:AJ6", "AK5:AO5", "AK6:AO6"].forEach((ref) => expect(xml).toContain(`<mergeCell ref="${ref}"/>`));
   });
 });

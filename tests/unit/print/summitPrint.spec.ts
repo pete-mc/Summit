@@ -101,12 +101,12 @@ describe("buildPrintDocument (Summary profile)", () => {
     expect(host.querySelectorAll("[title]").length).toBeGreaterThan(0);
   });
 
-  it("gives the 7-column (with Special) table 7 widths and the 6-column table 6", () => {
+  it("gives the 8-column (with Special) table 8 widths and the 7-column table 7", () => {
     for (const special of [true, false]) {
       const host = mountSummaryTable({ special });
       const doc = parse(buildPrintDocument({ source: host, profile: "peak-award-summary", vars: CONTEXT_VARS, generated: GENERATED }));
       const cols = doc.querySelectorAll("table.summit-print-table > colgroup > col");
-      expect(cols).toHaveLength(special ? 7 : 6);
+      expect(cols).toHaveLength(special ? 8 : 7);
       const total = Array.from(cols).reduce((sum, c) => sum + parseFloat((c as HTMLElement).style.width), 0);
       expect(total).toBeCloseTo(100, 1);
       document.body.innerHTML = "";

@@ -91,9 +91,9 @@
         </span>
       </template>
 
-      <template #item.presented="{ item }">
-        <span v-if="!presentedValue(item)">No</span>
-        <v-menu v-else :value="isDateMenuOpen(item)" :close-on-content-click="false" offset-y min-width="auto" @input="setDateMenuOpen(item, $event)">
+      <!-- Date Presented: empty until presented; the date opens a picker to change it. -->
+      <template #item.presentedDate="{ item }">
+        <v-menu v-if="presentedValue(item)" :value="isDateMenuOpen(item)" :close-on-content-click="false" offset-y min-width="auto" @input="setDateMenuOpen(item, $event)">
           <template #activator="{ on, attrs }">
             <span class="present-awards-date-activator" v-bind="attrs" :aria-label="`Change presentation date for ${item.achievementName}`" v-on="on">{{ presentedValue(item) }}</span>
           </template>
@@ -101,8 +101,12 @@
         </v-menu>
       </template>
 
+      <!-- Presented: Yes/No, following the tick box (unsaved ticks included). -->
+      <template #item.presented="{ item }">{{ presentedValue(item) ? "Yes" : "No" }}</template>
+
+      <!-- data-present tells the printout whether the box is ticked; the screen's icon font doesn't reach the print document. -->
       <template #item.present="{ item }">
-        <v-simple-checkbox :value="isSelected(item)" :ripple="false" :aria-label="`Mark ${item.achievementName} as presented`" @input="onTogglePresent(item, $event)"></v-simple-checkbox>
+        <v-simple-checkbox :data-present="isSelected(item) ? 'yes' : 'no'" :value="isSelected(item)" :ripple="false" :aria-label="`Mark ${item.achievementName} as presented`" @input="onTogglePresent(item, $event)"></v-simple-checkbox>
       </template>
     </v-data-table>
   </div>

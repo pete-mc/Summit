@@ -17,7 +17,7 @@ Status: **Stages 0 and 1 done (2026-10-12). Stage 2 (Heatmap) done (2026-10-13).
 |---|---|---|
 | 1 | Library | **write-excel-file** (4.1.1, maintained June 2026). Trialled in Stage 0 first. ExcelJS was rejected because its extras (hover notes, in-file print setup) aren't wanted. |
 | 2 | Box cells | **Coloured cells, one per box.** Each skill is several narrow columns under a merged skill header ("Core Skills" merged over Bushcraft / Bushwalking / Camping, as on screen). |
-| 2b | Fully-met skill | **Separate cells, all green**, not merged into one bar. |
+| 2b | Fully-met skill | ~~Separate cells, all green~~. **Changed 2026-10-13:** one green bar outlined in white with no borders inside it, as on the Heatmap sheet. |
 | 2c | Progressions / Special "X of Y" | **A text cell after the box cells**, as on screen. |
 | 3 | Colours | **Same as screen:** green `#004c00` = all met (`--summit-color-status-awarded`), yellow `#ecb206` = met (`--summit-color-status-answered`), grey `#edebe9` = not met (`--summit-color-status-unanswered`). Excel can't read CSS variables, so these are fixed hex copies, noted in DESIGN.md. |
 | 4 | Award details (tooltips) | **Left out.** |
@@ -37,6 +37,18 @@ Status: **Stages 0 and 1 done (2026-10-12). Stage 2 (Heatmap) done (2026-10-13).
 - **Member names in normal weight**, as on screen.
 - **OAS Table tab:** large exports probably won't be offered, and the tab isn't finalised. Left out for now.
 - **Order of later stages:** still to decide.
+
+### Changes after Stage 3 (user, 2026-10-13)
+- **Summary sheet:**
+  - A fully met group is **one green bar** with a white outline (shared `outlinedBar` in `summitExcel.ts`, also used by the Heatmap sheet).
+  - A **narrow blank spacer column** goes before each group, as on the Heatmap: before Core Skills, between the three skills, before Progressions and before Special. The "Core Skills" header spans the two inner spacers.
+- **Summary screen (and its printout):** the % moved out of the Progress text into its own column under the same "Progress" header (now `colspan="2"`). The print profile's column widths were updated for the extra column.
+- **Summary sheet header:** matches the screen. One "Progress" header spans both the "X of Y" and % columns; the separate "%" header is gone.
+- **Present Awards, screen and sheet:** the same columns in both:
+  - **Date Awarded** (was "Date").
+  - **Date Presented**: the date, empty when not presented. On screen it is still the click target for the date picker, sorts as a date (column key `presentedDate`, a getter on `SummitAchievement`), and has a text filter on the date shown.
+  - **Presented**: Yes/No, following the tick box, unsaved ticks included. It keeps the `presented` key and the Yes/No dropdown filter, so saved filters still apply. Sorts not-presented first.
+  - **Present**: the tick box. In Excel it's a ☑ / ☐ character, since write-excel-file can't write real tick boxes. The printout now includes it too, also as ☑ / ☐ (the table sets `data-present` on each box, and the print profile swaps the icon for the character).
 
 ## Technical approach (agreed by default; object if you disagree)
 

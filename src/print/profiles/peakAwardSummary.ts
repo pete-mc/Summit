@@ -4,12 +4,12 @@ import { SQUARE_COLOUR_PROPS, stripInlineSizes } from "./heatmapShared";
 
 /**
  * OAS Progression → Summary tab (OASPeakAwardSummaryVue).
- * Columns: Member | Progress | Bushcraft | Bushwalking | Camping | Progressions | Special
+ * Columns: Member | Progress ("X of Y") | % | Bushcraft | Bushwalking | Camping | Progressions | Special
  *
  * Special only exists for sections with a Special condition (hasSpecial), so the widths are
  * worked out from the table actually being printed rather than fixed (PLAN.md I6).
  */
-const WIDTHS_WITH_SPECIAL = [14, 11, 13, 13, 13, 23, 13];
+const WIDTHS_WITH_SPECIAL = [14, 8, 6, 12, 12, 12, 23, 13];
 
 /** Exported for tests. Unknown column counts fall back to automatic widths. */
 export function peakAwardSummaryWidths(table: HTMLTableElement): number[] | null {

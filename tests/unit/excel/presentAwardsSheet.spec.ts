@@ -6,7 +6,7 @@ import type { PresentAwardsExportRow, PresentAwardsExportView } from "@/pages/Pr
 const HEADER = { title: "Present Awards", subtitle: "Sample Group · Sample Unit", metaLine: "Generated: 13/10/2026" };
 
 function row(member: string, award: string, dateAwarded: string, presented = ""): PresentAwardsExportRow {
-  return { member, type: "OAS", award, dateAwarded, presented };
+  return { member, type: "OAS", award, dateAwarded, presented, present: !!presented };
 }
 
 const FLAT: PresentAwardsExportView = {
@@ -52,28 +52,32 @@ describe("dateCell", () => {
 });
 
 describe("buildPresentAwardsSheet", () => {
-  it("flat: Name, Type, Award, Date, Presented, one row per award", () => {
+  it("flat: Name, Type, Award, Date Awarded, Date Presented, Presented, Present, one row per award", () => {
     const rows = buildPresentAwardsSheet({ view: FLAT, header: HEADER, logo: null }).rows.slice(HEADER_BLOCK_ROWS);
-    expect(rows[0].map(value)).toEqual(["Name", "Type", "Award", "Date", "Presented"]);
+    expect(rows[0].map(value)).toEqual(["Name", "Type", "Award", "Date Awarded", "Date Presented", "Presented", "Present"]);
     expect(rows[1].slice(0, 3).map(value)).toEqual(["Alex Example", "OAS", "Bushcraft Stage 1"]);
     expect((value(rows[1][3]) as Date).toISOString()).toBe("2026-03-05T00:00:00.000Z");
     expect((value(rows[1][4]) as Date).toISOString()).toBe("2026-03-20T00:00:00.000Z");
-    // Not presented: empty.
+    expect(value(rows[1][5])).toBe("Yes");
+    expect(rows[1][6]).toMatchObject({ value: "☑", align: "center" });
+    // Not presented: no date, and "No".
     expect(rows[2][4]).toBeNull();
+    expect(value(rows[2][5])).toBe("No");
+    expect(value(rows[2][6])).toBe("☐");
   });
 
   it("grouped: no Name column; a grey member row, and a blank row before every member after the first", () => {
     const rows = buildPresentAwardsSheet({ view: GROUPED, header: HEADER, logo: null }).rows.slice(HEADER_BLOCK_ROWS);
-    expect(rows[0].map(value)).toEqual(["Type", "Award", "Date", "Presented"]);
+    expect(rows[0].map(value)).toEqual(["Type", "Award", "Date Awarded", "Date Presented", "Presented", "Present"]);
     expect(rows.slice(1).map((r) => value(r[0]))).toEqual(["Alex Example (1 not presented)", "OAS", "OAS", null, "Blake Sample (all presented)", "OAS"]);
-    expect(rows[1][0]).toMatchObject({ columnSpan: 4, fontWeight: "bold", backgroundColor: EXCEL_COLOURS.mutedRow });
-    expect(rows[4]).toEqual([null, null, null, null]);
+    expect(rows[1][0]).toMatchObject({ columnSpan: 6, fontWeight: "bold", backgroundColor: EXCEL_COLOURS.mutedRow });
+    expect(rows[4]).toEqual([null, null, null, null, null, null]);
   });
 
   it("gives every table row the same width as the columns", () => {
     [FLAT, GROUPED].forEach((view) => {
       const sheet = buildPresentAwardsSheet({ view, header: HEADER, logo: null });
-      const width = view.grouped ? 4 : 5;
+      const width = view.grouped ? 6 : 7;
       sheet.rows.slice(HEADER_BLOCK_ROWS).forEach((r) => expect(r.length).toBe(width));
       expect(sheet.options.columns).toHaveLength(width);
     });

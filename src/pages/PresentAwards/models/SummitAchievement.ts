@@ -103,6 +103,14 @@ export default class SummitAchievement {
     }
   }
 
+  /**
+   * The stored presentation date, or "" when not presented. The Present Awards table's "Date
+   * Presented" column sorts on this; `presented` itself (date or "No") drives its Yes/No column.
+   */
+  get presentedDate(): string {
+    return this.presented !== "No" ? this.presented : "";
+  }
+
   public updatePresented(newValue: string) {
     this.presented = newValue;
   }

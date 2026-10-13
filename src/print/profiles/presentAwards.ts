@@ -3,20 +3,30 @@ import { columnCount } from "../printFit";
 
 /**
  * Present Awards (PresentAwardsTableVue). See .claude/Print/PLAN_STAGE_4.md.
- * Columns on screen: [Name] | Type | Award | badge | Date | Presented | Present — Name is absent
+ * Columns on screen: [Name] | Type | Award (with badge) | Date Awarded | Date Presented | Presented
+ * (Yes/No) | Present (tick box) — Name is absent
  * when grouped by member (Vuetify moves it into the group header row).
  *
  * The page's prepareForPrint() has already put every row and every expanded group into the DOM
- * before this runs; this profile only removes what is screen-only.
+ * before this runs; this profile only removes what is screen-only, and turns the Present tick
+ * boxes into printable ☑ / ☐ (the screen draws them with an icon font the print document lacks).
  */
+
+const TICKED = "☑";
+const UNTICKED = "☐";
 
 /** Exported for tests. */
 export function removeScreenOnlyParts(table: HTMLTableElement): void {
   const remove = (selector: string) => Array.from(table.querySelectorAll(selector)).forEach((el) => el.parentNode?.removeChild(el));
   // The in-table column filter boxes.
   remove("tr.oas-vue-column-filter-row");
-  // The Present tick-box column, by the class its header definition gives it — not by position.
-  remove(".present-awards-present-header, .present-awards-present-cell");
+  // The Present tick box: printed as ☑ / ☐, read from the data-present the table sets (user, 2026-10-13).
+  Array.from(table.querySelectorAll<HTMLElement>(".present-awards-present-cell [data-present]")).forEach((box) => {
+    const mark = table.ownerDocument.createElement("span");
+    mark.className = "present-awards-print-tick";
+    mark.textContent = box.getAttribute("data-present") === "yes" ? TICKED : UNTICKED;
+    box.parentNode?.replaceChild(mark, box);
+  });
   // Group collapse chevrons.
   remove(".present-awards-group-toggle");
   // Full-width cells (group headers, Vuetify's "no data" row) still span the old column count.
@@ -68,6 +78,11 @@ table.summit-print-profile-present-awards td.present-awards-group-header {
   font-weight: 600;
   font-size: 9.5pt;
 }
+
+/* Present column: the tick mark, centred like the screen's tick box. */
+table.summit-print-profile-present-awards th.present-awards-present-header,
+table.summit-print-profile-present-awards td.present-awards-present-cell { text-align: center; }
+.summit-print-profile-present-awards .present-awards-print-tick { font-size: 11pt; line-height: 1; }
 
 /* The presented date is a click target on screen (dotted underline); plain text on paper. */
 .summit-print-profile-present-awards .present-awards-date-activator { border: 0; }

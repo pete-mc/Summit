@@ -21,7 +21,7 @@
         <thead class="oas-peak-award-summary-thead">
           <tr>
             <th class="oas-heatmap-member-header oas-peak-award-summary-th-bottom oas-peak-award-summary-th-rowspan" rowspan="2">Member</th>
-            <th class="oas-heatmap-stage-group-header oas-peak-award-summary-th-bottom oas-peak-award-summary-th-rowspan" rowspan="2">Progress</th>
+            <th class="oas-heatmap-stage-group-header oas-peak-award-summary-th-bottom oas-peak-award-summary-th-rowspan" rowspan="2" colspan="2">Progress</th>
             <th class="oas-peak-award-summary-core-skills-header oas-peak-award-summary-th-top" colspan="3">Core Skills</th>
             <th class="oas-heatmap-stage-group-header oas-peak-award-summary-th-bottom oas-peak-award-summary-th-rowspan" rowspan="2">Progressions</th>
             <th v-if="hasSpecial" class="oas-heatmap-stage-group-header oas-peak-award-summary-th-top">Special</th>
@@ -38,6 +38,7 @@
           <tr v-for="row in rowViews" :key="row.memberId" :data-oas-member="row.memberId">
             <td class="oas-heatmap-member-name">{{ row.displayName }}</td>
             <td class="oas-heatmap-highest-stage">{{ row.progressText }}</td>
+            <td class="oas-heatmap-highest-stage">{{ row.progressPercentText }}</td>
             <td v-for="coreSkill in row.coreSkills" :key="coreSkill.title" class="oas-heatmap-stage-cell">
               <div v-if="coreSkill.kind === 'bar'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete oas-peak-award-summary-bar" :style="{ width: barWidthPx(coreSkill.boxCount) }" :title="coreSkill.barTitle"></div>
               <div v-else class="oas-heatmap-squares">

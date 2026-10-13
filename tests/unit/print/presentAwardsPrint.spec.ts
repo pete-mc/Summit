@@ -19,20 +19,26 @@ function mountGroupedAwards(): HTMLElement {
 <div class="present-awards-table-panel"><div class="v-data-table present-awards-data-table"><div class="v-data-table__wrapper">
   <table>
     <thead><tr>
-      <th class="text-start">Type</th><th class="text-start">Award</th><th class="text-start">Date</th><th class="text-start">Presented</th>
+      <th class="text-start">Type</th><th class="text-start">Award</th><th class="text-start">Date Awarded</th><th class="text-start">Date Presented</th><th class="text-start">Presented</th>
       <th class="text-start ${PRESENT_HEADER_CLASS}">Present</th>
     </tr></thead>
     <tbody>
-      <tr class="oas-vue-column-filter-row"><th><input></th><th><input></th><th><input></th><th><input></th><th></th></tr>
-      <tr class="v-row-group__header"><td colspan="5" class="present-awards-group-header">
+      <tr class="oas-vue-column-filter-row"><th><input></th><th><input></th><th><input></th><th><input></th><th><input></th><th></th></tr>
+      <tr class="v-row-group__header"><td colspan="6" class="present-awards-group-header">
         <button class="v-btn present-awards-group-toggle"><i class="mdi-chevron-down"></i></button>
         <span class="present-awards-group-label">Member A (1 not presented)</span>
       </td></tr>
       <tr>
         <td>OAS</td>
         <td><span class="present-awards-award"><span class="present-awards-badge-slot"><img class="present-awards-badge-icon" src="chrome-extension://abc/images/oas.png" alt=""></span><span class="present-awards-award-name">Camping Stage 2</span></span></td>
-        <td>01/09/2026</td><td>No</td>
-        <td class="${PRESENT_CELL_CLASS}"><div class="v-simple-checkbox"></div></td>
+        <td>01/09/2026</td><td></td><td>No</td>
+        <td class="${PRESENT_CELL_CLASS}"><div class="v-simple-checkbox" data-present="no"><i class="v-icon mdi mdi-checkbox-blank-outline"></i></div></td>
+      </tr>
+      <tr>
+        <td>OAS</td>
+        <td><span class="present-awards-award"><span class="present-awards-award-name">Camping Stage 3</span></span></td>
+        <td>02/09/2026</td><td>03/09/2026</td><td>Yes</td>
+        <td class="${PRESENT_CELL_CLASS}"><div class="v-simple-checkbox" data-present="yes"><i class="v-icon mdi mdi-checkbox-marked"></i></div></td>
       </tr>
     </tbody>
   </table>
@@ -55,20 +61,22 @@ describe("present-awards profile", () => {
     expect(r.header.meta.map((m) => m.label)).toEqual(["Generated"]);
   });
 
-  it("strips the filter row, the Present column and the chevrons, and keeps the badges", () => {
+  it("strips the filter row and the chevrons, keeps the badges, and prints the Present column as ☑ / ☐", () => {
     const host = mountGroupedAwards();
     const doc = new DOMParser().parseFromString(buildPrintDocument({ source: host, profile: "present-awards", vars: VARS, generated: GENERATED }), "text/html");
     const table = doc.querySelector("table.summit-print-table") as HTMLTableElement;
     expect(table.querySelector(".oas-vue-column-filter-row")).toBeNull();
-    expect(table.querySelectorAll(`.${PRESENT_HEADER_CLASS}, .${PRESENT_CELL_CLASS}`)).toHaveLength(0);
+    expect(table.querySelector(`th.${PRESENT_HEADER_CLASS}`)?.textContent).toBe("Present");
+    expect(Array.from(table.querySelectorAll(`td.${PRESENT_CELL_CLASS}`)).map((td) => td.textContent)).toEqual(["☐", "☑"]);
+    expect(table.querySelector(".v-simple-checkbox")).toBeNull();
     expect(table.querySelector(".present-awards-group-toggle")).toBeNull();
     expect(table.querySelector(".present-awards-group-label")?.textContent).toBe("Member A (1 not presented)");
     expect(table.querySelector("img.present-awards-badge-icon")).not.toBeNull();
-    // The group header now spans the 4 remaining columns, not the old 5.
-    expect((table.querySelector("td.present-awards-group-header") as HTMLTableCellElement).colSpan).toBe(4);
-    expect(table.querySelectorAll("thead th")).toHaveLength(4);
+    // Every column prints, Present included.
+    expect((table.querySelector("td.present-awards-group-header") as HTMLTableCellElement).colSpan).toBe(6);
+    expect(table.querySelectorAll("thead th")).toHaveLength(6);
     // The live table is untouched.
-    expect(host.querySelectorAll(`.${PRESENT_CELL_CLASS}`)).toHaveLength(1);
+    expect(host.querySelectorAll(".v-simple-checkbox")).toHaveLength(2);
   });
 });
 
@@ -110,11 +118,12 @@ describe("buildPresentAwardsPrintMeta", () => {
   });
 
   it("uses the table's own column names, in column order, worded per filter kind", () => {
-    const meta = buildPresentAwardsPrintMeta({ presented: "no", achievementName: "camp", type: "OAS", member: "sam" });
+    const meta = buildPresentAwardsPrintMeta({ presented: "no", presentedDate: "2026", achievementName: "camp", type: "OAS", member: "sam" });
     expect(meta).toEqual([
       { label: "Name", value: 'contains "sam"' },
       { label: "Type", value: "OAS" },
       { label: "Award", value: 'contains "camp"' },
+      { label: "Date Presented", value: 'contains "2026"' },
       { label: "Presented", value: "No" },
     ]);
     expect(buildPresentAwardsPrintMeta({ presented: "presented" })).toEqual([{ label: "Presented", value: "Yes" }]);

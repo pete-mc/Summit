@@ -106,8 +106,10 @@ interface SummaryRowView {
   memberId: string;
   displayName: string;
   coreSkills: CoreSkillCellView[];
-  /** "X of Y (Z%)" — overall progress across every condition box on this row, per the user's own spec (2026-10-09). */
+  /** "X of Y" — overall progress across every condition box on this row, per the user's own spec (2026-10-09). */
   progressText: string;
+  /** "Z%" — in its own column under the same Progress header (user, 2026-10-13). */
+  progressPercentText: string;
   progressions: ProgressionsCellView;
   special: SpecialCellView | null;
 }
@@ -137,7 +139,8 @@ export function buildRowView(row: PeakAwardMemberRow, nameFormat: NameFormat): S
     memberId: row.memberId,
     displayName: getMemberDisplayName(row.firstName, row.lastName, row.memberId, nameFormat),
     coreSkills: row.coreSkills.map(buildCoreSkillCellView),
-    progressText: `${row.progressScore} of ${row.progressTotal} (${row.progressPercent}%)`,
+    progressText: `${row.progressScore} of ${row.progressTotal}`,
+    progressPercentText: `${row.progressPercent}%`,
     progressions,
     special,
   };
@@ -170,6 +173,7 @@ export default defineComponent({
       const headers = [
         { text: "Member", value: "member", sortable: false },
         { text: "Progress", value: "progress", sortable: false },
+        { text: "", value: "progressPercent", sortable: false },
         ...["bushcraft", "bushwalking", "camping"].map((skill) => ({ text: SKILL_TITLES[skill], value: skill, sortable: false })),
         { text: "Progressions", value: "progressions", sortable: false },
       ];

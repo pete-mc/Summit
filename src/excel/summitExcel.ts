@@ -34,7 +34,27 @@ export const EXCEL_COLOURS = {
   mutedRow: "#f3f2f1",
   /** Meta line text. */
   muted: "#555555",
+  /** Box borders, read as the gap between squares; also the green bar's outline. */
+  squareBorder: "#ffffff",
 };
+
+/**
+ * A bar `width` cells long: one fill, outlined on its outside edge only (no lines inside it), so
+ * it reads as a single shape like the screen's bar. Shared by the Summary and Heatmap sheets.
+ */
+export function outlinedBar(width: number, fill: string, outline: string): Cell[] {
+  return Array.from({ length: width }, (_, i) => ({
+    value: "",
+    type: String,
+    backgroundColor: fill,
+    topBorderStyle: "thin" as const,
+    topBorderColor: outline,
+    bottomBorderStyle: "thin" as const,
+    bottomBorderColor: outline,
+    ...(i === 0 ? { leftBorderStyle: "thin" as const, leftBorderColor: outline } : {}),
+    ...(i === width - 1 ? { rightBorderStyle: "thin" as const, rightBorderColor: outline } : {}),
+  }));
+}
 
 /** Windows forbids these in file names; a unit name containing one would break the download. */
 const FORBIDDEN_FILE_CHARS = /[\\/:*?"<>|]/g;
