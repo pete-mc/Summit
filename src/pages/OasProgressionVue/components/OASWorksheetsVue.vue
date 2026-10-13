@@ -399,9 +399,15 @@
   border-right: 2px solid var(--summit-color-border-default);
 }
 
-/* Three cell states, per PLAN.md decisions 2/3 — see worksheetCellClass() in the .ts. */
+/*
+ * Three cell states, per PLAN.md decisions 2/3 — see worksheetCellClass() in the .ts.
+ * --summit-color-status-awarded is the dark primary green, so the date text needs the matching
+ * on-primary colour or it's unreadable grey-on-green. Print has its own light-green rule
+ * (printWorksheets.ts) with dark text, so this is screen-only.
+ */
 .oas-worksheet-cell-awarded {
   background: var(--summit-color-status-awarded);
+  color: var(--summit-color-text-on-primary, #ffffff);
 }
 
 /* `white-space: nowrap` added live — a date like "03/02/24" could otherwise wrap once its 70px-min-width cell is squeezed (routine once many member columns are packed onto one sheet). */
