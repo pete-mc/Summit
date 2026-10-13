@@ -176,9 +176,8 @@ describe("OasProgressionVueContent render contract", () => {
     // Exports the rows on screen, with the printout's header wording.
     expect(tsSource).toContain("rows: this.filteredPeakAwardSummaryRows");
     expect(tsSource).toContain('this.runExcelExport("Summary", "peak-award-summary", this.summaryPrintMeta');
-    // Shared by every tab: printout header wording, and the agreed file name.
-    expect(tsSource).toContain("resolveExcelHeader(printProfile, meta, context.vars, generated)");
-    expect(tsSource).toContain('buildExcelFileName(["OAS Progression", viewName, context.vars.unit], generated)');
+    // Shared by both tabs, through summit-excel (header wording, logo and file name live there).
+    expect(tsSource).toContain('exportExcelSheet({ printProfile, meta, fileNameParts: ["OAS Progression", viewName], build })');
   });
 
   it("VueStage 4: the reload button shows a loading state while reloading, matching the plan's nicer-than-original affordance", () => {

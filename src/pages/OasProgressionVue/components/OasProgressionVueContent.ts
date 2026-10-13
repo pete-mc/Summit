@@ -17,12 +17,10 @@ import { PEAK_AWARD_REQUIREMENTS, type PeakAwardRequirement } from "@/pages/OasP
 import { collectPatrolNames, hasUnassignedMembers, filterMembersByPatrol, UNASSIGNED_PATROL, OAS_SKILLS } from "@/pages/OasProgression/services/filterHeatMapSections";
 import { loadOASProgressionVueFilters, saveOASProgressionVueFilters, type OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
 import { exportGridToExcel, type GridExportColumn, type GridExportRow } from "@/components/gridExport";
-import { buildExcelFileName, downloadWorkbook, loadSectionLogoImage, resolveExcelHeader, type ExcelHeader, type ExcelSheet } from "@/excel/summitExcel";
+import { exportExcelSheet, type ExcelExportRequest } from "@/excel/summitExcel";
 import { buildPeakAwardSummarySheet } from "@/excel/sheets/peakAwardSummary";
 import { buildSkillHeatmapSheet } from "@/excel/sheets/skillHeatmap";
-import type { Image } from "write-excel-file/browser";
 import type { HeatMapExportView } from "./OASHeatMapVue";
-import { getTerrainPrintContext } from "@/print/printContext";
 import { createLogger } from "@/helpers";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
@@ -446,18 +444,11 @@ export default defineComponent({
       if (!heatMap) return;
       await this.runExcelExport("Heatmap", "skill-heatmap", this.heatmapPrintMeta, (header, logo) => buildSkillHeatmapSheet({ view: heatMap.getExportView(), header, logo }));
     },
-    /**
-     * Shared by every tab's Excel Export: one timestamp for the header and the file name, the
-     * printout's header wording for `printProfile`, the section logo, then the download.
-     */
-    async runExcelExport(viewName: string, printProfile: string, meta: MetaEntry[], build: (header: ExcelHeader, logo: Image | null) => ExcelSheet) {
+    /** Shared by both tabs' Excel Export: summit-excel does the work; this reports how it went. */
+    async runExcelExport(viewName: string, printProfile: string, meta: MetaEntry[], build: ExcelExportRequest["build"]) {
       this.isExcelExporting = true;
       try {
-        const generated = new Date();
-        const context = getTerrainPrintContext();
-        const header = resolveExcelHeader(printProfile, meta, context.vars, generated);
-        const sheet = build(header, await loadSectionLogoImage(context.logo));
-        await downloadWorkbook(sheet, buildExcelFileName(["OAS Progression", viewName, context.vars.unit], generated));
+        await exportExcelSheet({ printProfile, meta, fileNameParts: ["OAS Progression", viewName], build });
         this.exportFeedback = "Excel export complete";
       } catch (e) {
         logger.error(`${viewName} Excel export failed:`, e);

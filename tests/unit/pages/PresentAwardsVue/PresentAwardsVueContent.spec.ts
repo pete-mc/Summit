@@ -12,14 +12,14 @@ jest.mock("@/components/SummitLoadingState.vue", () => ({ __esModule: true, defa
 jest.mock("@/components/SummitPillButton.vue", () => ({ __esModule: true, default: { name: "SummitPillButton", render: () => null } }), { virtual: true });
 jest.mock("@/components/SummitPrintButton.vue", () => ({ __esModule: true, default: { name: "SummitPrintButton", render: () => null } }), { virtual: true });
 
-// gridExport's top-level jsPDF/xlsx imports are ESM that Jest cannot parse, so it is mocked here
-// as the other grid tests do. Mocking it also lets these assert what reaches the exporters.
-jest.mock("@/components/gridExport", () => ({
-  __esModule: true,
-  exportGridToExcel: jest.fn(),
+// The download itself is summit-excel's (tested in tests/unit/excel/); mocked here so these can
+// assert what the page asks it for. The rows come from the table (presentAwardsExportView.spec.ts).
+jest.mock("@/excel/summitExcel", () => ({
+  ...jest.requireActual("@/excel/summitExcel"),
+  exportExcelSheet: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { exportGridToExcel } from "@/components/gridExport";
+import { exportExcelSheet } from "@/excel/summitExcel";
 
 import PresentAwardsVueContent, { DISCARD_EDITS_PROMPT, NOTHING_SELECTED_MESSAGE, SAVED_MESSAGE } from "@/pages/PresentAwardsVue/components/PresentAwardsVueContent";
 
@@ -199,73 +199,54 @@ describe("PresentAwardsVueContent — column filters", () => {
   });
 });
 
-describe("PresentAwardsVueContent — export", () => {
-  it("exports only the rows currently on screen", () => {
-    const content = mountContent([makeItem("a", { name: "Alex" }), makeItem("b", { name: "Sam" })]);
+describe("PresentAwardsVueContent — Excel export (.claude/Excel/PLAN_STAGE_3.md)", () => {
+  const VIEW = { grouped: false, groups: [{ label: "", rows: [{ member: "Alex Scout", type: "Intro", award: "Award", dateAwarded: "05/03/2026", presented: "" }] }] };
 
-    content.onColumnFiltersUpdate({ member: "Alex" });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function withTable(content: any) {
+    const table = { getExportView: jest.fn().mockReturnValue(VIEW) };
+    content.$refs.table = table;
+    return table;
+  }
 
-    expect(content.exportRows().map((row: Record<string, unknown>) => row.member)).toEqual(["Alex Scout"]);
-  });
-
-  it("respects the previously-presented toggle", () => {
-    const content = mountContent([makeItem("a", { alreadyStored: true }), makeItem("b")]);
-
-    expect(content.exportRows()).toHaveLength(1);
-
-    content.onDisplayFiltersUpdate({ ...content.displayFilters, showPreviouslyPresented: !content.showPreviouslyPresented });
-
-    expect(content.exportRows()).toHaveLength(2);
-  });
-
-  it("exports the edited presented date, not the value last loaded", () => {
-    // Exporting before saving must not produce a file that disagrees with the screen.
-    const item = makeItem("a", { presentedOn: "01/02/2026" });
-    const content = mountContent([item]);
-
-    content.onUpdateDate(item, "09/09/2026");
-
-    expect(content.exportRows()[0].presented).toBe("09/09/2026");
-  });
-
-  it("exports an unticked award as No", () => {
-    const item = makeItem("a", { presentedOn: "01/02/2026" });
-    const content = mountContent([item]);
-
-    content.onTogglePresent(item, false);
-
-    expect(content.exportRows()[0].presented).toBe("No");
-  });
-
-  it("exports the five data columns without the checkbox", () => {
+  it("asks summit-excel for the Present Awards sheet, with the printout's header and filter line", async () => {
     const content = mountContent([makeItem("a")]);
-
-    expect(Object.keys(content.exportRows()[0]).sort()).toEqual(["achievementName", "dateAwarded", "member", "presented", "type"]);
-  });
-
-  it("sends the filtered rows and the React page's file name to the Excel exporter", () => {
-    const content = mountContent([makeItem("a", { name: "Alex" }), makeItem("b", { name: "Sam" })]);
-
+    withTable(content);
     content.onColumnFiltersUpdate({ member: "Alex" });
-    content.onExcelExportClick();
 
-    expect(exportGridToExcel).toHaveBeenCalledTimes(1);
-    const options = (exportGridToExcel as jest.Mock).mock.calls[0][0];
-    expect(options.fileName).toBe("Awards.xlsx");
-    expect(options.rows).toHaveLength(1);
-    expect(options.columns.map((column: { header: string }) => column.header)).toEqual(["Name", "Type", "Award", "Date", "Presented"]);
+    await content.onExcelExportClick();
+
+    expect(exportExcelSheet).toHaveBeenCalledTimes(1);
+    const request = (exportExcelSheet as jest.Mock).mock.calls[0][0];
+    expect(request.printProfile).toBe("present-awards");
+    expect(request.fileNameParts).toEqual(["Present Awards"]);
+    expect(request.meta).toEqual(content.presentAwardsPrintMeta);
     expect(content.feedback).toBe("Excel export complete");
+    expect(content.isExcelExporting).toBe(false);
   });
 
-  it("reports an export failure rather than failing silently", () => {
-    (exportGridToExcel as jest.Mock).mockImplementationOnce(() => {
-      throw new Error("disk full");
-    });
+  it("builds the sheet from the table's own export view (rows as on screen)", async () => {
     const content = mountContent([makeItem("a")]);
+    const table = withTable(content);
 
-    content.onExcelExportClick();
+    await content.onExcelExportClick();
+    const request = (exportExcelSheet as jest.Mock).mock.calls[0][0];
+    const sheet = request.build({ title: "T", subtitle: "S", metaLine: "M" }, null);
+
+    expect(table.getExportView).toHaveBeenCalledTimes(1);
+    // Flat view: Name, Type, Award, Date, Presented, with the row after the header block and column header.
+    expect(sheet.rows[5][0]).toMatchObject({ value: "Alex Scout" });
+  });
+
+  it("reports an export failure rather than failing silently, and clears the busy state", async () => {
+    (exportExcelSheet as jest.Mock).mockRejectedValueOnce(new Error("disk full"));
+    const content = mountContent([makeItem("a")]);
+    withTable(content);
+
+    await content.onExcelExportClick();
 
     expect(content.feedback).toBe("Excel export failed: disk full");
+    expect(content.isExcelExporting).toBe(false);
   });
 });
 

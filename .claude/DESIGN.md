@@ -470,8 +470,15 @@ unreliable. `jsPDF` survives **only** behind the React `DataGrid.tsx`; don't use
 
 **Added 2026-10-12, in progress.** Formatted spreadsheets go through `summit-excel` (`src/excel/`,
 library `write-excel-file`). The plan and decisions are in `.claude/Excel/PLAN.md` and its stage files.
-So far it covers the OAS Summary and Heatmap tabs. Other Excel buttons still use the plain `xlsx`
-dump in `gridExport.ts` until their stage.
+So far it covers the OAS Summary and Heatmap tabs and Present Awards. The OAS Table tab and the
+React pages still use the plain `xlsx` dump in `gridExport.ts`.
+
+- A page's Excel button calls `exportExcelSheet({ printProfile, meta, fileNameParts, build })`. It
+  handles the timestamp, header, logo, file name and download; the page only reports success or failure.
+- Dates go in as real Excel dates via `parseDisplayDate` (UTC midnight; a local-midnight date
+  shows a day early in Australia).
+- To follow a `v-data-table`'s on-screen sort, sort with Vuetify's own `sortItems` and the
+  table's `.sync` sort state (see `sortPresentAwardRows`).
 
 - **Built from the page's row data, not the screen DOM**, so numbers stay numbers. One builder per
   table in `src/excel/sheets/`. Where the screen already works out the view (the Heatmap's layout,

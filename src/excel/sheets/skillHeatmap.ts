@@ -138,7 +138,7 @@ export function buildSkillHeatmapSheet(input: SkillHeatmapSheetInput): ExcelShee
     body.push(titleRow(section.patrolName ? `${section.title} — ${section.patrolName}` : section.title, totalColumns, { fontSize: 12, backgroundColor: EXCEL_COLOURS.sectionRow }));
     section.groups.forEach((group, groupIndex) => {
       if (groupIndex > 0) body.push(blankRow());
-      if (group.patrolName) body.push(titleRow(group.patrolName, totalColumns, { backgroundColor: EXCEL_COLOURS.patrolRow }));
+      if (group.patrolName) body.push(titleRow(group.patrolName, totalColumns, { backgroundColor: EXCEL_COLOURS.mutedRow }));
       group.rows.forEach((r) => body.push(dataRow(r.label, r.view, widths)));
     });
   });

@@ -9,17 +9,19 @@ import SummitPillButton from "@/components/SummitPillButton.vue";
 import { buildPresentAwardsPrintMeta } from "../services/presentAwardsPrintMeta";
 import type { MetaEntry } from "@/print/summitPrint";
 import type { PresentAwardsDisplayFilters } from "./PresentAwardsFiltersVue";
-import { filterPresentAwardRows, NOT_PRESENTED } from "./PresentAwardsTableVue";
+import type { PresentAwardsExportView } from "./PresentAwardsTableVue";
 import { DEFAULT_FILTERS, loadPresentAwardsVueFilters, savePresentAwardsVueFilters, type PresentAwardsVueFilterState } from "../services/PresentAwardsVueFilterPersistence";
-import { exportGridToExcel, type GridExportColumn, type GridExportRow } from "@/components/gridExport";
+import { exportExcelSheet } from "@/excel/summitExcel";
+import { buildPresentAwardsSheet } from "@/excel/sheets/presentAwards";
 import { createLogger } from "@/helpers";
 
 const logger = createLogger("PresentAwardsVueContent");
 
-/** What the content component asks of the table for printing (PresentAwardsTableVue's methods). */
+/** What the content component asks of the table for printing and export (PresentAwardsTableVue's methods). */
 interface PresentAwardsTablePrintApi {
   prepareForPrint(): Promise<() => void>;
   getPrintTable(): HTMLTableElement | undefined;
+  getExportView(): PresentAwardsExportView;
 }
 
 const FEEDBACK_TIMEOUT_MS = 4000;
@@ -29,18 +31,6 @@ const MERGE_FEEDBACK_TIMEOUT_MS = 10000;
 export const NOTHING_SELECTED_MESSAGE = "No new awards were selected as presented.";
 export const SAVED_MESSAGE = "Saved.";
 export const DISCARD_EDITS_PROMPT = "Refreshing will discard your unsaved changes. Continue?";
-
-/**
- * The five columns the React page exports — the Present checkbox is not data, so it stays out.
- * File names and titles match the React page's too, so the two pages produce interchangeable files.
- */
-const TABLE_EXPORT_COLUMNS: GridExportColumn[] = [
-  { key: "member", header: "Name" },
-  { key: "type", header: "Type" },
-  { key: "achievementName", header: "Award" },
-  { key: "dateAwarded", header: "Date" },
-  { key: "presented", header: "Presented" },
-];
 
 function loadInitialFilters(): PresentAwardsVueFilterState {
   // Merged OVER the defaults, so state saved by an older build that lacks a newer key still
@@ -90,6 +80,7 @@ export default defineComponent({
       showPreviouslyPresented: initialFilters.showPreviouslyPresented,
       groupByMember: initialFilters.groupByMember,
       isReloading: false,
+      isExcelExporting: false,
     };
   },
   watch: {
@@ -137,14 +128,6 @@ export default defineComponent({
       if (this.showPreviouslyPresented) return this.items;
       return this.items.filter((item) => !item.previouslyPresented);
     },
-    /**
-     * The rows actually on screen. Computed here as well as in the table because there is no way
-     * to ask a live v-data-table which rows it is currently showing — and export must match what
-     * the user can see.
-     */
-    filteredItems(): SummitAchievement[] {
-      return filterPresentAwardRows(this.visibleItems, this.columnFilters, (item) => this.presentedValueFor(item));
-    },
     /** The column filters in effect, for the printout's header line (.claude/Print/PLAN_STAGE_4.md). */
     presentAwardsPrintMeta(): MetaEntry[] {
       return buildPresentAwardsPrintMeta(this.columnFilters);
@@ -191,17 +174,6 @@ export default defineComponent({
       this.presentedDates = { ...this.presentedDates, [item.id]: displayDate };
     },
     /**
-     * What the row currently shows.
-     *
-     * The selection is the source of truth, not the stored value: unticking a row clears its
-     * pending date, and falling back to `item.presented` at that point would report a date for a
-     * row the user has just marked as not presented.
-     */
-    presentedValueFor(item: SummitAchievement): string {
-      if (!this.selectedIds.has(item.id)) return "";
-      return this.presentedDates[item.id] ?? (item.presented !== NOT_PRESENTED ? item.presented : "");
-    },
-    /**
      * Called directly from each handler rather than from a watcher: Vue 2 watchers fire on the
      * next tick, so a filter change followed immediately by navigating away could lose the write.
      */
@@ -240,31 +212,27 @@ export default defineComponent({
       }, timeoutMs);
     },
     /**
-     * Export rows carry the value currently ON SCREEN for the Presented column, not the value
-     * loaded from the storage event — otherwise exporting before saving produces a file that
-     * disagrees with what the user is looking at.
+     * Formatted spreadsheet through summit-excel (.claude/Excel/PLAN_STAGE_3.md): the table's rows as
+     * on screen (filters, sort, grouping, and the Presented value currently shown, saved or not),
+     * with the printout's header wording and the section logo.
      */
-    exportRows(): GridExportRow[] {
-      return this.filteredItems.map((item) => ({
-        member: item.member,
-        type: item.type,
-        achievementName: item.achievementName,
-        dateAwarded: item.dateAwarded,
-        presented: this.presentedValueFor(item) || NOT_PRESENTED,
-      }));
-    },
-    onExcelExportClick() {
+    async onExcelExportClick() {
+      const table = this.$refs.table as unknown as PresentAwardsTablePrintApi | undefined;
+      if (!table) return;
+      this.isExcelExporting = true;
       try {
-        exportGridToExcel({
-          fileName: "Awards.xlsx",
-          title: "Awards Completed",
-          rows: this.exportRows(),
-          columns: TABLE_EXPORT_COLUMNS,
+        await exportExcelSheet({
+          printProfile: "present-awards",
+          meta: this.presentAwardsPrintMeta,
+          fileNameParts: ["Present Awards"],
+          build: (header, logo) => buildPresentAwardsSheet({ view: table.getExportView(), header, logo }),
         });
         this.showFeedback("Excel export complete");
       } catch (e) {
         logger.error("Excel export failed:", e);
         this.showFeedback(`Excel export failed: ${e instanceof Error ? e.message : "Unknown error"}`);
+      } finally {
+        this.isExcelExporting = false;
       }
     },
     /** The awards table for SummitPrintButton — read at click time, after prepareForPrint has rendered every row. */

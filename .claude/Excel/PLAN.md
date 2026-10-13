@@ -1,6 +1,6 @@
 # Plan: Formatted Excel export (`summit-excel`), starting with OAS Progression → Summary
 
-Status: **Stages 0 and 1 done (2026-10-12). Stage 2 (Heatmap) done (2026-10-13).** See [PLAN_STAGE_0.md](PLAN_STAGE_0.md), [PLAN_STAGE_1.md](PLAN_STAGE_1.md) and [PLAN_STAGE_2.md](PLAN_STAGE_2.md).
+Status: **Stages 0 and 1 done (2026-10-12). Stage 2 (Heatmap) done (2026-10-13). Stage 3 (Present Awards) done (2026-10-13).** See [PLAN_STAGE_3.md](PLAN_STAGE_3.md). See [PLAN_STAGE_0.md](PLAN_STAGE_0.md), [PLAN_STAGE_1.md](PLAN_STAGE_1.md) and [PLAN_STAGE_2.md](PLAN_STAGE_2.md).
 
 ## What exists today (checked in the code, 2026-10-12)
 

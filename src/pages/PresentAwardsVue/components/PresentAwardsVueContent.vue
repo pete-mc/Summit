@@ -9,7 +9,8 @@
           them clickable during the load offered an empty spreadsheet and a save of nothing.
         -->
         <template v-if="hasContent">
-          <SummitPillButton @click="onExcelExportClick">Excel Export</SummitPillButton>
+          <!-- Formatted spreadsheet through summit-excel (.claude/Excel/PLAN_STAGE_3.md). -->
+          <SummitPillButton :loading="isExcelExporting" :disabled="isExcelExporting" @click="onExcelExportClick">Excel Export</SummitPillButton>
           <!-- Prints through summit-print (.claude/Print/PLAN_STAGE_4.md). -->
           <SummitPrintButton profile="present-awards" :target="presentAwardsPrintTarget" :prepare="preparePresentAwardsPrint" :meta="presentAwardsPrintMeta" />
           <SummitPillButton variant="major" class="present-awards-save-btn" :loading="isSaving" :disabled="isSaving" @click="onSaveClick">Save Changes</SummitPillButton>

@@ -1,6 +1,7 @@
 import writeXlsxFile from "write-excel-file/browser";
 import type { Cell, Image, Row, SheetOptions } from "write-excel-file/browser";
 import { resolveHeaderFooter, type MetaEntry } from "@/print/summitPrint";
+import { getTerrainPrintContext } from "@/print/printContext";
 import { createLogger } from "@/helpers/Logger";
 
 const logger = createLogger("summitExcel");
@@ -29,8 +30,8 @@ export const EXCEL_COLOURS = {
   headerBorder: "#c8c6c4",
   /** Section title rows (skill or member): --summit-color-status-unanswered, as on screen. */
   sectionRow: "#edebe9",
-  /** Patrol title rows: --summit-color-bg-muted. */
-  patrolRow: "#f3f2f1",
+  /** Patrol title rows (Heatmap) and member group rows (Present Awards): --summit-color-bg-muted. */
+  mutedRow: "#f3f2f1",
   /** Meta line text. */
   muted: "#555555",
 };
@@ -134,3 +135,44 @@ export async function downloadWorkbook(sheet: ExcelSheet, fileName: string): Pro
 export function workbookToBlob(sheet: ExcelSheet): Promise<Blob> {
   return writeXlsxFile(sheet.rows, sheet.options).toBlob();
 }
+
+export interface ExcelExportRequest {
+  /** summit-print profile whose header wording the sheet reuses, e.g. "present-awards". */
+  printProfile: string;
+  /** The filters in effect, as given to the printout. */
+  meta?: MetaEntry[];
+  /** File name parts before the unit, e.g. ["OAS Progression", "Summary"]. */
+  fileNameParts: string[];
+  /** Builds the sheet once the header and logo are known. */
+  build: (header: ExcelHeader, logo: Image | null) => ExcelSheet;
+}
+
+/**
+ * Every Excel Export button's work: one timestamp for both the header and the file name, Terrain's
+ * unit/group/section (the same source the printout uses), the section logo, then the download.
+ * Throws on failure, so the page can report it.
+ */
+export async function exportExcelSheet(request: ExcelExportRequest): Promise<void> {
+  const generated = new Date();
+  const context = getTerrainPrintContext();
+  const header = resolveExcelHeader(request.printProfile, request.meta, context.vars, generated);
+  const sheet = request.build(header, await loadSectionLogoImage(context.logo));
+  await downloadWorkbook(sheet, buildExcelFileName(request.fileNameParts.concat([context.vars.unit]), generated));
+}
+
+/**
+ * A DD/MM/YYYY date as a real Excel date, or null. Built at UTC midnight: write-excel-file counts
+ * days from the Unix epoch in UTC, so a local-midnight date in Australia (the previous afternoon UTC)
+ * would show as the day before.
+ */
+export function parseDisplayDate(text: string): Date | null {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(text.trim());
+  if (!match) return null;
+  const [day, month, year] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const date = new Date(Date.UTC(year, month - 1, day));
+  // Rejects impossible dates (31/02/2026 would otherwise roll into March).
+  return date.getUTCDate() === day && date.getUTCMonth() === month - 1 ? date : null;
+}
+
+/** Excel's own date format code for day/month/year. */
+export const EXCEL_DATE_FORMAT = "dd/mm/yyyy";

@@ -2,7 +2,8 @@
   <div class="present-awards-table-panel">
     <!-- No "Clear filters" link here: the filter bar's "Reset filters" clears column filters too
          (user, 2026-10-11). -->
-    <!-- items-per-page/page are .sync-bound so printing can show every row, then restore them (prepareForPrint). -->
+    <!-- items-per-page/page are .sync-bound so printing can show every row, then restore them (prepareForPrint).
+         sort-by/sort-desc are .sync-bound so the Excel export can follow the on-screen sort (getExportView). -->
     <v-data-table
       ref="table"
       :headers="headers"
@@ -11,6 +12,8 @@
       dense
       :items-per-page.sync="itemsPerPage"
       :page.sync="page"
+      :sort-by.sync="sortBy"
+      :sort-desc.sync="sortDesc"
       :footer-props="{ itemsPerPageOptions: [10, 25, 50, 100, -1] }"
       class="present-awards-data-table"
     >

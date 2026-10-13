@@ -2,6 +2,7 @@ import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import moment from "moment";
 import SummitAchievement from "@/pages/PresentAwards/models/SummitAchievement";
+import { sortItems } from "vuetify/es5/util/helpers";
 import { getBadgeIconUrl, hasWideIcon } from "../services/getBadgeIconUrl";
 
 export interface DataTableHeader {
@@ -89,6 +90,50 @@ export const HEADERS: DataTableHeader[] = [
 /** Rows per page until the user picks another from the table footer. */
 export const DEFAULT_ITEMS_PER_PAGE = 25;
 
+/** v-data-table's default sort locale (VData.js `locale` prop); the table doesn't override it. */
+const TABLE_SORT_LOCALE = "en-US";
+
+/** The columns' own comparers, as v-data-table builds them (VDataTable.js columnSorters). */
+const COLUMN_SORTERS: Record<string, (a: unknown, b: unknown) => number> = HEADERS.reduce(
+  (sorters, header) => {
+    if (header.sort) sorters[header.value] = header.sort;
+    return sorters;
+  },
+  {} as Record<string, (a: unknown, b: unknown) => number>,
+);
+
+/**
+ * The rows in the order v-data-table shows them: Vuetify's own sortItems with the table's current
+ * sort and, when grouping, the member column first (ascending), exactly as VData.sortItems does.
+ * So the Excel export (.claude/Excel/PLAN_STAGE_3.md) can't disagree with the screen.
+ *
+ * Note it sorts on the STORED values, as the table does: an unsaved presented date changes what
+ * the row shows, not where the table puts it.
+ */
+export function sortPresentAwardRows(items: SummitAchievement[], sortBy: string[], sortDesc: boolean[], groupByMember: boolean): SummitAchievement[] {
+  const by = groupByMember ? ["member"].concat(sortBy) : sortBy;
+  const desc = groupByMember ? [false].concat(sortDesc) : sortDesc;
+  return sortItems(items.slice(), by, desc, TABLE_SORT_LOCALE, COLUMN_SORTERS);
+}
+
+/** One exported row: the values ON SCREEN, including unsaved edits. `presented` is "" when not presented. */
+export interface PresentAwardsExportRow {
+  member: string;
+  type: string;
+  award: string;
+  dateAwarded: string;
+  presented: string;
+}
+
+/**
+ * The table as the Excel export sees it: filtered, sorted and grouped as on screen, ignoring paging
+ * and collapsed groups (as the printout does). Ungrouped: one group with an empty label.
+ */
+export interface PresentAwardsExportView {
+  grouped: boolean;
+  groups: Array<{ label: string; rows: PresentAwardsExportRow[] }>;
+}
+
 /** Values stored in columnFilters.presented — not substrings of the underlying data. */
 export const PRESENTED_FILTER_YES = "presented";
 export const PRESENTED_FILTER_NO = "no";
@@ -169,6 +214,9 @@ export default defineComponent({
       // put the user's own paging back.
       itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
       page: 1,
+      // Bound with .sync so the Excel export can follow the on-screen sort (getExportView).
+      sortBy: [] as string[],
+      sortDesc: [] as boolean[],
     };
   },
   computed: {
@@ -314,6 +362,31 @@ export default defineComponent({
         this.itemsPerPage = savedPaging.itemsPerPage;
         this.page = savedPaging.page;
       };
+    },
+    /** The rows for the Excel export, as on screen. See PresentAwardsExportView. */
+    getExportView(): PresentAwardsExportView {
+      const sorted = sortPresentAwardRows(this.filteredItems, this.sortBy, this.sortDesc, this.groupByMember);
+      const toRow = (item: SummitAchievement): PresentAwardsExportRow => ({
+        member: item.member,
+        type: item.type,
+        award: item.achievementName,
+        dateAwarded: item.dateAwarded,
+        presented: this.presentedValue(item),
+      });
+      if (!this.groupByMember) {
+        return { grouped: false, groups: [{ label: "", rows: sorted.map(toRow) }] };
+      }
+      // Sorted by member first, so each member's rows are already together.
+      const groups: PresentAwardsExportView["groups"] = [];
+      let current: string | null = null;
+      sorted.forEach((item) => {
+        if (item.member !== current) {
+          current = item.member;
+          groups.push({ label: this.groupLabel(item.member), rows: [] });
+        }
+        groups[groups.length - 1].rows.push(toRow(item));
+      });
+      return { grouped: true, groups };
     },
     /** The <table> for summit-print. A method, since a ref on v-data-table is a component, not an element. */
     getPrintTable(): HTMLTableElement | undefined {

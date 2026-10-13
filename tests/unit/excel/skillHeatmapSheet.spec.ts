@@ -135,7 +135,7 @@ describe("buildSkillHeatmapSheet", () => {
     const rows = buildSkillHeatmapSheet({ view: v, header: HEADER, logo: null }).rows.slice(HEADER_BLOCK_ROWS + 1);
     // A blank row before the second patrol, none before the first.
     expect(rows.map(firstValue)).toEqual(["Bushcraft", "Eagles", "Alex Example", null, "Wolves", "Blake Sample"]);
-    expect(rows[1][0]).toMatchObject({ backgroundColor: EXCEL_COLOURS.patrolRow, columnSpan: WIDTH });
+    expect(rows[1][0]).toMatchObject({ backgroundColor: EXCEL_COLOURS.mutedRow, columnSpan: WIDTH });
   });
 
   it("puts a blank row before every section after the first, and none at the top", () => {
