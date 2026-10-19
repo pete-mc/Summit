@@ -21,14 +21,6 @@ describe("Phase 1 event editor inline validation visibility gaps", () => {
     expect(organisersField).toContain('data-editor-validation="organisers"');
     expect(organisersField).toContain("editorValidationErrors.organisers");
   });
-
-  it("renders an inline validation contract for member_roles near member assignment controls", () => {
-    const source = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
-    const memberRoleSection = source.match(/data-editor-field="leader_members"[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/)?.[0] ?? "";
-
-    expect(memberRoleSection).toContain('data-editor-validation="member_roles"');
-    expect(memberRoleSection).toContain("editorValidationErrors.member_roles");
-  });
 });
 
 describe("Phase 2 event editor inline validation contract", () => {
@@ -77,7 +69,7 @@ describe("Phase 4 validation-key regression hardening", () => {
     const uniqueValidatorKeys = Array.from(new Set(emittedValidatorKeys)).sort();
     const uniqueAnchorKeys = Array.from(new Set(renderedAnchorKeys)).sort();
 
-    expect(uniqueValidatorKeys).toEqual(["challenge_area", "date_range", "location", "member_roles", "organisers", "scout_method_elements", "title"]);
+    expect(uniqueValidatorKeys).toEqual(["challenge_area", "date_range", "location", "organisers", "scout_method_elements", "title"]);
     expect(uniqueAnchorKeys).toEqual(uniqueValidatorKeys);
 
     uniqueValidatorKeys.forEach((key) => {

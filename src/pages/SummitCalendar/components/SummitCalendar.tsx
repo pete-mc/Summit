@@ -181,7 +181,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
     },
     attendance: {
       leader_members: [],
-      assistant_members: [],
       attendee_members: [],
     },
     ...this.getCreateOwnershipDefaults(),
@@ -848,27 +847,6 @@ export class SummitCalendarComponent extends React.Component<SummitCalendarProps
               <input id="leader_members" className="summit-form-input" type="text" name="leads" value={activity?.attendance?.leader_members?.map((i) => i.first_name + " " + i.last_name).join(", ")} disabled={true} />
             )}
           </div>
-          <div>
-            <div className="editor-field-status" data-editor-validation="member_roles" role="status">
-              {editorValidationErrors.member_roles ?? ""}
-            </div>
-          </div>
-        </div>
-        <div className="editor-field" data-editor-field="assistant_members">
-          <label className="editor-field-label" htmlFor="assistant_members">
-            Assists
-          </label>
-          <div className="editor-field-control">
-            {this.renderGroupedMultiSelect(
-              "assistant_members",
-              memberGroups,
-              this.state.activity?.attendance?.assistant_members?.map((i) => {
-                return i?.id ?? "";
-              }) ?? [],
-              !isEditable,
-            )}
-          </div>
-          <div className="editor-field-status" />
         </div>
       </div>
     );

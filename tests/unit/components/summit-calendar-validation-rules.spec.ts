@@ -102,7 +102,6 @@ describe("Phase 4 SummitCalendar validation rules", () => {
     end_datetime: "2026-04-01T11:00:00.000Z",
     attendance: {
       leader_members: [{ id: "m2", first_name: "Sam", last_name: "Lee" }],
-      assistant_members: [{ id: "m3", first_name: "Jo", last_name: "Kim" }],
     },
   });
 
@@ -135,15 +134,14 @@ describe("Phase 4 SummitCalendar validation rules", () => {
     );
   });
 
-  it("fails when a member is both a leader and assistant", () => {
+  it("ignores legacy assistant attendance because assistants are no longer a program role", () => {
     const activity = buildValidActivity();
-    activity.attendance.leader_members = [{ id: "m5", first_name: "Jordan", last_name: "Fox" }];
-    activity.attendance.assistant_members = [{ id: "m5", first_name: "Jordan", last_name: "Fox" }];
+    activity.attendance.assistant_members = [{ id: "m2", first_name: "Sam", last_name: "Lee" }];
 
     const result = validateSummitCalendarActivity(activity);
 
-    expect(result.isValid).toBe(false);
-    expect(result.errors.member_roles).toContain("leader");
+    expect(result.isValid).toBe(true);
+    expect(result.errors.member_roles).toBeUndefined();
   });
 
   it("fails when start is same as or after end", () => {
@@ -166,7 +164,6 @@ describe("Phase 4 SummitCalendar validation rules", () => {
       end_datetime: "2026-04-01T11:00:00+10:00",
       attendance: {
         leader_members: [{ id: "m2", first_name: "Sam", last_name: "Lee" }],
-        assistant_members: [{ id: "m3", first_name: "Jo", last_name: "Kim" }],
         attendee_members: [],
       },
     });

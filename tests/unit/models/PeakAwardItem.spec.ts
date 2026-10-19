@@ -74,7 +74,7 @@ describe("PeakAwardItem", () => {
     expect(item.name).toBe("Alex Scout");
     expect(item.milestone3).toBe("⌛");
     expect(item.leads).toBe(10);
-    expect(item.assists).toBe(10);
+    expect(item).not.toHaveProperty("assists");
     expect(item.outdoors).toBe(7);
     expect(item.creative).toBe(8);
     expect(item.personalGrowth).toBe(6);
@@ -100,7 +100,6 @@ describe("PeakAwardItem", () => {
 
     expect(item.milestone3).toBe("❌");
     expect(item.leads).toBe(0);
-    expect(item.assists).toBe(0);
     expect(item.outdoors).toBe(0);
     expect(item.creative).toBe(0);
     expect(item.personalGrowth).toBe(0);

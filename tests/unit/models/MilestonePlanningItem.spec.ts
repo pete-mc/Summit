@@ -53,7 +53,6 @@ describe("MilestonePlanningItem", () => {
     expect(item.milestone).toBe("-");
     expect(item.overall_percent).toBe("");
     expect(item.total_leads).toBe(0);
-    expect(item.total_assists).toBe(0);
     expect(item.outdoors).toBe(0);
     expect(item.creative).toBe(0);
     expect(item.personal_growth).toBe(0);
@@ -71,13 +70,57 @@ describe("MilestonePlanningItem", () => {
 
     expect(item.name).toBe("Alex Scout");
     expect(item.milestone).toBe(1);
-    expect(item.total_leads).toBe(0);
-    expect(item.total_assists).toBe(0);
+    expect(item.total_leads).toBe(1);
+    expect(item).not.toHaveProperty("total_assists");
     expect(item.outdoors).toBe(3);
     expect(item.creative).toBe(4);
     expect(item.personal_growth).toBe(2);
     expect(item.community).toBe(0);
-    expect(item.overall_percent).toBe("66%");
+    expect(item.overall_percent).toBe("61%");
+  });
+
+  it.each([
+    {
+      stage: 1,
+      requiredLeads: 2,
+      leader: { community: 1, creative: 0, outdoors: 0, personal_growth: 0 },
+      expectedLeadsRemaining: 1,
+      requiredParticipants: 6,
+    },
+    {
+      stage: 2,
+      requiredLeads: 4,
+      leader: { community: 1, creative: 1, outdoors: 0, personal_growth: 0 },
+      expectedLeadsRemaining: 2,
+      requiredParticipants: 5,
+    },
+    {
+      stage: 3,
+      requiredLeads: 6,
+      leader: { community: 1, creative: 1, outdoors: 1, personal_growth: 1 },
+      expectedLeadsRemaining: 2,
+      requiredParticipants: 4,
+    },
+  ])("applies per-area participant requirements and a total lead requirement for Milestone $stage", ({ stage, requiredLeads, leader, expectedLeadsRemaining, requiredParticipants }) => {
+    const eventCount = makeEventCount({
+      leader,
+      assistant: { community: 100, creative: 100, outdoors: 100, personal_growth: 100 },
+      participant: {
+        community: requiredParticipants,
+        creative: requiredParticipants - 1,
+        outdoors: requiredParticipants - 2,
+        personal_growth: requiredParticipants + 1,
+      },
+    });
+
+    const item = new MilestonePlanningItem(makeMilestoneAchievement(stage, eventCount), makeMember());
+
+    expect(item.total_leads).toBe(expectedLeadsRemaining);
+    expect(item.total_leads + Object.values(leader).reduce((total, count) => total + count, 0)).toBe(requiredLeads);
+    expect(item.community).toBe(0);
+    expect(item.creative).toBe(1);
+    expect(item.outdoors).toBe(2);
+    expect(item.personal_growth).toBe(0);
   });
 
   it("defaults to 0% when milestone stage has no defined requirements", () => {
@@ -85,7 +128,6 @@ describe("MilestonePlanningItem", () => {
 
     expect(item.milestone).toBe(99);
     expect(item.total_leads).toBe(0);
-    expect(item.total_assists).toBe(0);
     expect(item.outdoors).toBe(0);
     expect(item.creative).toBe(0);
     expect(item.personal_growth).toBe(0);
