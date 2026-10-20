@@ -6,7 +6,6 @@ export default class PeakAwardItem {
   progress: number;
   milestone3: string;
   leads: number;
-  assists: number;
   outdoors: number;
   creative: number;
   personalGrowth: number;
@@ -32,7 +31,6 @@ export default class PeakAwardItem {
       this.milestone3 = "❌";
 
       this.leads = 0;
-      this.assists = 0;
       this.outdoors = 0;
       this.creative = 0;
       this.personalGrowth = 0;
@@ -40,9 +38,6 @@ export default class PeakAwardItem {
     } else {
       this.milestone3 = ms3record.status === "awarded" ? "✅" : ms3record.status === "in_progress" ? "⌛" : "❌";
       this.leads = ms3record.event_count?.leader ? ms3record.event_count?.leader.community + ms3record.event_count?.leader.creative + ms3record.event_count?.leader.outdoors + ms3record.event_count?.leader.personal_growth : 0;
-      this.assists = ms3record.event_count?.assistant
-        ? ms3record.event_count?.assistant.community + ms3record.event_count?.assistant.creative + ms3record.event_count?.assistant.outdoors + ms3record.event_count?.assistant.personal_growth
-        : 0;
       this.outdoors = ms3record.event_count?.participant?.outdoors ?? 0;
       this.creative = ms3record.event_count?.participant?.creative ?? 0;
       this.personalGrowth = ms3record.event_count?.participant?.personal_growth ?? 0;

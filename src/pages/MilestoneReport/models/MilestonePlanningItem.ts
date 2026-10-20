@@ -1,9 +1,9 @@
+import { getMilestoneLeadRequirement } from "@/helpers/MilestoneRequirements";
 import { TerrainAchievements, TerrainAchievementsEventCount, TerrainUnitMember } from "@/types/terrainTypes";
 
 interface MilestoneObject {
   [key: string]: number;
   leads: number;
-  assists: number;
   outdoors: number;
   creative: number;
   personalGrowth: number;
@@ -13,7 +13,6 @@ interface MilestoneObject {
 class MilestoneRequirements implements MilestoneObject {
   milestone: number = 0;
   leads: number = 0;
-  assists: number = 0;
   outdoors: number = 0;
   creative: number = 0;
   personalGrowth: number = 0;
@@ -30,24 +29,21 @@ class MilestoneRequirements implements MilestoneObject {
         this.creative = 6;
         this.personalGrowth = 6;
         this.community = 6;
-        this.assists = 2;
-        this.leads = 1;
+        this.leads = getMilestoneLeadRequirement(1);
         return;
       case 2:
         this.outdoors = 5;
         this.creative = 5;
         this.personalGrowth = 5;
         this.community = 5;
-        this.assists = 2;
-        this.leads = 2;
+        this.leads = getMilestoneLeadRequirement(2);
         return;
       case 3:
         this.outdoors = 4;
         this.creative = 4;
         this.personalGrowth = 4;
         this.community = 4;
-        this.assists = 4;
-        this.leads = 4;
+        this.leads = getMilestoneLeadRequirement(3);
         return;
     }
   }
@@ -56,7 +52,6 @@ class MilestoneRequirements implements MilestoneObject {
 }
 class MilestoneCurrent implements MilestoneObject {
   leads: number = 0;
-  assists: number = 0;
   outdoors: number = 0;
   creative: number = 0;
   personalGrowth: number = 0;
@@ -67,7 +62,6 @@ class MilestoneCurrent implements MilestoneObject {
       return;
     }
     this.leads = Object.values(eventCount.leader).reduce((acc, currVal) => acc + currVal, 0);
-    this.assists = Object.values(eventCount.assistant).reduce((acc, currVal) => acc + currVal, 0);
     this.outdoors = eventCount.participant.outdoors;
     this.creative = eventCount.participant.creative;
     this.personalGrowth = eventCount.participant.personal_growth;
@@ -78,7 +72,7 @@ class MilestoneCurrent implements MilestoneObject {
 }
 
 function calculateMilestone(currentRequirements: MilestoneRequirements, eventCount: MilestoneCurrent) {
-  const calKeys = ["leads", "assists", "outdoors", "creative", "personalGrowth", "community"];
+  const calKeys = ["leads", "outdoors", "creative", "personalGrowth", "community"];
 
   function calculateEventResult(requiredEvents: number, completedEvents: number) {
     const result = requiredEvents - completedEvents;
@@ -115,7 +109,6 @@ export default class MilestonePlanningItem {
   name: string;
   milestone: number | string;
   total_leads: number;
-  total_assists: number;
   overall_percent: string;
   outdoors: number;
   creative: number;
@@ -128,7 +121,6 @@ export default class MilestonePlanningItem {
       this.milestone = "-";
       this.overall_percent = "";
       this.total_leads = 0;
-      this.total_assists = 0;
       this.outdoors = 0;
       this.creative = 0;
       this.personal_growth = 0;
@@ -143,7 +135,6 @@ export default class MilestonePlanningItem {
 
     const result = calculateMilestone(currentRequirements, eventCount);
     this.total_leads = result.leads;
-    this.total_assists = result.assists;
     this.overall_percent = result.overallPercent + "%";
     this.outdoors = result.outdoors;
     this.creative = result.creative;

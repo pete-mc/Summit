@@ -65,9 +65,11 @@ describe("Phase 2 calendar editor structured field layout contract", () => {
     expect(source).toContain('className="editor-field-control"');
     expect(source).toContain('className="editor-field-status"');
 
-    ["title", "location", "challenge_area", "date_range", "scout_method_elements", "organisers", "leader_members", "assistant_members"].forEach((fieldId) => {
+    ["title", "location", "challenge_area", "date_range", "scout_method_elements", "organisers", "leader_members"].forEach((fieldId) => {
       expect(source).toContain(`data-editor-field="${fieldId}"`);
     });
+    expect(source).not.toContain("assistant_members");
+    expect(source).not.toContain("Assists");
   });
 
   it("field layout uses tokenized CSS hooks instead of raw label inline flow", () => {

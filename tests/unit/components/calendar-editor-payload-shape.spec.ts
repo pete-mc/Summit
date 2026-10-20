@@ -174,7 +174,7 @@ describe("Phase 4 calendar editor payload shape", () => {
       organisers: [],
       attendance: {
         leader_members: [],
-        assistant_members: [],
+        assistant_members: [{ id: "m3", first_name: "Jo", last_name: "Kim" }],
         attendee_members: [],
       },
       review: {
@@ -186,14 +186,13 @@ describe("Phase 4 calendar editor payload shape", () => {
 
     const withOrganisers = applyGroupedMultiSelectChange(baseActivity, "organisers", ["m1", "m3"], members) as TerrainEvent;
     const withLeaders = applyGroupedMultiSelectChange(withOrganisers, "leader_members", ["m2"], members) as TerrainEvent;
-    const withAssistants = applyGroupedMultiSelectChange(withLeaders, "assistant_members", ["m3"], members) as TerrainEvent;
-    const complete = applyGroupedMultiSelectChange(withAssistants, "scout_method_elements", ["learn_by_doing", "promise_and_law"], members) as TerrainEvent;
+    const complete = applyGroupedMultiSelectChange(withLeaders, "scout_method_elements", ["learn_by_doing", "promise_and_law"], members) as TerrainEvent;
 
     const payload = new TerrainEventItem(complete);
 
     expect(payload.organisers).toEqual(["m1", "m3"]);
     expect(payload.attendance.leader_member_ids).toEqual(["m2"]);
-    expect(payload.attendance.assistant_member_ids).toEqual(["m3"]);
+    expect(payload.attendance).not.toHaveProperty("assistant_member_ids");
     expect(payload.review.scout_method_elements).toEqual(["learn_by_doing", "promise_and_law"]);
   });
 
@@ -630,4 +629,3 @@ describe("Phase 4 calendar editor payload shape", () => {
     expect(renderedTimeInput.props.value).toBe(expectedLocalTime);
   });
 });
-

@@ -12,12 +12,11 @@ export default function MilestoneReportTable(props: MilestoneReportTableProps): 
     { id: "name", header: "Name", accessorKey: "name", enableSorting: true },
     { id: "milestone", header: "Next Milestone", accessorKey: "milestone", enableSorting: true },
     { id: "overall_percent", header: "Complete", accessorKey: "overall_percent", enableSorting: true },
-    { id: "total_leads", header: "Leads", accessorKey: "total_leads", enableSorting: true },
-    { id: "total_assists", header: "Assists", accessorKey: "total_assists", enableSorting: true },
-    { id: "outdoors", header: "Outdoors", accessorKey: "outdoors", enableSorting: true },
-    { id: "creative", header: "Creative", accessorKey: "creative", enableSorting: true },
-    { id: "personal_growth", header: "Personal Growth", accessorKey: "personal_growth", enableSorting: true },
-    { id: "community", header: "Community", accessorKey: "community", enableSorting: true },
+    { id: "total_leads", header: "Leads (total)", accessorKey: "total_leads", enableSorting: true },
+    { id: "outdoors", header: "Outdoors participants", accessorKey: "outdoors", enableSorting: true },
+    { id: "creative", header: "Creative participants", accessorKey: "creative", enableSorting: true },
+    { id: "personal_growth", header: "Personal Growth participants", accessorKey: "personal_growth", enableSorting: true },
+    { id: "community", header: "Community participants", accessorKey: "community", enableSorting: true },
   ];
 
   return (
