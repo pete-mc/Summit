@@ -88,14 +88,6 @@ export const applyGroupedMultiSelectChange = <T extends Partial<TerrainEvent>>(a
           leader_members: selectedMembers,
         },
       };
-    case "assistant_members":
-      return {
-        ...activity,
-        attendance: {
-          ...(activity.attendance ?? {}),
-          assistant_members: selectedMembers,
-        },
-      };
     case "scout_method_elements":
       return {
         ...activity,
@@ -137,14 +129,6 @@ export const validateSummitCalendarActivity = (activity: Partial<TerrainEvent> |
 
   if (!activity?.start_datetime || !activity?.end_datetime || moment(activity.start_datetime).isSameOrAfter(activity.end_datetime)) {
     errors.date_range = "Start date can't be after end date";
-  }
-
-  const leaderIds = activity?.attendance?.leader_members?.map((member) => member.id) ?? [];
-  const assistantIds = activity?.attendance?.assistant_members?.map((member) => member.id) ?? [];
-  const hasRoleOverlap = leaderIds.some((leaderId) => assistantIds.includes(leaderId));
-
-  if (hasRoleOverlap) {
-    errors.member_roles = "A member can't both be a leader and an assistant at the same time";
   }
 
   return {

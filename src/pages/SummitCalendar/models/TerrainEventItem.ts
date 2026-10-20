@@ -30,7 +30,7 @@ export default class TerrainEventItem {
   end_datetime: string;
   owner_type: string;
   owner_id: string;
-  attendance: { leader_member_ids: string[]; assistant_member_ids: string[]; attendee_member_ids: string[] };
+  attendance: { leader_member_ids: string[]; attendee_member_ids: string[] };
   schedule_items: { start_datetime: string; end_datetime: string; description: string; leader_notes: string; assistant_notes: string }[];
   achievement_pathway_oas_data: { award_rule: string; verifier: { name: string; contact: string; type: string }; groups: unknown[] };
   achievement_pathway_logbook_data: {
@@ -65,7 +65,6 @@ export default class TerrainEventItem {
     this.owner_id = TerrainState.getUnitID();
     this.attendance = {
       leader_member_ids: terrainEvent?.attendance?.leader_members?.map((a) => a.id) ?? [],
-      assistant_member_ids: terrainEvent?.attendance?.assistant_members?.map((a) => a.id) ?? [],
       attendee_member_ids: terrainEvent?.attendance?.attendee_members?.map((a) => a.id) ?? [],
     };
     this.schedule_items = [];

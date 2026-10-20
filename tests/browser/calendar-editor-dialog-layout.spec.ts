@@ -80,7 +80,6 @@ const setCalendarEditorContent = async (page: Page, viewport: { width: number; h
                   ${groupedSelect("scout_method_elements", "Scout Method")}
                   ${groupedSelect("organisers", "Organisers")}
                   ${groupedSelect("leader_members", "Leads")}
-                  ${groupedSelect("assistant_members", "Assists")}
                 </div>
               </div>
             </div>

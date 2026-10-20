@@ -10,12 +10,11 @@ interface MilestoneReportTableProps {
 export default function MilestoneReprtTable(props: MilestoneReportTableProps): React.ReactNode {
   const columns: DataGridColumn<MilestonePlanningItem>[] = [
     { id: "name", header: "Name", accessorKey: "name", enableSorting: true },
-    { id: "total_leads", header: "Leads", accessorKey: "total_leads", enableSorting: true },
-    { id: "total_assists", header: "Assists", accessorKey: "total_assists", enableSorting: true },
-    { id: "outdoors", header: "Outdoors", accessorKey: "outdoors", enableSorting: true },
-    { id: "creative", header: "Creative", accessorKey: "creative", enableSorting: true },
-    { id: "personalGrowth", header: "Personal Growth", accessorKey: "personalGrowth", enableSorting: true },
-    { id: "community", header: "Community", accessorKey: "community", enableSorting: true },
+    { id: "total_leads", header: "Leads (total)", accessorKey: "total_leads", enableSorting: true },
+    { id: "outdoors", header: "Outdoors participants", accessorKey: "outdoors", enableSorting: true },
+    { id: "creative", header: "Creative participants", accessorKey: "creative", enableSorting: true },
+    { id: "personalGrowth", header: "Personal Growth participants", accessorKey: "personalGrowth", enableSorting: true },
+    { id: "community", header: "Community participants", accessorKey: "community", enableSorting: true },
   ];
 
   return (

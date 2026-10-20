@@ -1,7 +1,7 @@
 <template>
   <div id="SummitContentDiv">
     <h2 id="milestoneHeader">Milestone Planning</h2>
-    The milestones planning report is useful to see how many participates, leads and assists each member requires to
+    The milestones planning report is useful to see how many participation activities and leads each member requires to
     complete their current milestone. Note that the numbers displayed are the <b>remaining requirement</b> not the current
     total.<br />
     <div id="Buttons"></div>

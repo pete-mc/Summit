@@ -8,3 +8,4 @@ export { default as verticalText } from "./VerticleText";
 export { applyGroupedMultiSelectChange, buildGroupedMemberOptions, detectSummitCalendarSoftConflicts, validateSummitCalendarActivity } from "./SummitCalendarValidation";
 export { clearSummitCalendarEditorDraft, loadSummitCalendarEditorDraft, saveSummitCalendarEditorDraft } from "./SummitCalendarDraftPersistence";
 export { getContrastTextColor } from "./SummitCalendarContrastText";
+export { getMilestoneLeadRequirement } from "./MilestoneRequirements";
