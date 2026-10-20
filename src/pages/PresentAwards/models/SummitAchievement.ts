@@ -37,7 +37,8 @@ export default class SummitAchievement {
 
   /**
    * Gotcha: key each type exactly as finely as its artwork varies, or different badges share one icon.
-   * Additional awards → award id; milestones → section + stage; peak awards → section; SIAs → the selected SIA (in answers).
+   * Additional awards → award id; milestones → section + stage; peak awards, intro to section, AJs and courses → section;
+   * SIAs → the selected SIA (in answers).
    * Missing metadata falls back to the bare type (a placeholder), never a throw.
    */
   private static getBadgeKey(achievement: TerrainAchievements): string {
@@ -67,6 +68,11 @@ export default class SummitAchievement {
 
       case TerrainAchievementsType.PeakAward:
         return section ? `peak_award_${section}` : type;
+
+      case TerrainAchievementsType.IntroSection:
+      case TerrainAchievementsType.AdventurousJourney:
+      case TerrainAchievementsType.CourseReflection:
+        return section ? `${type}_${section}` : type;
 
       case TerrainAchievementsType.SpecialInterestArea: {
         const sia = achievement.answers?.special_interest_area_selection;

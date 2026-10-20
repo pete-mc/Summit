@@ -97,8 +97,8 @@ describe("badge manifest", () => {
   });
 
   it("resolves a known badge and returns null for an unknown one", () => {
-    expect(getBadgeEntry("camper_award_10")?.file).toBe("aawards/aawards-camperaward-10.svg");
-    expect(getBadgeEntry("Walkabout-100")?.file).toBe("aawards/aawards-walkabout-100.svg");
+    expect(getBadgeEntry("camper_award_10")?.file).toBe("terrain/additional-award-badges/camper_award_10.svg");
+    expect(getBadgeEntry("Walkabout-100")?.file).toBe("terrain/additional-award-badges/walkabout_100.svg");
     expect(getBadgeEntry("not_a_real_badge")).toBeNull();
     expect(getBadgeEntry("")).toBeNull();
   });
