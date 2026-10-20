@@ -13,6 +13,46 @@ You educate the user along the way so they can learn a bit about what's going on
 
 See .claude/DEVENV.md for development environment details.
 
+## GIT REMOTES
+
+| Remote     | Repo                         | Visibility | Purpose                                                                 |
+| ---------- | ---------------------------- | ---------- | ----------------------------------------------------------------------- |
+| `origin`   | Bitbucket `dssayer/terrain-summit` | Private    | User's own working repo — day-to-day `main` is pushed here.             |
+| `github`   | GitHub `Antipodn/Summit`     | Public     | User's public fork — push branches here to open PRs to `upstream`.      |
+| `upstream` | GitHub `pete-mc/Summit`      | Public     | Original Summit; all production releases originate here. Fetch only, never push. |
+
+Typical flow: fetch new releases (tags like `3.2.4`) from `upstream` and merge into `main` → push to `origin`. To contribute a change back, push a branch to `github` and open a PR from `Antipodn/Summit` to `pete-mc/Summit`. Confirm with the user before pushing to `github` or opening a PR (both are public).
+
+### `.claude/` is Bitbucket-only — NEVER on GitHub
+
+The upstream maintainer keeps all LLM tooling out of the repo to avoid collisions between contributors' tools. So:
+
+- `.claude/` (this file, plans, design notes) lives on `main` and is pushed to `origin` (Bitbucket) only.
+- No branch pushed to `github` may contain `.claude/`. The PR branch is `summit-dev` (PR #164 → `pete-mc/Summit` `main`).
+- Code in `src/`/`tests/` must not reference `.claude/` files (plans, DESIGN.md, NAME_RESOLUTION.md, …). Upstream won't have them.
+- The PR branch also keeps upstream's `.gitignore` lines and `.jest-components-results.json` as upstream has them. Our `.claude` ignore lines and our deletion of that Jest file stay on `main` only, so the PR stays focused on features.
+
+Updating the PR branch (do it in a separate worktree, never by checking `summit-dev` out over this one):
+
+1. `git merge main` into `summit-dev`.
+2. `git rm -r -q --cached .claude` (new `.claude/` files on `main` would otherwise ride in silently; modify/delete conflicts on `.claude/` files resolve the same way).
+3. `git checkout upstream/main -- .jest-components-results.json`, and remove the `.claude/*` and `.jest-components-results.json` lines from `.gitignore`.
+4. Commit, then verify before pushing: `git ls-tree -r --name-only HEAD | grep '^\.claude/'` must print nothing.
+5. Confirm with the user, then `git push github summit-dev`.
+
+**Never merge `summit-dev` back into `main`**: its `.claude/` deletion would delete the folder from `main`.
+
+## COMMENTS
+
+Upstream maintainer prefers a near-zero-comment codebase. Rules:
+
+- Make code self-explanatory through naming and small extracted functions first.
+- Keep only gotchas/learnings (non-obvious "why", Terrain/browser quirks, cross-file sync rules), as a short header above the function or constant, prefixed `Gotcha:` or `Learning:` where it helps.
+- No history ("requested live", "previously…", "Stage N"), no restating code, no section banners, no commented-out code. History goes in commit messages / PR descriptions.
+- Tests: keep a one-line "why this test exists" note when it records a past bug.
+
+The original long-form comments (design reasoning, history, rejected approaches) were removed on 2026-10-20. They are preserved at git tag `pre-comment-cleanup` (commit `d05617b`, Summit 3.2.4 + our work). To read them: `git show pre-comment-cleanup:<path>` or `git log -p pre-comment-cleanup -- <path>`.
+
 ## SPECIFICATIONS
 
 See .claude/INITIAL_SPECS.md for detailed specifications. It may not exist yet.
@@ -40,7 +80,7 @@ Items to consider:
 - [x] Pull all the reference repo's into the correct folders, for reference. They should not be under source control.
       Topo-Blazor cloned to `p:\Dev\personal\terrain_summit\reference\Topo-Blazor` (outside `code/`, not tracked).
 - [x] Create a working copy of the original Summit repo, which will be considered the local version for modification.
-      `pete-mc/Summit` cloned directly into `code/` — it IS the working git repo for this project (remote `origin` still points at upstream; no fork/push yet, see `.claude/DEVENV.local.md`).
+      `pete-mc/Summit` cloned directly into `code/` — it IS the working git repo for this project Remotes: see GIT REMOTES below and `.claude/DEVENV.local.md`.
 - [x] Make sure all dependancies are available, or guide the user through their installation.
       Node v24.15.0 / npm 11.12.1 already installed, matches Summit's `engines.node: 24.x`. `npm ci` completed (1232 packages; 27 pre-existing upstream vulnerabilities reported by npm audit — not addressed, flagged for awareness only).
 - [x] Make sure all needs set out in Summit Repo are met.
