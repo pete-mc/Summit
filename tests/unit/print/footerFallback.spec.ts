@@ -120,7 +120,7 @@ describe("split printouts (widths stubbed — jsdom has no layout engine)", () =
     return { doc, result };
   }
 
-  it("repeats only the Member column on every part (user, 2026-10-11)", () => {
+  it("repeats only the Member column on every part", () => {
     expect(getPrintProfile("skill-heatmap").repeatColumns).toBe(1);
     expect(getPrintProfile("peak-award-summary").repeatColumns).toBe(1);
 

@@ -13,9 +13,7 @@ export function saveCached<T>(key: string, value: T): void {
   try {
     const entry: CacheEntry<T> = { cachedAt: Date.now(), value };
     window.localStorage.setItem(cacheKey(key), JSON.stringify(entry));
-  } catch {
-    // local storage is best-effort only
-  }
+  } catch {}
 }
 
 export function loadCached<T>(key: string, maxAgeMs: number): T | null {
@@ -41,12 +39,7 @@ export function loadCached<T>(key: string, maxAgeMs: number): T | null {
   }
 }
 
-/**
- * Clears cache entries. With no filter, clears every Summit cache entry regardless of
- * feature. With a filter, each caller tests its own un-prefixed key (whatever shape it
- * chose when calling saveCached) rather than this module trying to parse every feature's
- * key format.
- */
+/** No filter clears everything. A filter tests each caller's own un-prefixed key. */
 export function clearCache(filter?: (key: string) => boolean): void {
   try {
     const keysToRemove: string[] = [];
@@ -61,7 +54,5 @@ export function clearCache(filter?: (key: string) => boolean): void {
       keysToRemove.push(key);
     }
     keysToRemove.forEach((key) => window.localStorage.removeItem(key));
-  } catch {
-    // local storage is best-effort only
-  }
+  } catch {}
 }

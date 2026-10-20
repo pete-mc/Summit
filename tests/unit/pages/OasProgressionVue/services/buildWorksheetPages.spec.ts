@@ -3,10 +3,7 @@ import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOAS
 import { getCodename } from "@/pages/OasProgression/services/getCodename";
 import { UNASSIGNED_PATROL } from "@/pages/OasProgression/services/filterHeatMapSections";
 
-// firstName/lastName default to a split of memberName purely as test-fixture convenience (most
-// of these tests only care about member identity/ordering, not real name-splitting edge cases —
-// those are covered directly in getMemberDisplayName.spec.ts and filterHeatMapSections.spec.ts).
-// Pass firstName/lastName explicitly when a test needs a specific sort order.
+// Test-fixture convenience only; pass firstName/lastName when sort order matters.
 function makeRow(overrides: Partial<OASProgressionRow> = {}): OASProgressionRow {
   const memberName = overrides.memberName ?? "Amy Scout";
   const [firstName, ...rest] = memberName.split(" ");
@@ -30,10 +27,7 @@ function makeRow(overrides: Partial<OASProgressionRow> = {}): OASProgressionRow 
   };
 }
 
-// selectedPatrols now behaves like every other Worksheets filter: [] means "show nothing," not
-// "show everyone" (see .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md). makeRow's own
-// default member is unassigned (patrolName: null), so default to [UNASSIGNED_PATROL] here;
-// tests using a real patrol name override this explicitly.
+// [] shows nobody, so default to [UNASSIGNED_PATROL] (makeRow's default).
 const DEFAULT_OPTIONS: BuildWorksheetPagesOptions = {
   visibleSkills: ["bushcraft", "bushwalking", "camping"],
   visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -85,7 +79,6 @@ describe("buildWorksheetPages", () => {
   });
 
   it("preserves template (first-seen) order for group bands, and omits an empty group", () => {
-    // Mirrors the real Stage 1 - Bushcraft sheet: a one-row Review and no further Verify.
     const rows = [makeRow({ inputGroup: "Plan", inputId: "p1" }), makeRow({ inputGroup: "Do", inputId: "d1" }), makeRow({ inputGroup: "Review", inputId: "r1" })];
 
     const result = buildWorksheetPages(rows, options());
@@ -146,17 +139,14 @@ describe("buildWorksheetPages", () => {
   });
 
   it("reorders member COLUMNS by patrol when breakByPatrol is on, matching patrolGroups' own order", () => {
-    // Members are columns on a worksheet (the opposite axis from the heat map) — "break by
-    // patrol" must reorder `members` itself, not just label it, or the rendered column order
-    // would silently disagree with the patrol-span header built from patrolGroups.
+    // Gotcha: break-by-patrol must reorder `members`, or columns disagree with the patrol header.
     const rows = [makeRow({ memberId: "m1", memberName: "Amy", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
     const bothPatrols = options({ selectedPatrols: ["Wombats", "Kookaburras"] });
 
     const unordered = buildWorksheetPages(rows, bothPatrols);
-    expect(unordered.members.map((m) => m.memberId)).toEqual(["m1", "m2", "m3"]); // firstName order
+    expect(unordered.members.map((m) => m.memberId)).toEqual(["m1", "m2", "m3"]);
 
     const byPatrol = buildWorksheetPages(rows, { ...bothPatrols, breakByPatrol: true });
-    // Kookaburras before Wombats (alphabetical), m1/m3 keep their relative order within Wombats.
     expect(byPatrol.members.map((m) => m.memberId)).toEqual(["m2", "m1", "m3"]);
     expect(byPatrol.patrolGroups?.flatMap((g) => g.members.map((m) => m.memberId))).toEqual(byPatrol.members.map((m) => m.memberId));
   });
@@ -166,8 +156,7 @@ describe("buildWorksheetPages", () => {
 
     const result = buildWorksheetPages(rows, options());
 
-    // OAS_SKILLS order is bushcraft, bushwalking, camping, ... — camping sorts alphabetically
-    // before bushcraft, so this only passes if OAS_SKILLS order (not alpha) is actually used.
+    // Only passes if OAS_SKILLS order (not alphabetical) is used.
     expect(result.pages.map((p) => p.skill)).toEqual(["bushcraft", "camping"]);
   });
 
@@ -249,8 +238,6 @@ describe("buildWorksheetPages", () => {
   });
 
   it("stamps every cell awarded across a fully awarded stage, and carries that through to the worksheet", () => {
-    // Mirrors applyAchievementsToMatrix's own behaviour (buildOASProgressionRows.ts line ~192):
-    // an awarded achievement stamps every cell for that member/stage, regardless of inputId match.
     const rows = [makeRow({ memberId: "m1", inputId: "a1", awarded: true, answered: true, date: "2024-02-03" }), makeRow({ memberId: "m1", inputId: "a2", awarded: true, answered: true, date: "2024-02-03" })];
 
     const result = buildWorksheetPages(rows, options());
@@ -259,9 +246,7 @@ describe("buildWorksheetPages", () => {
     expect(rowsOut.every((r) => r.cells[0].awarded && r.cells[0].answered)).toBe(true);
   });
 
-  // Members on different template versions of one stage — .claude/OASProgression/PLAN_TEMPLATE_VERSIONS.md.
   describe("mixed template versions", () => {
-    // m1 started on the older version, which still has "navigation"; m2 is on the latest, which dropped it.
     const mixedRows = (m2Awarded = false) => [
       makeRow({ memberId: "m1", memberName: "Amy", inputId: "activities" }),
       makeRow({ memberId: "m1", memberName: "Amy", inputId: "navigation" }),
@@ -298,10 +283,7 @@ describe("splitPageIntoColumnBatches", () => {
   });
 
   it("splits into EVENLY sized batches, not maxColumns-sized ones with a lopsided remainder", () => {
-    // 20 members / 8-max -> ceil(20/8) = 3 batches, each sized ceil(20/3) = 7 (so 7/7/6), not
-    // 8/8/4 — an uneven last batch would otherwise end up a different, wider column width than its
-    // siblings once each batch's width is computed from its own member count (requested live:
-    // split tables should line up, not render at mismatched widths).
+    // Regression: 7/7/6, not 8/8/4, so split tables line up.
     const page = makePage(20);
 
     const batches = splitPageIntoColumnBatches(page, 8);
@@ -313,8 +295,6 @@ describe("splitPageIntoColumnBatches", () => {
   });
 
   it("keeps cells index-aligned with each batch's own member slice", () => {
-    // Member index 1 (of 20) is the only one with a date — it must land in batch 0 at its own
-    // local index 1, not drift when sliced out of the full 20-member row.
     const page = makePage(20);
 
     const batches = splitPageIntoColumnBatches(page, 8);
@@ -404,8 +384,6 @@ describe("transposeWorksheetPage", () => {
 
     const transposed = transposeWorksheetPage(page);
 
-    // Kookaburras before Wombats (alphabetical) — same order buildWorksheetPages already
-    // guarantees for page.members; transposeWorksheetPage must not reorder it.
     expect(transposed.rows.map((r) => r.memberId)).toEqual(["m2", "m1", "m3"]);
   });
 
@@ -423,9 +401,6 @@ describe("transposeWorksheetPage", () => {
 });
 
 describe("splitTransposedPageIntoColumnBatches", () => {
-  // One member, `statementCount` distinct I-Statements (one per group so groupSpans has multiple
-  // entries to exercise clipping) — the column axis is what this splitter bounds; members (rows)
-  // are irrelevant to its own logic but still carried through to confirm they're never filtered.
   function makeTransposedPage(statementCount: number, memberCount = 1): ReturnType<typeof transposeWorksheetPage> {
     const rows: ReturnType<typeof makeRow>[] = [];
     for (let m = 0; m < memberCount; m++) {
@@ -466,8 +441,6 @@ describe("splitTransposedPageIntoColumnBatches", () => {
   });
 
   it("keeps cells index-aligned with each batch's own column slice", () => {
-    // Column index 1 (of 20) is the only one with a date — it must land in batch 0 at its own
-    // local index 1, not drift when sliced out of the full 20-column row.
     const page = makeTransposedPage(20);
 
     const batches = splitTransposedPageIntoColumnBatches(page, 8);
@@ -477,8 +450,6 @@ describe("splitTransposedPageIntoColumnBatches", () => {
   });
 
   it("clips groupSpans to each batch's own column range, dropping spans with no overlap", () => {
-    // 20 single-column groups (Group0..Group19), split into batches of <=8: batch 0 gets columns
-    // [0,8) — Group0..Group7, one column each; batch 2 gets [16,20) — Group16..Group19.
     const page = makeTransposedPage(20);
 
     const batches = splitTransposedPageIntoColumnBatches(page, 8);
@@ -489,8 +460,6 @@ describe("splitTransposedPageIntoColumnBatches", () => {
   });
 
   it("recomputes a group span's startColumnIndex/columnCount to the overlapping portion when it straddles a batch boundary", () => {
-    // One single group spanning all 20 columns — every batch must see it clipped to ITS OWN local
-    // range, starting at local index 0, with columnCount equal to that batch's own column count.
     const rows = Array.from({ length: 20 }, (_, i) => makeRow({ memberId: "m1", inputId: `a${i}`, inputGroup: "Plan" }));
     const page = transposeWorksheetPage(buildWorksheetPages(rows, options()).pages[0]);
 

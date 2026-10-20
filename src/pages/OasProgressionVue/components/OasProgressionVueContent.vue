@@ -4,11 +4,8 @@
       <div class="oas-progression-view-row">
         <span v-if="loadingStreams.size > 0">Loading skills {{ streamsDone }}/{{ totalStreams }}...</span>
         <v-spacer></v-spacer>
-        <!-- Exports need something to act on; hidden until a stream lands. -->
         <template v-if="hasContent">
-          <!-- Summary, Heatmap and Table print through summit-print (.claude/Print/PLAN.md). -->
           <template v-if="filters.viewMode === 'summary'">
-            <!-- Formatted spreadsheet through summit-excel (.claude/Excel/PLAN.md); needs a resolved section. -->
             <SummitPillButton v-if="peakAwardRequirement" :loading="isExcelExporting" :disabled="isExcelExporting" @click="onSummaryExcelExportClick">Excel Export</SummitPillButton>
             <SummitPrintButton profile="peak-award-summary" :target="summaryPrintTarget" :meta="summaryPrintMeta" />
           </template>
@@ -25,36 +22,14 @@
         <v-btn icon title="Refresh data" :loading="isReloading" :disabled="isReloading" @click="onReloadAllClick"><v-icon>mdi-refresh</v-icon></v-btn>
       </div>
 
-      <!--
-        Terrain's own tab control (see .claude/OASWorksheets/PLAN_STAGE_2.md) — a plain Vuetify
-        v-tabs, matching the classes/props read off Terrain's live Programming page tab strip.
-        Bound to filters.viewMode by explicit string :value/@change rather than v-model, which
-        would model a numeric index and create a second source of truth for the same thing (see
-        PLAN_STAGE_2.md §3). A full-width row of its own, below the export/refresh row — not
-        another item inside .oas-progression-view-row, which is right-aligned.
-
-        IMPORTANT: v-tab's own identity prop is `tab-value`, NOT `value` — `value` on v-tab is a
-        read-only COMPUTED (falls back to `to`/`href`, else undefined) with no corresponding prop,
-        so a plain `value="heatmap"` attribute is silently dropped and every tab's effective
-        identity becomes its index instead. That made every tab compare against filters.viewMode's
-        string and never match, so Vuetify's "mandatory" selection logic always fell back to the
-        same tab regardless of which one was clicked. See VTab.js's `value` computed and
-        VItemGroup.js's `getValue()` (`item.value === undefined ? i : item.value`) for why.
-      -->
+      <!-- Gotcha: v-tab's identity prop is `tab-value`, NOT `value`. `value` is silently dropped and every tab falls back to its index. -->
       <v-tabs v-if="hasContent" :value="filters.viewMode" grow height="40" color="primary" background-color="grey lighten-5" @change="onViewModeTabChange">
         <v-tab tab-value="summary">Summary</v-tab>
         <v-tab tab-value="heatmap">Heatmap</v-tab>
         <v-tab tab-value="table">Table</v-tab>
-        <!-- Labelled "Worksheets", not "OAS Worksheets" — the page itself is already titled OAS
-             Progression, so the prefix would be redundant here (DEV_NOTES). -->
         <v-tab tab-value="worksheets">Worksheets</v-tab>
       </v-tabs>
 
-      <!--
-        Unlike the other two pages this bar sits ALONGSIDE the content rather than replacing it:
-        the nine skills arrive one at a time and each renders as it lands. See `hasContent` in
-        the .ts for why hiding the body here would be a regression.
-      -->
       <SummitLoadingState
         :state="sharedLoadState"
         :done="streamsDone"
@@ -66,12 +41,6 @@
       <div v-if="exportFeedback" role="status" class="data-grid-export-feedback">{{ exportFeedback }}</div>
 
       <template v-if="hasContent && filters.viewMode === 'summary'">
-        <!--
-          No PeakAwardRequirement means Terrain hasn't resolved a section for the active profile
-          (TerrainState.getSectionName() returned nothing) — shown instead of guessing a section
-          and displaying a confidently wrong Peak Award gap. See peakAwardRequirement's own
-          comment in OasProgressionVueContent.ts.
-        -->
         <p v-if="!peakAwardRequirement" class="oas-peak-award-summary-no-section">Could not determine this unit's section.</p>
         <template v-else>
           <OASPeakAwardSummaryFiltersVue
@@ -145,20 +114,7 @@
 </script>
 
 <style scoped>
-/*
- * Single type scale for the whole OasProgressionVue page (this component plus
- * OASProgressionFiltersVue, OASProgressionTableVue, OASHeatMapVue) — CSS custom properties
- * inherit down through the DOM regardless of Vue's scoped-CSS/child-component boundaries, so
- * every descendant can reference these instead of each file hardcoding its own copy of "18px" or
- * "NunitoSans-regular, arial, sans-serif". Previously every heading/body font-size and font-family
- * across the three files was set independently by reading one live DevTools value at a time for
- * one specific element, with no shared source of truth tying them together — which is how a
- * <legend> and a <label> both ended up at "the same" font-size on paper while looking completely
- * different in practice (a layout bug, not a size bug, but only found because there was no single
- * place to check "should these even match"). Two tiers only, matching what's actually needed:
- *   heading — filter-row labels (Member/Skills/Patrol/Stage/Sort by/Display)
- *   body    — table cells (both views) and filter/select input text
- */
+/* The page's one type scale. Custom properties inherit through scoped child components, so they all use these. */
 .oas-vue-content {
   --oas-vue-font-size-heading: 18px;
   --oas-vue-font-size-body: 14px;
@@ -166,19 +122,7 @@
   padding: 8px 0;
 }
 
-/*
- * Vuetify's v-tab defaults to uppercase + letter-spaced labels; Terrain's own Programming page
- * tab strip (the reference this control is copied from — see .claude/OASWorksheets/
- * PLAN_STAGE_2.md §1) shows sentence-case labels ("Upcoming activities", not "UPCOMING
- * ACTIVITIES") in the captured markup. ::v-deep is required since .v-tab is Vuetify-internal
- * render output this template doesn't write directly.
- *
- * NOT YET VERIFIED LIVE — the capture confirms the rendered text case but not whether that is
- * Vuetify's own default being overridden by Terrain's page CSS (in which case this is redundant,
- * since Terrain's CSS already wins here the same way) or something this override is actually
- * needed for. Confirm against the live Programming page in DevTools per PLAN_STAGE_2.md's
- * verification section, and delete this comment once checked either way.
- */
+/* Terrain's tabs use sentence case. Not yet verified live whether this override is needed. */
 .oas-vue-content ::v-deep .v-tab {
   text-transform: none;
   letter-spacing: normal;

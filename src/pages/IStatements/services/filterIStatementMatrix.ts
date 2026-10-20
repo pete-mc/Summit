@@ -25,11 +25,7 @@ export function cellLookupKey(skill: string, branch: string, stage: number): str
   return skill + "|" + branch + "|" + stage;
 }
 
-/**
- * Order matters and is load-bearing (see .claude/I_Statement/PLAN_STAGE_4.md):
- * filter -> hide rows -> hide stage columns -> hide groups. Hiding rows can empty a
- * column, which is intended; the reverse cannot happen, so one pass suffices.
- */
+/** Gotcha: order matters: filter → hide rows → hide stage columns → hide groups. Hiding rows can empty a column. */
 export function filterIStatementMatrix(matrix: IStatementMatrix, filters: IStatementFilters): FilteredMatrix {
   const skills = new Set(filters.skills);
   const low = Math.min(filters.stageFrom, filters.stageTo);
@@ -55,7 +51,6 @@ export function filterIStatementMatrix(matrix: IStatementMatrix, filters: IState
 
   const rows = filters.hideEmptyRows ? rowsWithVisibleCells.filter((entry) => entry.visibleCount > 0).map((entry) => entry.row) : rowsWithVisibleCells.map((entry) => entry.row);
 
-  // Recomputed against surviving rows only — a row hidden above can empty a column.
   const occupiedCells = new Set<string>();
   rows.forEach((row) => {
     row.cells.forEach((cell) => {

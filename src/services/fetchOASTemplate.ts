@@ -3,9 +3,7 @@ import { TerrainState, createLogger } from "@/helpers";
 
 const logger = createLogger("fetchOASTemplate");
 
-// Real values look like "oas/bushcraft/pioneering/4/latest.json" — a bare relative path
-// segment, always sourced from Terrain's own OASTree response. This guards the fetch URL
-// in case a future caller ever passes through something less trusted.
+// Guards the fetch URL. Real values look like "oas/bushcraft/pioneering/4/latest.json".
 function isValidTemplateLink(templateLink: string): boolean {
   return templateLink.length > 0 && !templateLink.includes("://") && !templateLink.startsWith("/") && !templateLink.split("/").includes("..");
 }

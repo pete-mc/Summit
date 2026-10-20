@@ -58,11 +58,7 @@ describe("filterMembersByPatrol", () => {
     expect(filterMembersByPatrol([noPatrol], ["Kookaburras"])).toEqual([]);
   });
 
-  // UNASSIGNED_PATROL is the Patrol filter dropdown's explicit "Unassigned" item — selecting it
-  // should match members with no patrol, same as selecting a real patrol name matches members
-  // in that patrol. See .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md's note on the
-  // Patrol filter fix (a unit with one named patrol plus unassigned members previously had no
-  // way to filter to "just the unassigned ones", or even to combine both).
+  // Regression: there was no way to filter to just the unassigned members.
   it("matches members with no patrol when UNASSIGNED_PATROL is selected", () => {
     const kooka = makeMemberRow({ memberId: "m1", patrolName: "Kookaburras" });
     const noPatrol = makeMemberRow({ memberId: "m2", patrolName: null });
@@ -269,16 +265,13 @@ describe("sortMembers", () => {
     expect(result.map((m) => m.memberId)).toEqual(["m2", "m1"]);
   });
 
-  // Regression: the old implementation re-split a combined "first last" string on whitespace,
-  // which was lossy for a multi-word last name (e.g. only "Berg" would be recovered from "Van
-  // Der Berg"). Sorting on the real, separate lastName field fixes this.
+  // Regression: re-splitting "first last" lost multi-word last names ("Van Der Berg").
   it("sorts correctly on a multi-word last name, unlike the old whitespace-split approach", () => {
     const vanDerBerg = makeMemberRow({ memberId: "m1", firstName: "Anne", lastName: "Van Der Berg" });
     const anderson = makeMemberRow({ memberId: "m2", firstName: "Zara", lastName: "Anderson" });
 
     const result = sortMembers([vanDerBerg, anderson], "lastName");
 
-    // "Anderson" < "Van Der Berg" alphabetically — would have wrongly sorted as "Berg" < "Anderson" if lastName were re-derived from splitting a combined string.
     expect(result.map((m) => m.memberId)).toEqual(["m2", "m1"]);
   });
 

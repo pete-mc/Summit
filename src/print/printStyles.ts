@@ -1,13 +1,4 @@
-/**
- * Base print stylesheet shared by every table Summit prints (see .claude/Print/PLAN.md).
- *
- * Kept as a string rather than a .css import because it is written straight into the isolated
- * print document — Summit's own content-script CSS and Vue scoped styles never reach that
- * document, which is the point: nothing on Terrain's page can leak into the printout.
- *
- * Font: SummitPrintSans is Terrain's own Nunito Sans, re-declared inside the print document by
- * printFonts.ts with real weights. Arial is the fallback if Terrain's fonts can't be found.
- */
+/** A string, not a .css import: it's written into the isolated print document, which nothing on Terrain's page can reach. */
 export const PRINT_FONT_STACK = '"SummitPrintSans", arial, sans-serif';
 
 export const BASE_PRINT_CSS = `
@@ -31,7 +22,6 @@ html, body {
   font: 9pt/1.3 var(--summit-print-font);
 }
 
-/* ---------- First-page header (in normal flow, so page 1 only) ---------- */
 .summit-print-header {
   display: flex;
   align-items: center;
@@ -69,17 +59,13 @@ html, body {
 .summit-print-meta dt { display: inline; font-weight: 600; }
 .summit-print-meta dd { display: inline; margin: 0 0 0 1.5mm; }
 
-/* ---------- Table ---------- */
-/* 1pt short of full width: with collapsed borders, half of the outer border sits OUTSIDE the
-   table's box, so a 100%-wide table puts its right edge in the page margin, where it isn't drawn
-   (right edge missing on Present Awards, A4 portrait/normal margins, 2026-10-11). */
+/* Gotcha: 1pt short of full width. With collapsed borders half the outer border sits outside the box, so 100% loses the right edge in the margin. */
 table.summit-print-table {
   width: calc(100% - 1pt);
   border-collapse: collapse;
 }
 table.summit-print-table.summit-print-fixed { table-layout: fixed; }
 
-/* Repeat the (multi-row) header on every page, never split a row */
 table.summit-print-table thead { display: table-header-group; }
 table.summit-print-table tr { break-inside: avoid; page-break-inside: avoid; }
 
@@ -97,13 +83,10 @@ table.summit-print-table th {
   font-size: 8.5pt;
   line-height: 1.2;
 }
-/* No zebra striping: rows print on white (user, 2026-10-11). Alternating grey obscured the
-   patrol title rows when "Break by patrol" was on. A profile that wants striping adds its own. */
+/* No striping: grey hid the patrol title rows. */
 table.summit-print-table tbody td { background: #fff; }
 
-/* ---------- Fallback footer (browsers without page-margin boxes) ----------
-   A <tfoot> row: repeated at the foot of the table on every printed page. No page numbers —
-   CSS page counters only work in margin boxes. See .claude/Print/PLAN_STAGE_3.md. */
+/* Fallback footer (no page-margin boxes): no page numbers, since counters only work in margin boxes. */
 table.summit-print-table tfoot.summit-print-tfoot { display: table-footer-group; }
 table.summit-print-table tfoot.summit-print-tfoot td {
   border: 0;
@@ -117,7 +100,6 @@ table.summit-print-table tfoot.summit-print-tfoot td {
 .summit-print-foot { display: flex; justify-content: space-between; gap: 4mm; }
 .summit-print-foot-center { flex: 1 1 auto; text-align: center; }
 
-/* ---------- Wide tables split into column bands ---------- */
 .summit-print-band + .summit-print-band { break-before: page; }
 .summit-print-band-label {
   margin: 0 0 2mm;
@@ -126,6 +108,5 @@ table.summit-print-table tfoot.summit-print-tfoot td {
   color: #333;
 }
 
-/* Screen-only bits that may be cloned from Vuetify */
 .v-data-footer, .v-data-table-header__icon, .v-ripple__container { display: none !important; }
 `;

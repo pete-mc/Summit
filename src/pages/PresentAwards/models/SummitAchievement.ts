@@ -12,11 +12,7 @@ export default class SummitAchievement {
   dateAwarded: string;
   presented: string;
   previouslyPresented: boolean;
-  /**
-   * Lower-case key identifying which badge artwork this award should show, e.g. "bushwalking" for
-   * an OAS award or "milestone" for a milestone. Consumed by getBadgeIconUrl(); award types with
-   * no artwork yet fall back to a placeholder rather than rendering nothing.
-   */
+  /** Key into src/shared/badgeManifest.ts, e.g. "bushwalking" or "milestone_scout_2". */
   badgeKey: string;
 
   constructor(
@@ -40,21 +36,9 @@ export default class SummitAchievement {
   }
 
   /**
-   * Which badge artwork identifies this award. Keys match src/shared/badgeManifest.ts.
-   *
-   * Each award type is keyed as narrowly as its artwork varies, because a key coarser than the
-   * artwork makes different badges share one icon:
-   *
-   * - OAS → branch, falling back to stream ("bushwalking"); artwork is per skill, not per stage
-   *   or sub-branch. See the OAS case below for why both are consulted.
-   * - Additional awards → the award id ("walkabout_100"); the bare type would collapse all 32.
-   * - Milestones → section AND stage ("milestone_scout_2"); Terrain ships distinct artwork for
-   *   each of the 5 sections × 3 stages.
-   * - Peak awards → section ("peak_award_venturer"); artwork differs per section.
-   * - SIAs → the selected SIA id ("sia_environment"), which lives in the answers, not the meta.
-   *
-   * Every branch falls back to the bare achievement type when its metadata is missing, so an
-   * unexpected payload degrades to a placeholder rather than throwing.
+   * Gotcha: key each type exactly as finely as its artwork varies, or different badges share one icon.
+   * Additional awards → award id; milestones → section + stage; peak awards → section; SIAs → the selected SIA (in answers).
+   * Missing metadata falls back to the bare type (a placeholder), never a throw.
    */
   private static getBadgeKey(achievement: TerrainAchievements): string {
     const type = String(achievement.type ?? "").toLowerCase();
@@ -64,15 +48,8 @@ export default class SummitAchievement {
 
     switch (achievement.type) {
       case TerrainAchievementsType.OutdoorAdventureSkill: {
-        // The STREAM is the skill (paddling); the BRANCH is either the same value on trunk stages
-        // or a sub-branch once the tree forks (canoeing, sea-kayaking, white-water-rafting…).
-        // Scouts Australia awards no badge for a sub-branch — a branch wears its parent skill's
-        // badge — and Terrain ships artwork for the nine skills only.
-        //
-        // So: prefer the branch (it equals the skill on trunk stages, and keeps working if
-        // artwork for a sub-branch is ever added), but fall back to the stream when the branch has
-        // no badge of its own. Deriving it this way rather than from a hardcoded sub-branch list
-        // means a sub-branch Terrain adds later still resolves, with nothing to keep in sync.
+        // Learning: sub-branches (e.g. sea-kayaking) wear their parent skill's badge. Prefer the branch if it has
+        // artwork, else the stream, so new Terrain sub-branches resolve with no list to maintain.
         const branchKey = meta?.branch ? normalise(meta.branch) : null;
         if (branchKey && getBadgeEntry(branchKey)?.file) {
           return branchKey;
@@ -92,8 +69,6 @@ export default class SummitAchievement {
         return section ? `peak_award_${section}` : type;
 
       case TerrainAchievementsType.SpecialInterestArea: {
-        // `answers` is a loose union (string | string[] | boolean | date range), so narrow to a
-        // string before using it as a key — a malformed answer falls back to the type.
         const sia = achievement.answers?.special_interest_area_selection;
         return typeof sia === "string" && sia ? normalise(sia) : type;
       }
@@ -103,10 +78,7 @@ export default class SummitAchievement {
     }
   }
 
-  /**
-   * The stored presentation date, or "" when not presented. The Present Awards table's "Date
-   * Presented" column sorts on this; `presented` itself (date or "No") drives its Yes/No column.
-   */
+  /** "" when not presented. */
   get presentedDate(): string {
     return this.presented !== "No" ? this.presented : "";
   }

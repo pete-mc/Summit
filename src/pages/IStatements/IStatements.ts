@@ -8,12 +8,7 @@ import { TerrainRootState } from "@/types/terrainState";
 
 const logger = createLogger("IStatements");
 
-/**
- * Mirrors OasProgressionVue.ts: the content component is mounted as a second, independent
- * Vue instance built from Summit's own Vuetify-registered `vue`, because Terrain's Vue
- * constructor (which renders this outer SFC) has no Vuetify components registered on it.
- * See that file, and .claude/OASProgression/PLAN_VUE.md, for the full reasoning.
- */
+/** Gotcha: content mounts as a second Vue instance, because Terrain's Vue has no Vuetify components (see OasProgressionVue.ts). */
 interface ContentInstance {
   matrix: IStatementMatrix | undefined;
   loadState: string;
@@ -48,9 +43,7 @@ export default defineComponent({
     },
   },
   mounted() {
-    // Mount before loading: loadMatrix() starts reporting progress as soon as the (fast,
-    // often cached) tree fetches resolve, and renderContent() silently no-ops until the
-    // content instance exists — so loading first leaves the page blank until it finishes.
+    // Gotcha: mount before loading. renderContent() no-ops until the instance exists.
     this.mountContentComponent();
     this.loadMatrix();
     (window.$nuxt.$store.state as TerrainRootState).global.breadcrumbs = [
@@ -70,8 +63,6 @@ export default defineComponent({
         this.progressTotal = 0;
 
         const matrix = await buildIStatementMatrix(OAS_STREAMS, (done, total) => {
-          // Total is only known once the trees resolve; until then the bar stays
-          // indeterminate rather than sitting at 0% or jumping as the denominator grows.
           this.loadState = "loading-templates";
           this.progressDone = done;
           this.progressTotal = total;
@@ -89,8 +80,7 @@ export default defineComponent({
       await this.loadMatrix();
     },
     mountContentComponent() {
-      // `any` here sidesteps TS2589 ("type instantiation is excessively deep") from
-      // Vue.extend's inferred type — same workaround, and same reason, as OasProgressionVue.ts.
+      // Gotcha: `any` avoids TS2589 from Vue.extend's inferred type.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const ContentApp: any = Vue.extend(IStatementsContent);
       this.contentInstance = new ContentApp({

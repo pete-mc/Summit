@@ -23,11 +23,6 @@ export default defineComponent({
     isLoading(): boolean {
       return this.loadState === "loading-trees" || this.loadState === "loading-templates";
     },
-    /**
-     * Collapses this page's four load states onto the three the shared indicator knows about.
-     * The two loading phases differ only in whether counts are available, which the indicator
-     * decides for itself from the props it is given.
-     */
     sharedLoadState(): "loading" | "ready" | "error" {
       if (this.isLoading) return "loading";
       return this.loadState === "error" ? "error" : "ready";

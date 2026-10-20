@@ -3,19 +3,12 @@ import * as path from "path";
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 
-/**
- * OASWorksheetFiltersVue.ts is NOT imported live here: its template is what actually exercises
- * its v-if gating, same constraint as OASProgressionFiltersVue's own render-contract test (see
- * that file's comment for the full "why" — no @vue/test-utils in this build).
- */
+/** Gating lives in the template (no @vue/test-utils), so these are source-text checks. */
 describe("OASWorksheetFiltersVue wiring and gating rules", () => {
   const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASWorksheetFiltersVue.ts"), "utf8");
   const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASWorksheetFiltersVue.vue"), "utf8");
 
-  // Added per DEV_NOTES.md: "Add exact same Patrol filter as per Heatmap, with same defaults" —
-  // see .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md. Same control, same gating
-  // computed, same binding pattern as OASProgressionFiltersVue.vue's own Patrol select, but
-  // against worksheetSelectedPatrols (independent state from the Heat Map's selectedPatrols).
+  // Same Patrol control as the Heat Map, bound to its own worksheetSelectedPatrols.
   it("has a Patrol multi-select gated on canFilterByPatrol, bound to filters.worksheetSelectedPatrols", () => {
     expect(templateSource).toContain('v-if="canFilterByPatrol"');
     expect(templateSource).toContain(':value="filters.worksheetSelectedPatrols || []"');

@@ -88,11 +88,7 @@
   margin: 0;
 }
 
-/*
- * Width is set explicitly because a <legend> inherits `width: 100%` from a page-level rule
- * written for the React heat-map's different layout, which stretches it across the filter row.
- * Same trap documented in .claude/DESIGN.md.
- */
+/* Gotcha: a page-level rule gives <legend> width: 100%. */
 .istatement-display-legend {
   width: auto;
   font-size: var(--oas-vue-font-size-heading);

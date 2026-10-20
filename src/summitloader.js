@@ -4,11 +4,8 @@
     document.documentElement?.setAttribute("data-summit-version", summitVersion);
   }
 
-  // summit.js is injected into and runs in the page's own JS context (the "main world"), which
-  // has no access to chrome.runtime (MV3 does not expose it there) — so any extension-relative
-  // URL the page-world code needs (e.g. bundled images) must be resolved here, in the isolated
-  // content-script world where chrome.runtime IS available, and handed to the page via a DOM
-  // attribute rather than a JS global (globals set here are not visible to the injected script).
+  // Gotcha: summit.js runs in the page's MAIN world, which has no chrome.runtime. Resolve extension URLs here
+  // and pass them on a DOM attribute; JS globals set here aren't visible to the page.
   document.documentElement?.setAttribute("data-summit-extension-url", chrome.runtime.getURL(""));
 
   const script = document.createElement("script");

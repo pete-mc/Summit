@@ -2,16 +2,10 @@ import type { PrintProfile } from "../summitPrint";
 import { columnCount } from "../printFit";
 import { SQUARE_COLOUR_PROPS, stripInlineSizes } from "./heatmapShared";
 
-/**
- * OAS Progression → Summary tab (OASPeakAwardSummaryVue).
- * Columns: Member | Progress ("X of Y") | % | Bushcraft | Bushwalking | Camping | Progressions | Special
- *
- * Special only exists for sections with a Special condition (hasSpecial), so the widths are
- * worked out from the table actually being printed rather than fixed (PLAN.md I6).
- */
+/** Widths depend on the printed table, because the Special column only exists for some sections. */
 const WIDTHS_WITH_SPECIAL = [14, 8, 6, 12, 12, 12, 23, 13];
 
-/** Exported for tests. Unknown column counts fall back to automatic widths. */
+/** Unknown column counts fall back to automatic widths. */
 export function peakAwardSummaryWidths(table: HTMLTableElement): number[] | null {
   const n = columnCount(table);
   if (n === WIDTHS_WITH_SPECIAL.length) return WIDTHS_WITH_SPECIAL;
@@ -22,28 +16,22 @@ export function peakAwardSummaryWidths(table: HTMLTableElement): number[] | null
 const peakAwardSummary: PrintProfile = {
   name: "peak-award-summary",
   tableSelector: ".oas-heatmap-data-table table",
-  // Portrait matches the old export's choice for this narrower table; the user can change it.
   defaults: { pageSize: "A4", orientation: "portrait", margins: "normal", layout: "fit" },
 
-  // No "Section" meta line: the section logo and the unit name already say it (user, 2026-10-10).
+  // No "Section" line: the logo and unit name already say it.
   header: {
     title: "OAS Progression - Summary for Peak Award",
   },
 
   columnWidths: peakAwardSummaryWidths,
-  // Only Member repeats on split parts (user, 2026-10-11, "at this time"). Stated rather than left
-  // to the module default, so the choice is visible here.
   repeatColumns: 1,
 
-  // Colours and shapes come from the live screen CSS so the print matches the app; sizes are set
-  // in print units below instead.
   copyComputed: [
     { selector: ".oas-heatmap-square", props: SQUARE_COLOUR_PROPS },
     { selector: ".oas-heatmap-stage-bar", props: ["background-color", "border-radius"] },
   ],
 
   transform(table) {
-    // Screen pixel sizes (the bar's inline width from barWidthPx, square sizes) don't belong on paper.
     stripInlineSizes(table, ".oas-heatmap-stage-bar, .oas-heatmap-square");
   },
 

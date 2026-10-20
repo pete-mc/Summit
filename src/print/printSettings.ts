@@ -1,12 +1,6 @@
 import type { PageSettings } from "./summitPrint";
 
-/**
- * The print dialog's choices (page size, orientation, margins, layout), remembered per profile.
- *
- * localStorage, not chrome.storage: Summit's page code runs in Terrain's MAIN world, where
- * chrome.storage doesn't exist (.claude/Print/PLAN.md I3). Best-effort, same pattern as
- * OASProgressionVueFilterPersistence.ts — a failure just means the defaults are used next time.
- */
+/** Gotcha: localStorage, not chrome.storage, which doesn't exist in Terrain's MAIN world. */
 const PRINT_SETTINGS_KEY = "summit.print.settings";
 
 type StoredSettings = Record<string, Partial<PageSettings>>;
@@ -32,7 +26,5 @@ export function savePrintSettings(profile: string, settings: PageSettings): void
     const all = loadAll();
     all[profile] = { pageSize: settings.pageSize, orientation: settings.orientation, margins: settings.margins, layout: settings.layout };
     window.localStorage.setItem(PRINT_SETTINGS_KEY, JSON.stringify(all));
-  } catch {
-    // local storage is best-effort only
-  }
+  } catch {}
 }

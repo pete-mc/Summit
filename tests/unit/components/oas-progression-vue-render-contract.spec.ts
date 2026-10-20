@@ -3,14 +3,7 @@ import * as path from "path";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
 
-/**
- * OasProgressionVueContent.ts is NOT imported live here (unlike VueStage 1's original version
- * of this test) — as of VueStage 2 it imports OASHeatMapVue.vue, and Jest has no .vue transform
- * (see PLAN_VUESTAGE_1.md's "Deviations" note): vue-loader merges an SFC's external <script src>
- * with its own template at webpack build time only, so `.ts` files with a `.vue` import in their
- * chain can't be `require()`d directly under ts-jest. Testing this component's props/wiring
- * source-side (as below) avoids needing new Jest infrastructure mid-build.
- */
+/** Learning: it imports .vue files, which ts-jest can't load, so its wiring is checked source-side. */
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 
@@ -57,13 +50,13 @@ describe("OasProgressionVueContent render contract", () => {
     });
   });
 
-  it("renders OASHeatMapVue (VueStage 2's real heat-map layout), passing through the fetched data", () => {
+  it("renders OASHeatMapVue, passing through the fetched data", () => {
     const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(source).toContain("<OASHeatMapVue");
     expect(source).toContain(':items="items"');
   });
 
-  it("renders OASProgressionFiltersVue (VueStage 3's filter bar) and wires its filter state into OASHeatMapVue's props", () => {
+  it("renders OASProgressionFiltersVue and wires its filter state into OASHeatMapVue's props", () => {
     const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(source).toContain("<OASProgressionFiltersVue");
     expect(source).toContain('@update:filters="onFiltersUpdate"');
@@ -119,12 +112,10 @@ describe("OasProgressionVueContent render contract", () => {
     expect(source).not.toMatch(/<v-[a-z]/);
   });
 
-  it("Heatmap prints through summit-print's SummitPrintButton, asking the heat map for its table rather than reaching into its refs (.claude/Print/PLAN_STAGE_2.md)", () => {
+  it("Heatmap prints through summit-print's SummitPrintButton, asking the heat map for its table rather than reaching into its refs", () => {
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
 
-    // getExportTable() rather than $refs.exportTable: a ref on a v-data-table resolves to the
-    // component instance, not an element, and that failure is silent — the printout would find no
-    // table. The method keeps the caller working whichever way the heat map renders its table.
+    // Gotcha: a ref on v-data-table is the component, not the <table>, and fails silently.
     expect(tsSource).toContain("heatMapPrintTarget()");
     expect(tsSource).toContain("?.getExportTable()");
     expect(tsSource).not.toContain("$refs.exportTable");
@@ -135,12 +126,11 @@ describe("OasProgressionVueContent render contract", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(templateSource).toContain('ref="heatMap"');
     expect(templateSource).toMatch(/<template v-else-if="filters\.viewMode === 'heatmap'">[\s\S]*?<SummitPrintButton profile="skill-heatmap" :target="heatMapPrintTarget"[\s\S]*?<\/template>/);
-    // The old snapdom export is gone (.claude/Print/PLAN_STAGE_5.md §B).
     expect(templateSource).not.toContain("onPdfExportClick");
     expect(tsSource).not.toContain("onPdfExportClick");
   });
 
-  it("Heatmap tab has its own formatted Excel Export beside Print / PDF, built from the heat map's rendered view (.claude/Excel/PLAN_STAGE_2.md)", () => {
+  it("Heatmap tab has its own formatted Excel Export beside Print / PDF, built from the heat map's rendered view", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(templateSource).toMatch(/<template v-else-if="filters\.viewMode === 'heatmap'">[\s\S]*?@click="onHeatmapExcelExportClick">Excel Export<\/SummitPillButton>[\s\S]*?<SummitPrintButton profile="skill-heatmap"/);
 
@@ -149,10 +139,8 @@ describe("OasProgressionVueContent render contract", () => {
     expect(tsSource).toContain("heatMap.getExportView()");
   });
 
-  it("Summary tab prints through summit-print's SummitPrintButton, asking the summary for its table via getExportTable() (.claude/Print/PLAN_STAGE_1.md)", () => {
+  it("Summary tab prints through summit-print's SummitPrintButton, asking the summary for its table via getExportTable()", () => {
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
-    // Asked for rather than reached into: a ref on a v-data-table resolves to the component
-    // instance, not an element.
     expect(tsSource).toContain("?.getExportTable()");
     expect(tsSource).toContain("summaryPrintTarget()");
     expect(tsSource).not.toContain("$refs.summaryTable");
@@ -163,24 +151,21 @@ describe("OasProgressionVueContent render contract", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(templateSource).toContain('ref="summary"');
     expect(templateSource).toMatch(/<template v-if="filters\.viewMode === 'summary'">[\s\S]*?<SummitPrintButton profile="peak-award-summary" :target="summaryPrintTarget"[\s\S]*?<\/template>/);
-    // The old snapdom export is gone (.claude/Print/PLAN_STAGE_5.md §B).
     expect(templateSource).not.toContain("onSummaryPdfExportClick");
     expect(tsSource).not.toContain("onSummaryPdfExportClick");
   });
 
-  it("Summary tab has its own formatted Excel Export beside Print / PDF (.claude/Excel/PLAN_STAGE_1.md)", () => {
+  it("Summary tab has its own formatted Excel Export beside Print / PDF", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(templateSource).toMatch(/<template v-if="filters\.viewMode === 'summary'">[\s\S]*?@click="onSummaryExcelExportClick">Excel Export<\/SummitPillButton>[\s\S]*?<SummitPrintButton profile="peak-award-summary"/);
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
-    // Exports the rows on screen, with the printout's header wording.
     expect(tsSource).toContain("rows: this.filteredPeakAwardSummaryRows");
     expect(tsSource).toContain('this.runExcelExport("Summary", "peak-award-summary", this.summaryPrintMeta');
-    // Shared by both tabs, through summit-excel (header wording, logo and file name live there).
     expect(tsSource).toContain('exportExcelSheet({ printProfile, meta, fileNameParts: ["OAS Progression", viewName], build })');
   });
 
-  it("VueStage 4: the reload button shows a loading state while reloading, matching the plan's nicer-than-original affordance", () => {
+  it("the reload button shows a loading state while reloading", () => {
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
     expect(tsSource).toContain("isReloading");
     expect(tsSource).toContain("onReloadAllClick");
@@ -193,18 +178,11 @@ describe("OasProgressionVueContent render contract", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(templateSource).toContain("<OASProgressionTableVue");
     expect(templateSource).toContain("<v-tabs");
-    // tab-value, NOT value: v-tab's `value` is a read-only computed with no corresponding prop
-    // (falls back to `to`/`href`, else the tab's index) — a plain `value="heatmap"` attribute is
-    // silently dropped, which was a real bug caught live (every tab fell back to its index as its
-    // identity, so clicking a tab never matched filters.viewMode's string). See the long comment
-    // above the <v-tabs> block in the .vue file for the full explanation.
+    // Regression: `value` on v-tab is silently dropped, so every tab fell back to its index.
     expect(templateSource).toContain('<v-tab tab-value="heatmap">');
     expect(templateSource).toContain('<v-tab tab-value="table">');
     expect(templateSource).not.toMatch(/<v-tab value="/);
     expect(templateSource).toContain("onViewModeTabChange");
-    // Replaced by v-tabs per .claude/OASWorksheets/PLAN_STAGE_2.md (DEV_NOTES asked for "the same
-    // control as terrain, instead of a button") — the single-button toggle from VueStage 5, and
-    // the v-btn-toggle it in turn replaced, are both gone now.
     expect(templateSource).not.toContain("<v-btn-toggle");
     expect(templateSource).not.toContain("onToggleViewModeClick");
     expect(templateSource).not.toContain("Show Table");
@@ -220,8 +198,7 @@ describe("OasProgressionVueContent render contract", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(templateSource).toContain(':value="filters.viewMode"');
     expect(templateSource).toContain('@change="onViewModeTabChange"');
-    // A v-model here would model a numeric tab index rather than filters.viewMode's own string —
-    // see PLAN_STAGE_2.md §3 for why that would be a second, driftable source of truth.
+    // v-model would model a numeric index, a second source of truth.
     expect(templateSource).not.toMatch(/<v-tabs[^>]*v-model/);
   });
 
@@ -234,19 +211,14 @@ describe("OasProgressionVueContent render contract", () => {
     expect(tabsTag).toContain('background-color="grey lighten-5"');
   });
 
-  it("VueStage 5: resetting filters preserves the current viewMode (a display choice, not a filter)", () => {
-    // onResetFilters no longer spreads `{ ...DEFAULT_FILTERS, viewMode: this.filters.viewMode }`
-    // wholesale — see .claude/OASProgression/PLAN_PEAK_AWARD_SUMMARY.md's "Reset filters" fix
-    // (2026-10-09): each tab's own "Reset filters" button now only resets THAT tab's own keys,
-    // not every tab's filters at once. viewMode itself is still never assigned a new value by
-    // onResetFilters (confirmed by source: it builds a `resetValues` patch and spreads it onto
-    // `this.filters`, never touching `viewMode`), which is the actual invariant this test checks.
+  it("resetting filters preserves the current viewMode (a display choice, not a filter)", () => {
+    // Invariant: onResetFilters never assigns viewMode.
     const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
     const resetMethodSource = source.slice(source.indexOf("onResetFilters()"), source.indexOf("async onReloadAllClick"));
     expect(resetMethodSource).not.toContain("viewMode:");
   });
 
-  it("the Table view gets Excel Export plus summit-print's Print / PDF (the jsPDF export is gone, .claude/Print/PLAN_STAGE_5.md §C)", () => {
+  it("the Table view gets Excel Export plus summit-print's Print / PDF (the jsPDF export is gone)", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(templateSource).toContain("onTableExcelExportClick");
     expect(templateSource).toContain("Excel Export");
@@ -259,7 +231,7 @@ describe("OasProgressionVueContent render contract", () => {
     expect(tsSource).toContain("onTableExcelExportClick");
   });
 
-  it("VueStage 5 fixes: header row buttons keep a consistent left-to-right order — [Excel Export,] PDF Export, Refresh — so each button's position doesn't shift when Excel Export appears/disappears between views", () => {
+  it("header row buttons keep a consistent left-to-right order — [Excel Export,] PDF Export, Refresh — so each button's position doesn't shift when Excel Export appears/disappears between views", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     const headerRow = templateSource.slice(templateSource.indexOf('<div class="oas-progression-view-row">'), templateSource.indexOf("</div>", templateSource.indexOf('<div class="oas-progression-view-row">')));
 
@@ -269,14 +241,9 @@ describe("OasProgressionVueContent render contract", () => {
     const refreshIndex = headerRow.indexOf("onReloadAllClick");
 
     expect(refreshIndex).toBeGreaterThan(-1);
-    // Guard: a missing button's index is -1, which would pass every "less than" check below.
     expect(heatmapPdfIndex).toBeGreaterThan(-1);
     expect(tablePdfIndex).toBeGreaterThan(-1);
     expect(excelIndex).toBeGreaterThan(-1);
-    // Left to right: [Excel Export,] PDF Export, Refresh (rightmost). The view-mode toggle used to
-    // sit between PDF Export and Refresh here; it is now the v-tabs strip below this row entirely
-    // (see .claude/OASWorksheets/PLAN_STAGE_2.md §2 — a full-width row of its own, not another item
-    // in this right-aligned button row).
     expect(excelIndex).toBeLessThan(tablePdfIndex);
     expect(heatmapPdfIndex).toBeLessThan(refreshIndex);
     expect(tablePdfIndex).toBeLessThan(refreshIndex);
@@ -289,14 +256,12 @@ describe("OasProgressionVueContent render contract", () => {
     const tabsIndex = templateSource.indexOf("<v-tabs");
 
     expect(tabsIndex).toBeGreaterThan(-1);
-    // The tab strip must appear AFTER the view-row's closing </div>, i.e. outside it.
     expect(tabsIndex).toBeGreaterThan(viewRowEnd);
-    // No leftover CSS from the abandoned v-btn-toggle / single-button approaches.
     expect(templateSource).not.toContain("oas-vue-view-toggle");
     expect(templateSource).not.toContain("oas-vue-toggle-active");
   });
 
-  it("VueStage 5 fixes: Table view PDF/Excel export uses only the currently column-filtered rows, not every row", () => {
+  it("Table view PDF/Excel export uses only the currently column-filtered rows, not every row", () => {
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
     expect(tsSource).toContain("filterOASProgressionRows");
     expect(tsSource).toContain("tableFilteredItems");
@@ -370,13 +335,10 @@ describe("OasProgressionVueContent render contract", () => {
     expect(printSource).toContain("break-inside: avoid");
   });
 
-  // Default flipped per DEV_NOTES.md: "Layout > Members as rows, should be default and top item
-  // in list" — see .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
   it("OASWorksheets Stage 5: worksheetLayout persists (replacing the dropped worksheetOrientation), defaulting to membersAsRows", () => {
     const persistenceSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence.ts"), "utf8");
     expect(persistenceSource).toContain("worksheetLayout");
-    // Not a LIVE field any more — it may still be mentioned in a comment explaining the replacement
-    // (backtick-quoted prose), so check it's not declared as an interface member specifically.
+    // Checks it isn't declared as an interface member (it may still appear in prose).
     expect(persistenceSource).not.toMatch(/^\s*worksheetOrientation:/m);
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");

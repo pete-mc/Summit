@@ -4,11 +4,7 @@ import * as path from "path";
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 const TEMPLATE = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/PresentAwardsVue/components/PresentAwardsTableVue.vue"), "utf8");
 
-/**
- * Jest cannot import .vue files in this project, so these assert the structural decisions that
- * were expensive to arrive at — each one guards a specific bug documented in
- * .claude/OASProgression/PLAN_VUESTAGE_5.md and .claude/PresentAwardsVue/PLAN_STAGE_2.md.
- */
+/** Jest can't import .vue files, so these assert structural decisions that each guard a past bug. */
 describe("PresentAwardsTableVue render contract", () => {
   it("renders the filter row via #body.prepend, not a header slot", () => {
     // header.<value> slots can only customize a cell within the existing header <tr>; they
@@ -60,8 +56,7 @@ describe("PresentAwardsTableVue render contract", () => {
   });
 
   it("renders a badge icon (with a placeholder fallback) inside the Award cell, before the name", () => {
-    // Part of the Award column rather than a column of its own (user, 2026-10-12). A missing icon
-    // must still occupy its fixed-width slot, or the award names stop lining up.
+    // A missing icon must still take its slot, or the names stop lining up.
     expect(TEMPLATE).toContain("#item.achievementName");
     expect(TEMPLATE).not.toContain("#item.badge");
     expect(TEMPLATE).toContain("present-awards-badge-slot");

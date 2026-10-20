@@ -1,8 +1,4 @@
-/**
- * A small Summary-tab table shaped like OASPeakAwardSummaryVue's real render output (two-row
- * thead with rowspan/colspan, Vue scoped attributes, Vuetify's empty <col>s, tooltips, inline
- * screen widths). Invented names and ids only — no real member data (.claude/Print/PLAN.md I12).
- */
+/** Shaped like OASPeakAwardSummaryVue's real render (rowspan/colspan, scoped attrs, empty <col>s). Invented content. */
 export function summaryTableHtml({ special = true } = {}): string {
   const specialHead1 = special ? '<th data-v-abc="" class="oas-heatmap-stage-group-header oas-peak-award-summary-th-top">Special</th>' : "";
   const specialHead2 = special ? '<th data-v-abc="" class="oas-heatmap-stage-group-header oas-peak-award-summary-th-bottom">4 above Stage 3</th>' : "";

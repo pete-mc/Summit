@@ -12,42 +12,26 @@ const logger = createLogger("SummitPrintButton");
 export const SPLIT_FALLBACK_MESSAGE = (bands: number) => `Too wide for one page even when shrunk, so it was split into ${bands} parts.`;
 export const OVERFLOW_MESSAGE = "This table is too wide for the chosen page. Try landscape or A3.";
 
-/** Starting dialog values: the profile's defaults, overridden by this user's last choices for it. */
 export function initialPrintSettings(profile: string): PageSettings {
   return { ...getPrintProfile(profile).defaults, ...loadPrintSettings(profile) };
 }
 
-/**
- * Print / PDF button + page-setup dialog, shared by every page that prints a table
- * (.claude/Print/PLAN.md). The user picks page size, orientation, margins and layout; the table is
- * re-laid out for that page and Edge's print dialog opens, where they print or "Save as PDF".
- *
- * Fixed wording lives in the profile (src/print/profiles/). Unit, group, section and the section
- * logo are added here from Terrain's active profile, so a page only passes what is specific to it
- * — usually just `meta` describing its filters.
- */
+/** Adds unit, group, section and logo from Terrain, so a page usually only passes `meta` for its filters. */
 export default defineComponent({
   name: "SummitPrintButton",
   components: { SummitPillButton },
   props: {
-    /** Registered profile name, see src/print/profiles/. */
     profile: { type: String, required: true },
-    /** () => the element containing the table — a function so it is read at click time, after Vuetify has rendered. */
+    /** A function, so it's read at click time after Vuetify has rendered. */
     target: { type: Function as PropType<() => Element | null | undefined>, required: true },
     title: { type: String, default: undefined },
     subtitle: { type: String, default: undefined },
-    /** Merged into the header's meta line by label, e.g. the filters in effect. */
     meta: { type: Array as PropType<MetaEntry[]>, default: undefined },
     header: { type: Object as PropType<PrintHeader>, default: undefined },
     footer: { type: [Object, String] as PropType<PrintFooter | string>, default: undefined },
-    /** Extra placeholder values; override the Terrain-derived {unit}/{group}/{section} if given. */
     vars: { type: Object as PropType<Record<string, string>>, default: undefined },
     label: { type: String, default: "Print / PDF" },
-    /**
-     * Optional: get the table ready to print (e.g. show every row and open every group, since only
-     * rendered rows print) and return a function that puts it back. The restore always runs, even
-     * if printing fails or is cancelled.
-     */
+    /** Prepares the table (only rendered rows print) and returns a restore function, which always runs. */
     prepare: { type: Function as PropType<() => Promise<(() => void) | void>>, default: undefined },
   },
   data() {
@@ -57,7 +41,6 @@ export default defineComponent({
       warn: false,
       warnText: "",
       settings: initialPrintSettings(this.profile),
-      // Only a genuinely older browser — not the DevTools test switch (.claude/Print/PLAN_STAGE_3.md).
       lacksFooterSupport: browserLacksFooterSupport(),
       pageSizes: Object.keys(PAGE_SIZES),
       marginItems: [
@@ -73,7 +56,7 @@ export default defineComponent({
       try {
         savePrintSettings(this.profile, this.settings);
         this.open = false;
-        await this.$nextTick(); // let the dialog close before the print preview opens
+        await this.$nextTick();
         if (this.prepare) restore = await this.prepare();
 
         const source = this.target();

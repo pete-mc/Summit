@@ -22,8 +22,7 @@ export default defineComponent({
     patch(partial: Partial<IStatementFilters>) {
       this.$emit("update:filters", { ...this.filters, ...partial });
     },
-    // Dragging one end of the range past the other pushes the other end along, rather
-    // than leaving an inverted range that silently renders an empty table.
+    // Pushes the other end along rather than leaving an inverted (empty) range.
     onStageFromChange(stageFrom: number) {
       this.patch({ stageFrom, stageTo: Math.max(stageFrom, this.filters.stageTo) });
     },

@@ -1,13 +1,6 @@
 /**
- * Section logo for the print header (.claude/Print/PLAN.md "Section logos").
- *
- * Filenames are listed explicitly rather than built from a pattern: the supplied files mix .jpg and
- * .png, and a guessed name would print as a broken image. The keys are Terrain's own section values
- * (TerrainAchievementsSection: joey/cub/scout/venturer/rover).
- *
- * Same extension-URL mechanism as getSkillIconUrl.ts: this code runs in the page's MAIN world with
- * no chrome.runtime, so the base URL comes from the attribute summitloader.js stamps on <html>.
- * images/* is already web-accessible for terrain.scouts.com.au in manifest.json.
+ * Listed explicitly because the files mix .jpg and .png, so a guessed name would be a broken image.
+ * Gotcha: MAIN world has no chrome.runtime; the base URL comes from the attribute summitloader.js sets on <html>.
  */
 const SECTION_LOGO_FILES: Record<string, string> = {
   joey: "Section_Joey_Vert_FullCol.jpg",
@@ -17,7 +10,6 @@ const SECTION_LOGO_FILES: Record<string, string> = {
   rover: "Section_Rover_Vert_FullCol.jpg",
 };
 
-/** Official section names, as printed on the logos' own wordmarks. */
 const SECTION_LABELS: Record<string, string> = {
   joey: "Joey Scouts",
   cub: "Cub Scouts",
@@ -26,7 +18,6 @@ const SECTION_LABELS: Record<string, string> = {
   rover: "Rover Scouts",
 };
 
-/** Logo URL for a section, or null (unknown section, or no extension URL) — never a broken image. */
 export function getSectionLogoUrl(section: string | null | undefined): string | null {
   const file = section ? SECTION_LOGO_FILES[section.toLowerCase()] : undefined;
   if (!file) return null;
@@ -35,7 +26,6 @@ export function getSectionLogoUrl(section: string | null | undefined): string | 
   return `${extensionUrl}images/sections/${file}`;
 }
 
-/** "Venturer Scouts" for "venturer"; an unknown value is returned unchanged; empty for none. */
 export function getSectionLabel(section: string | null | undefined): string {
   if (!section) return "";
   return SECTION_LABELS[section.toLowerCase()] ?? section;

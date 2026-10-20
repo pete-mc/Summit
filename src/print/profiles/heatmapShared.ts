@@ -1,11 +1,4 @@
-/**
- * Shared by the OAS heat-map profiles (Summary and Heatmap), which render the same
- * .oas-heatmap-square / .oas-heatmap-stage-bar elements.
- *
- * Copied from the live screen's computed styles so the print colours track Summit's tokens
- * (--summit-color-status-*) rather than duplicating them. Sizes are set in each profile's CSS in
- * print units instead, because screen pixel sizes are exactly what shouldn't carry over.
- */
+/** Colours come from the live screen so print tracks Summit's tokens. Sizes are set in print units instead. */
 export const SQUARE_COLOUR_PROPS = [
   "background-color",
   "border-top-color",
@@ -23,7 +16,7 @@ export const SQUARE_COLOUR_PROPS = [
   "border-radius",
 ];
 
-/** Remove inline screen sizes (e.g. the Summary bar's width from barWidthPx) — inline styles would beat the print CSS. */
+/** Inline screen sizes would beat the print CSS. */
 export function stripInlineSizes(table: HTMLTableElement, selector: string): void {
   Array.from(table.querySelectorAll<HTMLElement>(selector)).forEach((el) => {
     el.style.removeProperty("width");

@@ -38,25 +38,12 @@ function makeMember(overrides: Partial<TerrainUnitMember> = {}): TerrainUnitMemb
   };
 }
 
-/**
- * Builds real heat map data through the production pipeline, then inverts it.
- *
- * Note `members` drives which rows exist at all — groupRowsForHeatMap produces a row per member
- * per section, so an empty members array yields sections with no members regardless of the
- * progression rows passed in.
- */
+/** `members` decides which rows exist; an empty list gives sections with no members. */
 function invert(rows: OASProgressionRow[], members: TerrainUnitMember[], skillOrder: string[], trunkCounts: Record<string, number> = {}) {
   const grouped = groupRowsForHeatMap(rows, trunkCounts, members);
   return groupSectionsByMember(grouped, skillOrder);
 }
 
-/**
- * The skills a member's rows cover, de-duplicated.
- *
- * Each skill yields a base/trunk section plus one per forked stream, so a member legitimately has
- * more than one skillRow per skill — these assertions are about which SKILLS appear and in what
- * order, not how many sections each produced.
- */
 function skillsOf(section: { skillRows: Array<{ skill: string }> }): string[] {
   return section.skillRows.map((row) => row.skill).filter((skill, index, all) => all.indexOf(skill) === index);
 }
@@ -84,7 +71,6 @@ describe("groupSectionsByMember", () => {
   });
 
   it("orders skills the same way for every member", () => {
-    // Every member's block should read the same way down the page.
     const rows = [
       makeRow({ memberId: "member-1", stream: "camping", branch: "camping" }),
       makeRow({ memberId: "member-1", stream: "bushcraft", branch: "bushcraft", inputId: "b" }),
@@ -101,19 +87,15 @@ describe("groupSectionsByMember", () => {
   });
 
   it("carries the member's own cell data through unchanged", () => {
-    // Cell rendering is identical either way, so the per-section member data must survive intact.
     const rows = [makeRow({ answered: true, awarded: true })];
 
     const sections = invert(rows, [makeMember()], ["bushcraft"]);
-    // Across all rows, not skillRows[0]: a skill yields a trunk section plus one per stream, and
-    // which of them holds a given stage depends on the trunk split.
     const cells = sections[0].skillRows.flatMap((row) => row.member.stages.flatMap((stage) => stage.cells));
 
     expect(cells.some((cell) => cell.answered && cell.awarded)).toBe(true);
   });
 
   it("keeps the member's patrol available on the section", () => {
-    // Patrol comes from the member record, not the progression row.
     const member = makeMember({ patrol: { id: "patrol-1", name: "Tawny" } as TerrainUnitMember["patrol"] });
 
     const sections = invert([makeRow()], [member], ["bushcraft"]);
@@ -122,7 +104,6 @@ describe("groupSectionsByMember", () => {
   });
 
   it("gives each skill row a key that distinguishes a stream from its trunk", () => {
-    // A member appears once per (skill, stream) section, so the key must separate them.
     const rows = [makeRow({ stream: "bushcraft", branch: "bushcraft", stage: 1 }), makeRow({ stream: "bushcraft", branch: "bushcraft-vertical", stage: 4, inputId: "def456" })];
 
     const sections = invert(rows, [makeMember()], ["bushcraft"], { bushcraft: 3 });
@@ -155,8 +136,6 @@ describe("groupSectionsByMember", () => {
 
 describe("memberHasNoProgress", () => {
   it("is true for a member who has started nothing", () => {
-    // These members are INCLUDED rather than hidden: a member who has started nothing is exactly
-    // who a leader is looking for in this view.
     const sections = invert([makeRow({ answered: false, awarded: false })], [makeMember()], ["bushcraft"]);
 
     expect(memberHasNoProgress(sections[0])).toBe(true);

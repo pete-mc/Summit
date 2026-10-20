@@ -24,9 +24,7 @@ describe("OAS heat map — group by Skill or Member", () => {
   });
 
   it("moves the skill icon onto the row when the heading is a person", () => {
-    // Per the DEV_NOTES entry: group by skill keeps the icon on the heading, group by member does
-    // not — so it has to appear on the rows instead, or the skills become unidentifiable at a
-    // glance.
+    // Grouped by member, the icon moves to the rows, or skills become unidentifiable.
     const memberBranch = HEAT_MAP.slice(HEAT_MAP.indexOf(`v-if="isGroupedByMember"`), HEAT_MAP.indexOf("v-else #body"));
     expect(memberBranch).toContain("row.iconUrl");
     expect(memberBranch).toContain("oas-heatmap-skill-icon");
@@ -51,9 +49,7 @@ describe("OAS table view — deliberately not grouped", () => {
   const TABLE = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASProgressionTableVue.vue"), "utf8");
 
   it("stays flat", () => {
-    // Table grouping was built and then removed: how it should behave alongside this view's own
-    // sorting and per-column filters needs more thought than it had. Re-adding it is a deliberate
-    // decision, not a tidy-up — see PLAN_GROUP_BY_MEMBER.md.
+    // Table grouping was deliberately removed; re-adding it is a design decision.
     expect(TABLE).not.toContain(":group-by=");
     expect(TABLE).not.toContain("#group.header");
   });
@@ -71,10 +67,7 @@ describe("OAS filters — the Group by control", () => {
   });
 
   it("hides the Break-by-patrol Show-dropdown item when grouped by member", () => {
-    // Leaving an inert control on screen is worse than removing it. Moved from the template
-    // (a v-if on a checkbox) into OASProgressionFiltersVue.ts's showOptions computed when
-    // Break-by-patrol relocated into the Show dropdown — see
-    // .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
+    // An inert control is worse than none.
     expect(FILTERS_TS).toContain(`filters.groupBy !== "member"`);
   });
 });

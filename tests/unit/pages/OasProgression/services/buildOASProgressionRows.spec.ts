@@ -424,8 +424,7 @@ describe("isOASCacheKeyForStream", () => {
   });
 });
 
-// Template-version handling — .claude/OASProgression/PLAN_TEMPLATE_VERSIONS.md. Fixture shape
-// mirrors the real Vertical Stage 3 change: v1 had a "navigation game" statement that v2 dropped.
+// Template versions: mirrors the real Vertical Stage 3 change (v2 dropped a statement).
 function statement(inputId: string, sortIndex: number, inputGroup = "Do"): FlattenedIStatement {
   return { inputId, iStatement: `I can ${inputId}`, inputGroup, sortIndex };
 }

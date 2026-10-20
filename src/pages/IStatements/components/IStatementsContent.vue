@@ -9,10 +9,6 @@
         <v-btn icon title="Refresh data" :loading="isLoading" :disabled="isLoading" @click="onReload"><v-icon>mdi-refresh</v-icon></v-btn>
       </div>
 
-      <!--
-        This page's two loading phases map onto the shared component's optional counts: trees
-        have no knowable total, templates do. See src/components/SummitLoadingState.ts.
-      -->
       <SummitLoadingState
         :state="sharedLoadState"
         :done="loadState === 'loading-templates' ? progressDone : undefined"
@@ -38,11 +34,7 @@
 </script>
 
 <style scoped>
-/*
- * Deliberately the same --oas-vue-* scale as OasProgressionVueContent.vue rather than a
- * parallel --istatement-* one: these two pages are visual siblings, and .claude/DESIGN.md
- * records that the scale exists precisely to stop near-identical elements drifting apart.
- */
+/* Same --oas-vue-* scale as OAS Progression, so sibling pages can't drift. */
 .oas-vue-content {
   --oas-vue-font-size-heading: 18px;
   --oas-vue-font-size-body: 14px;
@@ -50,7 +42,6 @@
   padding: 8px 0;
 }
 
-/* .istatement-error went with the error markup — that now lives in SummitLoadingState.vue. */
 .istatement-warning {
   font-family: var(--oas-vue-font-family);
   font-size: var(--oas-vue-font-size-body);

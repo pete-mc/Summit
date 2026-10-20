@@ -4,7 +4,6 @@ import type { TerrainUnitMember } from "@/types/terrainTypes";
 export interface HeatMapCell {
   inputId: string;
   iStatement: string;
-  /** e.g. "Plan", "Do", "Review" — the template's input-group title this i-statement belongs to. */
   inputGroup: string;
   answered: boolean;
   awarded: boolean;
@@ -19,26 +18,24 @@ export interface HeatMapStage {
 
 export interface SectionMemberRow {
   memberId: string;
-  /** Convenience display/search string — see OASProgressionRow.memberName's own comment on why sorting/initials must use firstName/lastName instead. */
   memberName: string;
   firstName: string;
   lastName: string;
   patrolName: string | null;
-  /** The member's highest AWARDED stage within THIS section only (base section: trunk stages only; a stream section: that stream's own stages only). */
+  /** Highest AWARDED stage within this section only. */
   highestStage: number | null;
   stages: HeatMapStage[];
-  /** Whether this member has fully awarded every trunk stage of the skill — gates a stream section's displayed progress. Always true/false consistently per member per skill; unused (but still computed) for the base section itself. */
+  /** Gates a stream section's displayed progress. */
   trunkFullyAwarded: boolean;
 }
 
 export interface HeatMapSection {
   skill: string;
-  /** null for the base/trunk section (the skill's own name, before any fork); the stream name for a forked section. */
+  /** null for the trunk section. */
   stream: string | null;
-  /** Whether every member has zero progress across this section's own stages — candidate for hide-by-default. Never true for the base section. */
+  /** Never true for the trunk section. */
   isEmpty: boolean;
   members: SectionMemberRow[];
-  /** Number of stages in the skill's trunk before it forks into streams (or the skill's whole stage count if it never forks). Same value across every section of a skill. */
   trunkStageCount: number;
 }
 
@@ -74,8 +71,7 @@ function buildStages(rows: OASProgressionRow[]): HeatMapStage[] {
     });
 }
 
-/** Highest stage that has itself been AWARDED (every i-statement awarded), matching
- * OAS Summary's semantics — an in-progress stage does not count toward the Stage value. */
+/** An in-progress stage doesn't count (matches OAS Summary). */
 function highestStageOf(stages: HeatMapStage[]): number | null {
   return stages.reduce<number | null>((highest, stage) => {
     if (!stage.complete) {
@@ -85,20 +81,10 @@ function highestStageOf(stages: HeatMapStage[]): number | null {
   }, null);
 }
 
-/**
- * Groups tidy progression rows into per-skill heat-map data, laid out as independent
- * "sections": one section per (skill, stream) pair, each listing EVERY member (even those
- * with zero progress in that particular section) so a leader can see the whole roster under
- * every stream. `trunkStageCounts` (keyed by skill, i.e. row.stream) comes from the OAS
- * tree's fixed structure (see getTrunkStageCount) — it tells us how many stages belong to
- * the shared base section before a skill forks into named streams (row.branch).
- */
+/** One section per (skill, stream), each listing EVERY member, even with no progress. */
 export function groupRowsForHeatMap(rows: OASProgressionRow[], trunkStageCounts: Record<string, number>, members: TerrainUnitMember[]): Record<string, SkillHeatMapData> {
   const result: Record<string, SkillHeatMapData> = {};
 
-  // Base ordering only — every downstream view re-sorts via sortMembers()/the user's own Sort By
-  // choice, so this just needs to be stable. Matches the previous concatenated-string sort's own
-  // tie-break order (first name primary) rather than introducing an unrequested change.
   const memberOrder = members.slice().sort((a, b) => a.first_name.localeCompare(b.first_name) || a.last_name.localeCompare(b.last_name));
 
   const bySkill = new Map<string, OASProgressionRow[]>();
@@ -117,8 +103,6 @@ export function groupRowsForHeatMap(rows: OASProgressionRow[], trunkStageCounts:
     const trunkRows = skillRows.filter((r) => r.stage <= trunkStageCount);
     const forkedRows = skillRows.filter((r) => r.stage > trunkStageCount);
 
-    // Whether each member has fully awarded every trunk stage — gates a stream section's
-    // displayed progress (a stream shows nothing until the base skill's trunk is done).
     const trunkRowsByMember = new Map<string, OASProgressionRow[]>();
     trunkRows.forEach((row) => {
       const existing = trunkRowsByMember.get(row.memberId);

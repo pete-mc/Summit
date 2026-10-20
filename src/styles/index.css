@@ -23,9 +23,7 @@
   --summit-focus-ring-width: 2px;
 
   --summit-color-status-unanswered: #edebe9;
-  /* --summit-color-status-answered: #7d6694; */
   --summit-color-status-answered: #ecb206;
-  /* --summit-color-status-awarded: #b3c9b3; */
   --summit-color-status-awarded: var(--summit-color-bg-primary);
 }
 
@@ -456,13 +454,7 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   background-color: #197419 !important;
 }
 
-/*
- * Page-level column layout, shared by every Vuetify page. .istatement-panel and
- * .present-awards-panel were previously written on their pages' root elements but defined
- * nowhere — dead classes that looked like they were doing something, which is part of why the
- * three pages' spacing never matched. Grouped here so the resemblance is enforced rather than
- * left to each page to remember.
- */
+/* Shared page layout for every Vuetify page, so sibling pages can't drift. */
 .oas-progression-panel,
 .present-awards-panel,
 .istatement-panel {
@@ -473,17 +465,7 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   padding-top: var(--summit-space-md);
 }
 
-/*
- * The standard filter-panel layout for every Vuetify page (OAS Progression, Present Awards,
- * I Statements). Declared ONCE here rather than per page, because per-page copies are exactly
- * how the three drifted apart: two declared it with different gaps and the third declared it
- * not at all, so I Statements' filter row got no layout whatsoever. Scoped styles cannot be
- * shared between components, so a genuinely shared class has to live in this global sheet.
- *
- * `margin-bottom` is the space BELOW the panel, which no page set — the gap before the table
- * came from whatever the next element happened to bring, which is why they did not line up.
- * Sibling pages should look the same without each having to remember to say so.
- */
+/* Learning: declared once here, because per-page copies drifted. Scoped styles can't be shared between components. */
 .oas-vue-filter-panel {
   display: flex;
   flex-direction: column;
@@ -633,29 +615,14 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   border-color: transparent;
 }
 
-/*
- * "Hide answered" state: the square keeps its size and position so the unanswered squares stay
- * put and rows stay aligned between members. `visibility: hidden` rather than `display: none`
- * for exactly that reason; the border is cleared too, or an empty outline would remain visible.
- */
+/* visibility: hidden (not display: none) keeps rows aligned; clear the border too or an outline remains. */
 .oas-heatmap-square-hidden {
   background: transparent;
   border-color: transparent;
   visibility: hidden;
 }
 
-/*
- * The Heat Map filter bar's "Show" dropdown groups its items under Skills/I Statements/Grouping
- * subheaders (see OASProgressionFiltersVue.ts's showOptions). Vuetify's v-select renders its
- * dropdown menu detached to <body> via v-menu (not inside the component's own DOM), so scoped
- * ::v-deep CSS in the .vue file cannot reach it — these rules live here instead, scoped to
- * .oas-vue-show-menu (passed via :menu-props="{ contentClass: 'oas-vue-show-menu' }") so they
- * only affect this one dropdown, not every v-subheader/v-divider on the page.
- *
- * Vuetify's own v-subheader defaults to a fixed 48px height with generous horizontal padding —
- * oversized for a dense dropdown list — and v-divider draws a visible 1px line. Flagged as "huge
- * dividers" in testing; shrunk to a slim spacer with no visible rule and minimal padding instead.
- */
+/* Gotcha: v-select's menu is detached to <body>, so scoped ::v-deep can't reach it. Scoped to .oas-vue-show-menu via menu-props. */
 .oas-vue-show-menu .v-subheader {
   height: auto;
   min-height: 0;

@@ -3,11 +3,7 @@ import { ALL_STAGES, type IStatementFilters } from "./filterIStatementMatrix";
 
 const I_STATEMENT_FILTERS_KEY = "summit.iStatements.filters";
 
-/**
- * Stages 1-5 and hidden empty statements by default: the full 1-9 range across every skill
- * is ~180 columns x ~500 rows, which is both slow to render and hard to read. These defaults
- * open on the densest, most-used part of the grid; the filters widen it on demand.
- */
+/** Defaults open small: the full grid is ~180 x ~500 and slow. */
 const DEFAULT_STAGE_TO = 5;
 
 export function defaultIStatementFilters(): IStatementFilters {
@@ -24,9 +20,7 @@ export function defaultIStatementFilters(): IStatementFilters {
 export function saveIStatementFilters(filters: IStatementFilters): void {
   try {
     window.localStorage.setItem(I_STATEMENT_FILTERS_KEY, JSON.stringify(filters));
-  } catch {
-    // local storage is best-effort only
-  }
+  } catch {}
 }
 
 function coerceStage(value: unknown, fallback: number): number {
@@ -37,11 +31,7 @@ function coerceBoolean(value: unknown, fallback: boolean): boolean {
   return typeof value === "boolean" ? value : fallback;
 }
 
-/**
- * Defensive by design: a persisted payload can predate a change to the skill list or the
- * stage range, so every field is validated against what currently exists and falls back to
- * its default rather than letting a stale value break the page.
- */
+/** Validates every field, so state saved before a skill or stage change can't break the page. */
 export function loadIStatementFilters(): IStatementFilters {
   const defaults = defaultIStatementFilters();
 

@@ -10,40 +10,26 @@ export interface DataTableHeader {
   value: string;
   sortable?: boolean;
   sort?: (a: unknown, b: unknown) => number;
-  /** Defaults to "text" — a plain filter box. "select" renders a dropdown instead. */
   filterType?: "text" | "select";
-  /** Columns with no underlying data (the checkbox) opt out of filtering entirely. */
   filterable?: boolean;
-  /** Vuetify header options: class on the <th>, and on each body <td> in this column. */
   class?: string;
   cellClass?: string;
 }
 
-/** Marks the Present (tick-box) column so the printout can drop it by class, not position. */
+/** Lets the printout drop the tick-box column by class, not position. */
 export const PRESENT_HEADER_CLASS = "present-awards-present-header";
 export const PRESENT_CELL_CLASS = "present-awards-present-cell";
 
-/** Vuetify 2.7's own v-data-table instance state used by prepareForPrint (see VDataTable.js openCache). */
 interface VuetifyDataTable {
   openCache: Record<string, boolean>;
 }
 
-/** What the rest of the page (and the storage event) speaks. */
 export const DISPLAY_DATE_FORMAT = "DD/MM/YYYY";
-/** What v-date-picker speaks. The only place the two formats meet is this component. */
 export const PICKER_DATE_FORMAT = "YYYY-MM-DD";
 
-/** Sentinel the model uses for an award that has not been handed over yet. */
 export const NOT_PRESENTED = "No";
 
-/**
- * Both date columns hold DD/MM/YYYY *strings* (SummitAchievement formats them for display), so
- * v-data-table's default comparator would sort them lexically — putting 01/12/2025 before
- * 02/01/2024 because it compares "0" to "0" then "1" to "2". Parse before comparing.
- *
- * "No" (an unpresented award) and empty values sort as the earliest possible value, so ascending
- * order reads as "never presented first, then oldest to newest".
- */
+/** Gotcha: DD/MM/YYYY strings sort wrongly as text, so parse them. "No" and blank sort earliest. */
 export function compareDisplayDates(a: unknown, b: unknown): number {
   const toTimestamp = (value: unknown): number => {
     const parsed = moment(String(value ?? ""), DISPLAY_DATE_FORMAT, true);
@@ -55,57 +41,38 @@ export function compareDisplayDates(a: unknown, b: unknown): number {
   return left < right ? -1 : 1;
 }
 
-/**
- * The Presented (Yes/No) column's sort: not presented first, ascending. Compares the stored
- * `presented` values (a date or "No"), as v-data-table does.
- */
 export function comparePresentedStatus(a: unknown, b: unknown): number {
   const isPresented = (value: unknown) => (value && value !== NOT_PRESENTED ? 1 : 0);
   return isPresented(a) - isPresented(b);
 }
 
-/** "05/03/2026" -> "2026-03-05". Returns undefined for "No"/blank, so the picker opens on today. */
+/** Undefined for "No"/blank, so the picker opens on today. */
 export function toPickerDate(displayDate: string): string | undefined {
   const parsed = moment(displayDate, DISPLAY_DATE_FORMAT, true);
   return parsed.isValid() ? parsed.format(PICKER_DATE_FORMAT) : undefined;
 }
 
-/**
- * "2026-03-05" -> "05/03/2026".
- *
- * Note the 4-digit year: the React page formats this boundary with "DD/MM/YY" while the model and
- * the save path both parse with "DD/MM/YYYY", which only survives because moment is lenient about
- * 2-digit years. This page uses the full year throughout.
- */
+/** Gotcha: use a 4-digit year. The React page uses "DD/MM/YY" and only works because moment is lenient. */
 export function toDisplayDate(pickerDate: string): string {
   return moment(pickerDate, PICKER_DATE_FORMAT, true).format(DISPLAY_DATE_FORMAT);
 }
 
-/** Exported for the printout's filter line, so it uses the table's own column names. */
 export const HEADERS: DataTableHeader[] = [
   { text: "Name", value: "member" },
-  // Only ~10 achievement types exist and SummitAchievement already normalises them for display,
-  // so a dropdown is both short and exhaustive. Award is deliberately left as a text box: there
-  // is one distinct value per badge, which would make an unusable dropdown.
+  // Award stays a text box: one value per badge would make an unusable dropdown.
   { text: "Type", value: "type", filterType: "select" },
-  // The badge artwork is drawn inside this cell, before the name (#item.achievementName in the
-  // .vue) — no column of its own (user, 2026-10-12).
   { text: "Award", value: "achievementName" },
   { text: "Date Awarded", value: "dateAwarded", sort: compareDisplayDates },
-  // Date Presented, Presented (Yes/No) and Present (tick box) are three separate columns (user,
-  // 2026-10-13). The Yes/No column keeps the `presented` key, so saved Yes/No filters still apply.
+  // The Yes/No column keeps the `presented` key so saved filters still apply.
   { text: "Date Presented", value: "presentedDate", sort: compareDisplayDates },
   { text: "Presented", value: "presented", sort: comparePresentedStatus, filterType: "select" },
   { text: "Present", value: "present", sortable: false, filterable: false, class: PRESENT_HEADER_CLASS, cellClass: PRESENT_CELL_CLASS },
 ];
 
-/** Rows per page until the user picks another from the table footer. */
 export const DEFAULT_ITEMS_PER_PAGE = 25;
 
-/** v-data-table's default sort locale (VData.js `locale` prop); the table doesn't override it. */
 const TABLE_SORT_LOCALE = "en-US";
 
-/** The columns' own comparers, as v-data-table builds them (VDataTable.js columnSorters). */
 const COLUMN_SORTERS: Record<string, (a: unknown, b: unknown) => number> = HEADERS.reduce(
   (sorters, header) => {
     if (header.sort) sorters[header.value] = header.sort;
@@ -114,41 +81,29 @@ const COLUMN_SORTERS: Record<string, (a: unknown, b: unknown) => number> = HEADE
   {} as Record<string, (a: unknown, b: unknown) => number>,
 );
 
-/**
- * The rows in the order v-data-table shows them: Vuetify's own sortItems with the table's current
- * sort and, when grouping, the member column first (ascending), exactly as VData.sortItems does.
- * So the Excel export (.claude/Excel/PLAN_STAGE_3.md) can't disagree with the screen.
- *
- * Note it sorts on the STORED values, as the table does: an unsaved presented date changes what
- * the row shows, not where the table puts it.
- */
+/** Mirrors VData.sortItems so the Excel export matches the screen. Sorts on stored values, as the table does. */
 export function sortPresentAwardRows(items: SummitAchievement[], sortBy: string[], sortDesc: boolean[], groupByMember: boolean): SummitAchievement[] {
   const by = groupByMember ? ["member"].concat(sortBy) : sortBy;
   const desc = groupByMember ? [false].concat(sortDesc) : sortDesc;
   return sortItems(items.slice(), by, desc, TABLE_SORT_LOCALE, COLUMN_SORTERS);
 }
 
-/** One exported row: the values ON SCREEN, including unsaved edits. `presented` is "" when not presented. */
+/** On-screen values, including unsaved edits. */
 export interface PresentAwardsExportRow {
   member: string;
   type: string;
   award: string;
   dateAwarded: string;
   presented: string;
-  /** The Present tick box. */
   present: boolean;
 }
 
-/**
- * The table as the Excel export sees it: filtered, sorted and grouped as on screen, ignoring paging
- * and collapsed groups (as the printout does). Ungrouped: one group with an empty label.
- */
+/** Ignores paging and collapsed groups, as the printout does. */
 export interface PresentAwardsExportView {
   grouped: boolean;
   groups: Array<{ label: string; rows: PresentAwardsExportRow[] }>;
 }
 
-/** Values stored in columnFilters.presented — not substrings of the underlying data. */
 export const PRESENTED_FILTER_YES = "presented";
 export const PRESENTED_FILTER_NO = "no";
 
@@ -162,17 +117,8 @@ function toFilterValue(value: unknown): string {
 }
 
 /**
- * ANDs every non-empty column filter together; empty entries mean "no filter on that column".
- * Matches filterOASProgressionRows' semantics, with one special case.
- *
- * `presented` (the Yes/No column) is not a plain value like the other columns — it is either the
- * literal "No" or a DD/MM/YYYY date. Substring matching cannot express "any date", and matching "no" as a substring
- * would also hit award names containing "no". So this column is matched on meaning rather than
- * text. (The OAS table hit the same class of bug with its Answered/Awarded columns, where typing
- * "yes" matched nothing because the raw value stringified to "true".)
- *
- * `resolvePresented` lets the caller supply the value currently ON SCREEN for a row, so that
- * filtering agrees with the visible state even when an edit has not been saved yet.
+ * Gotcha: `presented` holds "No" or a date, so it is matched on meaning, not substring ("no" would match award names).
+ * `resolvePresented` gives the on-screen value, so unsaved edits filter correctly.
  */
 export function filterPresentAwardRows(
   items: SummitAchievement[],
@@ -192,7 +138,6 @@ export function filterPresentAwardRows(
         const isPresented = resolvePresented(row).length > 0;
         return needle === PRESENTED_FILTER_YES ? isPresented : !isPresented;
       }
-      // Date Presented: text search on the date shown, so unsaved dates match too.
       if (field === "presentedDate") {
         return resolvePresented(row).toLowerCase().includes(needle);
       }
@@ -202,22 +147,12 @@ export function filterPresentAwardRows(
   );
 }
 
-/**
- * Flat, sortable table of the unit's awarded achievements — built on Vuetify's v-data-table to
- * match the OAS Progression table view (src/pages/OasProgressionVue/components/
- * OASProgressionTableVue.ts) rather than a port of DataGrid.tsx/@tanstack/react-table, since
- * @tanstack/vue-table requires Vue 3 and Summit is on Vue 2.7.
- *
- * Presentational only: the current selection and pending date edits arrive as props, and user
- * intent goes back up as events. All edit state lives in PresentAwardsVueContent.
- */
+/** Presentational only: selection and pending edits come in as props; all edit state is in PresentAwardsVueContent. */
 export default defineComponent({
   name: "PresentAwardsTableVue",
   props: {
     items: { type: Array as PropType<SummitAchievement[]>, required: true },
-    // Vue 2 has no constructor check for Set, so declaring `type: Set` logs a spurious
-    // invalid-prop warning — the same workaround OasProgressionVueContent.ts uses for
-    // loadingStreams.
+    // Gotcha: Vue 2 can't type-check a Set prop.
     selectedIds: { type: null as unknown as PropType<Set<string>>, required: true },
     presentedDates: { type: Object as PropType<Record<string, string>>, default: () => ({}) },
     columnFilters: { type: Object as PropType<Record<string, string>>, default: () => ({}) },
@@ -226,13 +161,9 @@ export default defineComponent({
   data() {
     return {
       headers: HEADERS,
-      /** Per-row open state for the date-picker menus, keyed by achievement id. */
       openDateMenus: {} as Record<string, boolean>,
-      // Bound with .sync rather than literals so prepareForPrint() can show every row and then
-      // put the user's own paging back.
       itemsPerPage: DEFAULT_ITEMS_PER_PAGE,
       page: 1,
-      // Bound with .sync so the Excel export can follow the on-screen sort (getExportView).
       sortBy: [] as string[],
       sortDesc: [] as boolean[],
     };
@@ -241,34 +172,14 @@ export default defineComponent({
     filteredItems(): SummitAchievement[] {
       return filterPresentAwardRows(this.items, this.columnFilters, (item) => this.presentedValue(item));
     },
-    /**
-     * v-data-table takes groupBy as an array of field names; an empty array means "don't group".
-     * Grouping by `member` (the display name) rather than memberid keeps the group headers
-     * readable and sorts them alphabetically for free.
-     */
     groupBy(): string[] {
       return this.groupByMember ? ["member"] : [];
     },
-    /**
-     * The headers v-data-table actually renders, which the #body.prepend filter row must mirror
-     * cell for cell.
-     *
-     * When grouping is on, Vuetify drops the grouped column from its own header row
-     * (`computedHeaders` filters it out — VDataTable.js:126), since the value is shown in the
-     * group header instead. Iterating the raw `headers` here emitted one <th> too many, shifting
-     * every filter box left of its column.
-     */
+    /** Gotcha: when grouping, Vuetify drops the grouped column from its header (VDataTable.js computedHeaders). The filter row must match it. */
     renderedHeaders(): DataTableHeader[] {
       return this.headers.filter((header) => !this.groupBy.includes(header.value));
     },
-    /**
-     * Outstanding award count per member name, across ALL filtered rows.
-     *
-     * Computed here rather than from the group.header slot's own `items`, because VData paginates
-     * before it groups (`computedItems` slices, then `groupedItems` groups the slice — see
-     * VData.js:156-164). The slot therefore only ever sees the current page's share of a member's
-     * awards, so a member with 30 outstanding awards on a 25-row page reported the wrong number.
-     */
+    /** Gotcha: VData paginates before it groups, so the group slot's `items` only covers the current page. Count across all rows here. */
     outstandingByMember(): Record<string, number> {
       return this.filteredItems.reduce(
         (counts, item) => {
@@ -280,11 +191,7 @@ export default defineComponent({
         {} as Record<string, number>,
       );
     },
-    /**
-     * Dropdown options keyed by header value. Type's options come from every row this table was
-     * given — deliberately NOT from filteredItems, so choosing one filter never shrinks another
-     * column's own option list out from under the user.
-     */
+    /** From all rows, not filteredItems, so one filter never shrinks another's options. */
     columnFilterOptions(): Record<string, Array<{ text: string; value: string }>> {
       return {
         type: Array.from(new Set(this.items.map((item) => item.type)))
@@ -298,12 +205,7 @@ export default defineComponent({
     isSelected(item: SummitAchievement): boolean {
       return this.selectedIds.has(item.id);
     },
-    /**
-     * The date to show for a row: a pending edit if there is one, otherwise what was loaded.
-     *
-     * An unticked row shows nothing regardless of what is stored — unticking clears the pending
-     * date, so falling through to `item.presented` would redisplay the very date just cleared.
-     */
+    /** Gotcha: an unticked row shows nothing, or the just-cleared stored date would reappear. */
     presentedValue(item: SummitAchievement): string {
       if (!this.selectedIds.has(item.id)) return "";
       return this.presentedDates[item.id] ?? (item.presented !== NOT_PRESENTED ? item.presented : "");
@@ -311,25 +213,14 @@ export default defineComponent({
     pickerValue(item: SummitAchievement): string | undefined {
       return toPickerDate(this.presentedValue(item));
     },
-    /**
-     * Group header label, e.g. "Alex Scout (2 not presented)".
-     *
-     * Counts what is still to hand over rather than the member's total, so the number answers the
-     * question actually being asked at a meeting — and it ticks down as rows are checked off.
-     * Reads the on-screen value, so it reflects unsaved ticks immediately.
-     *
-     * Deliberately takes only the group NAME: the count comes from outstandingByMember, which
-     * spans every filtered row, not from the slot's own paginated `items`.
-     */
+    /** Counts outstanding awards, including unsaved ticks, so it counts down during a meeting. */
     groupLabel(groupName: string): string {
       const outstanding = this.outstandingByMember[groupName] ?? 0;
       return outstanding === 0 ? `${groupName} (all presented)` : `${groupName} (${outstanding} not presented)`;
     },
-    /** Artwork URL for a row's badge, or null when only a placeholder is available. */
     badgeIconUrl(item: SummitAchievement): string | null {
       return getBadgeIconUrl(item.badgeKey);
     },
-    /** True for wide (non-square) artwork, which needs more width than the 28px icon box. */
     isWideBadge(item: SummitAchievement): boolean {
       return hasWideIcon(item.badgeKey);
     },
@@ -337,8 +228,7 @@ export default defineComponent({
       return this.openDateMenus[item.id] === true;
     },
     setDateMenuOpen(item: SummitAchievement, isOpen: boolean) {
-      // Replaced rather than index-assigned: Vue 2 cannot detect a key added to a reactive
-      // object after the fact, so `this.openDateMenus[id] = true` would not re-render the menu.
+      // Gotcha: Vue 2 can't detect a newly added key, so replace the object.
       this.openDateMenus = { ...this.openDateMenus, [item.id]: isOpen };
     },
     onTogglePresent(item: SummitAchievement, isSelected: boolean) {
@@ -352,13 +242,8 @@ export default defineComponent({
       this.$emit("update:columnFilters", { ...this.columnFilters, [field]: value });
     },
     /**
-     * Puts every row in the DOM for summit-print, which prints only what is rendered
-     * (.claude/Print/PLAN_STAGE_4.md): all rows on one page, every member group open. Returns a
-     * restore() that puts the user's paging and collapsed groups back.
-     *
-     * Groups: Vuetify 2.7 keeps each group's open state in the table's own `openCache`, keyed by
-     * group name; a group not in it yet defaults to open, and a collapsed group's rows aren't in
-     * the DOM at all (VDataTable.js genGroupedRows/genDefaultGroupedRow).
+     * summit-print only prints rendered rows, so show every row and open every group. Returns a restore function.
+     * Learning: Vuetify 2.7 keeps group open state in the table's `openCache`; collapsed groups aren't in the DOM.
      */
     async prepareForPrint(): Promise<() => void> {
       const savedPaging = { itemsPerPage: this.itemsPerPage, page: this.page };
@@ -367,7 +252,7 @@ export default defineComponent({
 
       this.itemsPerPage = -1;
       this.page = 1;
-      await this.$nextTick(); // groups from other pages register themselves (as open) on render
+      await this.$nextTick();
       if (table) {
         Object.keys(table.openCache).forEach((group) => this.$set(table.openCache, group, true));
         await this.$nextTick();
@@ -381,7 +266,6 @@ export default defineComponent({
         this.page = savedPaging.page;
       };
     },
-    /** The rows for the Excel export, as on screen. See PresentAwardsExportView. */
     getExportView(): PresentAwardsExportView {
       const sorted = sortPresentAwardRows(this.filteredItems, this.sortBy, this.sortDesc, this.groupByMember);
       const toRow = (item: SummitAchievement): PresentAwardsExportRow => ({
@@ -395,7 +279,6 @@ export default defineComponent({
       if (!this.groupByMember) {
         return { grouped: false, groups: [{ label: "", rows: sorted.map(toRow) }] };
       }
-      // Sorted by member first, so each member's rows are already together.
       const groups: PresentAwardsExportView["groups"] = [];
       let current: string | null = null;
       sorted.forEach((item) => {
@@ -407,7 +290,7 @@ export default defineComponent({
       });
       return { grouped: true, groups };
     },
-    /** The <table> for summit-print. A method, since a ref on v-data-table is a component, not an element. */
+    /** Gotcha: a ref on v-data-table is the component, not the <table>. */
     getPrintTable(): HTMLTableElement | undefined {
       return (this.$el as HTMLElement | undefined)?.querySelector(".present-awards-data-table table") ?? undefined;
     },

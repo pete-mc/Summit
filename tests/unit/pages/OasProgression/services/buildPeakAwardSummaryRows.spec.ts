@@ -42,7 +42,6 @@ function makeRow(overrides: Partial<OASProgressionRow> = {}): OASProgressionRow 
   };
 }
 
-/** One fully-awarded stage's single-i-statement row, for the given member/stream/stage, recorded against `section`. */
 function awardedRow(memberId: string, stream: string, stage: number, idSuffix: string, section: string = "venturer"): OASProgressionRow {
   return makeRow({ memberId, stream, branch: stream, stage, inputId: `${stream}-${stage}-${idSuffix}`, awarded: true, answered: true, section });
 }
@@ -96,10 +95,7 @@ describe("buildPeakAwardSummaryRows", () => {
     expect(camping?.met).toBe(false);
   });
 
-  // Core Skills is a lifetime check: a member who reached stage 5 of a core skill in an earlier
-  // section still counts as having reached it now. Progressions is NOT a lifetime check (see the
-  // "only counts progressions made in the member's CURRENT section" tests below) — this is the one
-  // place the two deliberately diverge.
+  // Core Skills is lifetime; Progressions only count the current section.
   it("still credits a core skill reached entirely in an earlier (lower) section", () => {
     const members = [makeMember({ id: "m1" })];
     const rows = [1, 2, 3, 4, 5].map((stage) => awardedRow("m1", "bushcraft", stage, "x", "scout"));
@@ -193,10 +189,7 @@ describe("buildPeakAwardSummaryRows", () => {
     expect(cub.progressionBoxes.every((b) => b.met)).toBe(true);
   });
 
-  // "Progress" column (2026-10-09): a simple sum of every condition box across every column —
-  // Core Skills ×3 + Progressions + Special, NOT de-duplicated against the fact that Special's own
-  // boxes are a subset of the same underlying Progressions achievements (per the rule's own
-  // composition) — the user's own worked example counts Special's boxes again as their own boxes.
+  // Progress sums the drawn boxes, so Special's boxes count again.
   describe("Progress column (progressScore/progressTotal/progressPercent)", () => {
     it("totals every condition box across Core Skills + Progressions + Special, per the user's own worked example (Venturer: 5+5+5+12+4=31)", () => {
       const members = [makeMember({ id: "m1" })];
@@ -261,12 +254,7 @@ describe("buildPeakAwardSummaryRows", () => {
     });
   });
 
-  // Regression coverage for the user's own report (2026-10-08): a member's Progressions count was
-  // including stages awarded while they were still in an earlier (lower) section — a Venturer who
-  // had also climbed through Cub/Scout showed e.g. "32 of 12" instead of their real Venturer-only
-  // count. Progressions/Special must only count achievements whose own `section` matches the
-  // CURRENT section being summarised, per the user's instruction: "don't count stages made in
-  // lower sections" (no rollover-progressions concept exists yet).
+  // Regression: Progressions counted earlier sections' stages ("32 of 12").
   describe("current-section scoping (Progressions/Special only count the member's CURRENT section)", () => {
     it("does not count a stream's stages awarded entirely in an earlier section toward Progressions", () => {
       const members = [makeMember({ id: "m1" })];

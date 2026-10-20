@@ -53,9 +53,7 @@
 </script>
 
 <style scoped>
-/* Same shared label styling as OASProgressionFiltersVue.vue's own filter row — see that file's
-   own comment for the full DevTools-confirmed rationale. Duplicated here (not extracted) since
-   Vue SFC `scoped` styles don't cross component files. */
+/* Kept in sync by hand with OASProgressionFiltersVue.vue: scoped styles can't be shared. */
 .oas-vue-select-summary {
   color: rgba(0, 0, 0, 0.6);
   font-size: var(--oas-vue-font-size-body);

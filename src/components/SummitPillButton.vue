@@ -7,12 +7,7 @@
 <script lang="ts" src="./SummitPillButton.ts"></script>
 
 <style scoped>
-/*
- * Terrain's .medium + button rules (see the .ts). The same declarations the four page-level
- * copies had, which were confirmed live against Terrain's buttons — height keeps its !important
- * because Vuetify's own size rule ties on specificity and otherwise wins on a cold load (DESIGN.md
- * "Summit's CSS loses cascade ties").
- */
+/* Gotcha: height needs !important, because Vuetify's size rule ties and wins on a cold load. */
 .summit-pill-btn.v-btn {
   font-size: 14px;
   font-weight: 600;
@@ -24,7 +19,6 @@
   letter-spacing: normal;
 }
 
-/* Terrain's .minor: outlined, on white rather than Vuetify's transparent. */
 .summit-pill-btn--minor.v-btn {
   background-color: var(--color-white, #fff);
 }

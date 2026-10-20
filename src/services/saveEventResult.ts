@@ -9,11 +9,7 @@ export type SaveEventFailure = {
 export type SaveEventResult =
   | {
       ok: true;
-      /**
-       * Set when the save had to be merged with someone else's concurrent changes, carrying when
-       * that other save happened. Absent on an ordinary save. Lets the caller tell the user their
-       * screen was not the whole picture — see awardStorageEvent.savePresentedAwards.
-       */
+      /** Set when merged with a concurrent save: when that other save happened. */
       mergedWith?: Date | null;
     }
   | SaveEventFailure;

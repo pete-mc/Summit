@@ -95,25 +95,14 @@
 </script>
 
 <style scoped>
-/*
- * Copied from OASProgressionFiltersVue.vue's own identical block — see that file's comment for
- * the full rationale (the slot replaces Vuetify's native .v-select__selection element entirely,
- * so it needs its own explicit sizing rather than inheriting the ::v-deep rule below).
- */
+/* Gotcha: same as OASProgressionFiltersVue.vue. The slot bypasses .v-select__selection sizing. */
 .oas-vue-select-summary {
   color: rgba(0, 0, 0, 0.6);
   font-size: var(--oas-vue-font-size-body);
   font-family: var(--oas-vue-font-family);
 }
 
-/*
- * Same shared heading values as OASProgressionFiltersVue's identical rule — see that file's long
- * comment for the full "why" (measured live off Terrain's Skills label, not re-derived from
- * Vuetify's scale factor). Kept as its own copy here rather than factored out, matching how
- * PresentAwardsFiltersVue also carries its own copy — each filter bar is a separate component by
- * design (PLAN_STAGE_3.md §3), and this specific rule set has already drifted once when assumed
- * "the same" without being stated explicitly in each place.
- */
+/* Gotcha: kept in sync by hand with OASProgressionFiltersVue.vue. It has drifted before. */
 .oas-vue-filter-select ::v-deep .v-label {
   color: var(--color-scouts-medium-blue, #00348d) !important;
   font-size: var(--oas-vue-font-size-heading) !important;
@@ -122,11 +111,6 @@
   letter-spacing: -0.01em !important;
 }
 
-/*
- * Unlike OASProgressionFiltersVue this bar has no v-text-field (no Member search — a worksheet is
- * organised by skill/stage/patrol, not searched by name), so only v-select's own selected-value
- * text needs the shared body size/family override.
- */
 .oas-heatmap-controls ::v-deep .v-select__selection {
   font-size: var(--oas-vue-font-size-body) !important;
   font-family: var(--oas-vue-font-family) !important;

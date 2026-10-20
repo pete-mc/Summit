@@ -12,14 +12,9 @@ function filesUnder(dir: string): string[] {
   });
 }
 
-/**
- * One pill button, by construction (.claude/Print/PLAN_STAGE_5.md §E; DESIGN.md "A shared
- * component beats a shared class"). The pill style used to be declared four separate times as a
- * scoped `.oas-vue-pill-btn` rule — free to drift, and one page's button didn't get it at all.
- */
+/** One pill button: four scoped copies used to drift, and one page's button missed it entirely. */
 describe("SummitPillButton", () => {
   it("is the only pill style: no page declares or uses the old .oas-vue-pill-btn class", () => {
-    // The component itself is exempt: its doc comment records what it replaced.
     const files = filesUnder("src").filter((f) => !/SummitPillButton\.(ts|vue)$/.test(f));
     expect(files.length).toBeGreaterThan(50);
     const offenders = files.filter((f) => read(f).includes("oas-vue-pill-btn"));

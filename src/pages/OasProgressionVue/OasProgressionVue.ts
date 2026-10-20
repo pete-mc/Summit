@@ -11,26 +11,13 @@ import type { TerrainAchievementsSection } from "@/shared";
 const logger = createLogger("OasProgressionVue");
 const CONCURRENCY = 6;
 
-/**
- * The nine OAS skills, fetched on every load. Lifted out of loadOasProgressionData so the
- * progress bar's denominator and the set of streams it waits for cannot drift apart.
- */
 const ALL_STREAMS = ["bushcraft", "bushwalking", "camping", "aquatics", "boating", "paddling", "alpine", "cycling", "vertical"];
 
 /**
- * OasProgressionVueContent is mounted as a second, independent Vue instance built from
- * Summit's own Vuetify-registered `vue` (see src/vuetifySetup.ts) — NOT registered as a child
- * component in this SFC's own template. Terrain's router renders this outer .vue file against
- * Terrain's own Vue constructor, which has no Vuetify components registered on it; only a
- * separately-constructed Vue instance sees them. This mirrors OasProgression.ts's React mount
- * (mountReactComponent/renderReactComponent) but with Vue.extend(...).$mount(...) in place of
- * React's createRoot(...).render(...).
+ * Gotcha: mounted as a second Vue instance from Summit's Vuetify-registered `vue` (src/vuetifySetup.ts), not as a child component.
+ * Terrain's router renders this outer file with Terrain's own Vue, which has no Vuetify components.
  */
-/**
- * Deliberately NOT `extends Vue` — pulling in Vue's own inferred instance type here causes
- * TS2589 "type instantiation is excessively deep" (hit and fixed the same way in a prior spike
- * on this page). This is just the minimal structural shape actually used below.
- */
+/** Gotcha: not `extends Vue`, which triggers TS2589 "type instantiation is excessively deep". */
 interface ContentInstance {
   items: OASProgressionRow[];
   trunkStageCounts: Record<string, number>;
@@ -47,20 +34,10 @@ function data() {
     items: [] as OASProgressionRow[],
     contentInstance: undefined as ContentInstance | undefined,
     loadingStreams: new Set<string>(),
-    /**
-     * A whole-load failure, as opposed to one stream failing. Previously the catch below only
-     * logged, so a failed load left a permanently empty heat map with nothing on screen to say
-     * why. TOTAL_STREAMS is the denominator for the progress bar.
-     */
     loadError: false,
     trunkStageCounts: {} as Record<string, number>,
     members: [] as TerrainUnitMember[],
-    /**
-     * The current unit's section — a Terrain "unit" is a single section (one Cub unit, one Scout
-     * unit, etc.), so every member fetched above shares this same value. Used by the Summary tab
-     * to pick which section's Peak Award requirement applies; undefined when Terrain hasn't
-     * resolved a section for the active profile (see TerrainState.getSectionName()).
-     */
+    /** A Terrain unit is one section. Undefined until Terrain resolves it. */
     section: undefined as TerrainAchievementsSection | undefined,
   };
 }
@@ -131,8 +108,7 @@ export default defineComponent({
         });
       } catch (e) {
         logger.error("failed to load OAS progression data:", e);
-        // Clear the in-flight set too: leaving streams "loading" forever would show a stuck
-        // progress bar rather than the error.
+        // Otherwise a stuck progress bar shows instead of the error.
         this.loadingStreams = new Set<string>();
         this.loadError = true;
       }
@@ -165,11 +141,7 @@ export default defineComponent({
       }
     },
     mountContentComponent() {
-      // Vue.extend(...)'s inferred return type, called with `new`, sends TS into
-      // "type instantiation is excessively deep" (TS2589) — the same issue hit in a prior spike
-      // on this page. Routing the construction through an `any`-typed local sidesteps the deep
-      // generic resolution; ContentInstance (a small structural interface, not Vue's own complex
-      // inferred instance type) restores real typing for everything used afterward.
+      // Gotcha: `new` on Vue.extend's inferred type hits TS2589. `any` here; ContentInstance restores typing.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const ContentApp: any = Vue.extend(OasProgressionVueContent);
       this.contentInstance = new ContentApp({

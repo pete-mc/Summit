@@ -1,12 +1,6 @@
 import { getMemberDisplayName } from "@/pages/OasProgression/services/getMemberDisplayName";
 import { getCodename } from "@/pages/OasProgression/services/getCodename";
 
-/**
- * Takes firstName/lastName directly (Terrain's own real, separate fields) rather than a combined
- * name string re-split on whitespace — see .claude/OASProgression/NAME_RESOLUTION.md. This is why
- * every case below passes firstName/lastName as two separate arguments rather than one combined
- * "Amy Scout" string the function would have to guess how to split.
- */
 describe("getMemberDisplayName", () => {
   it("returns the full name (first + last) for 'full'", () => {
     expect(getMemberDisplayName("Amy", "Scout", "m1", "full")).toBe("Amy Scout");
@@ -38,9 +32,7 @@ describe("getMemberDisplayName", () => {
     expect(getMemberDisplayName("Amy", "", "m1", "full")).toBe("Amy");
   });
 
-  // Regression: the previous implementation re-split a combined "first last" string on
-  // whitespace to recover first/last name for sorting and the initial-style formats, which was
-  // lossy for any multi-word given or family name. Taking firstName/lastName directly fixes this.
+  // Regression: re-splitting a combined name lost multi-word names.
   it("handles a multi-word last name correctly, unlike the old whitespace-split approach", () => {
     expect(getMemberDisplayName("Anne", "Van Der Berg", "m1", "firstInitialLast")).toBe("Anne.V");
     expect(getMemberDisplayName("Anne", "Van Der Berg", "m1", "firstLastInitial")).toBe("A.Van Der Berg");

@@ -1,14 +1,6 @@
 <template>
   <div class="oas-heatmap-scroll">
-    <!--
-      Heat map rendered through Vuetify's own v-data-table, so it inherits Terrain's table
-      styling rather than reimplementing it. See .claude/OASProgression/SPIKE_HEATMAP_DATATABLE.md.
-
-      The disabled props are features the heat map never used in the first place — it is one
-      continuous grid whose order comes from sortMembers() and whose filtering is the filter bar
-      above. They are switched off so Vuetify does not add UI for them, not because anything was
-      given up.
-    -->
+    <!-- v-data-table for Terrain's table styling. Sort/filter/paging are off because the filter bar handles them. -->
     <v-data-table
       :headers="dataTableHeaders"
       :items="flatRows"
@@ -21,21 +13,10 @@
       dense
       class="oas-heatmap-data-table"
     >
-      <!--
-        Hand-written thead: the stage-group row uses colspan to span several stage columns under
-        one label, which Vuetify's own header renderer (one <th> per header entry) cannot express.
-
-        Deliberately WITHOUT a thead class that paints the header Summit green: Terrain does not
-        style table headers at all — confirmed from its own Computed panel. Leaving it unstyled
-        lets Vuetify's default show through (12px, 60% black, 32px tall in dense mode), which is
-        what "match Terrain" actually means here. (The legacy React page's .oas-heatmap-thead rule
-        did this; it was removed from index.css along with that page's other dead CSS.)
-      -->
+      <!-- Hand-written thead for colspan. Learning: Terrain doesn't style table headers, so they're deliberately left unstyled. -->
       <template #header>
         <thead>
           <tr>
-            <!-- The first column holds whatever is NOT the section heading: member names under a
-                 skill heading, skill names under a member heading. -->
             <th class="oas-heatmap-member-header">{{ isGroupedByMember ? "Skill" : "Member" }}</th>
             <th class="oas-heatmap-highest-stage-header">Stage</th>
             <th v-for="stage in allStages" :key="stage" class="oas-heatmap-stage-group-header">
@@ -45,15 +26,7 @@
         </thead>
       </template>
 
-      <!--
-        Hand-written tbody: v-data-table emits a single <tbody>, but each skill section gets its
-        own, opening with its title row (which the printout keeps with the rows beneath it).
-      -->
-      <!--
-        Grouped by member: the heading is the person, the rows are their skills, and the skill
-        icon moves from the heading onto each row. No patrol sub-grouping — a member belongs to
-        one patrol, so it is shown beside their name rather than dividing anything.
-      -->
+      <!-- One <tbody> per section, so print keeps each title with its rows. -->
       <template v-if="isGroupedByMember" #body>
         <tbody v-for="section in memberSections" :key="section.memberId" :data-oas-member-section="section.memberId">
           <tr class="oas-heatmap-skill-title-row">
@@ -121,36 +94,18 @@
   font-family: var(--oas-vue-font-family);
 }
 
-/*
- * Patrol beside a member's name when grouped by member. Lighter than the name it follows, since
- * it qualifies rather than identifies — the member is what the row is about.
- */
 .oas-heatmap-member-patrol {
   font-weight: normal;
   color: var(--color-neutral-charcoal, #748494);
 }
 
-/*
- * Vuetify's table defaults to width: 100%. The heat map is a wide grid inside a horizontal
- * scroller, so it must size to its content instead.
- *
- * The border below is duplicated onto the <table> itself, not just its wrapper div. It was added
- * for the old snapdom PDF export (removed 2026-10-12, .claude/Print/PLAN_STAGE_5.md), which
- * captured the <table> alone. It is kept: whether it is truly invisible on screen next to the
- * wrapper's own border hasn't been checked live, so removing it is a visual change of its own,
- * not part of that cleanup. summit-print doesn't need it (it draws its own frame).
- */
+/* Size to content inside the scroller. The border duplicated on the <table> is a leftover from the old PDF export; removing it is a visual change to check live. */
 .oas-heatmap-data-table ::v-deep > .v-data-table__wrapper > table {
   width: max-content;
   border-collapse: collapse;
   border: 1px solid var(--color-light-charcoal, #e5e9ec);
 }
 
-/*
- * Terrain's own v-data-table frame, via its tokens rather than literals so it tracks any
- * retheme — see .claude/DESIGN.md. Terrain does not style thead at all, so the heat map's own
- * green header styling is removed rather than replaced.
- */
 .oas-heatmap-data-table ::v-deep > .v-data-table__wrapper {
   background: var(--color-white, #fff);
   border: 1px solid var(--color-light-charcoal, #e5e9ec);

@@ -26,14 +26,10 @@ const PAGES: Array<[string, string, string]> = [
 
 describe("SummitLoadingState — one indicator, normalised props", () => {
   it("lives in shared components, not under any one page", () => {
-    // A component owned by IStatements/ would make that page load-bearing for two others it has
-    // nothing to do with.
     expect(fs.existsSync(path.resolve(REPO_ROOT, "src/components/SummitLoadingState.vue"))).toBe(true);
   });
 
   it("is indeterminate without counts and determinate with them", () => {
-    // One component covers both of I Statements' phases: trees (no knowable total) then
-    // templates (countable).
     expect(LOADING_VUE).toContain(':indeterminate="!hasCounts"');
     expect(LOADING_VUE).toContain(':value="percent"');
   });
@@ -48,8 +44,7 @@ describe("SummitLoadingState — one indicator, normalised props", () => {
   });
 
   it("keeps its styling scoped to itself rather than in the global sheet", () => {
-    // DESIGN.md sends a shared *class* to index.css, but a shared *component* carries its own
-    // styles and so cannot be redeclared per page — the failure .oas-vue-filter-panel had.
+    // A shared component carries its own styles, so they can't be redeclared (and drift) per page.
     expect(LOADING_VUE).toContain("<style scoped>");
     expect(withoutComments(read("src/styles/index.css"))).not.toContain(".summit-loading");
   });
@@ -63,8 +58,7 @@ describe("All three pages use the shared indicator", () => {
   });
 
   it.each(PAGES)("%s no longer hand-rolls its own progress bar", (_name, template) => {
-    // The whole point of the extraction: one <v-progress-linear> in the codebase, in the shared
-    // component. A page reintroducing its own is how the three drifted apart to begin with.
+    // One <v-progress-linear> in the codebase; per-page copies are how the pages drifted.
     expect(withoutComments(template)).not.toContain("<v-progress-linear");
   });
 
@@ -75,8 +69,7 @@ describe("All three pages use the shared indicator", () => {
 
 describe("Present Awards — the reported bug", () => {
   it("gates the table on having content instead of rendering it while loading", () => {
-    // The bug was never a missing spinner: loadState was tracked correctly and the table
-    // rendered anyway, showing headers with no rows, which reads as "no awards".
+    // Regression: the table rendered empty during load, which read as "no awards".
     const gated = AWARDS_CONTENT.slice(AWARDS_CONTENT.indexOf('v-if="hasContent"', AWARDS_CONTENT.indexOf("<SummitLoadingState")));
     expect(gated).toContain("<PresentAwardsTableVue");
     expect(gated).toContain("<PresentAwardsFiltersVue");
@@ -108,7 +101,6 @@ describe("Present Awards — the reported bug", () => {
 
 describe("OAS Progression — gains a progress bar and an error state", () => {
   it("no longer swallows a failed load", () => {
-    // It previously only called logger.error, leaving a permanently empty heat map.
     expect(OAS_PAGE).toContain("this.loadError = true");
     expect(OAS_CONTENT_TS).toContain("loadError");
   });
@@ -119,16 +111,12 @@ describe("OAS Progression — gains a progress bar and an error state", () => {
   });
 
   it("counts the nine skills from one shared constant", () => {
-    // The bar's denominator and the set of streams awaited must not drift apart.
     expect(OAS_PAGE).toContain("const ALL_STREAMS");
     expect(OAS_PAGE).toContain("new Set(ALL_STREAMS)");
     expect(OAS_PAGE).toContain("totalStreams: ALL_STREAMS.length");
   });
 
   it("shows partial results alongside the bar rather than hiding them", () => {
-    // Deliberately unlike the other two pages: streams arrive one at a time and each renders as
-    // it lands, so hiding the body until all nine finish would feel slower, and a per-stream
-    // reload would blank a full screen to refresh one skill.
     expect(OAS_CONTENT_TS).toContain("hasContent()");
     expect(OAS_CONTENT_TS).toContain("this.items.length > 0");
     expect(OAS_CONTENT).toContain('v-if="hasContent && ');

@@ -1,5 +1,4 @@
-// Terrain's stylesheets don't exist in jsdom, so the borrowed-font lookup is stubbed with what it
-// returns on the real page: Nunito Sans re-declared as SummitPrintSans (.claude/Print/PLAN_STAGE_5.md §D).
+// Terrain's stylesheets don't exist in jsdom, so stub the borrowed fonts.
 const FAKE_FONT_CSS = '@font-face { font-family: "SummitPrintSans"; font-weight: 400; src: url("https://terrain.example/_nuxt/fonts/R.woff2"); }';
 jest.mock("@/print/printFonts", () => {
   const actual = jest.requireActual("@/print/printFonts");
@@ -126,10 +125,7 @@ describe("printWorksheets", () => {
   it("focuses the new window immediately, not only right before printing", () => {
     printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
 
-    // Called once synchronously during printWorksheets itself, before onload/the timeout have had
-    // any chance to fire — reported live: the window wasn't reliably coming to the front, so an
-    // early focus() call (in addition to the one right before print()) gives the browser the best
-    // chance of raising it as soon as it exists.
+    // Regression: the window didn't reliably come to the front, so focus() is also called immediately.
     expect(fakeWindow.focus).toHaveBeenCalled();
   });
 

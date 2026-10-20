@@ -17,7 +17,6 @@ import { createLogger } from "@/helpers";
 
 const logger = createLogger("PresentAwardsVueContent");
 
-/** What the content component asks of the table for printing and export (PresentAwardsTableVue's methods). */
 interface PresentAwardsTablePrintApi {
   prepareForPrint(): Promise<() => void>;
   getPrintTable(): HTMLTableElement | undefined;
@@ -25,7 +24,7 @@ interface PresentAwardsTablePrintApi {
 }
 
 const FEEDBACK_TIMEOUT_MS = 4000;
-/** Longer, because a merge notice reports something the user did not already know. */
+/** Longer: a merge notice tells the user something new. */
 const MERGE_FEEDBACK_TIMEOUT_MS = 10000;
 
 export const NOTHING_SELECTED_MESSAGE = "No new awards were selected as presented.";
@@ -33,21 +32,11 @@ export const SAVED_MESSAGE = "Saved.";
 export const DISCARD_EDITS_PROMPT = "Refreshing will discard your unsaved changes. Continue?";
 
 function loadInitialFilters(): PresentAwardsVueFilterState {
-  // Merged OVER the defaults, so state saved by an older build that lacks a newer key still
-  // produces a complete object.
+  // Spread over defaults so older saved state missing new keys is still complete.
   return { ...DEFAULT_FILTERS, ...(loadPresentAwardsVueFilters() ?? {}) };
 }
 
-/**
- * Root of the second (Vuetify-registered) Vue instance for the Present Awards page — see
- * PresentAwardsVue.ts for why this is mounted separately from Terrain's own Vue.
- *
- * This component owns ALL edit state. The table is presentational: it receives the current
- * selection/dates as props and emits intent, never mutating anything itself.
- *
- * Edit state is keyed by achievement id rather than row index, so it survives a sort, a filter,
- * or a reload of the underlying items.
- */
+/** Owns ALL edit state, keyed by achievement id so it survives sort, filter and reload. The table only emits intent. */
 export default defineComponent({
   name: "PresentAwardsVueContent",
   components: { PresentAwardsTableVue, PresentAwardsFiltersVue, SummitLoadingState, SummitPillButton, SummitPrintButton },
@@ -60,23 +49,14 @@ export default defineComponent({
   data() {
     const initialFilters = loadInitialFilters();
     return {
-      /**
-       * Ticked achievement ids. Vue 2 cannot observe Set mutations (no .add()/.delete()
-       * interception), so every change REPLACES this with a new Set — mutating in place would
-       * update the data without ever re-rendering the checkbox.
-       */
+      /** Gotcha: Vue 2 can't observe Set mutations. Always replace the Set, or the checkbox won't re-render. */
       selectedIds: new Set<string>(),
-      /**
-       * Achievement id -> "DD/MM/YYYY". Vue 2 also cannot detect keys added to a plain object
-       * after it was made reactive, so this is likewise replaced rather than index-assigned.
-       */
+      /** Gotcha: Vue 2 can't see added keys either, so replace rather than index-assign. */
       presentedDates: {} as Record<string, string>,
       isSaving: false,
       feedback: "",
       feedbackTimer: undefined as ReturnType<typeof setTimeout> | undefined,
-      /** Per-column filter values, lifted here so this component can reuse the filtered set. */
       columnFilters: initialFilters.columnFilters,
-      /** Matches the React page's default: already-presented awards are hidden until asked for. */
       showPreviouslyPresented: initialFilters.showPreviouslyPresented,
       groupByMember: initialFilters.groupByMember,
       isReloading: false,
@@ -84,8 +64,7 @@ export default defineComponent({
     };
   },
   watch: {
-    // Reseed edit state whenever a fresh set of items arrives (initial load, or a reload after
-    // saving), so the checkboxes reflect what is actually stored rather than a stale selection.
+    // Reseed edit state from each fresh load so checkboxes match what's stored.
     items: {
       immediate: true,
       handler() {
@@ -97,30 +76,15 @@ export default defineComponent({
     if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
   },
   computed: {
-    /**
-     * Whether the page has data on screen. Saving and refreshing both re-run the load, which
-     * sets loadState back to "loading" — gating the table on loadState alone would therefore
-     * blank a full screen of ticked checkboxes every time the user pressed Save. The Save
-     * button's own spinner already reports that work. Only a genuine first load has nothing
-     * to show.
-     */
+    /** Gotcha: Save and Refresh re-run the load. Gating on loadState alone would blank the table on every save. */
     hasContent(): boolean {
       return this.items.length > 0;
     },
-    /**
-     * Errors always show. The bar only shows on a first load, for the reason above — a reload
-     * behind existing content is reported by the refresh and Save buttons' own spinners.
-     */
     sharedLoadState(): "loading" | "ready" | "error" {
       if (this.loadState === "error") return "error";
       return this.loadState === "loading" && !this.hasContent ? "loading" : "ready";
     },
-    /**
-     * The hide-previously-presented toggle runs UPSTREAM of the column filters, so the Type
-     * dropdown's options (derived from what the table is given) only ever offer values that could
-     * actually match something currently in scope.
-     */
-    /** Bundled for the filters component, which takes the whole display-filter object as a prop. */
+    /** Runs before the column filters, so the Type dropdown only offers values that can match. */
     displayFilters(): PresentAwardsDisplayFilters {
       return { showPreviouslyPresented: this.showPreviouslyPresented, groupByMember: this.groupByMember };
     },
@@ -128,7 +92,6 @@ export default defineComponent({
       if (this.showPreviouslyPresented) return this.items;
       return this.items.filter((item) => !item.previouslyPresented);
     },
-    /** The column filters in effect, for the printout's header line (.claude/Print/PLAN_STAGE_4.md). */
     presentAwardsPrintMeta(): MetaEntry[] {
       return buildPresentAwardsPrintMeta(this.columnFilters);
     },
@@ -159,8 +122,7 @@ export default defineComponent({
 
       if (isSelected) {
         nextSelected.add(item.id);
-        // Matches the React page: ticking an unpresented award defaults its presentation date to
-        // the date it was awarded.
+        // Ticking defaults the presented date to the awarded date (as the React page does).
         if (!nextDates[item.id]) nextDates[item.id] = item.dateAwarded;
       } else {
         nextSelected.delete(item.id);
@@ -173,10 +135,7 @@ export default defineComponent({
     onUpdateDate(item: SummitAchievement, displayDate: string) {
       this.presentedDates = { ...this.presentedDates, [item.id]: displayDate };
     },
-    /**
-     * Called directly from each handler rather than from a watcher: Vue 2 watchers fire on the
-     * next tick, so a filter change followed immediately by navigating away could lose the write.
-     */
+    /** Gotcha: called from each handler, not a watcher. Watchers fire next tick and the write could be lost on navigation. */
     persistFilters() {
       savePresentAwardsVueFilters({
         columnFilters: this.columnFilters,
@@ -193,11 +152,7 @@ export default defineComponent({
       this.groupByMember = filters.groupByMember;
       this.persistFilters();
     },
-    /**
-     * "Reset filters": everything back to a first visit — display options (Group by member On,
-     * Show previously presented Off) and every column filter (user, 2026-10-11). Edit state (ticks,
-     * dates) is not a filter and is left alone.
-     */
+    /** Edit state (ticks, dates) is not a filter and is kept. */
     onResetFilters() {
       this.columnFilters = { ...DEFAULT_FILTERS.columnFilters };
       this.showPreviouslyPresented = DEFAULT_FILTERS.showPreviouslyPresented;
@@ -211,11 +166,6 @@ export default defineComponent({
         this.feedback = "";
       }, timeoutMs);
     },
-    /**
-     * Formatted spreadsheet through summit-excel (.claude/Excel/PLAN_STAGE_3.md): the table's rows as
-     * on screen (filters, sort, grouping, and the Presented value currently shown, saved or not),
-     * with the printout's header wording and the section logo.
-     */
     async onExcelExportClick() {
       const table = this.$refs.table as unknown as PresentAwardsTablePrintApi | undefined;
       if (!table) return;
@@ -235,18 +185,15 @@ export default defineComponent({
         this.isExcelExporting = false;
       }
     },
-    /** The awards table for SummitPrintButton — read at click time, after prepareForPrint has rendered every row. */
     presentAwardsPrintTarget(): HTMLTableElement | undefined {
       return (this.$refs.table as unknown as PresentAwardsTablePrintApi | undefined)?.getPrintTable();
     },
-    /** Show every row and open every group for printing; returns the restore (see PresentAwardsTableVue.prepareForPrint). */
     async preparePresentAwardsPrint(): Promise<(() => void) | void> {
       const table = this.$refs.table as unknown as PresentAwardsTablePrintApi | undefined;
       return table ? table.prepareForPrint() : undefined;
     },
     async onReloadClick() {
-      // Reloading re-seeds the selection and dates from fresh data, so any unsaved ticks would
-      // vanish. Silent data loss behind a button labelled "Refresh" is worth one confirmation.
+      // A reload discards unsaved ticks, so confirm first.
       if (this.hasUnsavedEdits && !window.confirm(DISCARD_EDITS_PROMPT)) {
         return;
       }
@@ -264,18 +211,14 @@ export default defineComponent({
         return;
       }
 
-      // Apply the pending edits onto the model instances only now, at save time — this is the
-      // one place SummitAchievement is mutated, keeping the model (and its existing tests)
-      // untouched by the editing flow.
+      // The only place SummitAchievement is mutated.
       const presentedItems = this.items.filter((item) => this.selectedIds.has(item.id));
       presentedItems.forEach((item) => item.updatePresented(this.presentedDates[item.id] ?? item.dateAwarded));
 
       this.isSaving = true;
       try {
         const outcome = this.onSave ? await this.onSave(presentedItems) : {};
-        // A merge notice is already a full sentence about what happened, so it replaces the plain
-        // "Saved." rather than being appended — and it stays up longer, since it is telling the
-        // user something they did not know rather than confirming something they just did.
+        // A merge notice replaces "Saved." and stays up longer.
         if (outcome.error) {
           this.showFeedback(`Save failed: ${outcome.error}`);
         } else if (outcome.mergeNotice) {

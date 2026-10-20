@@ -6,42 +6,22 @@ import { createLogger } from "@/helpers/Logger";
 
 const logger = createLogger("summitExcel");
 
-/**
- * summit-excel: formatted spreadsheet export (.claude/Excel/PLAN.md). The counterpart of
- * src/print/: each table gets a sheet builder (src/excel/sheets/) that turns the page's own row
- * data into cells; this file holds what every sheet shares: the header block (same wording as the
- * printout), the section logo, colours, the file name and the download.
- *
- * Sheets are built from data, not by reading the screen, so numbers stay numbers in Excel.
- */
+/** Sheets are built from data, not by reading the screen, so numbers stay numbers in Excel. */
 
-/**
- * Fixed copies of the screen's status colours (src/styles/index.css). Excel can't read CSS
- * variables, so a change there must be copied here too (noted in .claude/DESIGN.md).
- */
+/** Gotcha: copies of the screen's status colours (src/styles/index.css). Excel can't read CSS variables; change both. */
 export const EXCEL_COLOURS = {
-  /** Every box in a group met: --summit-color-status-awarded (= --summit-color-bg-primary). */
   allMet: "#004c00",
-  /** One box met: --summit-color-status-answered. */
   met: "#ecb206",
-  /** Box not met: --summit-color-status-unanswered. */
   notMet: "#edebe9",
-  /** Header rule and the not-started bar's outline: --summit-color-border-default. */
   headerBorder: "#c8c6c4",
-  /** Section title rows (skill or member): --summit-color-status-unanswered, as on screen. */
   sectionRow: "#edebe9",
-  /** Patrol title rows (Heatmap) and member group rows (Present Awards): --summit-color-bg-muted. */
   mutedRow: "#f3f2f1",
-  /** Meta line text. */
   muted: "#555555",
-  /** Box borders, read as the gap between squares; also the green bar's outline. */
+  /** White borders read as the gap between squares. */
   squareBorder: "#ffffff",
 };
 
-/**
- * A bar `width` cells long: one fill, outlined on its outside edge only (no lines inside it), so
- * it reads as a single shape like the screen's bar. Shared by the Summary and Heatmap sheets.
- */
+/** Outlined on its outside edge only, so it reads as one shape. */
 export function outlinedBar(width: number, fill: string, outline: string): Cell[] {
   return Array.from({ length: width }, (_, i) => ({
     value: "",
@@ -56,13 +36,9 @@ export function outlinedBar(width: number, fill: string, outline: string): Cell[
   }));
 }
 
-/** Windows forbids these in file names; a unit name containing one would break the download. */
 const FORBIDDEN_FILE_CHARS = /[\\/:*?"<>|]/g;
 
-/**
- * "Summit - OAS Progression - Summary - {Unit} - 20261012.xlsx" (user, 2026-10-12). Empty parts
- * (e.g. no unit name yet) are dropped rather than leaving "- -" in the name.
- */
+/** Empty parts are dropped rather than leaving "- -". */
 export function buildExcelFileName(parts: string[], when: Date): string {
   const pad = (n: number) => (n < 10 ? `0${n}` : String(n));
   const stamp = `${when.getFullYear()}${pad(when.getMonth() + 1)}${pad(when.getDate())}`;
@@ -73,14 +49,10 @@ export function buildExcelFileName(parts: string[], when: Date): string {
 export interface ExcelHeader {
   title: string;
   subtitle: string;
-  /** "Patrol: All · Generated: 12/10/2026, 2:05 pm", same entries as the printout's meta line. */
   metaLine: string;
 }
 
-/**
- * The header text for a sheet, resolved by summit-print from the same profile, so the spreadsheet
- * and the printout say exactly the same thing.
- */
+/** Resolved by summit-print, so the sheet and the printout say the same thing. */
 export function resolveExcelHeader(printProfile: string, meta: MetaEntry[] | undefined, vars: Record<string, string>, generated: Date): ExcelHeader {
   const { header } = resolveHeaderFooter({ profile: printProfile, meta, vars, generated });
   return {
@@ -90,13 +62,9 @@ export function resolveExcelHeader(printProfile: string, meta: MetaEntry[] | und
   };
 }
 
-/** Rows the header block occupies (title, subtitle, meta, spacer). */
 export const HEADER_BLOCK_ROWS = 4;
 
-/**
- * The rows above the table. With a logo, the text starts in column B so it sits beside the logo
- * (which floats over column A); without one it starts in column A.
- */
+/** With a logo (floating over column A), text starts in column B. */
 export function buildHeaderBlock(header: ExcelHeader, hasLogo: boolean): Row[] {
   const lead: Cell[] = hasLogo ? [null] : [];
   return [
@@ -107,13 +75,9 @@ export function buildHeaderBlock(header: ExcelHeader, hasLogo: boolean): Row[] {
   ];
 }
 
-/** Logo height on the sheet, about the height of the header block (the Stage 0 sample's size). */
 const LOGO_HEIGHT_PX = 94;
 
-/**
- * The section logo as an embedded image, or null (no section, no extension URL, or the fetch
- * failed). Never fails the export: a spreadsheet without the logo beats no spreadsheet.
- */
+/** Never fails the export: no logo beats no spreadsheet. */
 export async function loadSectionLogoImage(url: string | null): Promise<Image | null> {
   if (!url) return null;
   try {
@@ -128,7 +92,6 @@ export async function loadSectionLogoImage(url: string | null): Promise<Image | 
       contentType: blob.type || (/\.png$/i.test(url) ? "image/png" : "image/jpeg"),
       width,
       height,
-      // write-excel-file sizes images by pixels / dpi; this dpi makes the logo LOGO_HEIGHT_PX tall.
       dpi: (height * 96) / LOGO_HEIGHT_PX,
       anchor: { row: 1, column: 1 },
       offsetX: 4,
@@ -146,32 +109,22 @@ export interface ExcelSheet {
   options: SheetOptions<File | Blob | ArrayBuffer>;
 }
 
-/** Writes the workbook and starts the browser download. */
 export async function downloadWorkbook(sheet: ExcelSheet, fileName: string): Promise<void> {
   await writeXlsxFile(sheet.rows, sheet.options).toFile(fileName);
 }
 
-/** Writes the workbook to a Blob (tests, and anything that needs the bytes rather than a download). */
 export function workbookToBlob(sheet: ExcelSheet): Promise<Blob> {
   return writeXlsxFile(sheet.rows, sheet.options).toBlob();
 }
 
 export interface ExcelExportRequest {
-  /** summit-print profile whose header wording the sheet reuses, e.g. "present-awards". */
   printProfile: string;
-  /** The filters in effect, as given to the printout. */
   meta?: MetaEntry[];
-  /** File name parts before the unit, e.g. ["OAS Progression", "Summary"]. */
   fileNameParts: string[];
-  /** Builds the sheet once the header and logo are known. */
   build: (header: ExcelHeader, logo: Image | null) => ExcelSheet;
 }
 
-/**
- * Every Excel Export button's work: one timestamp for both the header and the file name, Terrain's
- * unit/group/section (the same source the printout uses), the section logo, then the download.
- * Throws on failure, so the page can report it.
- */
+/** One timestamp for header and file name. Throws on failure so the page can report it. */
 export async function exportExcelSheet(request: ExcelExportRequest): Promise<void> {
   const generated = new Date();
   const context = getTerrainPrintContext();
@@ -180,19 +133,14 @@ export async function exportExcelSheet(request: ExcelExportRequest): Promise<voi
   await downloadWorkbook(sheet, buildExcelFileName(request.fileNameParts.concat([context.vars.unit]), generated));
 }
 
-/**
- * A DD/MM/YYYY date as a real Excel date, or null. Built at UTC midnight: write-excel-file counts
- * days from the Unix epoch in UTC, so a local-midnight date in Australia (the previous afternoon UTC)
- * would show as the day before.
- */
+/** Gotcha: built at UTC midnight. write-excel-file counts days in UTC, so local midnight in Australia shows the day before. */
 export function parseDisplayDate(text: string): Date | null {
   const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(text.trim());
   if (!match) return null;
   const [day, month, year] = [Number(match[1]), Number(match[2]), Number(match[3])];
   const date = new Date(Date.UTC(year, month - 1, day));
-  // Rejects impossible dates (31/02/2026 would otherwise roll into March).
+  // Rejects impossible dates (31/02 would roll into March).
   return date.getUTCDate() === day && date.getUTCMonth() === month - 1 ? date : null;
 }
 
-/** Excel's own date format code for day/month/year. */
 export const EXCEL_DATE_FORMAT = "dd/mm/yyyy";

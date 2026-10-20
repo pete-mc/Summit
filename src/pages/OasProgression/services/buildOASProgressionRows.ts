@@ -7,10 +7,6 @@ const logger = createLogger("buildOASProgressionRows");
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-/**
- * Matches this module's own cache key shapes for a given stream:
- * "tree.{stream}" | "template.{stream}" | "achievements.{unitId}.{stream}.{branch}.{stage}"
- */
 export function isOASCacheKeyForStream(stream: string): (key: string) => boolean {
   return (key: string) => {
     const segments = key.split(".");
@@ -35,14 +31,7 @@ export interface OASProgressionRow {
   inputId: string;
   iStatement: string;
   memberId: string;
-  /**
-   * Convenience display/search string (`${firstName} ${lastName}`) — kept for the member-filter
-   * substring search and the Table view's PDF/Excel export column, where concatenation is
-   * lossless. Sorting and name-format logic (initials, last-name-first, etc.) must use
-   * firstName/lastName directly instead, never re-split memberName — splitting it back apart
-   * loses information for multi-word given/family names (e.g. "Van Der Berg"). See
-   * .claude/OASProgression/NAME_RESOLUTION.md.
-   */
+  /** For search and export only. Gotcha: never re-split it; sort and format from firstName/lastName. */
   memberName: string;
   firstName: string;
   lastName: string;
@@ -50,16 +39,7 @@ export interface OASProgressionRow {
   answered: boolean;
   awarded: boolean;
   date: string | null;
-  /**
-   * The section this cell's achievement was recorded against (Terrain's own `achievement.section`
-   * on the underlying TerrainAchievements record) — null for a blank/unanswered cell, where there
-   * is no achievement to read it from. Used to tell apart progress made in a member's CURRENT
-   * section from progress made in an earlier (lower) section before they moved up, e.g. for the
-   * Peak Award Summary tab's Progressions/Special counts, which must only count the current
-   * section's own achievements — see buildPeakAwardSummaryRows.ts and
-   * .claude/OASProgression/PLAN_PEAK_AWARD_SUMMARY.md. Not used by the heat map, which
-   * deliberately shows a member's whole OAS history regardless of section.
-   */
+  /** Null for a blank cell. Lets the Peak Award summary count only the current section. */
   section: string | null;
 }
 
@@ -90,11 +70,7 @@ export function flattenOASTemplate(template: OASTemplate): FlattenedIStatement[]
   return flattened;
 }
 
-/**
- * `iStatements` is either one list shared by every member, or a per-member lookup — a member who
- * started a stage on an older template version keeps that version's I-statements (see
- * .claude/OASProgression/PLAN_TEMPLATE_VERSIONS.md), so members of one stage can differ.
- */
+/** `iStatements` can be per member: members stay on the template version they started. */
 export function buildBlankMatrix(unitId: string, stream: string, branch: string, stage: number, iStatements: FlattenedIStatement[] | ((memberId: string) => FlattenedIStatement[]), members: TerrainUnitMember[]): OASProgressionRow[] {
   const matrix: OASProgressionRow[] = [];
   members.forEach((member) => {
@@ -231,11 +207,8 @@ export function applyAchievementsToMatrix(matrix: OASProgressionRow[], achieveme
       return;
     }
 
-    // Stamp every cell awarded regardless of whether its inputId appears in `answers` — the
-    // template's i-statements can change after a member was awarded (wording edits, additions),
-    // leaving old `answers` keys that no longer match current inputIds. The achievement's
-    // `awarded` status is authoritative for the whole stage; it must not be second-guessed by a
-    // per-cell answers-key match, or an awarded stage renders as partially-complete squares.
+    // Gotcha: an awarded achievement is authoritative for the whole stage. Template edits can leave old `answers`
+    // keys that no longer match, which would render an awarded stage as partly complete.
     applyAnswersToMemberRows(memberRows, achievement, achievement.status_updated);
     memberRows.forEach((row) => {
       row.answered = true;
@@ -273,12 +246,7 @@ export function flattenOASTree(tree: OASTree): OASTreeBranchStage[] {
   return results;
 }
 
-/**
- * Counts how many stages share the stream's own branch_id before the tree forks into
- * named sub-branches (e.g. Bushcraft stages 1-3 before splitting into Pioneering/Survival
- * Skills at stage 4). Based on the tree's fixed structure, not any member's own progress,
- * so every member's heat-map row aligns on the same trunk/branch column split.
- */
+/** From the tree's structure, not progress, so every member's row splits trunk/branch at the same column. */
 export function getTrunkStageCount(tree: OASTree): number {
   let count = 0;
   let node: OASTreeNode | undefined = tree.tree;
@@ -329,13 +297,7 @@ async function getCachedAchievements(unitId: string, stream: string, branch: str
   return fetched;
 }
 
-/**
- * Which older template file each member's achievement for this stage points at, e.g.
- * "oas/vertical/3/1.json" — the same `{template}/{version}.json` path Terrain's own loadTemplate()
- * uses for an existing achievement. A member is left out (→ use latest) when their achievement is
- * already on the latest version, or carries no template/version at all (e.g. an imported award).
- * If a member somehow has several achievements for one stage, the most recently updated wins.
- */
+/** e.g. "oas/vertical/3/1.json". Members on the latest version, or with no version (imported awards), are left out. */
 export function olderTemplateLinksByMember(achievements: TerrainAchievements[], latestVersion: number): Map<string, string> {
   const newestByMember = new Map<string, TerrainAchievements>();
   achievements.forEach((achievement) => {
@@ -354,12 +316,7 @@ export function olderTemplateLinksByMember(achievements: TerrainAchievements[], 
   return links;
 }
 
-/**
- * One display order for a stage whose members may be on different template versions: the latest
- * version's order, with each statement that only exists in an older version inserted straight
- * after the statement that preceded it in that version (or at the very start, if it was first).
- * So a statement dropped from the latest version still shows where its own members saw it.
- */
+/** Latest version's order, with older-only statements inserted after their predecessor. */
 export function mergeStatementOrder(latest: FlattenedIStatement[], olderVersions: FlattenedIStatement[][]): Map<string, number> {
   const order = latest.map((s) => s.inputId);
   olderVersions.forEach((statements) => {
@@ -374,7 +331,6 @@ export function mergeStatementOrder(latest: FlattenedIStatement[], olderVersions
   return new Map(order.map((inputId, index) => [inputId, index]));
 }
 
-/** Fetches each older template version members are on (once per distinct file); a failed fetch falls back to latest for those members. */
 async function loadOlderStatementsByMember(achievements: TerrainAchievements[], latestVersion: number): Promise<{ byMember: Map<string, FlattenedIStatement[]>; versions: FlattenedIStatement[][] }> {
   const linksByMember = olderTemplateLinksByMember(achievements, latestVersion);
   const links = Array.from(new Set(Array.from(linksByMember.values())));

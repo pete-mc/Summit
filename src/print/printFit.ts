@@ -1,39 +1,20 @@
 /**
- * Page layout for the print document. Runs against the print document AFTER it has rendered in a
- * hidden iframe whose body is exactly the printable width of the chosen page, so what fits can be
- * measured directly. Dependency-free on purpose (see .claude/Print/PLAN.md).
- *
- * Two strategies:
- *   'fit'   – keep the table one page wide: let it reflow, then shrink with CSS zoom (down to
- *             minZoom). Only if it STILL doesn't fit do we fall back to splitting columns.
- *   'split' – keep things at (near) full size and split the columns across several page-wide
- *             "bands", repeating the first `repeatColumns` columns (e.g. Member, Stage) on every
- *             band. Each band runs down as many pages as it needs: an n × m page grid, printed
- *             "down, then across" like a spreadsheet.
- *
- * Browsers never paginate a table sideways — anything wider than the page is simply cut off —
- * which is why the banding is done here rather than left to the print engine.
- *
- * Note: Array.from() rather than spread throughout — see the ES5 Set-spread note in
- * .claude/Print/PLAN.md (I2).
+ * 'fit' reflows then CSS-zooms down to minZoom, splitting only if that still fails. 'split' bands the
+ * columns across pages (repeating the first `repeatColumns`), printed down then across.
+ * Learning: browsers never paginate a table sideways (it's just cut off), so banding is done here.
+ * Gotcha: Array.from(), not spread (ES5 Set-spread trap).
  */
 
 export type PrintLayout = "fit" | "split";
 
 export interface LayoutOptions {
   layout?: PrintLayout;
-  /** Smallest shrink allowed in 'fit'. */
   minZoom?: number;
-  /** Zoom used for bands in 'split'. */
   splitZoom?: number;
-  /** Leading columns repeated on every band. */
   repeatColumns?: number;
   step?: number;
-  /** Label above each band, e.g. 'Stages {first} – {last}'. */
   bandLabel?: string;
-  /** Centre footer on split parts; {part}, {parts}, {page}, {pages}. */
   partFooter?: string;
-  /** "table" = the <tfoot> fallback footer for browsers without page-margin boxes. */
   footerMode?: "margin-box" | "table";
 }
 
@@ -57,27 +38,20 @@ export function layoutTable(doc: Document, options: LayoutOptions = {}): LayoutR
   if (layout === "fit") {
     const r = shrinkToFit(table, available, minZoom, step);
     if (!r.overflow) return { ...r, bands: 1 };
-    // Too wide even at minZoom: fall through to splitting at minZoom.
     splitZoom = minZoom;
   }
   return splitIntoBands(doc, table, available, { zoom: splitZoom, repeatColumns, bandLabel, partFooter, footerMode });
 }
 
-// ---------------------------------------------------------------------------
-
 function setZoom(el: HTMLElement, zoom: number): void {
-  // `zoom` (not transform: scale) — it reflows layout and pagination; Chromium-only, which is all
-  // Summit targets.
+  // `zoom`, not transform: scale, because it reflows layout and pagination (Chromium-only, which is all Summit targets).
   el.style.setProperty("zoom", String(zoom));
 }
 
 function overflows(table: HTMLTableElement, available: number): boolean {
-  // No tolerance on the table's own width: `available` is already rounded DOWN from the page's
-  // fractional printable width (e.g. 702.99 -> 702 for A4 portrait, normal margins), so allowing
-  // +1px let a 703px table through that then spilled past the page and lost its right border
-  // (seen live on Present Awards, 2026-10-11).
+  // Gotcha: no +1px tolerance. `available` is already rounded down, and a 703px table spilled past the page and lost its right border.
   if (table.getBoundingClientRect().width > available) return true;
-  // Fixed-layout tables clip inside cells instead of growing, so the table-width check alone misses it.
+  // Gotcha: fixed-layout tables clip inside cells instead of growing, so check the cells too.
   const cells = Array.from(table.querySelectorAll<HTMLElement>("th, td"));
   return cells.some((c) => c.scrollWidth > c.clientWidth + 1);
 }
@@ -95,10 +69,6 @@ function shrinkToFit(table: HTMLTableElement, available: number, minZoom: number
   return { zoom, overflow: overflows(table, available) };
 }
 
-// ---------------------------------------------------------------------------
-// Column banding
-// ---------------------------------------------------------------------------
-
 interface BandOptions {
   zoom: number;
   repeatColumns: number;
@@ -107,26 +77,23 @@ interface BandOptions {
   footerMode: "margin-box" | "table";
 }
 
-/** The part's centre footer text, e.g. "Generated … · Part 2 of 3". */
 function partFooterText(partFooter: string, part: number, parts: number): string {
   return partFooter.replace(/\{part\}/g, String(part)).replace(/\{parts\}/g, String(parts));
 }
 
 function splitIntoBands(doc: Document, original: HTMLTableElement, available: number, { zoom, repeatColumns, bandLabel, partFooter, footerMode }: BandOptions): LayoutResult {
-  // Fixed % widths suit one-page layouts; for bands let each column size to its content so wide
-  // columns get the room and narrow ones don't waste it.
+  // Bands size columns to content instead of fixed % widths.
   original.querySelector("colgroup")?.remove();
   original.classList.remove("summit-print-fixed");
 
   const total = columnCount(original);
   const repeat = Math.min(repeatColumns, total - 1);
-  const data = range(repeat, total); // columns that get split
-  const fixed = range(0, repeat); // columns repeated on each band
+  const data = range(repeat, total);
+  const fixed = range(0, repeat);
   const host = original.parentElement as HTMLElement;
   const probe = doc.createElement("div");
   host.appendChild(probe);
 
-  // Try 1, 2, 3 … bands (balanced sizes) until every band fits.
   let chosen: number[][] | null = null;
   for (let n = 1; n <= data.length && !chosen; n++) {
     const groups = balance(data, n);
@@ -140,7 +107,7 @@ function splitIntoBands(doc: Document, original: HTMLTableElement, available: nu
   }
   probe.remove();
   const overflow = !chosen;
-  if (!chosen) chosen = data.map((c) => [c]); // best effort: one column per band
+  if (!chosen) chosen = data.map((c) => [c]);
 
   if (chosen.length === 1) {
     setZoom(original, zoom);
@@ -162,7 +129,6 @@ function splitIntoBands(doc: Document, original: HTMLTableElement, available: nu
     label.textContent = `Part ${i + 1} of ${bandCount}  ·  ${cols}`;
     const t = sliceColumns(original, fixed.concat(g));
     setZoom(t, zoom);
-    // Fallback footer: the part number goes in this part's own <tfoot> instead of a named @page.
     const footCenter = t.querySelector(".summit-print-foot-center");
     if (footerMode === "table" && footCenter && partFooter && !/\{pages?\}/.test(partFooter)) {
       footCenter.textContent = partFooterText(partFooter, i + 1, bandCount);
@@ -171,14 +137,11 @@ function splitIntoBands(doc: Document, original: HTMLTableElement, available: nu
     frag.appendChild(section);
   });
   original.replaceWith(frag);
-  // Keep the first-page header on part 1's page (named pages force a break between
-  // differently-named content, which would otherwise strand the header alone on page 1).
+  // Gotcha: named pages force a break, which would strand the header alone on page 1.
   const header = doc.querySelector(".summit-print-header");
   const firstBand = doc.querySelector(".summit-print-band");
   if (header && firstBand) firstBand.prepend(header);
 
-  // Per-band footer ("Part 2 of 3") using named pages — margin-box mode only; the fallback put it
-  // in each part's <tfoot> above.
   const style = doc.createElement("style");
   style.textContent =
     !partFooter || footerMode === "table"
@@ -199,7 +162,6 @@ function splitIntoBands(doc: Document, original: HTMLTableElement, available: nu
   return { zoom, overflow, bands: bandCount };
 }
 
-/** Copy of `table` containing only the given logical column indexes. */
 export function sliceColumns(table: HTMLTableElement, keep: number[]): HTMLTableElement {
   const t = table.cloneNode(true) as HTMLTableElement;
   const sections = [t.tHead, t.tFoot].concat(Array.from(t.tBodies)).filter((s): s is HTMLTableSectionElement => !!s);
@@ -234,7 +196,6 @@ export interface GridCell {
   span: number;
 }
 
-/** Every cell with its starting logical column, honouring rowspan/colspan. */
 export function cellGrid(section: HTMLTableSectionElement): GridCell[] {
   const occupied: boolean[][] = [];
   const out: GridCell[] = [];
@@ -264,7 +225,6 @@ export function columnCount(table: HTMLTableElement): number {
   return max;
 }
 
-/** Text of the bottom-most header cell over each column (for band labels). */
 function headerLabels(table: HTMLTableElement, total: number): string[] {
   const labels = range(0, total).map((i) => String(i + 1));
   if (!table.tHead) return labels;
@@ -285,7 +245,6 @@ function balance(items: number[], n: number): number[][] {
   return out;
 }
 
-/** Template -> CSS `content` value, turning {page}/{pages} into live page counters. */
 export function cssContent(template: string): string {
   const str = (x: string) => '"' + x.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\A ") + '"';
   const parts = String(template)

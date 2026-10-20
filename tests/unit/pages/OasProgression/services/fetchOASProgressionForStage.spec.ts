@@ -1,7 +1,4 @@
-/**
- * fetchOASProgressionForStage's template-version handling — .claude/OASProgression/PLAN_TEMPLATE_VERSIONS.md.
- * Kept separate from buildOASProgressionRows.spec.ts because it mocks the network services and cache.
- */
+/** Separate from buildOASProgressionRows.spec.ts because it mocks the network and cache. */
 jest.mock("@/services", () => ({
   fetchOASTemplate: jest.fn(),
   fetchOASTree: jest.fn(),

@@ -1,13 +1,6 @@
 import type { PrintProfile } from "../summitPrint";
 
-/**
- * OAS Progression → Table tab (OASProgressionTableVue). Kept deliberately simple — the user may
- * rework this tab (.claude/Print/PLAN_STAGE_5.md §C). Columns: Member | Skill | Stream | Stage |
- * Group | I-Statement | Answered | Awarded | Date.
- *
- * The page's prepareForPrint() has already put every row in the DOM; this only removes the
- * in-table filter row, which is screen-only.
- */
+/** prepareForPrint() has already rendered every row; this only removes the screen-only filter row. */
 const oasTable: PrintProfile = {
   name: "oas-table",
   tableSelector: ".oas-vue-data-table table",

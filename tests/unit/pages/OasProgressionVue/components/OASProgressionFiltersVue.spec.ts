@@ -1,6 +1,4 @@
-// OASProgressionFiltersVue.ts imports NameFormatSelect.vue, which Jest cannot parse (vue-loader
-// only merges template + external script at webpack build time). Stub it so the options object
-// under test can be required — see OasProgressionVueContent.spec.ts for the same pattern.
+// Gotcha: Jest can't parse .vue files, so stub NameFormatSelect.
 jest.mock("@/components/NameFormatSelect.vue", () => ({ __esModule: true, default: { name: "NameFormatSelect", render: () => null } }), { virtual: true });
 
 import OASProgressionFiltersVueOptions from "@/pages/OasProgressionVue/components/OASProgressionFiltersVue";
@@ -35,17 +33,7 @@ function makeFilters(overrides: Partial<OASProgressionVueFilterState> = {}): OAS
   };
 }
 
-/**
- * Regression tests for the Patrol filter bug: a single-item multi-select could never reach its
- * own "filtered" state, because selectedPatrolsForDisplay substituted the full availablePatrols
- * list for display whenever the real stored selection was empty — which broke for ANY one-item
- * list, not just "one patrol total" (a unit with one named patrol plus unassigned members hit
- * the same wall, since "Unassigned" wasn't a selectable item at all). The fix removes the
- * display/storage split entirely: the Patrol v-select is now a plain, honest multi-select bound
- * directly to filters.selectedPatrols, with "Unassigned" as a real item
- * (OasProgressionVueContent.ts's patrolFilterOptions) alongside named patrols. See
- * .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
- */
+/** Regression: a display/storage split meant a one-item Patrol list could never be filtered. Now a plain multi-select. */
 describe("OASProgressionFiltersVue — Patrol filter", () => {
   it("patches selectedPatrols directly, with no reconciliation/substitution step", () => {
     const emitted: Array<[string, unknown]> = [];
@@ -68,12 +56,7 @@ describe("OASProgressionFiltersVue — Patrol filter", () => {
   });
 });
 
-/**
- * Regression tests for "Sort By doesn't work in Group by Member... But 'Stage' should be
- * disabled as it's not applicable" — a person has one stage per skill when grouped by member,
- * not one overall, so "Stage" is omitted from the options entirely rather than shown disabled.
- * See .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
- */
+/** Regression: "Stage" sort is removed when grouped by member. */
 describe("OASProgressionFiltersVue — Sort By options", () => {
   function callSortOptions(groupBy: OASProgressionVueFilterState["groupBy"]) {
     const context = { filters: makeFilters({ groupBy }) };

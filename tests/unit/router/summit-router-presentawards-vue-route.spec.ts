@@ -3,14 +3,7 @@ import * as path from "path";
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 
-/**
- * Jest cannot import .vue files in this project, so route/nav registration is asserted against the
- * source text — the same approach as summit-router-oasprogression-vue-route.spec.ts.
- *
- * The Vue rebuild is the only Present Awards page. The React original, archived at -legacy for a
- * while, was deleted 2026-10-12; its model and storage service stay under src/pages/PresentAwards/
- * (models/, services/) because the Vue page uses them.
- */
+/** Jest can't import .vue files, so routes are checked as source text. */
 describe("SummitRouter routes Present Awards to the Vue page", () => {
   const routerSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/router/SummitRouter.ts"), "utf8");
   const pagesBarrelSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/index.ts"), "utf8");

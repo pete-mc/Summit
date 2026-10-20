@@ -61,8 +61,6 @@ describe("I Statements heat map — the green header is gone", () => {
   });
 
   it("no longer defines .oas-heatmap-thead in index.css", () => {
-    // Only the legacy React OAS page (removed) ever used this class; the CSS cleanup pass
-    // removed the now-dead rule along with the rest of that page's dropped selectors.
     expect(INDEX_CSS).not.toContain(".oas-heatmap-thead");
   });
 
@@ -84,8 +82,6 @@ describe("Filter panel spacing is declared once, not per page", () => {
   });
 
   it("sets space BELOW the panel, which no page did", () => {
-    // The DEV_NOTES entry: the gap before the table previously came from whatever the next
-    // element happened to bring, so the three pages did not line up.
     const rule = INDEX_CSS.slice(INDEX_CSS.indexOf(".oas-vue-filter-panel {"));
     expect(rule.slice(0, rule.indexOf("}"))).toContain("margin-bottom");
   });
@@ -99,8 +95,6 @@ describe("Filter panel spacing is declared once, not per page", () => {
   });
 
   it("gives all three pages the same page-level panel layout", () => {
-    // .istatement-panel and .present-awards-panel were written on their pages' roots but defined
-    // nowhere — dead classes that looked like they were doing something.
     const rule = INDEX_CSS.slice(INDEX_CSS.indexOf(".oas-progression-panel"));
     const selector = rule.slice(0, rule.indexOf("{"));
     expect(selector).toContain(".present-awards-panel");

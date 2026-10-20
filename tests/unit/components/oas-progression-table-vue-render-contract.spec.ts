@@ -4,13 +4,7 @@ import * as path from "path";
 import OASProgressionTableVueOptions, { filterOASProgressionRows } from "@/pages/OasProgressionVue/components/OASProgressionTableVue";
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 
-/**
- * OASProgressionTableVue.ts has no .vue import in its own chain, so — unlike OasProgressionVueContent
- * or OASHeatMapVue's containing files — it can be `new Vue(options)`'d directly here (same approach
- * oas-heatmap-vue-render-contract.spec.ts uses for OASHeatMapVue's own options object). The .vue
- * template itself (v-data-table wiring) is checked via source-text assertions, matching this
- * project's established Jest-can't-import-.vue workaround — see PLAN_VUESTAGE_1.md's "Deviations".
- */
+/** No .vue import in its chain, so it can be `new Vue(options)`'d; the template is checked as source text. */
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 
@@ -196,7 +190,6 @@ describe("OASProgressionTableVue render contract", () => {
 
   it("rows-per-page dropdown offers 10/25/50/100/All, matching the table's own default of 25 (fixes the dropdown defaulting to Vuetify's stock 5/10/15/All list, which had no 25 entry)", () => {
     const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASProgressionTableVue.vue"), "utf8");
-    // .sync-bound (so printing can show every row and restore), defaulting to 25.
     expect(source).toContain(':items-per-page.sync="itemsPerPage"');
     const ts = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASProgressionTableVue.ts"), "utf8");
     expect(ts).toContain("export const DEFAULT_ITEMS_PER_PAGE = 25;");

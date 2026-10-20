@@ -7,11 +7,7 @@
         <v-card-title class="text-subtitle-1">Print or save as PDF</v-card-title>
         <v-card-text>
           <v-select v-model="settings.pageSize" :items="pageSizes" label="Page size" dense outlined hide-details class="mb-4" />
-          <!--
-            Radios, not a v-btn-toggle: on Terrain the toggle's buttons rendered as dark rounded
-            pills (seen live 2026-10-10) — outside Summit's own styles, since the dialog is detached
-            to the app root. Plain radios match the Layout choice below and leave nothing to restyle.
-          -->
+          <!-- Gotcha: radios, not v-btn-toggle. The dialog is detached to the app root, where the toggle rendered as dark pills. -->
           <v-radio-group v-model="settings.orientation" row dense hide-details class="mt-0 mb-4">
             <v-radio value="portrait" label="Portrait" />
             <v-radio value="landscape" label="Landscape" />

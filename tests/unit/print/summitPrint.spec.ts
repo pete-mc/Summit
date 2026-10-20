@@ -61,7 +61,6 @@ describe("resolveHeaderFooter", () => {
     const r = resolveHeaderFooter({ source: document.body, profile: "peak-award-summary", vars: CONTEXT_VARS, generated: GENERATED, meta: [{ label: "Patrol", value: "All" }] });
     expect(r.header.title).toBe(SUMMARY_TITLE);
     expect(r.header.subtitle).toBe("1st Example Group · Example Venturer Unit");
-    // No Section line: the logo and unit name already say it (user, 2026-10-10).
     expect(r.header.meta.map((m) => m.label)).toEqual(["Patrol", "Generated"]);
     expect(r.footer.left).toBe(`${SUMMARY_TITLE} · Example Venturer Unit`);
     expect(r.footer.center).toMatch(/^Generated 10\/10\/2026/);

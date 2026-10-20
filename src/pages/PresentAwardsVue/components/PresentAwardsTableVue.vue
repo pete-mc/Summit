@@ -1,9 +1,5 @@
 <template>
   <div class="present-awards-table-panel">
-    <!-- No "Clear filters" link here: the filter bar's "Reset filters" clears column filters too
-         (user, 2026-10-11). -->
-    <!-- items-per-page/page are .sync-bound so printing can show every row, then restore them (prepareForPrint).
-         sort-by/sort-desc are .sync-bound so the Excel export can follow the on-screen sort (getExportView). -->
     <v-data-table
       ref="table"
       :headers="headers"
@@ -17,10 +13,7 @@
       :footer-props="{ itemsPerPageOptions: [10, 25, 50, 100, -1] }"
       class="present-awards-data-table"
     >
-      <!--
-        The filter row goes in #body.prepend, not a header slot: header.<value> slots only
-        customize a cell WITHIN the existing header <tr> and cannot emit a sibling row.
-      -->
+      <!-- Gotcha: header.<value> slots can't add a sibling row, so the filter row goes in #body.prepend. -->
       <template #body.prepend>
         <tr class="oas-vue-column-filter-row">
           <th v-for="header in renderedHeaders" :key="header.value">
@@ -60,11 +53,7 @@
         </tr>
       </template>
 
-      <!--
-        Custom group header: Vuetify's default one includes a "remove grouping" button that would
-        silently drop grouping with no way to get it back, since the toggle lives in the page
-        header. This keeps the collapse toggle and drops that.
-      -->
+      <!-- Gotcha: Vuetify's default group header has a "remove grouping" button with no way back. -->
       <template #group.header="{ group, isOpen, toggle }">
         <td :colspan="renderedHeaders.length" class="present-awards-group-header">
           <v-btn icon small class="present-awards-group-toggle" :aria-label="isOpen ? `Collapse ${group}` : `Expand ${group}`" @click="toggle">
@@ -74,13 +63,6 @@
         </td>
       </template>
 
-      <!--
-        Badge artwork inside the Award cell, just before the award's name (user, 2026-10-12) —
-        connected to the name it illustrates, without a column of its own. Every badge gets the
-        same fixed-width slot so the names line up; award types without artwork yet show a neutral
-        dashed placeholder in it. The image is decorative (alt="", no tooltip): the name beside it
-        says the same thing. Sorting and filtering still use achievementName.
-      -->
       <template #item.achievementName="{ item }">
         <span class="present-awards-award">
           <span class="present-awards-badge-slot">
@@ -91,7 +73,6 @@
         </span>
       </template>
 
-      <!-- Date Presented: empty until presented; the date opens a picker to change it. -->
       <template #item.presentedDate="{ item }">
         <v-menu v-if="presentedValue(item)" :value="isDateMenuOpen(item)" :close-on-content-click="false" offset-y min-width="auto" @input="setDateMenuOpen(item, $event)">
           <template #activator="{ on, attrs }">
@@ -101,10 +82,9 @@
         </v-menu>
       </template>
 
-      <!-- Presented: Yes/No, following the tick box (unsaved ticks included). -->
       <template #item.presented="{ item }">{{ presentedValue(item) ? "Yes" : "No" }}</template>
 
-      <!-- data-present tells the printout whether the box is ticked; the screen's icon font doesn't reach the print document. -->
+      <!-- Gotcha: the icon font doesn't reach the print document, so data-present carries the tick state. -->
       <template #item.present="{ item }">
         <v-simple-checkbox :data-present="isSelected(item) ? 'yes' : 'no'" :value="isSelected(item)" :ripple="false" :aria-label="`Mark ${item.achievementName} as presented`" @input="onTogglePresent(item, $event)"></v-simple-checkbox>
       </template>
@@ -122,32 +102,12 @@
   gap: 12px;
 }
 
-/*
- * v-data-table's body text otherwise falls back to whatever Vuetify/Terrain's ambient table font
- * resolves to. Pin it explicitly via the shared body scale (defined once on .oas-vue-content in
- * PresentAwardsVueContent.vue) so it matches the OAS table rather than drifting independently.
- * ::v-deep is required: Vue 2's scoped CSS only stamps its data-v-* attribute onto elements this
- * component's own template literally writes, and <td> comes from Vuetify's render function.
- */
 .present-awards-data-table ::v-deep tbody td {
   font-size: var(--oas-vue-font-size-body);
   font-family: var(--oas-vue-font-family);
 }
 
-/*
- * Cell padding, set explicitly rather than inherited from Vuetify's own rule.
- *
- * Vuetify supplies `padding: 0 16px` for these cells, but our copy of it arrives in
- * summit.css — which manifest.json injects as a CONTENT SCRIPT stylesheet. Chrome places those
- * in a lower-precedence cascade origin than the page's own stylesheets, so on a cold load
- * (hard refresh straight onto the page) Terrain's ambient table CSS can win and the first
- * column ends up flush against the table edge. Navigating in from another Summit page made it
- * look correct only because the styles had already settled by then — the classic symptom of a
- * load-order race rather than a wrong value.
- *
- * Restating the padding here, scoped to this component and reaching through ::v-deep, means the
- * layout no longer depends on which stylesheet won.
- */
+/* Gotcha: content-script CSS loses cascade ties to Terrain's, so on a cold load Vuetify's padding can lose. Restate it. */
 .present-awards-data-table ::v-deep > .v-data-table__wrapper > table > tbody > tr > td,
 .present-awards-data-table ::v-deep > .v-data-table__wrapper > table > thead > tr > th {
   padding: 0 16px;
@@ -159,43 +119,25 @@
   vertical-align: middle;
 }
 
-/*
- * v-data-table applies its row-hover highlight to any <tr> in <tbody>, and its selector's two
- * :not()s don't exclude a #body.prepend row — so the filter row picked up the highlight like a
- * real data row. Opt out: it's a filter row, not selectable data.
- */
+/* Gotcha: Vuetify's row-hover rule also matches the #body.prepend filter row. */
 .oas-vue-column-filter-row:hover {
   background: transparent !important;
 }
 
-/*
- * Every rule below reaching a Vuetify-internal element (.v-input__slot, .v-select__selection,
- * .v-icon, the raw <input>) needs ::v-deep. Vue 2's scoped CSS stamps its data-v-* attribute onto
- * the RIGHTMOST compound selector, and only onto elements this template literally writes — so
- * `.oas-vue-column-filter-input .v-input__slot` compiles to `... .v-input__slot[data-v-xxx]`,
- * which can never match something Vuetify's own render function produced.
- */
+/* Learning: Vue 2 scoped CSS can't reach Vuetify-internal elements without ::v-deep. */
 .oas-vue-column-filter-input ::v-deep .v-input__control,
 .oas-vue-column-filter-input ::v-deep .v-input__slot {
   min-height: 30px !important;
   box-shadow: none !important;
 }
 
-/* Opaque, not translucent: a translucent background composites against the row behind it and
-   disappears on white. */
 .oas-vue-column-filter-input ::v-deep .v-input__slot {
   background-color: #eceff1 !important;
   border-radius: 4px;
   padding: 0 8px !important;
 }
 
-/*
- * Two global Terrain/Vuetify rules force 20px here and neither is itself !important, so a plain
- * override at equal specificity would still lose:
- *   .v-application .theme--light.v-text-field input { font-size: 20px; }
- *   .v-application .v-select__selection--comma      { font-size: 20px; }
- * The second only applies once a value is actually selected.
- */
+/* Gotcha: global Vuetify rules force 20px (v-text-field input, .v-select__selection--comma once a value is set). */
 .oas-vue-column-filter-input.v-text-field ::v-deep input,
 .oas-vue-column-filter-input.v-select ::v-deep .v-select__selection {
   font-size: var(--oas-vue-font-size-body) !important;
@@ -206,18 +148,12 @@
   font-size: 16px;
 }
 
-/*
- * Vuetify's clearable "x" is opacity:0 until :hover or :focus — unreachable on touch devices,
- * which have no hover. Show it whenever the field actually holds a value.
- */
+/* Gotcha: the clear icon only shows on hover, which touch devices don't have. */
 .oas-vue-column-filter-input.v-input--is-dirty ::v-deep .v-input__icon--clear {
   opacity: 1 !important;
 }
 
-/*
- * Award cell: badge, then name, on one line (user, 2026-10-12). The slot is the width of the widest
- * (additional award) artwork, with each badge centred in it, so every name starts at the same x.
- */
+/* A fixed-width badge slot so every name starts at the same x. */
 .present-awards-award {
   display: inline-flex;
   align-items: center;
@@ -230,10 +166,6 @@
   justify-content: center;
 }
 
-/*
- * Badge artwork. Fixed 28px so every row is the same height whether its badge has artwork or a
- * placeholder, and so a dense row doesn't grow to fit the image.
- */
 .present-awards-badge-icon,
 .present-awards-badge-placeholder {
   display: block;
@@ -245,26 +177,17 @@
   object-fit: contain;
 }
 
-/*
- * Additional awards are wide (96x66) rather than square like the OAS icons. Letterboxing one into
- * the 28px square would shrink it to ~19px tall and leave it visibly smaller than its neighbours,
- * so it gets the width its aspect ratio needs while keeping the shared 28px row height.
- */
+/* Additional-award art is 96x66. Letterboxed into 28px it would look too small. */
 .present-awards-badge-icon--wide {
   width: 41px;
 }
 
-/* Neutral dashed outline: reads as "artwork not loaded yet" rather than as a real badge. */
 .present-awards-badge-placeholder {
   border: 1px dashed var(--summit-color-border-default, #c8c6c4);
   border-radius: 50%;
   background: var(--summit-color-bg-muted, #f3f2f1);
 }
 
-/*
- * Group header rows. A tinted background and a semibold label separate each member's block from
- * the rows beneath without needing a heavier rule or border.
- */
 .present-awards-group-header {
   background-color: var(--summit-color-bg-muted, #f3f2f1);
 }
@@ -276,18 +199,13 @@
   margin-left: var(--summit-space-xs, 4px);
 }
 
-/* Chevron sits tight against the name rather than carrying v-btn's default icon-button width. */
 .present-awards-group-toggle.v-btn {
   width: 20px;
   height: 20px;
   margin: 0;
 }
 
-/*
- * The presented date doubles as the button that opens its own date picker, so it needs to look
- * clickable without becoming a full v-btn (which would blow out the row height on a dense table).
- * A dotted underline reads as "editable text" rather than as a link.
- */
+/* Not a v-btn, which would blow out a dense row's height. */
 .present-awards-date-activator {
   cursor: pointer;
   border-bottom: 1px dotted currentColor;

@@ -9,7 +9,7 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-describe("oas-table profile (.claude/Print/PLAN_STAGE_5.md §C)", () => {
+describe("oas-table profile", () => {
   it("is titled per the OAS Progression pattern, A4 landscape, with only Generated in the meta", () => {
     const profile = getPrintProfile("oas-table");
     expect(profile.header.title).toBe("OAS Progression - Table");

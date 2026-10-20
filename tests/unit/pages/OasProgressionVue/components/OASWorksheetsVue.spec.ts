@@ -25,8 +25,7 @@ import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOAS
 import type { OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
 import { UNASSIGNED_PATROL } from "@/pages/OasProgression/services/filterHeatMapSections";
 
-// firstName/lastName default to a split of memberName purely as test-fixture convenience — see
-// buildWorksheetPages.spec.ts's identical fixture for why.
+// Test-fixture convenience only; real code never splits memberName.
 function makeRow(overrides: Partial<OASProgressionRow> = {}): OASProgressionRow {
   const memberName = overrides.memberName ?? "Amy Scout";
   const [firstName, ...rest] = memberName.split(" ");
@@ -69,8 +68,6 @@ function makeFilters(overrides: Partial<OASProgressionVueFilterState> = {}): OAS
     worksheetVisibleSkills: ["bushcraft"],
     worksheetVisibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     worksheetNameFormat: "full",
-    // Default test members are unassigned (makeRow's patrolName: null) — same reasoning as
-    // buildWorksheetPages.spec.ts's own DEFAULT_OPTIONS.selectedPatrols.
     worksheetSelectedPatrols: [UNASSIGNED_PATROL],
     worksheetBreakByPatrol: false,
     worksheetShowCompleted: true,
@@ -94,7 +91,6 @@ describe("worksheetCellClass", () => {
 
   it("returns the awarded class when awarded, even if answered is also true", () => {
     expect(worksheetCellClass(makeCell({ answered: true, awarded: true }))).toBe("oas-worksheet-cell-awarded");
-    // awarded wins even in the (should-not-happen) case where only awarded is true.
     expect(worksheetCellClass(makeCell({ answered: false, awarded: true }))).toBe("oas-worksheet-cell-awarded");
   });
 
@@ -134,8 +130,7 @@ describe("OASWorksheetsVue computed", () => {
 
   it("does not mix heat-map filter keys into the worksheet build (uses worksheetVisibleSkills, not visibleStreams)", () => {
     const rows = [makeRow({ stream: "bushcraft" }), makeRow({ stream: "camping", branch: "camping" })];
-    // visibleStreams (heat map's own key) deliberately set to something that would exclude
-    // bushcraft, to prove the worksheet build ignores it entirely.
+    // visibleStreams would exclude bushcraft, proving the worksheet ignores it.
     const context = { items: rows, filters: makeFilters({ visibleStreams: ["camping"], worksheetVisibleSkills: ["bushcraft"] }), availablePatrols: [] };
 
     const pageSet = computed.pageSet.call(context);
@@ -149,8 +144,7 @@ describe("OASWorksheetsVue computed", () => {
       filters: makeFilters({ worksheetVisibleSkills: ["camping"] }),
       availablePatrols: [],
     };
-    // hasPages reads `this.pageSet` as a plain property (that's how Vue resolves computed-on-
-    // computed at runtime) — calling it standalone needs that value pre-resolved onto the context.
+    // Computed-on-computed: pre-resolve pageSet onto the context.
     context.pageSet = computed.pageSet.call(context);
 
     expect(computed.hasPages.call(context)).toBe(false);
@@ -169,11 +163,7 @@ describe("OASWorksheetsVue computed", () => {
   });
 
   describe("columnsLayoutPages", () => {
-    // Fixed at PRINT_USABLE_WIDTH_PX, standing in for "whatever the ResizeObserver measured" — a
-    // real mounted component always has this set by the time anything reads columnsLayoutPages
-    // (see OASWorksheetsVue.ts's own comment on why 0/unset only ever applies pre-mount). Using a
-    // fixed, known value here (rather than leaving it unset and relying on the pre-mount fallback)
-    // keeps these tests about the splitting/width MATH, not about the fallback's own behaviour.
+    // A fixed measured width, so these test the splitting math rather than the pre-mount fallback.
     const SCREEN_WIDTH_PX = PRINT_USABLE_WIDTH_PX;
     const MAX_FITTING_SCREEN = maxFittingMemberColumns(SCREEN_WIDTH_PX, GROUP_BAND_COLUMN_WIDTH_SCREEN_PX, STATEMENT_COLUMN_WRAP_WIDTH_SCREEN_PX);
 
@@ -199,16 +189,12 @@ describe("OASWorksheetsVue computed", () => {
       const context = makeContextWithMembers(MAX_FITTING_SCREEN + 5);
       const views = computed.columnsLayoutPages.call(context);
       expect(views.length).toBeGreaterThan(1);
-      // Nothing lost — every member still appears across the split pages.
       const totalMembers = views.reduce((sum: number, v: { page: WorksheetPage }) => sum + v.page.members.length, 0);
       expect(totalMembers).toBe(MAX_FITTING_SCREEN + 5);
     });
 
     it("gives a batch at the fitting threshold the minimum member-column width — no room left to expand", () => {
-      // An exact multiple of MAX_FITTING_SCREEN splits into batches that are each FULLY packed
-      // (unlike e.g. +5, which can split into batches with slack left over in each — see the
-      // relaxed-width test below for that case) — this is the one case guaranteed to have zero
-      // leftover width, so memberColumnWidthPx must stay at the bare minimum.
+      // An exact multiple packs every batch fully, so widths stay at the minimum.
       const context = makeContextWithMembers(MAX_FITTING_SCREEN * 2);
       const views = computed.columnsLayoutPages.call(context);
       expect(views.length).toBeGreaterThan(1);
@@ -237,11 +223,7 @@ describe("OASWorksheetsVue computed", () => {
     });
 
     it("gives every batch of a split page the SAME statement/member-column width, not one derived from its own smaller member count", () => {
-      // Reported live: a page split into an uneven-looking pair of batches got visibly different
-      // column widths per batch (the smaller batch had more slack, so its own columns stretched
-      // wider) — the two tables no longer lined up under each other even though they're the same
-      // logical page. +5 is deliberately not an exact multiple of MAX_FITTING_SCREEN, so without the
-      // fix this would produce batches of different sizes and thus different per-batch widths.
+      // Regression: uneven batches got different column widths and stopped lining up.
       const context = makeContextWithMembers(MAX_FITTING_SCREEN + 5);
       const views = computed.columnsLayoutPages.call(context);
       expect(views.length).toBeGreaterThan(1);
@@ -273,13 +255,8 @@ describe("OASWorksheetsVue computed", () => {
   });
 
   describe("rowsLayoutPages", () => {
-    // Fixed, standing in for "whatever the ResizeObserver measured" — see columnsLayoutPages' own
-    // SCREEN_WIDTH_PX comment above for why a fixed value (not the pre-mount fallback) is used here.
     const SCREEN_WIDTH_PX = PRINT_USABLE_WIDTH_PX;
-    // Every fixture below uses a single member, "Amy Scout" (makeRow's own default memberName) —
-    // the member-name column width is MEASURED now (memberNameColumnWidthPx), not a fixed constant,
-    // so MAX_FITTING_SCREEN must be computed against that same real name via the real component
-    // logic's own maxFittingTransposedColumns, not assumed.
+    // The name column is measured, so compute MAX_FITTING_SCREEN from the real name.
     function maxFittingScreenFor(memberCount: number): number {
       const rows = Array.from({ length: memberCount }, (_, i) => makeRow({ memberId: `m${i}` }));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -380,7 +357,6 @@ describe("OASWorksheetsVue computed", () => {
       const views = computed.rowsLayoutPages.call(context);
 
       expect(views).toHaveLength(1);
-      // Every row's own display name must fit within the measured width, including the longest one.
       expect(views[0].memberNameColumnWidthPx).toBeGreaterThan(0);
     });
 
@@ -395,8 +371,7 @@ describe("OASWorksheetsVue computed", () => {
   });
 
   describe("hasSplitPages", () => {
-    // hasSplitPages reads `this.isMembersAsRows`/`this.columnsLayoutPages`/`this.rowsLayoutPages`/
-    // `this.pageSet` as plain properties — all need pre-resolving onto the fixture context.
+    // Pre-resolve the computeds hasSplitPages reads.
     function makeContext(rows: OASProgressionRow[], filterOverrides: Partial<OASProgressionVueFilterState> = {}) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const context: any = { items: rows, filters: makeFilters(filterOverrides), availablePatrols: [], screenAvailableWidthPx: PRINT_USABLE_WIDTH_PX };
@@ -469,19 +444,13 @@ describe("OASWorksheetsVue computed", () => {
         { patrolName: "Wombats", columnCount: 2 },
       ]);
       expect(spans.reduce((sum: number, s: { columnCount: number }) => sum + s.columnCount, 0)).toBe(page.members.length);
-      // The spans must appear in the same left-to-right order as page.members itself, or the
-      // rendered colspan header would silently misalign with the columns beneath it.
+      // Out-of-order spans would misalign the colspan header.
       expect(page.members.map((m: { patrolName: string | null }) => m.patrolName)).toEqual(["Kookaburras", "Wombats", "Wombats"]);
     });
   });
 
   describe("patrolBorderClassesForPage", () => {
-    // Calls `this.patrolSpansForPage(...)` internally — the fixture context needs that method
-    // bound onto it too, not just `pageSet`, to behave like a real Vue instance.
-    //
-    // worksheetSelectedPatrols defaults to the given availablePatrols (matching how
-    // OasProgressionVueContent.ts's watcher would have already resolved it against real patrol
-    // data by the time a real page renders) unless filterOverrides supplies its own.
+    // Binds patrolSpansForPage onto the context, as a real instance would have it.
     function makeContext(rows: OASProgressionRow[], filterOverrides: Partial<OASProgressionVueFilterState> = {}, availablePatrols: string[] = []) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const context: any = { items: rows, filters: makeFilters({ worksheetSelectedPatrols: availablePatrols, ...filterOverrides }), availablePatrols, patrolSpansForPage: methods.patrolSpansForPage };
@@ -501,8 +470,6 @@ describe("OASWorksheetsVue computed", () => {
     });
 
     it("flags only the first and last column of each patrol group, not every column in it", () => {
-      // Columns end up [m2 (Kookaburras, 1 member), m1 (Wombats), m3 (Wombats)] — see the
-      // patrolSpansForPage test above for why.
       const rows = [makeRow({ memberId: "m1", memberName: "Amy", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
       const context = makeContext(rows, { worksheetBreakByPatrol: true }, ["Wombats", "Kookaburras"]);
       const page = context.pageSet.pages[0] as WorksheetPage;
@@ -510,9 +477,9 @@ describe("OASWorksheetsVue computed", () => {
       const borders = methods.patrolBorderClassesForPage.call(context, page);
 
       expect(borders).toEqual([
-        { start: true, end: true }, // Kookaburras' only column — both its own start and end
-        { start: true, end: false }, // Wombats' first column
-        { start: false, end: true }, // Wombats' last column
+        { start: true, end: true },
+        { start: true, end: false },
+        { start: false, end: true },
       ]);
     });
 
@@ -557,9 +524,9 @@ describe("OASWorksheetsVue computed", () => {
       const borders = methods.groupBorderClassesForPage.call({}, page);
 
       expect(borders).toEqual([
-        { start: true, end: true }, // Plan's only column
-        { start: true, end: false }, // Do's first column
-        { start: false, end: true }, // Do's last column
+        { start: true, end: true },
+        { start: true, end: false },
+        { start: false, end: true },
       ]);
     });
   });
@@ -584,14 +551,12 @@ describe("OASWorksheetsVue computed", () => {
     });
 
     it("places a divider before the first row and before each patrol change, not on every row", () => {
-      // Row order ends up [m2 (Kookaburras), m1 (Wombats), m3 (Wombats)] — same patrol ordering
-      // buildWorksheetPages already applies to columns, now read as rows (Layout B).
       const rows = [makeRow({ memberId: "m1", memberName: "Amy", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
       const { context, transposed } = makeTransposedContext(rows, true);
 
       expect(methods.patrolDividerBeforeRow.call(context, transposed, 0)).toBe("Kookaburras");
       expect(methods.patrolDividerBeforeRow.call(context, transposed, 1)).toBe("Wombats");
-      expect(methods.patrolDividerBeforeRow.call(context, transposed, 2)).toBeNull(); // still Wombats, no change
+      expect(methods.patrolDividerBeforeRow.call(context, transposed, 2)).toBeNull();
     });
 
     it("labels a null patrolName as 'Unassigned'", () => {
@@ -640,10 +605,9 @@ describe("TEMPORARY DEV AID — large-unit preview via localStorage (delete alon
 
       const result = duplicateMembersForDevPreview(items, 3);
 
-      // 2 real + (2 x 3) duplicates = 8 total.
       expect(result).toHaveLength(8);
       const memberIds = result.map((r) => r.memberId);
-      expect(new Set(memberIds).size).toBe(8); // every id distinct — filter+indexOf, not [...new Set()] per this repo's ES5 trap.
+      expect(new Set(memberIds).size).toBe(8);
       expect(memberIds.filter((id) => id === "m1")).toHaveLength(1);
       expect(memberIds.filter((id) => id.startsWith("m1-dev"))).toHaveLength(3);
     });
@@ -698,18 +662,13 @@ describe("TEMPORARY DEV AID — large-unit preview via localStorage (delete alon
 
       const pageSet = computed.pageSet.call(context);
 
-      // 2 real + (2 x 4) duplicates = 10 total.
       expect(pageSet.members).toHaveLength(10);
     });
   });
 });
 
 describe("splitTableColumnsForPrint", () => {
-  // Mirrors OASWorksheetsVue.vue's own Layout A markup shape closely enough to exercise the real
-  // column-slicing logic: a title row (colspan=2 leading cell + one <th> per member), an optional
-  // patrol-header row (colspan=2 leading cell + one <th> per patrol, colspan = that patrol's member
-  // count), and body rows (an optional rowspan group-band <td>, a statement <td>, one <td> per
-  // member).
+  // Mirrors OASWorksheetsVue.vue's Layout A markup.
   function makeTable(memberCount: number, options: { withPatrolHeader?: { patrolSizes: number[] }; memberOffset?: number; memberTotal?: number; title?: string } = {}): HTMLTableElement {
     const table = document.createElement("table");
     table.className = "oas-worksheet-page oas-worksheet-layout-columns";
@@ -766,7 +725,6 @@ describe("splitTableColumnsForPrint", () => {
     const table = makeTable(20);
     const results = splitTableColumnsForPrint(table, 8);
 
-    // ceil(20/8) = 3 batches, evenly sized: 7/7/6 (same even-split rule as splitPageIntoColumnBatches).
     expect(results).toHaveLength(3);
     expect(results[0].querySelectorAll(".oas-worksheet-cell")).toHaveLength(7);
     expect(results[1].querySelectorAll(".oas-worksheet-cell")).toHaveLength(7);
@@ -804,10 +762,7 @@ describe("splitTableColumnsForPrint", () => {
   });
 
   it("numbers a re-split batch against the ORIGINAL page's true total, not this table's own local member count", () => {
-    // Simulates a table that is ALREADY one screen-split batch (29 of 33 members, per the
-    // data-oas-worksheet-member-offset/-total attributes columnsLayoutPages sets) — print's own,
-    // smaller budget re-splits this 29-member table further still, and the result must read
-    // "of 33" (the true original total), not "of 29" (this table's own local member count).
+    // Regression: re-splitting a screen batch must number against the original total ("of 33", not "of 29").
     const table = makeTable(29, { memberOffset: 0, memberTotal: 33, title: "Stage 1 - Bushcraft (members 1-29 of 33)" });
     const results = splitTableColumnsForPrint(table, 8);
 
@@ -834,15 +789,11 @@ describe("splitTableColumnsForPrint", () => {
   });
 
   it("recomputes patrol-header colspans against each new column range, clipping spans at batch boundaries", () => {
-    // 2 patrols of 10 members each (20 total), split into batches of <=8: batch 0 gets [0,8) — all
-    // from patrol 0 (colspan 8, patrol 1 dropped entirely); batch 1 gets [8,15) — the last 2 of
-    // patrol 0 (colspan 2) plus the first 5 of patrol 1 (colspan 5); etc.
     const table = makeTable(20, { withPatrolHeader: { patrolSizes: [10, 10] } });
     const results = splitTableColumnsForPrint(table, 7);
 
     const patrolHeadersOf = (result: HTMLTableElement) => Array.from(result.querySelectorAll<HTMLTableCellElement>(".oas-worksheet-patrol-header")).map((th) => ({ text: th.textContent, colspan: th.colSpan }));
 
-    // ceil(20/7) = 3 batches, evenly sized 7/7/6.
     expect(results).toHaveLength(3);
     expect(patrolHeadersOf(results[0])).toEqual([{ text: "Patrol 0", colspan: 7 }]);
     expect(patrolHeadersOf(results[1])).toEqual([
@@ -883,10 +834,7 @@ describe("splitTableColumnsForPrint", () => {
 });
 
 describe("splitRowsTableColumnsForPrint (Layout B's column-axis print splitting)", () => {
-  // Mirrors OASWorksheetsVue.vue's rows template shape: a group-span row (leading member-name <th>
-  // + one <th> per Plan/Do/Review/Verify group with a colspan), a statement-header row (leading
-  // "Member" <th> + one <th> per I-Statement column), optional full-width patrol-divider rows, and
-  // ordinary body rows (leading member-name <td> + one <td> per column).
+  // Mirrors OASWorksheetsVue.vue's Layout B markup.
   function makeRowsTable(columnCount: number, options: { groupSizes?: number[]; statementOffset?: number; statementTotal?: number; title?: string; memberCount?: number; withPatrolDivider?: boolean } = {}): HTMLTableElement {
     const table = document.createElement("table");
     table.className = "oas-worksheet-page oas-worksheet-layout-rows";
@@ -928,11 +876,7 @@ describe("splitRowsTableColumnsForPrint (Layout B's column-axis print splitting)
     return table;
   }
 
-  // splitRowsTableColumnsForPrint takes (table, usableWidthPx, columnWidthPx) and derives maxColumns
-  // itself from the table's OWN member names (measured) — this computes the usableWidthPx needed to
-  // produce a given maxColumns for a table whose names are all "Member N" (makeRowsTable's own
-  // fixed format), using the same measurement function the real code calls internally, so these
-  // tests exercise the real splitting math rather than assuming a width.
+  // Works out the width that yields a given maxColumns, using the real name measurement.
   function usableWidthForMaxColumns(table: HTMLTableElement, maxColumns: number, columnWidthPx = TRANSPOSED_COLUMN_WIDTH_PRINT_PX): number {
     const memberNames = Array.from(table.querySelectorAll<HTMLElement>(".oas-worksheet-member-name-cell")).map((cell) => cell.textContent ?? "");
     const nameColumnWidthPx = memberNameColumnWidthPx(memberNames, WORKSHEET_BODY_FONT_SIZE_PRINT_PX, WORKSHEET_FONT_FAMILY);
@@ -960,7 +904,6 @@ describe("splitRowsTableColumnsForPrint (Layout B's column-axis print splitting)
     const table = makeRowsTable(20);
     const results = splitRowsTableColumnsForPrint(table, usableWidthForMaxColumns(table, 8), TRANSPOSED_COLUMN_WIDTH_PRINT_PX);
 
-    // ceil(20/8) = 3 batches, evenly sized: 7/7/6.
     expect(results).toHaveLength(3);
     expect(results[0].querySelectorAll(".oas-worksheet-statement-header")).toHaveLength(7);
     expect(results[1].querySelectorAll(".oas-worksheet-statement-header")).toHaveLength(7);
@@ -1012,7 +955,6 @@ describe("splitRowsTableColumnsForPrint (Layout B's column-axis print splitting)
   });
 
   it("recomputes group-span colspans against each new column range, clipping/dropping spans at batch boundaries", () => {
-    // 2 groups of 10 columns each (20 total), split into batches of <=7.
     const table = makeRowsTable(20, { groupSizes: [10, 10] });
     const results = splitRowsTableColumnsForPrint(table, usableWidthForMaxColumns(table, 7), TRANSPOSED_COLUMN_WIDTH_PRINT_PX);
 
@@ -1058,7 +1000,6 @@ describe("splitRowsTableColumnsForPrint (Layout B's column-axis print splitting)
 
   it("measures the member-name column width from the table's own longest member name and applies it to every batch", () => {
     const table = makeRowsTable(20, { memberCount: 3 });
-    // Override the member names so one is much longer than the others, mirroring a real unit.
     table.querySelectorAll<HTMLElement>(".oas-worksheet-member-name-cell").forEach((cell, i) => {
       cell.textContent = ["Jo", "Alexandra Montgomery-Smith", "Beth"][i];
     });

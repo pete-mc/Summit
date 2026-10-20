@@ -2,21 +2,10 @@ import type { Cell, Image, Row } from "write-excel-file/browser";
 import type { HeatMapExportView, MemberRowView, StageCellView } from "@/pages/OasProgressionVue/components/OASHeatMapVue";
 import { buildHeaderBlock, EXCEL_COLOURS, HEADER_BLOCK_ROWS, outlinedBar, type ExcelHeader, type ExcelSheet } from "../summitExcel";
 
-/**
- * OAS Progression → Heatmap tab as a spreadsheet (.claude/Excel/PLAN_STAGE_2.md).
- *
- * Columns: Member (or Skill) | Stage | Next | then per stage: a narrow spacer and one cell per
- * square. A stage is as wide as the most squares it has in any exported row (at least 2, so a
- * stage of bars stays visible); shorter stages leave blank cells. Bars (fully awarded green, not
- * started grey) fill the whole stage width. Hidden squares are blank, as on screen. A blank row
- * separates each section (skill or member) and each patrol group from the one before.
- *
- * Built from OASHeatMapVue.getExportView(): the rows exactly as rendered, in either layout.
- */
+/** A stage is as wide as its most squares in any row (min 2, so bars stay visible). */
 
 const SHEET_NAME = "Heatmap";
 const MIN_STAGE_CELLS = 2;
-/** Column widths in Excel "characters". Box width matches the Summary sheet. */
 const WIDTH = { stage: 7, next: 6, spacer: 1, box: 2.6 };
 const LABEL_WIDTH_MIN = 12;
 const LABEL_WIDTH_MAX = 45;
@@ -35,7 +24,6 @@ function allRows(view: HeatMapExportView): Array<{ label: string; view: MemberRo
   return view.sections.flatMap((s) => s.groups.flatMap((g) => g.rows));
 }
 
-/** Cells per stage column: the most squares that stage has in any row, at least MIN_STAGE_CELLS. */
 export function stageWidths(view: HeatMapExportView): number[] {
   const rows = allRows(view);
   return view.stages.map((_, i) => rows.reduce((max, r) => Math.max(max, r.view.cells[i]?.squares?.length ?? 0), MIN_STAGE_CELLS));
@@ -47,17 +35,13 @@ const SQUARE_FILL: Record<string, string> = {
   unanswered: EXCEL_COLOURS.notMet,
 };
 
-/** One stage's cells for one row, exactly `width` long. */
 export function stageCells(cell: StageCellView | undefined, width: number): Cell[] {
   if (!cell || cell.kind === "empty") return nulls(width);
   if (cell.kind === "bar-complete") {
-    // White outline, the same as a square's border, so the bar is inset like the squares around
-    // it. Without it, the white borders of squares above and below nibble its edges unevenly
-    // (user, 2026-10-13).
+    // White outline so the bar is inset like the squares; otherwise their borders nibble its edges.
     return outlinedBar(width, EXCEL_COLOURS.allMet, EXCEL_COLOURS.squareBorder);
   }
   if (cell.kind === "bar-unstarted") {
-    // Outlined in grey like the screen's not-started bar.
     return outlinedBar(width, EXCEL_COLOURS.notMet, EXCEL_COLOURS.headerBorder);
   }
   const squares: Cell[] = (cell.squares ?? []).map((square) =>
@@ -67,7 +51,6 @@ export function stageCells(cell: StageCellView | undefined, width: number): Cell
           value: "",
           type: String,
           backgroundColor: SQUARE_FILL[square.state],
-          // White borders read as the gap between squares, as on the Summary sheet.
           borderColor: EXCEL_COLOURS.squareBorder,
           borderStyle: "thin" as const,
         },
@@ -87,13 +70,12 @@ function buildTableHeader(view: HeatMapExportView, widths: number[]): Row {
   return row;
 }
 
-/** A full-width title row (skill or member section, or patrol). */
 function titleRow(text: string, totalColumns: number, style: Record<string, unknown>): Row {
   return [{ value: text, type: String, columnSpan: totalColumns, fontWeight: "bold", ...style } as Cell, ...nulls(totalColumns - 1)];
 }
 
 function dataRow(label: string, view: MemberRowView, widths: number[]): Row {
-  // "-" (nothing awarded, or a stream not yet unlocked) leaves Stage and Next empty, so it sorts last.
+  // "-" leaves Stage and Next empty, so it sorts last.
   const hasStage = view.stageDisplay !== "-";
   const row: Row = [
     { value: label, type: String },
@@ -111,8 +93,6 @@ export function buildSkillHeatmapSheet(input: SkillHeatmapSheetInput): ExcelShee
   const widths = stageWidths(view);
   const totalColumns = 3 + widths.reduce((sum, w) => sum + 1 + w, 0);
 
-  // A blank row before every section and patrol group after the first, so long sheets don't run
-  // together (user, 2026-10-13).
   const blankRow = (): Row => nulls(totalColumns);
   const body: Row[] = [];
   view.sections.forEach((section, sectionIndex) => {
@@ -136,7 +116,6 @@ export function buildSkillHeatmapSheet(input: SkillHeatmapSheetInput): ExcelShee
     options: {
       sheet: SHEET_NAME,
       columns,
-      // Title block and table header stay on screen, as does the first column (user, 2026-10-12).
       stickyRowsCount: HEADER_BLOCK_ROWS + 1,
       stickyColumnsCount: 1,
       images: logo ? [logo] : undefined,

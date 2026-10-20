@@ -4,13 +4,7 @@ import { UNASSIGNED_PATROL } from "@/pages/OasProgression/services/filterHeatMap
 import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
 
-/**
- * Tests OASHeatMapVue's `computed` logic directly (Vue 2 options objects are plain JS/TS, so
- * they can be instantiated with `new Vue(options)` without a template or DOM mount) — this
- * project's Jest config has no `.vue` transform/`@vue/test-utils` (see
- * PLAN_VUESTAGE_1.md's "Deviations" note), so this mirrors that same source-level testing
- * approach rather than adding new test infrastructure mid-build.
- */
+/** Learning: Jest has no .vue transform, so the options object is tested directly with `new Vue(options)`. */
 
 function makeRow(overrides: Partial<OASProgressionRow> = {}): OASProgressionRow {
   return {
@@ -65,13 +59,7 @@ interface MountProps {
   groupBy?: "skill" | "member" | "none";
 }
 
-/**
- * selectedPatrols now behaves like every other filter: [] means "show nothing," not "show
- * everyone" (see .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md). Most of these tests
- * aren't about patrol filtering at all and use makeMember()'s default (patrol: null, i.e.
- * unassigned), so default selectedPatrols to [UNASSIGNED_PATROL] here unless a test explicitly
- * overrides it (e.g. the patrol-filtering tests themselves, which pass a real patrol name).
- */
+/** [] shows nobody, so default to [UNASSIGNED_PATROL] (makeMember's default) unless a test overrides it. */
 function mountLogic(props: MountProps) {
   const ComponentClass = Vue.extend(OASHeatMapVueOptions);
   const propsWithDefaults = { selectedPatrols: [UNASSIGNED_PATROL], ...props };
@@ -243,9 +231,6 @@ describe("OASHeatMapVue render contract", () => {
     expect(sections[0].patrolGroups.map((g) => g.patrolName)).toEqual(["Eagles", "Wolves"]);
   });
 
-  // The old combined "Hide complete/not started" checkbox was split into two independent Show
-  // dropdown options, inverted to positive (default-on) selections — see
-  // .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
   it("hides a fully-complete stage bar when showAwarded is off", () => {
     const rows = [makeRow({ inputId: "a", answered: true, awarded: true }), makeRow({ inputId: "b", answered: true, awarded: true })];
     const members = [makeMember()];
@@ -282,10 +267,7 @@ describe("OASHeatMapVue render contract", () => {
     expect(sections[0].patrolGroups[0].members[0].cells[0].kind).toBe("empty");
   });
 
-  // Regression test: an earlier pass wrongly let showNotStarted also suppress individual
-  // unanswered squares inside a stage that has SOME progress — the user clarified "not started"
-  // means only a whole stage with zero progress anywhere, never a square within an in-progress
-  // stage. showNotStarted must have no effect once a stage reaches the "squares" branch.
+  // Regression: showNotStarted must not hide squares inside a stage that has some progress.
   it("never hides individual unanswered squares inside an in-progress stage, even when showNotStarted is off", () => {
     const rows = [makeRow({ inputId: "answered", answered: true, awarded: false }), makeRow({ inputId: "unanswered", answered: false, awarded: false })];
     const members = [makeMember()];
@@ -323,8 +305,6 @@ describe("OASHeatMapVue render contract", () => {
       const cell = firstCell({ ...baseProps, items: rows, showAnswered: false });
 
       expect(cell.kind).toBe("squares");
-      // Every square survives — only the answered one's state class changes, so the visible
-      // squares keep the positions they had with the filter off.
       expect((cell.squares ?? []).map((s) => s.inputId)).toEqual(["awarded", "answered", "untouched"]);
       expect((cell.squares ?? []).map((s) => s.stateClass)).toEqual(["oas-heatmap-square-awarded", "oas-heatmap-square-hidden", "oas-heatmap-square-unanswered"]);
     });
@@ -359,8 +339,7 @@ describe("OASHeatMapVue render contract", () => {
     });
 
     it("leaves group-start borders exactly where they are when squares are hidden", () => {
-      // Hiding is purely visual, so the group layout must not shift: "do-a" stays the group start
-      // even though the Plan square before it is now invisible.
+      // Hiding is visual only: the group start must not move.
       const rows = [
         makeRow({ inputId: "plan-a", inputGroup: "Plan", answered: true, awarded: false }),
         makeRow({ inputId: "plan-b", inputGroup: "Plan", answered: false, awarded: false }),
@@ -374,7 +353,6 @@ describe("OASHeatMapVue render contract", () => {
     });
   });
 
-  // Surfaced in the UI as the Show dropdown's "Empty top stages" option.
   describe("showEmptyTopStages", () => {
     function stagesFor(rows: OASProgressionRow[], showEmptyTopStages: boolean): number[] {
       const vm = mountLogic({ items: rows, trunkStageCounts: { bushcraft: 9 }, members: [makeMember()], visibleStreams: ["bushcraft"], visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9], sortBy: "firstName", showEmptyTopStages });
@@ -382,9 +360,6 @@ describe("OASHeatMapVue render contract", () => {
     }
 
     it("trims empty top stages down to 1, keeping only stage 1 on screen", () => {
-      // Progress only in stage 1, so stages 2-9 are all trimmable; 1 survives as the floor
-      // (lowered from 2 to 1 — DEV_NOTES.md: "can hide empty stages down to 2, inclusively. So
-      // only stage 1 must be shown").
       const rows = [makeRow({ stage: 1, inputId: "s1", answered: true }), ...[2, 3, 4, 5, 6, 7, 8, 9].map((stage) => makeRow({ stage, inputId: "s" + stage }))];
 
       expect(stagesFor(rows, false)).toEqual([1]);
@@ -403,9 +378,7 @@ describe("OASHeatMapVue render contract", () => {
     });
   });
 
-  // Surfaced in the UI as the Show dropdown's "Empty skills" option.
   describe("showEmptySkillRows", () => {
-    // Paddling forks into Canoeing/Kayaking after its trunk; bushcraft never forks.
     const forkedRows = [
       makeRow({ stream: "paddling", branch: "paddling", stage: 1, inputId: "trunk" }),
       makeRow({ stream: "paddling", branch: "canoeing", stage: 4, inputId: "canoe" }),
@@ -425,8 +398,6 @@ describe("OASHeatMapVue render contract", () => {
     });
 
     it("hides an entirely empty skill, trunk section included", () => {
-      // bushcraft has no progress anywhere, so nothing of it should survive -- the trunk section
-      // is no longer exempt the way the React page leaves it.
       const rows = [makeRow({ stream: "bushcraft", branch: "bushcraft", stage: 1, inputId: "bc" }), makeRow({ stream: "camping", branch: "camping", stage: 1, inputId: "cp", answered: true })];
 
       const titles = sectionTitlesFor(rows, ["bushcraft", "camping"], { bushcraft: 3, camping: 3 }, false);
@@ -443,7 +414,6 @@ describe("OASHeatMapVue render contract", () => {
     });
 
     it("keeps a skill whose trunk is empty but whose stream has progress", () => {
-      // The trunk itself is empty here, but the skill must not vanish -- Kayaking has progress.
       const titles = sectionTitlesFor(forkedRows, ["paddling"], { paddling: 3 }, false);
 
       expect(titles.length).toBeGreaterThan(0);
@@ -451,12 +421,7 @@ describe("OASHeatMapVue render contract", () => {
     });
   });
 
-  /**
-   * Regression tests for three bugs specific to Group by Member (groupBy: "member"), which uses
-   * the memberSections computed rather than sections — found via live testing and fixed
-   * together, since memberSections had drifted from sections' own filtering/sorting entirely.
-   * See .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md.
-   */
+  /** Regression: memberSections had drifted from sections' filtering and sorting. */
   describe("memberSections (Group by Member)", () => {
     function memberTitlesFor(props: Partial<MountProps> & Pick<MountProps, "items" | "members">): string[] {
       const vm = mountLogic({
@@ -474,9 +439,7 @@ describe("OASHeatMapVue render contract", () => {
       const rows = [makeRow({ memberId: "m1", memberName: "Alex Scout", patrolName: "Eagles" }), makeRow({ memberId: "m2", memberName: "Sam Ranger", patrolName: null, inputId: "b" })];
       const members = [makeMember({ id: "m1", patrol: { id: "p1", name: "Eagles" } }), makeMember({ id: "m2", first_name: "Sam", last_name: "Ranger", patrol: null })];
 
-      // Only the unassigned member should show — this is exactly the case the old hand-rolled
-      // filter (section.patrolName !== null && ...) got wrong: it could never match
-      // UNASSIGNED_PATROL, so an unassigned member could never be selected back in.
+      // Regression: the old hand-rolled filter could never match UNASSIGNED_PATROL.
       expect(memberTitlesFor({ items: rows, members, selectedPatrols: [UNASSIGNED_PATROL] })).toEqual(["Sam Ranger"]);
     });
 
@@ -488,8 +451,6 @@ describe("OASHeatMapVue render contract", () => {
     });
 
     it("sorts by first name, replacing the old fixed alphabetical-by-display-title sort", () => {
-      // The displayed name comes from the Terrain member record (first_name/last_name via
-      // groupRowsForHeatMap), not makeRow's own memberName field — override both there.
       const rows = [makeRow({ memberId: "m1", patrolName: null }), makeRow({ memberId: "m2", patrolName: null, inputId: "b" })];
       const members = [makeMember({ id: "m1", first_name: "Zara", last_name: "Adams" }), makeMember({ id: "m2", first_name: "Amy", last_name: "Zebra" })];
 
@@ -504,7 +465,6 @@ describe("OASHeatMapVue render contract", () => {
     });
   });
 
-  /** The Excel export's view of the heat map (.claude/Excel/PLAN_STAGE_2.md): both layouts, as rendered. */
   describe("getExportView", () => {
     type ExportView = {
       firstColumnHeader: string;

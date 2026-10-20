@@ -32,10 +32,6 @@ function makeItem(id: string, name: string, presentedOn?: string): SummitAchieve
   return item;
 }
 
-/**
- * Ticking a row in the real page always gives it a date (defaulted to the awarded date), so the
- * fixture mirrors that: every selected id gets a pending date unless one is passed explicitly.
- */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mountTable(items: SummitAchievement[], selectedIds: Set<string>, groupByMember = true, presentedDates?: Record<string, string>): any {
   const dates =
@@ -94,10 +90,7 @@ describe("PresentAwardsTableVue — group header label", () => {
   });
 
   it("counts every filtered row, not just the current page", () => {
-    // VData paginates before it groups (computedItems slices, then groupedItems groups the slice
-    // — VData.js:156-164), so the group.header slot's own `items` only ever holds the current
-    // page's share of a member's awards. With 30 awards and a 25-row page the slot would report
-    // 25. The count must come from the full filtered set.
+    // Regression: VData paginates before grouping, so the slot's `items` is only the current page (30 awards showed as 25).
     const items = Array.from({ length: 30 }, (_, index) => makeItem(`a${index}`, "Alex"));
     const table = mountTable(items, new Set());
 

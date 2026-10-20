@@ -94,10 +94,7 @@ function hashString(value: string): number {
   return Math.abs(hash);
 }
 
-/**
- * Deterministic member-id -> codename mapping (same member always gets the same word, across
- * sessions/screenshots), used by the OAS Progression heat-map's "use codenames" display toggle.
- */
+/** Deterministic, so a member keeps the same codename across sessions. */
 export function getCodename(memberId: string): string {
   const index = hashString(memberId) % CODENAMES.length;
   return CODENAMES[index];

@@ -1,11 +1,6 @@
 import { unzipSync, strFromU8 } from "fflate";
 
-/**
- * fflate compresses any file of 160 KB or more in a Web Worker, which jsdom doesn't have. The large-unit test
- * below crosses that line on purpose, so zipping is made synchronous here (same output). In the
- * browser the worker path is used; Terrain sends no Content-Security-Policy, so nothing blocks it
- * (checked 2026-10-12, .claude/Excel/PLAN_STAGE_2.md).
- */
+/** Gotcha: fflate uses a Web Worker for files ≥160 KB, which jsdom lacks, so zipping is made synchronous here. */
 jest.mock("fflate", () => {
   const actual = jest.requireActual("fflate");
   return { ...actual, zip: (data: Record<string, Uint8Array>, cb: (err: Error | null, out: Uint8Array | null) => void) => cb(null, actual.zipSync(data)) };

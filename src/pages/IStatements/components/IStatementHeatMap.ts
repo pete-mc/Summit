@@ -23,10 +23,6 @@ export default defineComponent({
     groups: { type: Array as PropType<VisibleGroup[]>, required: true },
   },
   computed: {
-    /**
-     * Column identity (key/title/group-start) is the same for every row, so it is built once
-     * here rather than being recomputed inside each row's cell list.
-     */
     columns(): RenderedColumn[] {
       const columns: RenderedColumn[] = [];
       this.groups.forEach((group) => {
@@ -42,13 +38,8 @@ export default defineComponent({
     },
 
     /**
-     * At full scale this is ~180 columns x ~500 rows. Two deliberate choices keep a filter
-     * change cheap:
-     *
-     *  - each row carries a plain boolean[] aligned to `columns`, not an array of per-cell
-     *    objects, which avoids allocating ~90k objects per recompute;
-     *  - the result is frozen, so Vue 2 skips walking it to install reactive getters on data
-     *    that is rebuilt wholesale and never mutated in place.
+     * Learning: ~180 x ~500 cells. Rows are plain boolean[] (not ~90k objects), and the result is frozen so
+     * Vue 2 doesn't make it reactive.
      */
     renderedRows(): RenderedRow[] {
       const columnKeys = this.columns.map((column) => column.key);
@@ -57,8 +48,6 @@ export default defineComponent({
         const present = new Set<string>();
         row.cells.forEach((cell) => present.add(cellLookupKey(cell.skill, cell.branch, cell.stage)));
 
-        // Rows built from more than one raw wording are marked so an over-merge is visible
-        // in the UI rather than silently presented as a single statement.
         const variants = Array.from(row.variants.keys());
 
         return Object.freeze({
@@ -73,12 +62,7 @@ export default defineComponent({
       return Object.freeze(rendered) as RenderedRow[];
     },
 
-    /**
-     * v-data-table requires `headers` even though the header is hand-written in the #header
-     * slot — the two-row header spans stage columns under one group label via colspan, which
-     * Vuetify's own renderer (one <th> per entry) cannot express. Mirrors OASHeatMapVue so both
-     * heat maps are configured the same way.
-     */
+    /** Needed only for the column count; the header is hand-written for colspan. */
     dataTableHeaders(): Array<{ text: string; value: string; sortable: boolean }> {
       return [{ text: "I-Statement", value: "statement", sortable: false }, ...this.columns.map((column) => ({ text: column.title, value: column.key, sortable: false }))];
     },

@@ -3,17 +3,13 @@ import SummitAchievement from "@/pages/PresentAwards/models/SummitAchievement";
 import { TerrainAchievementsType } from "@/shared";
 import type { TerrainAchievements, TerrainUnitMember } from "@/types/terrainTypes";
 
-// The content component's .vue sibling imports the table's .vue file, which Jest cannot parse
-// (vue-loader only merges template + external script at webpack build time). Stub it so the
-// options object under test can be required — the table is covered by its own logic tests.
+// Gotcha: Jest can't parse .vue files, so stub the table.
 jest.mock("@/pages/PresentAwardsVue/components/PresentAwardsTableVue.vue", () => ({ __esModule: true, default: { name: "PresentAwardsTableVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/PresentAwardsVue/components/PresentAwardsFiltersVue.vue", () => ({ __esModule: true, default: { name: "PresentAwardsFiltersVue", render: () => null } }), { virtual: true });
 jest.mock("@/components/SummitLoadingState.vue", () => ({ __esModule: true, default: { name: "SummitLoadingState", render: () => null } }), { virtual: true });
 jest.mock("@/components/SummitPillButton.vue", () => ({ __esModule: true, default: { name: "SummitPillButton", render: () => null } }), { virtual: true });
 jest.mock("@/components/SummitPrintButton.vue", () => ({ __esModule: true, default: { name: "SummitPrintButton", render: () => null } }), { virtual: true });
 
-// The download itself is summit-excel's (tested in tests/unit/excel/); mocked here so these can
-// assert what the page asks it for. The rows come from the table (presentAwardsExportView.spec.ts).
 jest.mock("@/excel/summitExcel", () => ({
   ...jest.requireActual("@/excel/summitExcel"),
   exportExcelSheet: jest.fn().mockResolvedValue(undefined),
@@ -48,19 +44,12 @@ function makeItem(id: string, options: { memberId?: string; name?: string; award
     status_updated: options.awardedOn ?? "2026-03-05T00:00:00.000Z",
   } as TerrainAchievements;
 
-  // Passing the achievement's own id as an existing presentation is what marks a row as
-  // previously presented, exactly as a loaded storage event would.
   const existing = options.alreadyStored ? [{ guid: id, date: new Date("2026-02-01T00:00:00.000Z") }] : [];
   const item = new SummitAchievement(achievement, makeMember(options.memberId ?? "member-1", options.name ?? "Alex"), existing);
   if (options.presentedOn) item.updatePresented(options.presentedOn);
   return item;
 }
 
-/**
- * The component is a plain Vue 2 options object, so it can be instantiated directly without a
- * template or DOM — the approach .claude/OASProgression/PLAN_VUESTAGE_2.md establishes for this
- * project, since Jest here cannot import .vue files.
- */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mountContent(items: SummitAchievement[], onSave?: (presented: SummitAchievement[]) => Promise<{ error?: string; mergeNotice?: string }>, onReload?: () => Promise<void>): any {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,7 +57,6 @@ function mountContent(items: SummitAchievement[], onSave?: (presented: SummitAch
   return new Ctor({ propsData: { items, loadState: "ready", onSave, onReload } });
 }
 
-// The component restores saved filters on construction, so each test starts from a clean slate.
 beforeEach(() => {
   window.localStorage.clear();
   jest.clearAllMocks();
@@ -110,8 +98,7 @@ describe("PresentAwardsVueContent — edit state", () => {
 
     content.onTogglePresent(item, true);
 
-    // Vue 2 cannot intercept Set.add/.delete — an in-place mutation would update the data while
-    // leaving the checkbox stale.
+    // Gotcha: Vue 2 can't see Set.add/.delete.
     expect(content.selectedIds).not.toBe(before);
   });
 
@@ -164,8 +151,7 @@ describe("PresentAwardsVueContent — previously presented visibility", () => {
   });
 
   it("still saves a hidden award that remains ticked", async () => {
-    // Hiding a row must not silently drop it from the next save — the storage event is a full
-    // replace, so an omitted row would be erased.
+    // Gotcha: the save is a full replace, so a hidden row must still be saved.
     const onSave = jest.fn().mockResolvedValue({});
     const content = mountContent([makeItem("a", { alreadyStored: true, presentedOn: "01/02/2026" })], onSave);
 
@@ -199,7 +185,7 @@ describe("PresentAwardsVueContent — column filters", () => {
   });
 });
 
-describe("PresentAwardsVueContent — Excel export (.claude/Excel/PLAN_STAGE_3.md)", () => {
+describe("PresentAwardsVueContent — Excel export", () => {
   const VIEW = { grouped: false, groups: [{ label: "", rows: [{ member: "Alex Scout", type: "Intro", award: "Award", dateAwarded: "05/03/2026", presented: "", present: false }] }] };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -234,7 +220,6 @@ describe("PresentAwardsVueContent — Excel export (.claude/Excel/PLAN_STAGE_3.m
     const sheet = request.build({ title: "T", subtitle: "S", metaLine: "M" }, null);
 
     expect(table.getExportView).toHaveBeenCalledTimes(1);
-    // Flat view: Name, Type, Award, Date, Presented, with the row after the header block and column header.
     expect(sheet.rows[5][0]).toMatchObject({ value: "Alex Scout" });
   });
 
@@ -315,7 +300,6 @@ describe("PresentAwardsVueContent — filter persistence", () => {
   });
 
   it("persists synchronously, so navigating away immediately does not lose the change", () => {
-    // Vue 2 watchers fire on the next tick; persisting from one would drop this write.
     const content = mountContent([makeItem("a")]);
 
     content.onColumnFiltersUpdate({ member: "Alex" });
@@ -414,8 +398,6 @@ describe("PresentAwardsVueContent — saving", () => {
   });
 
   it("tells the user when their save had to be merged with someone else's", async () => {
-    // A merge means the screen they were looking at was not the whole picture, so a plain
-    // "Saved." would be misleading.
     const notice = "Saved. Someone else had also made changes at 9:41 am; both sets have been kept.";
     const onSave = jest.fn().mockResolvedValue({ mergeNotice: notice });
     const content = mountContent([makeItem("a", { presentedOn: "01/02/2026" })], onSave);

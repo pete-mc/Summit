@@ -3,11 +3,7 @@ import { OAS_STREAMS, flattenOASTemplate, flattenOASTree, getCachedOASTemplate, 
 
 const TEMPLATE_FETCH_CONCURRENCY = 6;
 
-/**
- * Inputs that exist in nearly every template and are administrative rather than
- * skills. Excluded by id, not by `type`: real data has shown `logbook_up_to_date`
- * declared as both "checkbox" and "text", so type is not a reliable discriminator.
- */
+/** Gotcha: excluded by id, not `type`: `logbook_up_to_date` appears as both "checkbox" and "text". */
 const NON_ISTATEMENT_INPUT_IDS = new Set(["logbook_up_to_date", "file_uploader"]);
 
 export interface IStatementCell {
@@ -62,10 +58,7 @@ function cellKey(skill: string, branch: string, stage: number): string {
   return skill + "|" + branch + "|" + stage;
 }
 
-/**
- * Highest occurrence count wins; ties break alphabetically so the rendered text is
- * stable across loads (an unstable pick would reshuffle the table and flake tests).
- */
+/** Ties break alphabetically so the text is stable across loads. */
 function pickDisplayText(variants: Map<string, number>): string {
   let best = "";
   let bestCount = -1;
@@ -154,7 +147,6 @@ export async function buildIStatementMatrix(skills: string[], onProgress?: (done
 
       row.variants.set(label, (row.variants.get(label) ?? 0) + 1);
 
-      // A statement can repeat within one template (different input groups); one square per cell.
       const cell = cellKey(task.skill, task.branch, task.stage);
       if (!seenCells.has(key + "::" + cell)) {
         seenCells.add(key + "::" + cell);
@@ -177,7 +169,6 @@ export async function buildIStatementMatrix(skills: string[], onProgress?: (done
     const branches = Array.from(stagesByGroup.keys())
       .filter((key) => key.startsWith(skill + "|"))
       .map((key) => key.slice(skill.length + 1))
-      // Trunk (branch === skill) first, then the named branches alphabetically.
       .sort((a, b) => (a === skill ? -1 : b === skill ? 1 : a.localeCompare(b)));
 
     branches.forEach((branch) => {

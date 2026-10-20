@@ -1,10 +1,6 @@
 import type { HeatMapSection, SectionMemberRow } from "./groupRowsForHeatMap";
 
-/**
- * Sentinel value representing "no patrol" as a selectable Patrol-filter item — exported so the
- * Heat Map's Patrol dropdown can offer it alongside real patrol names. See
- * .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md's note on the Patrol filter fix.
- */
+/** Selectable Patrol-filter item for members with no patrol. */
 export const UNASSIGNED_PATROL = "Unassigned";
 
 export interface PatrolGroup {
@@ -12,7 +8,6 @@ export interface PatrolGroup {
   members: SectionMemberRow[];
 }
 
-/** The minimal shape filterMembersByPatrol/groupMembersByPatrol actually need — both are generic over this rather than hard-typed to SectionMemberRow, so OASWorksheetsVue's WorksheetMember (a different, narrower shape) can reuse them directly instead of being force-fit into SectionMemberRow's heat-map-specific fields (highestStage, stages, trunkFullyAwarded) it has no use for. See .claude/OASWorksheets/PLAN_STAGE_1.md §2. */
 interface HasPatrolName {
   patrolName: string | null;
 }
@@ -22,19 +17,10 @@ export interface PatrolGroupOf<T extends HasPatrolName> {
   members: T[];
 }
 
-/**
- * True stream names ("Bushwalking", "Bushcraft"...), NOT `OASProgressionRow.stream` (which is
- * actually Terrain's field name for what the UI calls "Skill" — see PLAN_STAGE_3.md round 3).
- * Kept here rather than re-exported from OASHeatMap.tsx to avoid a component<->service import cycle.
- */
+/** Gotcha: Terrain's `stream` field is what the UI calls "Skill". Kept here to avoid a component↔service import cycle. */
 export const OAS_SKILLS = ["bushcraft", "bushwalking", "camping", "aquatics", "boating", "paddling", "alpine", "cycling", "vertical"];
 
-/**
- * Filters a section's members down to only those in one of the selected patrols. Empty
- * selection = no filter (shows everyone, including unassigned members). A selection containing
- * UNASSIGNED_PATROL matches members with no patrol (patrolName === null) — see that constant's
- * own comment.
- */
+/** Gotcha: an empty selection means NO filter (everyone). The Vue page treats empty as "show nobody" before calling this. */
 export function filterMembersByPatrol<T extends HasPatrolName>(members: T[], selectedPatrols: string[]): T[] {
   if (selectedPatrols.length === 0) {
     return members;
@@ -42,14 +28,7 @@ export function filterMembersByPatrol<T extends HasPatrolName>(members: T[], sel
   return members.filter((m) => (m.patrolName === null ? selectedPatrols.includes(UNASSIGNED_PATROL) : selectedPatrols.includes(m.patrolName)));
 }
 
-/**
- * Groups a section's members by patrol, alphabetically by patrol name — member order WITHIN each
- * patrol group is preserved from the input array (callers should sort members before grouping if
- * a specific within-patrol order, e.g. via sortMembers, is wanted). Members lacking a patrol are
- * collected into a trailing "Unassigned" group — unless NO member in the section has a patrol at
- * all, in which case grouping would add noise for no benefit, so a single unlabeled group
- * containing everyone is returned instead.
- */
+/** Keeps input order within each patrol (sort first). If no member has a patrol, returns one unlabelled group. */
 export function groupMembersByPatrol<T extends HasPatrolName>(members: T[]): PatrolGroupOf<T>[] {
   if (members.every((m) => m.patrolName === null)) {
     return [{ patrolName: "", members }];
@@ -75,7 +54,6 @@ export function groupMembersByPatrol<T extends HasPatrolName>(members: T[]): Pat
     .map(([patrolName, patrolMembers]) => ({ patrolName, members: patrolMembers }));
 }
 
-/** All distinct non-null patrol names present across a set of sections, alphabetically sorted. */
 export function collectPatrolNames(sections: HeatMapSection[]): string[] {
   const names = new Set<string>();
   sections.forEach((section) => {
@@ -88,49 +66,25 @@ export function collectPatrolNames(sections: HeatMapSection[]): string[] {
   return Array.from(names).sort((a, b) => a.localeCompare(b));
 }
 
-/**
- * True if at least one member across these sections has no patrol (patrolName === null) —
- * i.e. would show up as "Unassigned" if "Break by patrol" were on. Used alongside
- * collectPatrolNames() to decide whether the Patrol filter control has any real choice to
- * offer: with exactly one named patrol and no unassigned members, every member is already in
- * that one patrol, so there is nothing left to narrow between — see
- * .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md's note on the Patrol filter bug.
- */
+/** With one named patrol and no unassigned members there's nothing to filter between. */
 export function hasUnassignedMembers(sections: HeatMapSection[]): boolean {
   return sections.some((section) => section.members.some((member) => member.patrolName === null));
 }
 
-/** Slices a list of stage numbers down to those within [min, max] (inclusive). Streams with a lower max simply end up with fewer/no columns past their own range — no special-casing needed since this just filters the stage list already computed for that stream/section. Used by the legacy React OAS Progression page (OASHeatMap.tsx), which still has separate "Stage from"/"Stage to" controls — the Vue page's equivalent is sliceStagesToVisible below. */
+/** Legacy React page only. The Vue page uses sliceStagesToVisible. */
 export function sliceStagesToRange(allStages: number[], stageRange: [number, number]): number[] {
   const [min, max] = stageRange;
   return allStages.filter((stage) => stage >= min && stage <= max);
 }
 
-/**
- * Slices a list of stage numbers down to the ones the user has selected to see, via the Vue
- * OAS Progression page's combined "Show"-style stage multi-select (replaces that page's old
- * separate "Stage from"/"Stage to" range controls — see
- * .claude/OASProgression/PLAN_NAMES_AND_HIDE_CONTROLS.md). Selection is a true multi-select, not
- * a contiguous range: picking stages 2 and 5 shows only those two, nothing between. Streams with
- * fewer stages than selected simply end up with fewer/no columns past their own range — no
- * special-casing needed since this just filters the stage list already computed for that
- * stream/section.
- */
 export function sliceStagesToVisible(allStages: number[], visibleStages: number[]): number[] {
   const visibleSet = new Set(visibleStages);
   return allStages.filter((stage) => visibleSet.has(stage));
 }
 
 export interface StageProgressDisplay {
-  /** The section's displayed stage number (or null if none), formatted as a plain string, e.g. "5" or "-". */
   stage: string;
-  /**
-   * Two-digit count of i-statements with any progress (answered or awarded) in the stage
-   * immediately above the member's highest AWARDED stage, WITHIN THE SAME SECTION only (a
-   * section's own stage list may not include every stage implied by a stream's own
-   * highestStage) — null when there's nothing to show (no next stage in this section, or it has
-   * zero i-statements with any progress yet).
-   */
+  /** Ticked count in the stage above the highest AWARDED one, within this section only. Null when there's nothing to show. */
   nextStageProgress: string | null;
 }
 
@@ -139,10 +93,6 @@ interface NextStageProgress {
   total: number;
 }
 
-/**
- * Ticked (answered or awarded) count and total i-statement count for the stage immediately above
- * `highestStage`, scoped to `stages` — null when there's no next stage or it has zero ticks yet.
- */
 function nextStageProgress(highestStage: number, stages: SectionMemberRow["stages"]): NextStageProgress | null {
   const nextStage = stages.find((s) => s.stage === highestStage + 1);
   if (!nextStage) {
@@ -157,13 +107,6 @@ function nextStageProgress(highestStage: number, stages: SectionMemberRow["stage
   return { ticked, total: nextStage.cells.length };
 }
 
-/**
- * Zero-padded count of i-statements ticked (answered or awarded) in the stage immediately above
- * `highestStage`, scoped to `stages` — null when there's no next stage or it has zero ticks yet
- * (see nextStageProgress). The stage's total i-statement count (also available from
- * nextStageProgress) is deliberately not shown here — see stageProgressProportion for where the
- * total is still used, as a sort tiebreaker.
- */
 function nextStageTickProgress(highestStage: number, stages: SectionMemberRow["stages"]): string | null {
   const progress = nextStageProgress(highestStage, stages);
   if (!progress) {
@@ -173,18 +116,8 @@ function nextStageTickProgress(highestStage: number, stages: SectionMemberRow["s
 }
 
 /**
- * Builds the "Stage X.xx" display for one section.
- *
- * - Non-stream sections (a non-streamed skill, or the base/trunk section of a skill that forks
- *   into streams): plain highest-awarded-stage number, with xx = next-stage tick count as above.
- * - Stream sections: gated — until the skill's trunk has been fully awarded for this member,
- *   nothing is shown ("-"), since a stream can't be started before its base skill is done. Once
- *   unlocked, the WHOLE NUMBER is the skill's trunk stage count as a FLOOR — it only rises once
- *   the stream itself has a fully AWARDED stage (merely answered/in-progress cells in the stage
- *   right above the trunk don't move the whole number, only its .xx). So a member with the trunk
- *   done and stage 4 merely answered (not awarded) still shows "3.xx", but a member with stream
- *   stage 6 fully awarded shows "6" (or "6.xx" if stage 7 has ticks) — never a number below the
- *   trunk floor, and never the trunk number once the stream itself has overtaken it.
+ * "Stage X.xx". Learning: a stream section shows "-" until the trunk is fully awarded, then uses the
+ * trunk stage count as a FLOOR. The whole number only rises once a stream stage is fully AWARDED.
  */
 export function formatStageProgress(highestStage: number | null, stages: SectionMemberRow["stages"], isStreamSection: boolean, trunkStageCount: number, trunkFullyAwarded: boolean): StageProgressDisplay {
   if (!isStreamSection) {
@@ -204,12 +137,7 @@ export function formatStageProgress(highestStage: number | null, stages: Section
 
 export type MemberSortBy = "lastName" | "firstName" | "stageProgress";
 
-/**
- * The stage value a member should be sorted/ranked by, matching what's actually displayed: for a
- * stream section this is null (sorts last, same as "no progress") whenever the section is gated
- * ("-" is shown); once unlocked it's the same floored `max(trunkStageCount, own highestStage)`
- * value formatStageProgress would show as the whole number, not the raw (possibly lower) highestStage.
- */
+/** Matches what's displayed: null while a stream is gated, otherwise floored at the trunk count. */
 function effectiveHighestStage(member: SectionMemberRow, isStreamSection: boolean, trunkStageCount: number): number | null {
   if (!isStreamSection) {
     return member.highestStage;
@@ -220,13 +148,7 @@ function effectiveHighestStage(member: SectionMemberRow, isStreamSection: boolea
   return member.highestStage === null ? trunkStageCount : Math.max(trunkStageCount, member.highestStage);
 }
 
-/**
- * Proportion (ticked/total, 0..1) used as the Stage yy/nn tiebreaker — same "next stage above
- * highestStage" cells the displayed yy/nn is built from, but as a raw fraction (0 when there's
- * nothing to show) so members are ranked by how close they are to finishing the next stage,
- * not by its raw i-statement count (a bigger next stage shouldn't out-rank a smaller one that's
- * proportionally further along).
- */
+/** Tiebreaker uses the proportion, so a small next stage that's further along outranks a bigger one. */
 function stageProgressProportion(member: SectionMemberRow, isStreamSection: boolean, trunkStageCount: number): number {
   const effectiveStage = effectiveHighestStage(member, isStreamSection, trunkStageCount);
   if (effectiveStage === null) {
@@ -236,18 +158,7 @@ function stageProgressProportion(member: SectionMemberRow, isStreamSection: bool
   return progress ? progress.ticked / progress.total : 0;
 }
 
-/**
- * Sorts a section's (or patrol group's) members by the chosen key. "stageProgress" sorts by
- * (section-appropriate) highestStage descending first (higher stage ranks first, matching how
- * members are usually scanned "who's furthest along"), then by next-stage progress *proportion*
- * (ticked/total, not the raw ticked count shown in the .xx display) descending as a tiebreaker
- * within the same stage — a member with 5 of 6 i-statements ticked in the next stage (83%) ranks
- * above one with 6 of 20 (30%) even though 6 > 5, since the next stage's own size can differ
- * between members, and both rank above a plain "5" with no next-stage progress yet. A null (or
- * gated-to-null, for a locked stream section) highestStage sorts last. `isStreamSection`/
- * `trunkStageCount` describe the section being sorted,
- * matching the same params `formatStageProgress` uses to render it.
- */
+/** "stageProgress": highest effective stage desc, then next-stage proportion desc. Null sorts last. */
 export function sortMembers(members: SectionMemberRow[], sortBy: MemberSortBy, isStreamSection = false, trunkStageCount = 0): SectionMemberRow[] {
   const sorted = members.slice();
   switch (sortBy) {

@@ -8,11 +8,7 @@ import path from "path";
 const VARS = { unit: "Example Scout Unit", group: "1st Example Group", section: "Scouts" };
 const GENERATED = new Date(2026, 9, 11, 10, 0);
 
-/**
- * Shaped like PresentAwardsTableVue's render with "Group by member" on: Name moved into the group
- * header, the in-table filter row, chevron toggles, the Present tick-box column. Invented content
- * (.claude/Print/PLAN.md I12).
- */
+/** Shaped like PresentAwardsTableVue grouped by member. Invented content. */
 function mountGroupedAwards(): HTMLElement {
   const host = document.createElement("div");
   host.innerHTML = `
@@ -80,7 +76,7 @@ describe("present-awards profile", () => {
   });
 });
 
-describe("Present Awards columns (user, 2026-10-11/12)", () => {
+describe("Present Awards columns", () => {
   it("has no separate badge column — the badge is part of the Award cell", () => {
     expect(HEADERS.map((h) => h.value)).not.toContain("badge");
     expect(HEADERS.map((h) => h.text)).not.toContain("Badge");

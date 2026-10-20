@@ -7,10 +7,7 @@ import type { OASProgressionVueFilterState } from "@/pages/OasProgressionVue/ser
 const VARS = { unit: "Example Venturer Unit", group: "1st Example Group", section: "Venturer Scouts" };
 const GENERATED = new Date(2026, 9, 10, 14, 5);
 
-/**
- * Shaped like OASHeatMapVue's group-by-skill render (Break by patrol on). Invented names/ids only
- * (.claude/Print/PLAN.md I12).
- */
+/** Shaped like OASHeatMapVue grouped by skill, with break by patrol. Invented content. */
 function heatmapHtml(stages: number[]): string {
   const span = stages.length + 2;
   const stageHeads = stages.map((s) => `<th data-v-x="" class="oas-heatmap-stage-group-header">${s}</th>`).join("");
@@ -60,7 +57,7 @@ describe("skill-heatmap profile", () => {
     expect(profile.header.title).toBe("OAS Progression - Heatmap");
     const r = resolveHeaderFooter({ source: document.body, profile: "skill-heatmap", vars: VARS, generated: GENERATED });
     expect(r.header.meta.map((m) => m.label)).toEqual(["Generated"]);
-    expect(profile.repeatColumns).toBe(1); // Member only (user, 2026-10-11)
+    expect(profile.repeatColumns).toBe(1);
     expect(profile.defaults.orientation).toBe("landscape");
   });
 
@@ -90,7 +87,7 @@ describe("skill-heatmap profile", () => {
     expect(host.querySelectorAll(".oas-sq-break")).toHaveLength(0);
   });
 
-  it("prints every row on white — no zebra striping (user, 2026-10-11)", () => {
+  it("prints every row on white — no zebra striping", () => {
     expect(BASE_PRINT_CSS).not.toMatch(/nth-child/);
     expect(BASE_PRINT_CSS).toMatch(/table\.summit-print-table tbody td \{ background: #fff; \}/);
     // Title and patrol bands are more specific than the white rule, so they keep their tint.

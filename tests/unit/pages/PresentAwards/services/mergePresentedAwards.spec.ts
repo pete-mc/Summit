@@ -49,8 +49,7 @@ describe("mergePresentedAwards", () => {
   });
 
   it("lets a deliberate untick beat another user's carried-along tick", () => {
-    // The Alice/Bob/Carol case from PLAN_STAGE_8. Bob's base HAD x and his save omits it, so he
-    // decided to remove it. Alice merely carried it along. Bob's removal is the only real intent.
+    // Bob's base had x and his save omits it: a deliberate removal. Alice only carried it along.
     const bobBase = [record("x")];
     const bobSave: PresentedAwardRecord[] = [];
     const serverAfterAlice = [record("x")];
