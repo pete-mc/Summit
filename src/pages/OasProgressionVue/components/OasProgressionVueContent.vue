@@ -6,7 +6,23 @@
         <v-spacer></v-spacer>
         <template v-if="hasContent">
           <template v-if="filters.viewMode === 'summary'">
-            <SummitPillButton v-if="peakAwardRequirement" :loading="isExcelExporting" :disabled="isExcelExporting" @click="onSummaryExcelExportClick">Excel Export</SummitPillButton>
+            <v-menu v-if="peakAwardRequirement" v-model="summaryExcelMenuOpen" offset-y left :close-on-content-click="false">
+              <template #activator="{ on, attrs }">
+                <SummitPillButton v-bind="attrs" :loading="isExcelExporting" :disabled="isExcelExporting" v-on="on">Excel Export</SummitPillButton>
+              </template>
+              <v-card>
+                <v-card-text class="pb-0">
+                  <p class="oas-summary-include-label">Include</p>
+                  <v-checkbox v-model="summaryInclude.peakAward" label="Towards Peak Award" dense hide-details :disabled="!summaryInclude.overall" />
+                  <v-checkbox v-model="summaryInclude.overall" label="Overall" dense hide-details :disabled="!summaryInclude.peakAward" />
+                </v-card-text>
+                <v-card-actions>
+                  <v-spacer />
+                  <v-btn text @click="summaryExcelMenuOpen = false">Cancel</v-btn>
+                  <v-btn color="primary" depressed @click="onSummaryExcelExportClick">Export</v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-menu>
             <SummitPrintButton profile="peak-award-summary" :target="summaryPrintTarget" :meta="summaryPrintMeta" />
           </template>
           <template v-else-if="filters.viewMode === 'heatmap'">
@@ -105,6 +121,12 @@
   font-size: var(--oas-vue-font-size-heading);
   font-family: var(--oas-vue-font-family);
   font-weight: normal;
+}
+
+.oas-summary-include-label {
+  margin: 0;
+  color: var(--summit-color-text-primary, #2a2a2a);
+  font-weight: 600;
 }
 
 .oas-peak-award-summary-no-section {

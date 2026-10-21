@@ -1,4 +1,4 @@
-import { saveOASProgressionVueFilters, loadOASProgressionVueFilters, type OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
+import { saveOASProgressionVueFilters, loadOASProgressionVueFilters, loadSummaryInclude, saveSummaryInclude, type OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
 
 const STORAGE_KEY = "summit.oasProgressionVue.filters";
 const REACT_PAGE_STORAGE_KEY = "summit.oasProgression.filters";
@@ -82,5 +82,33 @@ describe("OASProgressionVueFilterPersistence", () => {
     expect(loadOASProgressionVueFilters()).toBeNull();
 
     spy.mockRestore();
+  });
+});
+
+describe("Summary include (which tables Print and Excel output)", () => {
+  beforeEach(() => window.localStorage.clear());
+
+  it("defaults to both tables", () => {
+    expect(loadSummaryInclude()).toEqual({ peakAward: true, overall: true });
+  });
+
+  it("round-trips a single-table choice", () => {
+    saveSummaryInclude({ peakAward: false, overall: true });
+
+    expect(loadSummaryInclude()).toEqual({ peakAward: false, overall: true });
+  });
+
+  it("falls back to both when nothing is ticked or the stored value is broken", () => {
+    saveSummaryInclude({ peakAward: false, overall: false });
+    expect(loadSummaryInclude()).toEqual({ peakAward: true, overall: true });
+
+    window.localStorage.setItem("summit.oasProgressionVue.summaryInclude", "{not json");
+    expect(loadSummaryInclude()).toEqual({ peakAward: true, overall: true });
+  });
+
+  it("is stored apart from the filters, so resetting filters leaves it alone", () => {
+    saveSummaryInclude({ peakAward: true, overall: false });
+
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
   });
 });

@@ -19,7 +19,7 @@ describe("buildExcelFileName", () => {
 describe("resolveExcelHeader", () => {
   it("uses the printout's wording for the same profile", () => {
     const header = resolveExcelHeader("peak-award-summary", [{ label: "Patrol", value: "All" }], { unit: "Sample Unit", group: "Sample Group", section: "Venturer Scouts" }, new Date(2026, 9, 12, 14, 5));
-    expect(header.title).toBe("OAS Progression - Summary for Peak Award");
+    expect(header.title).toBe("OAS Progression - Summary - Towards Peak Award");
     expect(header.subtitle).toBe("Sample Group · Sample Unit");
     expect(header.metaLine).toMatch(/^Patrol: All · Generated: 12\/10\/2026/);
   });

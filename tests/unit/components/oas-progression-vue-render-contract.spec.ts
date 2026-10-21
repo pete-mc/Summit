@@ -135,7 +135,7 @@ describe("OasProgressionVueContent render contract", () => {
     expect(templateSource).toMatch(/<template v-else-if="filters\.viewMode === 'heatmap'">[\s\S]*?@click="onHeatmapExcelExportClick">Excel Export<\/SummitPillButton>[\s\S]*?<SummitPrintButton profile="skill-heatmap"/);
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
-    expect(tsSource).toContain('this.runExcelExport("Heatmap", "skill-heatmap", this.heatmapPrintMeta');
+    expect(tsSource).toContain('this.runExcelExport("Heatmap", this.heatmapPrintMeta, [{ printProfile: "skill-heatmap"');
     expect(tsSource).toContain("heatMap.getExportView()");
   });
 
@@ -155,14 +155,20 @@ describe("OasProgressionVueContent render contract", () => {
     expect(tsSource).not.toContain("onSummaryPdfExportClick");
   });
 
-  it("Summary tab has its own formatted Excel Export beside Print / PDF", () => {
+  it("Summary tab has its own formatted Excel Export, a menu choosing which tables become sheets, beside Print / PDF", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
-    expect(templateSource).toMatch(/<template v-if="filters\.viewMode === 'summary'">[\s\S]*?@click="onSummaryExcelExportClick">Excel Export<\/SummitPillButton>[\s\S]*?<SummitPrintButton profile="peak-award-summary"/);
+    expect(templateSource).toMatch(
+      /<template v-if="filters\.viewMode === 'summary'">[\s\S]*?Excel Export<\/SummitPillButton>[\s\S]*?@click="onSummaryExcelExportClick">Export<\/v-btn>[\s\S]*?<SummitPrintButton profile="peak-award-summary"/,
+    );
+    expect(templateSource).toContain('v-model="summaryInclude.peakAward"');
+    expect(templateSource).toContain('v-model="summaryInclude.overall"');
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
     expect(tsSource).toContain("rows: this.filteredPeakAwardSummaryRows");
-    expect(tsSource).toContain('this.runExcelExport("Summary", "peak-award-summary", this.summaryPrintMeta');
-    expect(tsSource).toContain('exportExcelSheet({ printProfile, meta, fileNameParts: ["OAS Progression", viewName], build })');
+    expect(tsSource).toContain('printProfile: "peak-award-summary"');
+    expect(tsSource).toContain('printProfile: "overall-progress"');
+    expect(tsSource).toContain('this.runExcelExport("Summary", this.summaryPrintMeta, sheets)');
+    expect(tsSource).toContain('exportExcelWorkbook({ sheets, meta, fileNameParts: ["OAS Progression", viewName] })');
   });
 
   it("the reload button shows a loading state while reloading", () => {

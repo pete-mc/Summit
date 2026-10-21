@@ -15,10 +15,18 @@ import { groupRowsForHeatMap } from "@/pages/OasProgression/services/groupRowsFo
 import { buildPeakAwardSummaryRows, sortPeakAwardSummaryRows, type PeakAwardMemberRow } from "@/pages/OasProgression/services/buildPeakAwardSummaryRows";
 import { PEAK_AWARD_REQUIREMENTS, type PeakAwardRequirement } from "@/pages/OasProgression/data/peakAwardRequirements";
 import { collectPatrolNames, hasUnassignedMembers, filterMembersByPatrol, UNASSIGNED_PATROL, OAS_SKILLS } from "@/pages/OasProgression/services/filterHeatMapSections";
-import { loadOASProgressionVueFilters, saveOASProgressionVueFilters, type OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
+import {
+  loadOASProgressionVueFilters,
+  loadSummaryInclude,
+  saveOASProgressionVueFilters,
+  saveSummaryInclude,
+  type OASProgressionVueFilterState,
+  type SummaryIncludeState,
+} from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
 import { exportGridToExcel, type GridExportColumn, type GridExportRow } from "@/components/gridExport";
-import { exportExcelSheet, type ExcelExportRequest } from "@/excel/summitExcel";
+import { exportExcelWorkbook, type ExcelWorkbookRequest } from "@/excel/summitExcel";
 import { buildPeakAwardSummarySheet } from "@/excel/sheets/peakAwardSummary";
+import { buildOverallProgressSheet } from "@/excel/sheets/overallProgress";
 import { buildSkillHeatmapSheet } from "@/excel/sheets/skillHeatmap";
 import type { HeatMapExportView } from "./OASHeatMapVue";
 import { createLogger } from "@/helpers";
@@ -28,6 +36,7 @@ import type { TerrainAchievementsSection } from "@/shared";
 import OASPeakAwardSummaryFiltersVue from "./OASPeakAwardSummaryFiltersVue.vue";
 import OASPeakAwardSummaryVue from "./OASPeakAwardSummaryVue.vue";
 import OASOverallProgressVue from "./OASOverallProgressVue.vue";
+import { buildHeaderView } from "./OASOverallProgressVue";
 import { buildOverallProgressColumns, buildOverallProgressRows, nextColumnSort, sortOverallProgressRows, type OverallProgressColumn, type OverallProgressRow } from "@/pages/OasProgression/services/buildOverallProgressRows";
 import { getMemberDisplayName } from "@/pages/OasProgression/services/getMemberDisplayName";
 
@@ -173,6 +182,8 @@ export default defineComponent({
       isReloading: false,
       isExcelExporting: false,
       exportFeedback: "",
+      summaryInclude: loadSummaryInclude() as SummaryIncludeState,
+      summaryExcelMenuOpen: false,
       tableColumnFilters: {} as Record<string, string>,
     };
   },
@@ -248,6 +259,12 @@ export default defineComponent({
     },
   },
   watch: {
+    summaryInclude: {
+      deep: true,
+      handler(include: SummaryIncludeState) {
+        saveSummaryInclude(include);
+      },
+    },
     filters: {
       deep: true,
       handler(newFilters: OASProgressionVueFilterState) {
@@ -344,26 +361,39 @@ export default defineComponent({
     async onSummaryExcelExportClick() {
       const requirement = this.peakAwardRequirement;
       if (!requirement) return;
-      await this.runExcelExport("Summary", "peak-award-summary", this.summaryPrintMeta, (header, logo) =>
-        buildPeakAwardSummarySheet({
-          rows: this.filteredPeakAwardSummaryRows,
-          requirement,
-          nameFormat: this.filters.summaryNameFormat,
-          specialConditionText: this.specialConditionText,
-          header,
-          logo,
-        }),
-      );
+      this.summaryExcelMenuOpen = false;
+      const sheets: ExcelWorkbookRequest["sheets"] = [];
+      if (this.summaryInclude.peakAward) {
+        sheets.push({
+          printProfile: "peak-award-summary",
+          build: (header, logo) =>
+            buildPeakAwardSummarySheet({
+              rows: this.filteredPeakAwardSummaryRows,
+              requirement,
+              nameFormat: this.filters.summaryNameFormat,
+              specialConditionText: this.specialConditionText,
+              header,
+              logo,
+            }),
+        });
+      }
+      if (this.summaryInclude.overall) {
+        sheets.push({
+          printProfile: "overall-progress",
+          build: (header, logo) => buildOverallProgressSheet({ headers: this.overallProgressColumns.map((c) => buildHeaderView(c)), rows: this.overallProgressRows, header, logo }),
+        });
+      }
+      await this.runExcelExport("Summary", this.summaryPrintMeta, sheets);
     },
     async onHeatmapExcelExportClick() {
       const heatMap = this.$refs.heatMap as unknown as HeatMapVueInstance | undefined;
       if (!heatMap) return;
-      await this.runExcelExport("Heatmap", "skill-heatmap", this.heatmapPrintMeta, (header, logo) => buildSkillHeatmapSheet({ view: heatMap.getExportView(), header, logo }));
+      await this.runExcelExport("Heatmap", this.heatmapPrintMeta, [{ printProfile: "skill-heatmap", build: (header, logo) => buildSkillHeatmapSheet({ view: heatMap.getExportView(), header, logo }) }]);
     },
-    async runExcelExport(viewName: string, printProfile: string, meta: MetaEntry[], build: ExcelExportRequest["build"]) {
+    async runExcelExport(viewName: string, meta: MetaEntry[], sheets: ExcelWorkbookRequest["sheets"]) {
       this.isExcelExporting = true;
       try {
-        await exportExcelSheet({ printProfile, meta, fileNameParts: ["OAS Progression", viewName], build });
+        await exportExcelWorkbook({ sheets, meta, fileNameParts: ["OAS Progression", viewName] });
         this.exportFeedback = "Excel export complete";
       } catch (e) {
         logger.error(`${viewName} Excel export failed:`, e);

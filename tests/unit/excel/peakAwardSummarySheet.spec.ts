@@ -44,7 +44,7 @@ function memberRow(id: string, first: string, last: string, core: [number, numbe
   };
 }
 
-const HEADER = { title: "OAS Progression - Summary for Peak Award", subtitle: "Sample Group · Sample Unit", metaLine: "Generated: 12/10/2026" };
+const HEADER = { title: "OAS Progression - Summary - Towards Peak Award", subtitle: "Sample Group · Sample Unit", metaLine: "Generated: 12/10/2026" };
 
 function input(overrides: Partial<PeakAwardSummarySheetInput> = {}): PeakAwardSummarySheetInput {
   return {

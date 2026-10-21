@@ -5,7 +5,7 @@ import { getMemberDisplayName, type NameFormat } from "@/pages/OasProgression/se
 import { buildHeaderBlock, EXCEL_COLOURS, HEADER_BLOCK_ROWS, outlinedBar, type ExcelHeader, type ExcelSheet } from "../summitExcel";
 
 const CORE_SKILL_TITLES = ["Bushcraft", "Bushwalking", "Camping"];
-const SHEET_NAME = "Summary";
+const SHEET_NAME = "Towards Peak Award";
 
 /** Excel "characters". Box and spacer widths match the Heatmap sheet. */
 const WIDTH = { progress: 11, percent: 6, spacer: 1, box: 2.6, countText: 8 };

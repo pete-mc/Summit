@@ -109,28 +109,47 @@ export interface ExcelSheet {
   options: SheetOptions<File | Blob | ArrayBuffer>;
 }
 
-export async function downloadWorkbook(sheet: ExcelSheet, fileName: string): Promise<void> {
-  await writeXlsxFile(sheet.rows, sheet.options).toFile(fileName);
+function writeWorkbook(sheets: ExcelSheet | ExcelSheet[]) {
+  const list = Array.isArray(sheets) ? sheets : [sheets];
+  return writeXlsxFile(list.map((sheet) => ({ data: sheet.rows, ...sheet.options })));
 }
 
-export function workbookToBlob(sheet: ExcelSheet): Promise<Blob> {
-  return writeXlsxFile(sheet.rows, sheet.options).toBlob();
+export async function downloadWorkbook(sheets: ExcelSheet | ExcelSheet[], fileName: string): Promise<void> {
+  await writeWorkbook(sheets).toFile(fileName);
+}
+
+export function workbookToBlob(sheets: ExcelSheet | ExcelSheet[]): Promise<Blob> {
+  return writeWorkbook(sheets).toBlob();
+}
+
+export type ExcelSheetBuilder = (header: ExcelHeader, logo: Image | null) => ExcelSheet;
+
+export interface ExcelWorkbookRequest {
+  /** Each sheet's title block comes from its own print profile. */
+  sheets: Array<{ printProfile: string; build: ExcelSheetBuilder }>;
+  meta?: MetaEntry[];
+  fileNameParts: string[];
 }
 
 export interface ExcelExportRequest {
   printProfile: string;
   meta?: MetaEntry[];
   fileNameParts: string[];
-  build: (header: ExcelHeader, logo: Image | null) => ExcelSheet;
+  build: ExcelSheetBuilder;
 }
 
-/** One timestamp for header and file name. Throws on failure so the page can report it. */
-export async function exportExcelSheet(request: ExcelExportRequest): Promise<void> {
+/** One timestamp for every header and the file name. Throws on failure so the page can report it. */
+export async function exportExcelWorkbook(request: ExcelWorkbookRequest): Promise<void> {
+  if (request.sheets.length === 0) throw new Error("nothing was chosen to export");
   const generated = new Date();
   const context = getTerrainPrintContext();
-  const header = resolveExcelHeader(request.printProfile, request.meta, context.vars, generated);
-  const sheet = request.build(header, await loadSectionLogoImage(context.logo));
-  await downloadWorkbook(sheet, buildExcelFileName(request.fileNameParts.concat([context.vars.unit]), generated));
+  const logo = await loadSectionLogoImage(context.logo);
+  const sheets = request.sheets.map(({ printProfile, build }) => build(resolveExcelHeader(printProfile, request.meta, context.vars, generated), logo && { ...logo }));
+  await downloadWorkbook(sheets, buildExcelFileName(request.fileNameParts.concat([context.vars.unit]), generated));
+}
+
+export function exportExcelSheet(request: ExcelExportRequest): Promise<void> {
+  return exportExcelWorkbook({ sheets: [{ printProfile: request.printProfile, build: request.build }], meta: request.meta, fileNameParts: request.fileNameParts });
 }
 
 /** Gotcha: built at UTC midnight. write-excel-file counts days in UTC, so local midnight in Australia shows the day before. */
