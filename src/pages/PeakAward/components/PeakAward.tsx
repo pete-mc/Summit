@@ -66,7 +66,7 @@ export default function PeakAwardTable(props: PeakAwardReportTableProps): React.
       toolbarActions={["pdf", "excel"]}
       exportOptions={{
         fileNamePrefix: "PeakAwardReport",
-        title: "Terrain | Summit - Peak Award Report",
+        title: "Terrain | Summit Peak Award",
         orientation: "landscape",
       }}
     />
