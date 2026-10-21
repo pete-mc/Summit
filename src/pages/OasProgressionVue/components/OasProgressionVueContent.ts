@@ -27,6 +27,9 @@ import type { TerrainUnitMember } from "@/types/terrainTypes";
 import type { TerrainAchievementsSection } from "@/shared";
 import OASPeakAwardSummaryFiltersVue from "./OASPeakAwardSummaryFiltersVue.vue";
 import OASPeakAwardSummaryVue from "./OASPeakAwardSummaryVue.vue";
+import OASOverallProgressVue from "./OASOverallProgressVue.vue";
+import { buildOverallProgressColumns, buildOverallProgressRows, nextColumnSort, sortOverallProgressRows, type OverallProgressColumn, type OverallProgressRow } from "@/pages/OasProgression/services/buildOverallProgressRows";
+import { getMemberDisplayName } from "@/pages/OasProgression/services/getMemberDisplayName";
 
 const logger = createLogger("OasProgressionVueContent");
 
@@ -69,6 +72,7 @@ const DEFAULT_FILTERS: OASProgressionVueFilterState = {
   summaryNameFormat: "full",
   summarySelectedPatrols: null,
   summarySortBy: "firstName",
+  summaryColumnSort: null,
   groupBy: "skill",
   memberFilter: "",
   nameFormat: "full",
@@ -98,7 +102,7 @@ const DEFAULT_FILTERS: OASProgressionVueFilterState = {
 const VALID_VIEW_MODES: OASProgressionVueFilterState["viewMode"][] = ["summary", "heatmap", "table", "worksheets"];
 
 /** Each tab's "Reset filters" resets only its own keys. Table has none: its filters live in tableColumnFilters. viewMode is never reset. */
-const SUMMARY_FILTER_KEYS = ["summaryMemberFilter", "summaryNameFormat", "summarySelectedPatrols", "summarySortBy"] as const;
+const SUMMARY_FILTER_KEYS = ["summaryMemberFilter", "summaryNameFormat", "summarySelectedPatrols", "summarySortBy", "summaryColumnSort"] as const;
 const HEATMAP_FILTER_KEYS = [
   "groupBy",
   "memberFilter",
@@ -138,7 +142,19 @@ function loadInitialFilters(): OASProgressionVueFilterState {
 
 export default defineComponent({
   name: "OasProgressionVueContent",
-  components: { OASHeatMapVue, OASPeakAwardSummaryFiltersVue, OASPeakAwardSummaryVue, OASProgressionFiltersVue, OASProgressionTableVue, OASWorksheetFiltersVue, OASWorksheetsVue, SummitLoadingState, SummitPillButton, SummitPrintButton },
+  components: {
+    OASHeatMapVue,
+    OASOverallProgressVue,
+    OASPeakAwardSummaryFiltersVue,
+    OASPeakAwardSummaryVue,
+    OASProgressionFiltersVue,
+    OASProgressionTableVue,
+    OASWorksheetFiltersVue,
+    OASWorksheetsVue,
+    SummitLoadingState,
+    SummitPillButton,
+    SummitPrintButton,
+  },
   props: {
     items: { type: Array as PropType<OASProgressionRow[]>, required: true },
     trunkStageCounts: { type: Object as PropType<Record<string, number>>, required: true },
@@ -210,6 +226,17 @@ export default defineComponent({
       const patrolFiltered = selectedPatrols.length === 0 ? [] : filterMembersByPatrol(nameFiltered, selectedPatrols);
       return sortPeakAwardSummaryRows(patrolFiltered, this.filters.summarySortBy);
     },
+    overallProgressColumns(): OverallProgressColumn[] {
+      return buildOverallProgressColumns(this.grouped);
+    },
+    /** Starts from the Peak Award rows so both tables share the Summary filters; a column sort then reorders this table only. */
+    overallProgressRows(): OverallProgressRow[] {
+      const members = this.filteredPeakAwardSummaryRows.map((row) => ({
+        memberId: row.memberId,
+        displayName: getMemberDisplayName(row.firstName, row.lastName, row.memberId, this.filters.summaryNameFormat),
+      }));
+      return sortOverallProgressRows(buildOverallProgressRows(this.grouped, members), this.overallProgressColumns, this.filters.summaryColumnSort);
+    },
     summaryPrintMeta(): MetaEntry[] {
       return buildSummaryPrintMeta(this.filters, this.patrolFilterOptions, this.canFilterByPatrol);
     },
@@ -250,6 +277,9 @@ export default defineComponent({
   methods: {
     onFiltersUpdate(next: OASProgressionVueFilterState) {
       this.filters = next;
+    },
+    onOverallProgressSortColumn(key: string) {
+      this.filters = { ...this.filters, summaryColumnSort: nextColumnSort(this.filters.summaryColumnSort, key) };
     },
     onViewModeTabChange(viewMode: OASProgressionVueFilterState["viewMode"]) {
       this.filters = { ...this.filters, viewMode };

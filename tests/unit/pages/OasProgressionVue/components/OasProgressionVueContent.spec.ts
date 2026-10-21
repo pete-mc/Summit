@@ -1,6 +1,7 @@
 // Gotcha: Jest can't parse .vue files, so stub the children.
 jest.mock("@/pages/OasProgressionVue/components/OASHeatMapVue.vue", () => ({ __esModule: true, default: { name: "OASHeatMapVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/OasProgressionVue/components/OASPeakAwardSummaryFiltersVue.vue", () => ({ __esModule: true, default: { name: "OASPeakAwardSummaryFiltersVue", render: () => null } }), { virtual: true });
+jest.mock("@/pages/OasProgressionVue/components/OASOverallProgressVue.vue", () => ({ __esModule: true, default: { name: "OASOverallProgressVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/OasProgressionVue/components/OASPeakAwardSummaryVue.vue", () => ({ __esModule: true, default: { name: "OASPeakAwardSummaryVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/OasProgressionVue/components/OASProgressionFiltersVue.vue", () => ({ __esModule: true, default: { name: "OASProgressionFiltersVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/OasProgressionVue/components/OASProgressionTableVue.vue", () => ({ __esModule: true, default: { name: "OASProgressionTableVue", render: () => null } }), { virtual: true });
@@ -26,6 +27,7 @@ function makeStoredFilters(overrides: Partial<OASProgressionVueFilterState> = {}
     summaryNameFormat: "full",
     summarySelectedPatrols: [],
     summarySortBy: "firstName",
+    summaryColumnSort: null,
     groupBy: "skill",
     memberFilter: "",
     nameFormat: "full",

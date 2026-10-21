@@ -7,6 +7,8 @@ export interface OASProgressionVueFilterState {
   summaryNameFormat: NameFormat;
   summarySelectedPatrols: string[] | null;
   summarySortBy: "firstName" | "lastName" | "progress";
+  /** Overall Progress table only. Overrides summarySortBy until cleared; choosing a Sort by option clears it. */
+  summaryColumnSort: { key: string; descending: boolean } | null;
   /** Gotcha: "none" is still accepted because old saved state may hold it. The heat map renders it as "skill". */
   groupBy: "skill" | "member" | "none";
   memberFilter: string;

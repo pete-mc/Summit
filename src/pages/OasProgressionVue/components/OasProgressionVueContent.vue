@@ -30,46 +30,25 @@
         <v-tab tab-value="worksheets">Worksheets</v-tab>
       </v-tabs>
 
-      <SummitLoadingState
-        :state="sharedLoadState"
-        :done="streamsDone"
-        :total="totalStreams"
-        error-message="Could not load OAS progression data."
-        :on-retry="onReloadAllClick"
-      />
+      <SummitLoadingState :state="sharedLoadState" :done="streamsDone" :total="totalStreams" error-message="Could not load OAS progression data." :on-retry="onReloadAllClick" />
 
       <div v-if="exportFeedback" role="status" class="data-grid-export-feedback">{{ exportFeedback }}</div>
 
       <template v-if="hasContent && filters.viewMode === 'summary'">
         <p v-if="!peakAwardRequirement" class="oas-peak-award-summary-no-section">Could not determine this unit's section.</p>
         <template v-else>
-          <OASPeakAwardSummaryFiltersVue
-            :filters="filters"
-            :patrol-filter-options="patrolFilterOptions"
-            :can-filter-by-patrol="canFilterByPatrol"
-            @update:filters="onFiltersUpdate"
-            @reset="onResetFilters"
-          />
+          <OASPeakAwardSummaryFiltersVue :filters="filters" :patrol-filter-options="patrolFilterOptions" :can-filter-by-patrol="canFilterByPatrol" @update:filters="onFiltersUpdate" @reset="onResetFilters" />
 
-          <OASPeakAwardSummaryVue
-            ref="summary"
-            :rows="filteredPeakAwardSummaryRows"
-            :name-format="filters.summaryNameFormat"
-            :has-special="!!peakAwardRequirement.special"
-            :special-condition-text="specialConditionText"
-          />
+          <h3 class="oas-summary-section-heading">Towards Peak Award</h3>
+          <OASPeakAwardSummaryVue ref="summary" :rows="filteredPeakAwardSummaryRows" :name-format="filters.summaryNameFormat" :has-special="!!peakAwardRequirement.special" :special-condition-text="specialConditionText" />
+
+          <h3 class="oas-summary-section-heading">Overall</h3>
+          <OASOverallProgressVue ref="overallProgress" :columns="overallProgressColumns" :rows="overallProgressRows" :column-sort="filters.summaryColumnSort" @sort-column="onOverallProgressSortColumn" />
         </template>
       </template>
 
       <template v-if="hasContent && filters.viewMode === 'heatmap'">
-        <OASProgressionFiltersVue
-          :filters="filters"
-          :available-patrols="availablePatrols"
-          :patrol-filter-options="patrolFilterOptions"
-          :can-filter-by-patrol="canFilterByPatrol"
-          @update:filters="onFiltersUpdate"
-          @reset="onResetFilters"
-        />
+        <OASProgressionFiltersVue :filters="filters" :available-patrols="availablePatrols" :patrol-filter-options="patrolFilterOptions" :can-filter-by-patrol="canFilterByPatrol" @update:filters="onFiltersUpdate" @reset="onResetFilters" />
 
         <OASHeatMapVue
           ref="heatMap"
@@ -95,14 +74,7 @@
       <OASProgressionTableVue v-if="hasContent && filters.viewMode === 'table'" ref="table" :items="items" :column-filters.sync="tableColumnFilters" />
 
       <template v-if="hasContent && filters.viewMode === 'worksheets'">
-        <OASWorksheetFiltersVue
-          :filters="filters"
-          :available-patrols="availablePatrols"
-          :patrol-filter-options="patrolFilterOptions"
-          :can-filter-by-patrol="canFilterByPatrol"
-          @update:filters="onFiltersUpdate"
-          @reset="onResetFilters"
-        />
+        <OASWorksheetFiltersVue :filters="filters" :available-patrols="availablePatrols" :patrol-filter-options="patrolFilterOptions" :can-filter-by-patrol="canFilterByPatrol" @update:filters="onFiltersUpdate" @reset="onResetFilters" />
 
         <OASWorksheetsVue ref="worksheets" :items="items" :filters="filters" :available-patrols="availablePatrols" />
       </template>
@@ -110,8 +82,7 @@
   </v-app>
 </template>
 
-<script lang="ts" src="./OasProgressionVueContent.ts">
-</script>
+<script lang="ts" src="./OasProgressionVueContent.ts"></script>
 
 <style scoped>
 /* The page's one type scale. Custom properties inherit through scoped child components, so they all use these. */
@@ -126,6 +97,14 @@
 .oas-vue-content ::v-deep .v-tab {
   text-transform: none;
   letter-spacing: normal;
+}
+
+.oas-summary-section-heading {
+  margin: var(--summit-space-lg, 16px) 0 var(--summit-space-sm, 8px);
+  color: var(--color-scouts-medium-blue, #00348d);
+  font-size: var(--oas-vue-font-size-heading);
+  font-family: var(--oas-vue-font-family);
+  font-weight: normal;
 }
 
 .oas-peak-award-summary-no-section {

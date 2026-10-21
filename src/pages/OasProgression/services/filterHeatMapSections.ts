@@ -20,6 +20,14 @@ export interface PatrolGroupOf<T extends HasPatrolName> {
 /** Gotcha: Terrain's `stream` field is what the UI calls "Skill". Kept here to avoid a component↔service import cycle. */
 export const OAS_SKILLS = ["bushcraft", "bushwalking", "camping", "aquatics", "boating", "paddling", "alpine", "cycling", "vertical"];
 
+const CORE_SKILLS = ["bushwalking", "bushcraft", "camping"];
+
+export function orderSkills(skills: string[]): string[] {
+  const core = CORE_SKILLS.filter((s) => skills.includes(s));
+  const rest = skills.filter((s) => !CORE_SKILLS.includes(s)).sort();
+  return [...core, ...rest];
+}
+
 /** Gotcha: an empty selection means NO filter (everyone). The Vue page treats empty as "show nobody" before calling this. */
 export function filterMembersByPatrol<T extends HasPatrolName>(members: T[], selectedPatrols: string[]): T[] {
   if (selectedPatrols.length === 0) {
@@ -115,9 +123,14 @@ function nextStageTickProgress(highestStage: number, stages: SectionMemberRow["s
   return String(progress.ticked).padStart(2, "0");
 }
 
+function hasStreamProgress(stages: SectionMemberRow["stages"]): boolean {
+  return stages.some((stage) => stage.cells.some((c) => c.answered || c.awarded));
+}
+
 /**
- * "Stage X.xx". Learning: a stream section shows "-" until the trunk is fully awarded, then uses the
- * trunk stage count as a FLOOR. The whole number only rises once a stream stage is fully AWARDED.
+ * "Stage X.xx". Learning: a stream section shows "-" until the trunk is fully awarded AND the member has
+ * started that stream, then uses the trunk stage count as a FLOOR. The whole number only rises once a
+ * stream stage is fully AWARDED. Without the "started" check, every stream repeats the trunk stage.
  */
 export function formatStageProgress(highestStage: number | null, stages: SectionMemberRow["stages"], isStreamSection: boolean, trunkStageCount: number, trunkFullyAwarded: boolean): StageProgressDisplay {
   if (!isStreamSection) {
@@ -127,7 +140,7 @@ export function formatStageProgress(highestStage: number | null, stages: Section
     return { stage: String(highestStage), nextStageProgress: nextStageTickProgress(highestStage, stages) };
   }
 
-  if (!trunkFullyAwarded) {
+  if (!trunkFullyAwarded || !hasStreamProgress(stages)) {
     return { stage: "-", nextStageProgress: null };
   }
 
@@ -137,12 +150,12 @@ export function formatStageProgress(highestStage: number | null, stages: Section
 
 export type MemberSortBy = "lastName" | "firstName" | "stageProgress";
 
-/** Matches what's displayed: null while a stream is gated, otherwise floored at the trunk count. */
+/** Matches what's displayed: null while a stream is gated or unstarted, otherwise floored at the trunk count. */
 function effectiveHighestStage(member: SectionMemberRow, isStreamSection: boolean, trunkStageCount: number): number | null {
   if (!isStreamSection) {
     return member.highestStage;
   }
-  if (!member.trunkFullyAwarded) {
+  if (!member.trunkFullyAwarded || !hasStreamProgress(member.stages)) {
     return null;
   }
   return member.highestStage === null ? trunkStageCount : Math.max(trunkStageCount, member.highestStage);

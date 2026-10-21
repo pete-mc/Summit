@@ -2,7 +2,7 @@ import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import { groupRowsForHeatMap } from "@/pages/OasProgression/services/groupRowsForHeatMap";
 import type { HeatMapSection, HeatMapStage, SectionMemberRow } from "@/pages/OasProgression/services/groupRowsForHeatMap";
-import { filterMembersByPatrol, groupMembersByPatrol, sliceStagesToVisible, formatStageProgress, sortMembers } from "@/pages/OasProgression/services/filterHeatMapSections";
+import { filterMembersByPatrol, groupMembersByPatrol, orderSkills, sliceStagesToVisible, formatStageProgress, sortMembers } from "@/pages/OasProgression/services/filterHeatMapSections";
 import type { PatrolGroup } from "@/pages/OasProgression/services/filterHeatMapSections";
 import { groupSectionsByMember } from "@/pages/OasProgression/services/groupSectionsByMember";
 import { getSkillIconUrl } from "@/pages/OasProgression/services/getSkillIconUrl";
@@ -23,7 +23,6 @@ const SKILL_TITLES: Record<string, string> = {
   vertical: "Vertical",
 };
 
-const CORE_SKILLS = ["bushwalking", "bushcraft", "camping"];
 /** Stage 1 always stays visible. The React page's floor is 4. */
 const MIN_VISIBLE_STAGE = 1;
 
@@ -41,12 +40,6 @@ export function formatStream(stream: string): string {
 function sectionTitle(section: HeatMapSection): string {
   const base = skillTitle(section.skill);
   return section.stream ? `${base} — ${formatStream(section.stream)}` : base;
-}
-
-function orderSkills(skills: string[]): string[] {
-  const core = CORE_SKILLS.filter((s) => skills.includes(s));
-  const rest = skills.filter((s) => !CORE_SKILLS.includes(s)).sort();
-  return [...core, ...rest];
 }
 
 function trimEmptyTrailingStages(allStages: number[], sections: HeatMapSection[]): number[] {

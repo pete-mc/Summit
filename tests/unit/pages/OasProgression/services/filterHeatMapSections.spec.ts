@@ -214,8 +214,10 @@ describe("formatStageProgress", () => {
       expect(formatStageProgress(5, stages, true, 3, false)).toEqual({ stage: "-", nextStageProgress: null });
     });
 
-    it("shows the trunk stage count as a FLOOR when the trunk is done but the stream has zero progress", () => {
-      expect(formatStageProgress(null, [], true, 3, true)).toEqual({ stage: "3", nextStageProgress: null });
+    // Every stream of a skill used to repeat the trunk stage for a member who hadn't started any of them.
+    it("shows '-' when the trunk is done but the stream has zero progress", () => {
+      expect(formatStageProgress(null, [], true, 3, true)).toEqual({ stage: "-", nextStageProgress: null });
+      expect(formatStageProgress(null, [makeStage({ stage: 4, cells: [makeCell()] })], true, 3, true)).toEqual({ stage: "-", nextStageProgress: null });
     });
 
     it("example: trunk (3) done, next stage (4) has 2 answered-but-not-awarded cells -> 3.02, not 4.xx", () => {
@@ -344,9 +346,18 @@ describe("sortMembers", () => {
 
   it("sorts by stageProgress in a stream section: a member with real stream progress but an un-awarded trunk sorts as if they had none", () => {
     const gated = makeMemberRow({ memberId: "m1", highestStage: 5, trunkFullyAwarded: false });
-    const unlocked = makeMemberRow({ memberId: "m2", highestStage: 1, trunkFullyAwarded: true });
+    const unlocked = makeMemberRow({ memberId: "m2", highestStage: 1, trunkFullyAwarded: true, stages: [makeStage({ stage: 4, cells: [makeCell({ answered: true })] })] });
 
     const result = sortMembers([gated, unlocked], "stageProgress", true, 3);
+
+    expect(result.map((m) => m.memberId)).toEqual(["m2", "m1"]);
+  });
+
+  it("sorts by stageProgress in a stream section: a member who hasn't started the stream sorts as if they had none", () => {
+    const unstarted = makeMemberRow({ memberId: "m1", trunkFullyAwarded: true, stages: [makeStage({ stage: 4, cells: [makeCell()] })] });
+    const started = makeMemberRow({ memberId: "m2", trunkFullyAwarded: true, stages: [makeStage({ stage: 4, cells: [makeCell({ answered: true })] })] });
+
+    const result = sortMembers([unstarted, started], "stageProgress", true, 3);
 
     expect(result.map((m) => m.memberId)).toEqual(["m2", "m1"]);
   });

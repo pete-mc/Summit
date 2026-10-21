@@ -39,8 +39,17 @@
         hide-details
         style="max-width: 180px"
         class="oas-vue-filter-select"
-        @change="patch({ summarySortBy: $event })"
-      ></v-select>
+        @change="patch({ summarySortBy: $event, summaryColumnSort: null })"
+      >
+        <!-- Gotcha: v-select emits no change when the already-selected option is picked, so that click clears the column sort here. -->
+        <template #item="{ item, on, attrs }">
+          <v-list-item v-bind="attrs" v-on="on" @click="item.value === filters.summarySortBy && patch({ summaryColumnSort: null })">
+            <v-list-item-content>
+              <v-list-item-title>{{ item.text }}</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+        </template>
+      </v-select>
 
       <NameFormatSelect :value="filters.summaryNameFormat" @input="patch({ summaryNameFormat: $event })" />
 
