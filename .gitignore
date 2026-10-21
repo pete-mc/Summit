@@ -11,3 +11,6 @@
 /.vscode/.chrome-*/*
 /plans
 /.playwright-mcp
+
+# Windows Explorer thumbnail caches, created whenever an image folder is browsed
+Thumbs.db

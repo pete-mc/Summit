@@ -62,6 +62,8 @@
     "react": "^18.2.0",
     "react-datepicker": "^9.1.0",
     "react-dom": "^18.2.0",
+    "vuetify": "^2.7.2",
+    "write-excel-file": "^4.1.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -103,7 +105,9 @@
     "webpack-dev-server": "^5.2.3"
   },
   "sideEffects": [
-    "*.css"
+    "*.css",
+    "*.vue",
+    "./src/vuetifySetup.ts"
   ],
   "overrides": {
     "uuid": "^14.0.0"

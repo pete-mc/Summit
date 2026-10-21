@@ -1,0 +1,139 @@
+// Terrain's stylesheets don't exist in jsdom, so stub the borrowed fonts.
+const FAKE_FONT_CSS = '@font-face { font-family: "SummitPrintSans"; font-weight: 400; src: url("https://terrain.example/_nuxt/fonts/R.woff2"); }';
+jest.mock("@/print/printFonts", () => {
+  const actual = jest.requireActual("@/print/printFonts");
+  return { __esModule: true, ...actual, collectPrintFontCss: jest.fn(() => FAKE_FONT_CSS) };
+});
+
+import { printWorksheets } from "@/pages/OasProgressionVue/services/printWorksheets";
+
+/** A minimal stand-in for the Window object printWorksheets writes into and prints. */
+function makeFakePrintWindow() {
+  const fakeDocument = {
+    open: jest.fn(),
+    write: jest.fn(),
+    close: jest.fn(),
+  };
+  const fakeWindow = {
+    document: fakeDocument,
+    closed: false,
+    focus: jest.fn(),
+    print: jest.fn(),
+    onload: null as (() => void) | null,
+  };
+  return fakeWindow;
+}
+
+function makeTable(id: string): HTMLTableElement {
+  const table = document.createElement("table");
+  table.className = "oas-worksheet-page";
+  table.setAttribute("data-oas-worksheet-page", id);
+  const tr = document.createElement("tr");
+  tr.innerHTML = `<td>${id} content</td>`;
+  table.appendChild(tr);
+  return table;
+}
+
+describe("printWorksheets", () => {
+  let openSpy: jest.SpyInstance;
+  let fakeWindow: ReturnType<typeof makeFakePrintWindow>;
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    fakeWindow = makeFakePrintWindow();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    openSpy = jest.spyOn(window, "open").mockReturnValue(fakeWindow as any);
+  });
+
+  afterEach(() => {
+    openSpy.mockRestore();
+    jest.useRealTimers();
+  });
+
+  it("returns false and opens nothing when the popup is blocked", () => {
+    openSpy.mockReturnValue(null);
+
+    const result = printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
+
+    expect(result).toBe(false);
+    expect(fakeWindow.document.write).not.toHaveBeenCalled();
+  });
+
+  it("returns true and writes every page table's markup into the new document", () => {
+    const result = printWorksheets({ pageTables: [makeTable("p1"), makeTable("p2")], documentTitle: "Test Title", orientation: "landscape" });
+
+    expect(result).toBe(true);
+    expect(fakeWindow.document.open).toHaveBeenCalled();
+    expect(fakeWindow.document.close).toHaveBeenCalled();
+    const written = fakeWindow.document.write.mock.calls[0][0] as string;
+    expect(written).toContain("Test Title");
+    expect(written).toContain('data-oas-worksheet-page="p1"');
+    expect(written).toContain('data-oas-worksheet-page="p2"');
+    expect(written).toContain("p1 content");
+    expect(written).toContain("p2 content");
+  });
+
+  it("prints A4 landscape when orientation is 'landscape' (Layout A)", () => {
+    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
+
+    const written = fakeWindow.document.write.mock.calls[0][0] as string;
+    expect(written).toContain("size: A4 landscape");
+  });
+
+  it("prints A4 portrait when orientation is 'portrait' (Layout B)", () => {
+    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "portrait" });
+
+    const written = fakeWindow.document.write.mock.calls[0][0] as string;
+    expect(written).toContain("size: A4 portrait");
+    expect(written).not.toContain("size: A4 landscape");
+  });
+
+  // Printing waits (asynchronously) for the borrowed fonts first, so these advance timers with the
+  // async variant, which also lets that wait settle.
+  it("calls print() exactly once, even if both onload and the fallback timeout fire", async () => {
+    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
+
+    fakeWindow.onload?.();
+    await jest.advanceTimersByTimeAsync(1000);
+
+    expect(fakeWindow.print).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not call print() via the fallback timeout if the window was closed first", async () => {
+    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
+
+    fakeWindow.closed = true;
+    await jest.advanceTimersByTimeAsync(1000);
+
+    expect(fakeWindow.print).not.toHaveBeenCalled();
+  });
+
+  it("borrows Terrain's Nunito Sans into the print window and uses it, so the sheets don't print in Arial", () => {
+    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
+
+    const written = fakeWindow.document.write.mock.calls[0][0] as string;
+    expect(written).toContain(FAKE_FONT_CSS);
+    expect(written).toContain('font-family: "SummitPrintSans", NunitoSans-regular, arial, sans-serif;');
+  });
+
+  it("opens the window with the configured popup name", () => {
+    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
+
+    expect(openSpy).toHaveBeenCalledWith("", "oasWorksheetsPrint", expect.any(String));
+  });
+
+  it("focuses the new window immediately, not only right before printing", () => {
+    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
+
+    // Regression: the window didn't reliably come to the front, so focus() is also called immediately.
+    expect(fakeWindow.focus).toHaveBeenCalled();
+  });
+
+  it("writes a visible close button into the document, so the window isn't stuck with no way back to it", () => {
+    printWorksheets({ pageTables: [makeTable("p1")], documentTitle: "Test", orientation: "landscape" });
+
+    const written = fakeWindow.document.write.mock.calls[0][0] as string;
+    expect(written).toContain("window.close()");
+    expect(written).toContain("oas-worksheet-print-close-btn");
+  });
+});

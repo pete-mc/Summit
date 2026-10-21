@@ -1,5 +1,7 @@
-import { TerrainState } from "@/helpers";
+import { TerrainState, createLogger } from "@/helpers";
 import { type TerrainEventSummary } from "../types/terrainTypes";
+
+const logger = createLogger("fetchMemberEvents");
 
 export default async function fetchMemberEvents(fromDateString: string, toDateString: string): Promise<TerrainEventSummary[]> {
   try {
@@ -22,7 +24,7 @@ export default async function fetchMemberEvents(fromDateString: string, toDateSt
     const data = await response.json();
     return data.results;
   } catch (e) {
-    console.log(`Error fetching member events: ${e}`);
+    logger.error(e);
     return [];
   }
 }

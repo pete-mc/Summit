@@ -6,17 +6,13 @@ import { DatePickerComponent, TimePickerComponent } from "@/components/DateTimeI
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 const SUMMIT_CALENDAR_PATH = path.resolve(REPO_ROOT, "src/pages/SummitCalendar/components/SummitCalendar.tsx");
-const PRESENT_AWARDS_PATH = path.resolve(REPO_ROOT, "src/pages/PresentAwards/components/PresentAwards.tsx");
 
 describe("Phase 2 date/time input contracts", () => {
   it("uses OSS date/time wrappers and removes Syncfusion calendar imports", () => {
     const summitCalendarSource = fs.readFileSync(SUMMIT_CALENDAR_PATH, "utf8");
-    const presentAwardsSource = fs.readFileSync(PRESENT_AWARDS_PATH, "utf8");
 
     expect(summitCalendarSource).toContain('from "@/components/DateTimeInputs"');
-    expect(presentAwardsSource).toContain('from "@/components/DateTimeInputs"');
     expect(summitCalendarSource).not.toContain("@syncfusion/ej2-react-calendars");
-    expect(presentAwardsSource).not.toContain("@syncfusion/ej2-react-calendars");
   });
 
   it("emits name/value change events for date and time fields", () => {

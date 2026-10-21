@@ -6,6 +6,7 @@
 
   --summit-font-size-sm: 12px;
   --summit-font-size-md: 14px;
+  --summit-font-size-lg: 16px;
   --summit-font-weight-semibold: 600;
 
   --summit-color-bg-primary: #004c00;
@@ -20,6 +21,10 @@
 
   --summit-focus-ring-color: #0f6cbd;
   --summit-focus-ring-width: 2px;
+
+  --summit-color-status-unanswered: #edebe9;
+  --summit-color-status-answered: #ecb206;
+  --summit-color-status-awarded: var(--summit-color-bg-primary);
 }
 
 .editor-container {
@@ -388,13 +393,11 @@ nav:has(* a[href*="/terrain"]) * .NavMenu__expansion-panel-content,
 nav:has(* a[href*="/terrain"]) * .NavMenu__expansion-panel,
 .NavMenu__menu-group:has(* a[href*="/summit"]),
 div.NavMenu__menu-group:has(* a[href*="/summit/"]) * .NavMenu__expansion-panel,
-div.NavMenu__menu-group:has(* a[href*="/summit/"]) * div.NavMenu__subitem-content
-{
-  background: #004C00 !important;
+div.NavMenu__menu-group:has(* a[href*="/summit/"]) * div.NavMenu__subitem-content {
+  background: #004c00 !important;
   border-bottom: 1px solid #004100 !important;
   border-top: 0px solid #004100 !important;
 }
-
 
 nav:has(* a[href*="/terrain"]) * .NavMenu__expansion-panel:hover,
 nav:has(* a[href*="/terrain"]) * .NavMenu__secondary-link:hover,
@@ -408,16 +411,14 @@ div.NavMenu__expansion-panel.v-menu-group--active:has(* a[href*="/summit/"]) > .
   background: #006600 !important;
 }
 
-div.NavMenu__expansion-panel.v-menu-group--active:has(* a[href*="/summit/"]) * a.v-list-item--active > .NavMenu__subitem-content
-{
+div.NavMenu__expansion-panel.v-menu-group--active:has(* a[href*="/summit/"]) * a.v-list-item--active > .NavMenu__subitem-content {
   background: #197419 !important;
 }
 
 div.v-menu-group__header:has(* a[href*="/summit/"]),
 div.v-menu-group__header:has(> a[href*="/summit/"]),
-div.v-menu-group__items:has(* a[href*="/summit/"])
-{
-  background: #004C00 !important;
+div.v-menu-group__items:has(* a[href*="/summit/"]) {
+  background: #004c00 !important;
 }
 
 div.v-menu-group__header:has(> a[href*="/summit/"]):hover,
@@ -426,32 +427,242 @@ a.NavMenu__sub-subitem[href*="/summit/"]:hover {
   background-color: #006600 !important;
 }
 
-
-div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-content:hover{
+div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-content:hover {
   background: #006600 !important;
   cursor: default;
 }
-
 
 /* .e-grid .e-headercell {
   background-color: #004C00; 
   color: #fff;
 } */
 
-.summit-btn { 
-  background: linear-gradient(97.08deg,#004C00,#197419) !important;
+.summit-btn {
+  background: linear-gradient(97.08deg, #004c00, #197419) !important;
 }
-.summit-menu { 
-  background: #004C00 !important;
+.summit-menu {
+  background: #004c00 !important;
   border-bottom-color: #197419 !important;
   border-top-color: #197419 !important;
 }
 
-.summit-menu-outline { 
-  border: 1px solid #004C00 !important;
-  color: #004C00 !important;
+.summit-menu-outline {
+  border: 1px solid #004c00 !important;
+  color: #004c00 !important;
 }
 .summit-menu:hover {
   background-color: #197419 !important;
 }
 
+/* Shared page layout for every Vuetify page, so sibling pages can't drift. */
+.oas-progression-panel,
+.present-awards-panel,
+.istatement-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--summit-space-md);
+  margin-bottom: var(--summit-space-md);
+  padding-top: var(--summit-space-md);
+}
+
+/* Learning: declared once here, because per-page copies drifted. Scoped styles can't be shared between components. */
+.oas-vue-filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--summit-space-md);
+  margin-bottom: var(--summit-space-md);
+}
+
+.oas-heatmap-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--summit-space-lg);
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--summit-color-bg-surface);
+  border: 1px solid var(--summit-color-border-subtle);
+  border-radius: 6px;
+  padding: var(--summit-space-md);
+}
+
+.oas-heatmap-filter-label {
+  font-size: var(--summit-font-size-sm);
+  font-weight: var(--summit-font-weight-semibold);
+  color: var(--summit-color-text-primary);
+}
+
+.oas-heatmap-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  border: 1px solid var(--summit-color-border-default);
+  border-radius: 6px;
+}
+
+.oas-heatmap-stage-group-header {
+  text-align: center;
+  border-left: 1px solid var(--summit-color-border-subtle);
+  border-right: 1px solid var(--summit-color-border-subtle);
+  padding-left: 1em;
+}
+
+.oas-heatmap-skill-title-row td {
+  padding: 2px var(--summit-space-md);
+  font-size: var(--summit-font-size-lg);
+  font-weight: var(--summit-font-weight-semibold);
+  background: var(--summit-color-status-unanswered);
+  border-bottom: none;
+  border-left: 1px solid var(--summit-color-border-default);
+  border-right: 1px solid var(--summit-color-border-default);
+  vertical-align: middle;
+}
+
+.oas-heatmap-skill-title {
+  color: var(--summit-color-text-primary);
+}
+
+.oas-heatmap-skill-icon {
+  height: 90%;
+  width: auto;
+  vertical-align: middle;
+  margin-right: var(--summit-space-sm);
+}
+
+.oas-heatmap-member-name {
+  color: var(--summit-color-text-primary);
+  font-size: var(--summit-font-size-lg);
+  white-space: nowrap;
+  padding-right: var(--summit-space-lg);
+  vertical-align: middle;
+}
+
+.oas-heatmap-highest-stage,
+.oas-heatmap-highest-stage-header {
+  text-align: center;
+  border-left: 1px solid var(--summit-color-border-default);
+  border-right: 1px solid var(--summit-color-border-default);
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
+.oas-heatmap-stage-progress {
+  font-size: var(--summit-font-size-sm);
+  color: var(--summit-color-text-primary);
+}
+
+.oas-heatmap-stage-cell {
+  border-left: 1px solid var(--summit-color-border-subtle);
+  border-right: 1px solid var(--summit-color-border-subtle);
+  padding-left: 1em;
+}
+
+.oas-heatmap-stage-bar {
+  height: var(--summit-space-lg);
+  min-width: 40px;
+  border-radius: 4px;
+}
+
+.oas-heatmap-stage-bar-complete {
+  background: var(--summit-color-status-awarded);
+}
+
+.oas-heatmap-stage-bar-unstarted {
+  background: var(--summit-color-status-unanswered);
+  border: 1px solid var(--summit-color-border-default);
+}
+
+.oas-heatmap-squares {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1px;
+}
+
+.oas-heatmap-square {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex: none;
+}
+
+.oas-heatmap-square-group-start {
+  margin-left: var(--summit-space-sm);
+  position: relative;
+}
+
+.oas-heatmap-square-group-start::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--summit-space-sm) / -2);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 1px;
+  background: var(--summit-color-border-default);
+}
+
+.oas-heatmap-square-unanswered {
+  background: var(--summit-color-status-unanswered);
+}
+
+.oas-heatmap-square-answered {
+  background: var(--summit-color-status-answered);
+  border-color: transparent;
+}
+
+.oas-heatmap-square-awarded {
+  background: var(--summit-color-status-awarded);
+  border-color: transparent;
+}
+
+/* visibility: hidden (not display: none) keeps rows aligned; clear the border too or an outline remains. */
+.oas-heatmap-square-hidden {
+  background: transparent;
+  border-color: transparent;
+  visibility: hidden;
+}
+
+/* Gotcha: v-select's menu is detached to <body>, so scoped ::v-deep can't reach it. Scoped to .oas-vue-show-menu via menu-props. */
+.oas-vue-show-menu .v-subheader {
+  height: auto;
+  min-height: 0;
+  padding: 4px 16px 2px;
+}
+
+.oas-vue-show-menu .v-divider {
+  border: none;
+  margin: 2px 0;
+}
+
+.oas-progression-view-row {
+  display: flex;
+  align-items: center;
+  gap: var(--summit-space-md);
+}
+
+.oas-heatmap-display-group {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--summit-space-sm) var(--summit-space-md);
+  align-items: center;
+  border: none;
+  padding: 0;
+  margin: 0;
+  flex-basis: 100%;
+  order: 10;
+}
+
+.oas-heatmap-display-group legend {
+  padding: 0;
+  width: 100%;
+}
+
+.oas-heatmap-patrol-title-row td {
+  padding: calc(var(--summit-space-xs)) var(--summit-space-md);
+  font-size: var(--summit-font-size-sm);
+  font-weight: var(--summit-font-weight-semibold);
+  color: var(--summit-color-text-primary);
+  background: var(--summit-color-bg-muted);
+  border-bottom: 1px solid var(--summit-color-border-subtle);
+}

@@ -1,5 +1,7 @@
 import { type TerrainLogbook } from "../types/terrainTypes";
-import { TerrainState } from "@/helpers";
+import { TerrainState, createLogger } from "@/helpers";
+
+const logger = createLogger("getLogbookData");
 
 export default async function getLogbookData(logbookId: string): Promise<TerrainLogbook | undefined> {
   try {
@@ -21,7 +23,7 @@ export default async function getLogbookData(logbookId: string): Promise<Terrain
     }
     return await response.json();
   } catch (e) {
-    console.log("Error fetching logbook: " + e);
+    logger.error(e);
     return undefined;
   }
 }

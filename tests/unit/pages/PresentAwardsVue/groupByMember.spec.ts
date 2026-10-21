@@ -1,0 +1,124 @@
+import Vue from "vue";
+import SummitAchievement from "@/pages/PresentAwards/models/SummitAchievement";
+import { TerrainAchievementsType } from "@/shared";
+import type { TerrainAchievements, TerrainUnitMember } from "@/types/terrainTypes";
+import PresentAwardsTableVue from "@/pages/PresentAwardsVue/components/PresentAwardsTableVue";
+
+function makeItem(id: string, name: string, presentedOn?: string): SummitAchievement {
+  const member: TerrainUnitMember = {
+    id: `member-${name}`,
+    member_number: "123",
+    first_name: name,
+    last_name: "Scout",
+    status: "active",
+    date_of_birth: "2010-01-01",
+    groups: [],
+    unit: { id: "unit-1", section: "scout", duty: "member" as TerrainUnitMember["unit"]["duty"], unit_council: false, group_id: "group-1" },
+    patrol: null,
+    metadata: { "achievement-import": "" },
+  };
+
+  const achievement = {
+    id,
+    member_id: member.id,
+    section: "scout" as TerrainAchievements["section"],
+    type: TerrainAchievementsType.IntroScouting as TerrainAchievements["type"],
+    status: "awarded" as TerrainAchievements["status"],
+    status_updated: "2026-03-05T00:00:00.000Z",
+  } as TerrainAchievements;
+
+  const item = new SummitAchievement(achievement, member, []);
+  if (presentedOn) item.updatePresented(presentedOn);
+  return item;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mountTable(items: SummitAchievement[], selectedIds: Set<string>, groupByMember = true, presentedDates?: Record<string, string>): any {
+  const dates =
+    presentedDates ??
+    Array.from(selectedIds).reduce(
+      (accumulator, id) => {
+        accumulator[id] = items.find((item) => item.id === id)?.dateAwarded ?? "01/01/2026";
+        return accumulator;
+      },
+      {} as Record<string, string>,
+    );
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const Ctor: any = Vue.extend(PresentAwardsTableVue as any);
+  return new Ctor({ propsData: { items, selectedIds, presentedDates: dates, groupByMember } });
+}
+
+describe("PresentAwardsTableVue — grouping by member", () => {
+  it("groups by the display name when enabled", () => {
+    expect(mountTable([makeItem("a", "Alex")], new Set(), true).groupBy).toEqual(["member"]);
+  });
+
+  it("passes an empty array when disabled, which v-data-table reads as ungrouped", () => {
+    expect(mountTable([makeItem("a", "Alex")], new Set(), false).groupBy).toEqual([]);
+  });
+});
+
+describe("PresentAwardsTableVue — group header label", () => {
+  it("counts the awards still to be presented", () => {
+    const items = [makeItem("a", "Alex"), makeItem("b", "Alex"), makeItem("c", "Alex", "01/02/2026")];
+    const table = mountTable(items, new Set(["c"]));
+
+    expect(table.groupLabel("Alex Scout")).toBe("Alex Scout (2 not presented)");
+  });
+
+  it("says so when a member has nothing outstanding", () => {
+    const items = [makeItem("a", "Alex", "01/02/2026")];
+    const table = mountTable(items, new Set(["a"]));
+
+    expect(table.groupLabel("Alex Scout")).toBe("Alex Scout (all presented)");
+  });
+
+  it("uses the singular count wording for one outstanding award", () => {
+    const items = [makeItem("a", "Alex")];
+
+    expect(mountTable(items, new Set()).groupLabel("Alex Scout")).toBe("Alex Scout (1 not presented)");
+  });
+
+  it("counts down as rows are ticked, before saving", () => {
+    // The label reads the on-screen value, so ticking a row updates it immediately.
+    const items = [makeItem("a", "Alex"), makeItem("b", "Alex")];
+
+    expect(mountTable(items, new Set()).groupLabel("Alex Scout")).toBe("Alex Scout (2 not presented)");
+    expect(mountTable(items, new Set(["a"])).groupLabel("Alex Scout")).toBe("Alex Scout (1 not presented)");
+    expect(mountTable(items, new Set(["a", "b"])).groupLabel("Alex Scout")).toBe("Alex Scout (all presented)");
+  });
+
+  it("counts every filtered row, not just the current page", () => {
+    // Regression: VData paginates before grouping, so the slot's `items` is only the current page (30 awards showed as 25).
+    const items = Array.from({ length: 30 }, (_, index) => makeItem(`a${index}`, "Alex"));
+    const table = mountTable(items, new Set());
+
+    expect(table.groupLabel("Alex Scout")).toBe("Alex Scout (30 not presented)");
+  });
+
+  it("counts each member separately", () => {
+    const items = [makeItem("a", "Alex"), makeItem("b", "Alex"), makeItem("c", "Sam")];
+    const table = mountTable(items, new Set());
+
+    expect(table.groupLabel("Alex Scout")).toBe("Alex Scout (2 not presented)");
+    expect(table.groupLabel("Sam Scout")).toBe("Sam Scout (1 not presented)");
+  });
+
+  it("counts only rows surviving the column filters", () => {
+    const items = [makeItem("a", "Alex"), makeItem("b", "Alex")];
+    const table = mountTable(items, new Set());
+
+    // Filtering to the presented rows leaves this member with nothing outstanding in view.
+    table.columnFilters = { presented: "presented" };
+
+    expect(table.groupLabel("Alex Scout")).toBe("Alex Scout (all presented)");
+  });
+
+  it("counts a stored-but-unticked award as outstanding", () => {
+    // Unticking a previously presented award means it is to be handed over again.
+    const items = [makeItem("a", "Alex", "01/02/2026")];
+
+    expect(mountTable(items, new Set()).groupLabel("Alex Scout")).toBe("Alex Scout (1 not presented)");
+  });
+});

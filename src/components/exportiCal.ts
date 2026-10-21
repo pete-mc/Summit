@@ -1,11 +1,14 @@
 import { fetchActivity } from "@/services";
+import { createLogger } from "@/helpers";
 import $ from "jquery";
 import jquery from "jquery";
+
+const logger = createLogger("exportiCal");
 
 export async function ExportiCal(): Promise<void> {
   const activityIdElement = $("p.ActivityPlan__activity-id");
   if (activityIdElement.length === 0) {
-    console.error("Activity ID element not found.");
+    logger.error("Activity ID element not found.");
     return;
   }
   const activityId = activityIdElement.text().split(": ")[1];

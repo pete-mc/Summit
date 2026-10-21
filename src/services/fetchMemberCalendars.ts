@@ -1,5 +1,7 @@
-import { TerrainState } from "@/helpers";
+import { TerrainState, createLogger } from "@/helpers";
 import { type TerrrainCalendarResult } from "../types/terrainTypes";
+
+const logger = createLogger("fetchMemberCalendars");
 
 export default async function fetchMemberCalendars(): Promise<TerrrainCalendarResult> {
   try {
@@ -22,7 +24,7 @@ export default async function fetchMemberCalendars(): Promise<TerrrainCalendarRe
     const data = await response.json();
     return data;
   } catch (e) {
-    console.log(`Error fetching calendars: ${e}`);
+    logger.error(e);
     return {};
   }
 }
