@@ -10,7 +10,7 @@ export interface BadgeEntry {
   /** Relative to images/. null = no artwork yet; callers show a placeholder. */
   file: string | null;
   label: string;
-  /** 96x66 additional-award art rather than an 85x85 square. */
+  /** Landscape art (additional awards, adventurous journeys, courses) rather than a square. */
   wide?: boolean;
 }
 
@@ -109,19 +109,19 @@ const INTRO_SECTION: Record<string, BadgeEntry> = {
 };
 
 const ADVENTUROUS_JOURNEYS: Record<string, BadgeEntry> = {
-  adventurous_journey_joey: { file: "manual/adventurous-journey-joey.webp", label: "Adventurous Journey (Joey)" },
-  adventurous_journey_cub: { file: "manual/adventurous-journey-cub.webp", label: "Adventurous Journey (Cub)" },
-  adventurous_journey_scout: { file: "manual/adventurous-journey-scout.webp", label: "Adventurous Journey (Scout)" },
-  adventurous_journey_venturer: { file: "manual/adventurous-journey-venturer.webp", label: "Adventurous Journey (Venturer)" },
-  adventurous_journey_rover: { file: "manual/adventurous-journey-rover.webp", label: "Adventurous Journey (Rover)" },
+  adventurous_journey_joey: { file: "manual/adventurous-journey-joey.webp", label: "Adventurous Journey (Joey)", wide: true },
+  adventurous_journey_cub: { file: "manual/adventurous-journey-cub.webp", label: "Adventurous Journey (Cub)", wide: true },
+  adventurous_journey_scout: { file: "manual/adventurous-journey-scout.webp", label: "Adventurous Journey (Scout)", wide: true },
+  adventurous_journey_venturer: { file: "manual/adventurous-journey-venturer.webp", label: "Adventurous Journey (Venturer)", wide: true },
+  adventurous_journey_rover: { file: "manual/adventurous-journey-rover.webp", label: "Adventurous Journey (Rover)", wide: true },
 };
 
 /** Joeys have no LS/PD course. */
 const COURSE_REFLECTIONS: Record<string, BadgeEntry> = {
-  course_reflection_cub: { file: "manual/personal-development-cub.webp", label: "LS/PD Course (Cub)" },
-  course_reflection_scout: { file: "manual/personal-development-scout.webp", label: "LS/PD Course (Scout)" },
-  course_reflection_venturer: { file: "manual/personal-development-venturer.webp", label: "LS/PD Course (Venturer)" },
-  course_reflection_rover: { file: "manual/personal-development-rover.webp", label: "LS/PD Course (Rover)" },
+  course_reflection_cub: { file: "manual/personal-development-cub.webp", label: "LS/PD Course (Cub)", wide: true },
+  course_reflection_scout: { file: "manual/personal-development-scout.webp", label: "LS/PD Course (Scout)", wide: true },
+  course_reflection_venturer: { file: "manual/personal-development-venturer.webp", label: "LS/PD Course (Venturer)", wide: true },
+  course_reflection_rover: { file: "manual/personal-development-rover.webp", label: "LS/PD Course (Rover)", wide: true },
 };
 
 /** Fallback keys getBadgeKey() produces from the bare type. */

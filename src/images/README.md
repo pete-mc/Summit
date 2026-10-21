@@ -20,7 +20,16 @@ Terrain shows no badge art for these achievement types, so they were downloaded 
 | `scouts-australia-logo.jpg` | `intro_scouting` | Scouts Australia national full-colour vertical logo |
 
 To replace or add one: download it, save it here under the name above, and set or update that row's `file` in
-`badgeManifest.ts`. These files are not refreshed automatically, so check them by eye if Scouts Australia updates a design.
+`badgeManifest.ts`.
+
+The Adventurous Journey and Personal Development downloads come on a large light-grey canvas. They were trimmed to the
+badge's white border with ImageMagick, and marked `wide` in the manifest because the result is landscape:
+
+```
+magick <file>.webp -fuzz 2% -trim +repage -resize "580x>" -quality 90 <file>.webp
+```
+
+Keep the fuzz at 2%. The badge's white border is only about 5% away from the grey, so a higher value trims it off too. These files are not refreshed automatically, so check them by eye if Scouts Australia updates a design.
 
 Badges are mapped to files in `src/shared/badgeManifest.ts`. Paths there are relative to this folder.
 
