@@ -7,6 +7,7 @@ import OASWorksheetFiltersVue from "./OASWorksheetFiltersVue.vue";
 import OASWorksheetsVue from "./OASWorksheetsVue.vue";
 import SummitLoadingState from "@/components/SummitLoadingState.vue";
 import SummitPrintButton from "@/components/SummitPrintButton.vue";
+import type { PrintButtonPart } from "@/components/SummitPrintButton";
 import SummitPillButton from "@/components/SummitPillButton.vue";
 import { buildHeatmapPrintMeta, buildOasTablePrintMeta, buildSummaryPrintMeta } from "@/pages/OasProgressionVue/services/oasPrintMeta";
 import type { MetaEntry } from "@/print/summitPrint";
@@ -15,14 +16,7 @@ import { groupRowsForHeatMap } from "@/pages/OasProgression/services/groupRowsFo
 import { buildPeakAwardSummaryRows, sortPeakAwardSummaryRows, type PeakAwardMemberRow } from "@/pages/OasProgression/services/buildPeakAwardSummaryRows";
 import { PEAK_AWARD_REQUIREMENTS, type PeakAwardRequirement } from "@/pages/OasProgression/data/peakAwardRequirements";
 import { collectPatrolNames, hasUnassignedMembers, filterMembersByPatrol, UNASSIGNED_PATROL, OAS_SKILLS } from "@/pages/OasProgression/services/filterHeatMapSections";
-import {
-  loadOASProgressionVueFilters,
-  loadSummaryInclude,
-  saveOASProgressionVueFilters,
-  saveSummaryInclude,
-  type OASProgressionVueFilterState,
-  type SummaryIncludeState,
-} from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
+import { loadOASProgressionVueFilters, saveOASProgressionVueFilters, type OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
 import { exportGridToExcel, type GridExportColumn, type GridExportRow } from "@/components/gridExport";
 import { exportExcelWorkbook, type ExcelWorkbookRequest } from "@/excel/summitExcel";
 import { buildPeakAwardSummarySheet } from "@/excel/sheets/peakAwardSummary";
@@ -48,6 +42,10 @@ interface HeatMapVueInstance {
 }
 
 interface SummaryVueInstance {
+  getExportTable(): HTMLTableElement | undefined;
+}
+
+interface OverallProgressVueInstance {
   getExportTable(): HTMLTableElement | undefined;
 }
 
@@ -182,8 +180,6 @@ export default defineComponent({
       isReloading: false,
       isExcelExporting: false,
       exportFeedback: "",
-      summaryInclude: loadSummaryInclude() as SummaryIncludeState,
-      summaryExcelMenuOpen: false,
       tableColumnFilters: {} as Record<string, string>,
     };
   },
@@ -248,6 +244,13 @@ export default defineComponent({
       }));
       return sortOverallProgressRows(buildOverallProgressRows(this.grouped, members), this.overallProgressColumns, this.filters.summaryColumnSort);
     },
+    /** Always both: Edge's own Pages box can pick pages. */
+    summaryPrintParts(): PrintButtonPart[] {
+      return [
+        { label: "Towards Peak Award", profile: "peak-award-summary", target: () => this.summaryPrintTarget() },
+        { label: "Overall", profile: "overall-progress", target: () => this.overallProgressPrintTarget() },
+      ];
+    },
     summaryPrintMeta(): MetaEntry[] {
       return buildSummaryPrintMeta(this.filters, this.patrolFilterOptions, this.canFilterByPatrol);
     },
@@ -259,12 +262,6 @@ export default defineComponent({
     },
   },
   watch: {
-    summaryInclude: {
-      deep: true,
-      handler(include: SummaryIncludeState) {
-        saveSummaryInclude(include);
-      },
-    },
     filters: {
       deep: true,
       handler(newFilters: OASProgressionVueFilterState) {
@@ -335,6 +332,9 @@ export default defineComponent({
     summaryPrintTarget(): HTMLTableElement | undefined {
       return (this.$refs.summary as unknown as SummaryVueInstance | undefined)?.getExportTable();
     },
+    overallProgressPrintTarget(): HTMLTableElement | undefined {
+      return (this.$refs.overallProgress as unknown as OverallProgressVueInstance | undefined)?.getExportTable();
+    },
     tablePrintTarget(): HTMLTableElement | undefined {
       return (this.$refs.table as unknown as TableVueInstance | undefined)?.getPrintTable();
     },
@@ -361,10 +361,8 @@ export default defineComponent({
     async onSummaryExcelExportClick() {
       const requirement = this.peakAwardRequirement;
       if (!requirement) return;
-      this.summaryExcelMenuOpen = false;
-      const sheets: ExcelWorkbookRequest["sheets"] = [];
-      if (this.summaryInclude.peakAward) {
-        sheets.push({
+      const sheets: ExcelWorkbookRequest["sheets"] = [
+        {
           printProfile: "peak-award-summary",
           build: (header, logo) =>
             buildPeakAwardSummarySheet({
@@ -375,14 +373,12 @@ export default defineComponent({
               header,
               logo,
             }),
-        });
-      }
-      if (this.summaryInclude.overall) {
-        sheets.push({
+        },
+        {
           printProfile: "overall-progress",
           build: (header, logo) => buildOverallProgressSheet({ headers: this.overallProgressColumns.map((c) => buildHeaderView(c)), rows: this.overallProgressRows, header, logo }),
-        });
-      }
+        },
+      ];
       await this.runExcelExport("Summary", this.summaryPrintMeta, sheets);
     },
     async onHeatmapExcelExportClick() {

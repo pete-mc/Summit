@@ -224,10 +224,17 @@ function settingsFor(o: HeaderFooterOptions, profile: ResolvedProfile) {
 
 const FOOTER_FONT = `7.5pt "${PRINT_FONT_FAMILY}", arial, sans-serif`;
 
-export function buildPrintDocument(o: PrintOptions): string {
+interface PreparedPart {
+  table: HTMLTableElement;
+  header: ResolvedHeaderFooter["header"];
+  footer: ResolvedHeaderFooter["footer"];
+  layout: PrintLayout;
+  profile: ResolvedProfile;
+}
+
+function preparePart(o: PrintOptions): PreparedPart {
   const profile = getPrintProfile(o.profile);
   const opts = settingsFor(o, profile);
-  const page = resolvePage(opts);
 
   const sourceTable = (o.source.matches("table") ? o.source : o.source.querySelector(profile.tableSelector)) as HTMLTableElement | null;
   if (!sourceTable) throw new Error("summit-print: no table found in source element");
@@ -243,10 +250,12 @@ export function buildPrintDocument(o: PrintOptions): string {
   table.classList.add("summit-print-table", `summit-print-profile-${profile.name}`);
 
   const { header, footer } = resolveHeaderFooter(o);
-  const mode = o.footerMode ?? "margin-box";
-  if (mode === "table") appendFallbackFooter(table, footer);
+  if ((o.footerMode ?? "margin-box") === "table") appendFallbackFooter(table, footer);
+  return { table, header, footer, layout: opts.layout, profile };
+}
 
-  // Gotcha: leave the margin boxes out in fallback mode, or a forced fallback prints two footers.
+/** Gotcha: leave the margin boxes out in fallback mode, or a forced fallback prints two footers. */
+function footerSlots(footer: ResolvedHeaderFooter["footer"], mode: FooterMode): string {
   const slot = (name: string, text: string) =>
     text && mode === "margin-box"
       ? `
@@ -256,42 +265,140 @@ export function buildPrintDocument(o: PrintOptions): string {
     vertical-align: middle;
   }`
       : "";
+  return `${slot("left", footer.left)}${slot("center", footer.center)}${slot("right", footer.right)}`;
+}
 
-  const pageCss = `
-@page {
-  size: ${page.width}mm ${page.height}mm;
-  margin: ${page.margins.top}mm ${page.margins.right}mm ${page.margins.bottom}mm ${page.margins.left}mm;${slot("left", footer.left)}${slot("center", footer.center)}${slot("right", footer.right)}
-}`;
+function pageSizeCss(page: ResolvedPage): string {
+  return `size: ${page.width}mm ${page.height}mm;
+  margin: ${page.margins.top}mm ${page.margins.right}mm ${page.margins.bottom}mm ${page.margins.left}mm;`;
+}
 
-  const logo = o.logo ? `<img class="summit-print-logo" src="${esc(o.logo)}" alt="">` : "";
+function headerHtml(header: ResolvedHeaderFooter["header"], logoUrl: string | null | undefined): string {
+  const logo = logoUrl ? `<img class="summit-print-logo" src="${esc(logoUrl)}" alt="">` : "";
   const meta = header.meta.length ? `<dl class="summit-print-meta">${header.meta.map((m) => `<div><dt>${esc(m.label)}:</dt><dd>${esc(m.value)}</dd></div>`).join("")}</dl>` : "";
-
-  return `<!doctype html>
-<html lang="en-AU"><head><meta charset="utf-8">
-<title>${esc(header.title)}</title>
-<style>${o.fontCss || ""}
-${pageCss}
-${BASE_PRINT_CSS}
-${profile.css}</style>
-</head><body class="summit-print-layout-${opts.layout === "split" ? "split" : "fit"}">
-<header class="summit-print-header">
+  return `<header class="summit-print-header">
   ${logo}
   <div class="summit-print-header-text">
     ${header.title ? `<h1>${esc(header.title)}</h1>` : ""}
     ${header.subtitle ? `<div class="summit-print-subtitle">${esc(header.subtitle)}</div>` : ""}
     ${meta}
   </div>
-</header>
-<main>${table.outerHTML}</main>
+</header>`;
+}
+
+function layoutClass(layout: PrintLayout): string {
+  return `summit-print-layout-${layout === "split" ? "split" : "fit"}`;
+}
+
+export function buildPrintDocument(o: PrintOptions): string {
+  const profile = getPrintProfile(o.profile);
+  const page = resolvePage(settingsFor(o, profile));
+  const part = preparePart(o);
+  const mode = o.footerMode ?? "margin-box";
+
+  const pageCss = `
+@page {
+  ${pageSizeCss(page)}${footerSlots(part.footer, mode)}
+}`;
+
+  return `<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8">
+<title>${esc(part.header.title)}</title>
+<style>${o.fontCss || ""}
+${pageCss}
+${BASE_PRINT_CSS}
+${profile.css}</style>
+</head><body class="${layoutClass(part.layout)}">
+${headerHtml(part.header, o.logo)}
+<main>${part.table.outerHTML}</main>
 </body></html>`;
+}
+
+/** Per table; everything else (page setup, vars, logo, footer mode) is shared by the whole printout. */
+export type PrintPart = Pick<PrintOptions, "source" | "profile" | "layout" | "title" | "subtitle" | "meta" | "header" | "footer">;
+
+export interface MultiPartPrintOptions extends Omit<PrintOptions, "source" | "profile" | "layout"> {
+  parts: PrintPart[];
+}
+
+export function partPageName(index: number): string {
+  return `summit-part-${index + 1}`;
+}
+
+function partOptions(o: MultiPartPrintOptions, part: PrintPart): PrintOptions {
+  return { ...o, ...part };
+}
+
+/**
+ * Learning: Edge prints every page at the first page's size, so parts share one page setup. Named pages
+ * (`page: summit-part-N`) still work, so each part gets its own footer and starts on a new page.
+ */
+export function buildMultiPartDocument(o: MultiPartPrintOptions): string {
+  if (o.parts.length === 0) throw new Error("summit-print: nothing to print");
+  const mode = o.footerMode ?? "margin-box";
+  const page = resolvePage(settingsFor(o, getPrintProfile(o.parts[0].profile)));
+  const prepared = o.parts.map((part) => preparePart(partOptions(o, part)));
+
+  const partPageCss = prepared.map((p, i) => `\n@page ${partPageName(i)} {${footerSlots(p.footer, mode)}\n}`).join("");
+  const pageCss = `
+@page {
+  ${pageSizeCss(page)}
+}${partPageCss}`;
+
+  const profileCss = prepared
+    .map((p) => p.profile)
+    .filter((profile, i, all) => all.indexOf(profile) === i)
+    .map((profile) => profile.css)
+    .join("\n");
+
+  const sections = prepared
+    .map(
+      (p, i) => `<section class="summit-print-part ${layoutClass(p.layout)}" data-summit-print-part="${i + 1}" style="page: ${partPageName(i)}">
+${headerHtml(p.header, o.logo)}
+${p.table.outerHTML}
+</section>`,
+    )
+    .join("\n");
+
+  return `<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8">
+<title>${esc(prepared[0].header.title)}</title>
+<style>${o.fontCss || ""}
+${pageCss}
+${BASE_PRINT_CSS}
+${profileCss}</style>
+</head><body>
+<main>${sections}</main>
+</body></html>`;
+}
+
+function withPrintDefaults<T extends { generated?: Date; fontCss?: string; footerMode?: FooterMode }>(o: T): T {
+  return { ...o, generated: o.generated ?? new Date(), fontCss: o.fontCss ?? collectPrintFontCss(document), footerMode: o.footerMode ?? detectFooterMode() };
 }
 
 /** Resolves when the dialog closes; the browser doesn't say whether the user printed or cancelled. */
 export async function printTable(o: PrintOptions): Promise<LayoutResult> {
-  const options: PrintOptions = { ...o, generated: o.generated ?? new Date(), fontCss: o.fontCss ?? collectPrintFontCss(document), footerMode: o.footerMode ?? detectFooterMode() };
+  const options = withPrintDefaults(o);
   const html = buildPrintDocument(options);
   const { page, fit } = layoutOptions(options);
-  return printViaSrcdoc(html, page, fit, declaredPrintWeights(options.fontCss || ""));
+  return printViaSrcdoc(html, page, (doc) => layoutTable(doc, fit), declaredPrintWeights(options.fontCss || ""));
+}
+
+/** One LayoutResult per part, in order. */
+export async function printTables(o: MultiPartPrintOptions): Promise<LayoutResult[]> {
+  const options = withPrintDefaults(o);
+  const html = buildMultiPartDocument(options);
+  const perPart = options.parts.map((part) => partOptions(options, part));
+  const layouts = perPart.map((part) => layoutOptions(part));
+  return printViaSrcdoc(html, layouts[0].page, (doc) => layoutParts(doc, perPart, layouts), declaredPrintWeights(options.fontCss || ""));
+}
+
+export function layoutParts(doc: Document, perPart: PrintOptions[], layouts: Array<{ fit: LayoutOptions }>): LayoutResult[] {
+  return layouts.map(({ fit }, i) => {
+    const table = doc.querySelector<HTMLTableElement>(`[data-summit-print-part="${i + 1}"] table.summit-print-table`) ?? undefined;
+    const footer = resolveHeaderFooter(perPart[i]).footer;
+    return layoutTable(doc, { ...fit, table, bandPagePrefix: `${partPageName(i)}-band`, bandFooter: { left: footer.left, right: footer.right } });
+  });
 }
 
 function makeHiddenFrame(widthPx: number): HTMLIFrameElement {
@@ -324,7 +431,7 @@ function waitForImages(doc: Document, timeoutMs = 4000): Promise<void> {
   return Promise.race([Promise.all(loads).then(() => undefined), new Promise<void>((resolve) => setTimeout(resolve, timeoutMs))]);
 }
 
-function printViaSrcdoc(html: string, page: ResolvedPage, fit: LayoutOptions, fontWeights: number[]): Promise<LayoutResult> {
+function printViaSrcdoc<T>(html: string, page: ResolvedPage, layout: (doc: Document) => T, fontWeights: number[]): Promise<T> {
   return new Promise((resolve, reject) => {
     const frame = makeHiddenFrame(page.printableWidthPx);
     frame.onload = async () => {
@@ -338,7 +445,7 @@ function printViaSrcdoc(html: string, page: ResolvedPage, fit: LayoutOptions, fo
         }
         await waitForPrintFonts(doc, fontWeights);
         await waitForImages(doc);
-        const result = layoutTable(doc, fit);
+        const result = layout(doc);
         const done = () => {
           frame.remove();
           resolve(result);

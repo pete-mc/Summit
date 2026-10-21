@@ -101,6 +101,7 @@ table.summit-print-table tfoot.summit-print-tfoot td {
 .summit-print-foot-center { flex: 1 1 auto; text-align: center; }
 
 .summit-print-band + .summit-print-band { break-before: page; }
+.summit-print-part + .summit-print-part { break-before: page; }
 .summit-print-band-label {
   margin: 0 0 2mm;
   font-size: 8.5pt;

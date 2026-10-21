@@ -139,7 +139,7 @@ describe("OasProgressionVueContent render contract", () => {
     expect(tsSource).toContain("heatMap.getExportView()");
   });
 
-  it("Summary tab prints through summit-print's SummitPrintButton, asking the summary for its table via getExportTable()", () => {
+  it("Summary tab prints both tables through summit-print's SummitPrintButton, asking each table component for its table via getExportTable()", () => {
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
     expect(tsSource).toContain("?.getExportTable()");
     expect(tsSource).toContain("summaryPrintTarget()");
@@ -150,18 +150,16 @@ describe("OasProgressionVueContent render contract", () => {
 
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
     expect(templateSource).toContain('ref="summary"');
-    expect(templateSource).toMatch(/<template v-if="filters\.viewMode === 'summary'">[\s\S]*?<SummitPrintButton profile="peak-award-summary" :target="summaryPrintTarget"[\s\S]*?<\/template>/);
+    expect(templateSource).toMatch(/<template v-if="filters\.viewMode === 'summary'">[\s\S]*?<SummitPrintButton[\s\S]*?:parts="summaryPrintParts"[\s\S]*?<\/template>/);
+    expect(tsSource).toContain('profile: "peak-award-summary", target: () => this.summaryPrintTarget()');
+    expect(tsSource).toContain('profile: "overall-progress", target: () => this.overallProgressPrintTarget()');
     expect(templateSource).not.toContain("onSummaryPdfExportClick");
     expect(tsSource).not.toContain("onSummaryPdfExportClick");
   });
 
-  it("Summary tab has its own formatted Excel Export, a menu choosing which tables become sheets, beside Print / PDF", () => {
+  it("Summary tab has its own formatted Excel Export of both tables, beside Print / PDF", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.vue"), "utf8");
-    expect(templateSource).toMatch(
-      /<template v-if="filters\.viewMode === 'summary'">[\s\S]*?Excel Export<\/SummitPillButton>[\s\S]*?@click="onSummaryExcelExportClick">Export<\/v-btn>[\s\S]*?<SummitPrintButton profile="peak-award-summary"/,
-    );
-    expect(templateSource).toContain('v-model="summaryInclude.peakAward"');
-    expect(templateSource).toContain('v-model="summaryInclude.overall"');
+    expect(templateSource).toMatch(/<template v-if="filters\.viewMode === 'summary'">[\s\S]*?@click="onSummaryExcelExportClick">Excel Export<\/SummitPillButton>[\s\S]*?<SummitPrintButton[\s\S]*?:parts="summaryPrintParts"/);
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OasProgressionVueContent.ts"), "utf8");
     expect(tsSource).toContain("rows: this.filteredPeakAwardSummaryRows");

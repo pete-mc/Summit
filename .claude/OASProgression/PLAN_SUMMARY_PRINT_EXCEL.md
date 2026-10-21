@@ -8,9 +8,9 @@ Agreed in chat 2026-10-21.
 | Topic | Decision |
 | --- | --- |
 | Scope | One Print button and one Excel button output **both** tables. |
-| Include | Print dialog and Excel menu have tick boxes: ☑ Towards Peak Award ☑ Overall (both on by default, remembered). At least one must stay ticked. |
+| Include | **Always both**, in print and Excel (user decision 2026-10-22, after trying tick boxes: Edge's Pages box picks pages; Excel tabs can be deleted). |
 | Print order | Towards Peak Award first, then Overall. **Page break between them.** |
-| Print page setup | **Separate per table**: page size, orientation, margins, fit/split each. Defaults: Peak Award = A4 portrait fit (as now); Overall = A4 landscape fit. Remembered per table (each has its own print profile, so the existing per-profile settings storage covers it). |
+| Print page setup | **One** page setup for the whole printout, fit/split included (see spike result below; user simplified it 2026-10-22, since the Peak Award part fits one page either way). Default orientation: landscape when Overall is included, portrait when only Peak Award is. Remembered under one settings key for the Summary printout. |
 | Titles | "OAS Progression - Summary - Towards Peak Award" and "OAS Progression - Summary - Overall". Used as the printed heading of each part and the title row of each sheet. |
 | Print header | Each part gets the full header (logo, title, `{group} · {unit}`, filters line), so each stands alone. Same filters line on both. Footer title follows its part. |
 | Excel file | One file, two sheets. File name unchanged: `Summit - OAS Progression - Summary - {Unit} - {yyyymmdd}.xlsx`. |
@@ -35,7 +35,11 @@ Agreed in chat 2026-10-21.
 
 ## Stage 2: print module, several tables in one printout
 
-**Spike first (go/no-go, checked live in Edge):** a hand-built two-part document where part 1 is A4 portrait and part 2 is
+**Spike result (2026-10-21, live in Edge): mixed orientation is NOT possible.** Named pages work (each part had its
+own footer, page numbers ran through, bands split), but Edge prints every page at the first page's size, both via
+the hidden srcdoc frame and directly. User chose one printout with a shared page setup.
+
+Original spike plan (kept for the record): a hand-built two-part document where part 1 is A4 portrait and part 2 is
 A4 landscape, using named pages (`page: summit-part-2` + `@page summit-part-2 { size: … }`). Check that the preview and
 Save as PDF really mix orientations, and that the footers still print. **If not:** stop and come back to the user. The
 fallback is one shared orientation.
@@ -44,13 +48,14 @@ Then, in `src/print/`:
 
 - New `printTables({ parts: [{ source, profile, settings, header/meta }], … })`. `printTable` becomes a one-part
   wrapper, so other pages are unchanged and their tests still pass as they are.
-- `buildPrintDocument` builds one `<section class="summit-print-part">` per part, each with its own header, its
-  table, a named page (`summit-part-N`) and an `@page summit-part-N` rule for its size, margins and footer.
-  Each part starts on a new page.
+- `buildMultiPartDocument` builds one `<section class="summit-print-part summit-print-layout-{fit|split}">` per part,
+  each with its own header, its table and a named page (`summit-part-N`). The shared `@page` sets size and margins,
+  and `@page summit-part-N` sets that part's footer. Each part starts on a new page. `buildPrintDocument` (one table)
+  produces exactly the same output as before.
 - `printFit.layoutTable` takes a part root and that part's printable width instead of `doc.body` / the first
   table. Split bands get part-scoped page names (`summit-part-N-band-M`), inheriting the part's page rule.
 - Profile CSS from every part's profile goes into the one document (already scoped by profile name).
-- The iframe is as wide as the widest part. Each part is measured against its own width.
+- One printable width for every part (shared page setup). Each part is laid out (fit/split) on its own.
 - Tests (jsdom): two parts produce two headers, two page rules and the part order. Single-part output
   is unchanged from today (compare against `printTable`).
 
@@ -76,5 +81,5 @@ Then, in `src/print/`:
 
 ## Risks
 
-- Mixed orientation via named pages: proven or rejected by the Stage 2 spike before any module refactor.
+- Mixed orientation: rejected by the spike, so the page setup is shared.
 - Old-browser footer fallback (`footerMode: "table"`): has to put each part's footer on its own table. This is covered by a test.

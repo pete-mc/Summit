@@ -63,30 +63,3 @@ export const loadOASProgressionVueFilters = (): Partial<OASProgressionVueFilterS
     return null;
   }
 };
-
-/** Which Summary tables Print and Excel include. Kept apart from the filters, so Reset filters leaves it alone. */
-export interface SummaryIncludeState {
-  peakAward: boolean;
-  overall: boolean;
-}
-
-export const DEFAULT_SUMMARY_INCLUDE: SummaryIncludeState = { peakAward: true, overall: true };
-
-const SUMMARY_INCLUDE_KEY = "summit.oasProgressionVue.summaryInclude";
-
-export const saveSummaryInclude = (include: SummaryIncludeState) => {
-  try {
-    window.localStorage.setItem(SUMMARY_INCLUDE_KEY, JSON.stringify(include));
-  } catch {}
-};
-
-/** Falls back to both when the stored value is missing, malformed, or has nothing ticked. */
-export const loadSummaryInclude = (): SummaryIncludeState => {
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(SUMMARY_INCLUDE_KEY) || "null");
-    const include = { peakAward: parsed?.peakAward === true, overall: parsed?.overall === true };
-    return include.peakAward || include.overall ? include : { ...DEFAULT_SUMMARY_INCLUDE };
-  } catch {
-    return { ...DEFAULT_SUMMARY_INCLUDE };
-  }
-};

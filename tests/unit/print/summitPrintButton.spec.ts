@@ -3,11 +3,11 @@
 jest.mock("@/components/SummitPillButton.vue", () => ({ __esModule: true, default: { name: "SummitPillButton", render: () => null } }), { virtual: true });
 jest.mock("@/print/summitPrint", () => {
   const actual = jest.requireActual("@/print/summitPrint");
-  return { __esModule: true, ...actual, printTable: jest.fn() };
+  return { __esModule: true, ...actual, printTable: jest.fn(), printTables: jest.fn() };
 });
 
-import SummitPrintButton from "@/components/SummitPrintButton";
-import { printTable } from "@/print/summitPrint";
+import SummitPrintButton, { initialMultiPartSettings, type PrintButtonPart } from "@/components/SummitPrintButton";
+import { printTable, printTables } from "@/print/summitPrint";
 
 type GoContext = Record<string, unknown> & { go(): Promise<void> };
 
@@ -24,13 +24,16 @@ function context(overrides: Record<string, unknown> = {}): GoContext {
     $nextTick: async () => undefined,
     ...overrides,
   };
-  ctx.showWarning = methods.showWarning.bind(ctx);
-  ctx.go = methods.go.bind(ctx);
+  Object.keys(methods).forEach((name) => {
+    ctx[name] = methods[name].bind(ctx);
+  });
   return ctx as GoContext;
 }
 
 beforeEach(() => {
   (printTable as jest.Mock).mockReset();
+  (printTables as jest.Mock).mockReset();
+  window.localStorage.clear();
   jest.spyOn(console, "error").mockImplementation(() => undefined);
 });
 
@@ -71,5 +74,78 @@ describe("SummitPrintButton prepare/restore", () => {
     (printTable as jest.Mock).mockResolvedValue({ zoom: 1, overflow: false, bands: 1 });
     await context().go();
     expect(printTable).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("SummitPrintButton with several tables", () => {
+  function part(label: string, profile: string, extra: Partial<PrintButtonPart> = {}): PrintButtonPart {
+    return { label, profile, target: () => document.createElement("table"), ...extra };
+  }
+  const PARTS = () => [part("Towards Peak Award", "peak-award-summary"), part("Overall", "overall-progress")];
+
+  function multiContext(overrides: Record<string, unknown> = {}) {
+    return context({
+      profile: "",
+      parts: PARTS(),
+      settingsKey: "oas-summary",
+      settings: { pageSize: "A4", orientation: "landscape", margins: "normal", layout: "split" },
+      ...overrides,
+    });
+  }
+
+  it("prints every table as one printout with one page setup, layout included", async () => {
+    (printTables as jest.Mock).mockResolvedValue([
+      { zoom: 1, overflow: false, bands: 1 },
+      { zoom: 1, overflow: false, bands: 2 },
+    ]);
+
+    await multiContext().go();
+
+    expect(printTable).not.toHaveBeenCalled();
+    const request = (printTables as jest.Mock).mock.calls[0][0];
+    expect(request.parts.map((p: { profile: string }) => p.profile)).toEqual(["peak-award-summary", "overall-progress"]);
+    expect([request.pageSize, request.orientation, request.margins, request.layout]).toEqual(["A4", "landscape", "normal", "split"]);
+  });
+
+  it("names the table in a layout warning", async () => {
+    (printTables as jest.Mock).mockResolvedValue([
+      { zoom: 1, overflow: false, bands: 1 },
+      { zoom: 0.7, overflow: false, bands: 3 },
+    ]);
+    const ctx = multiContext({ settings: { pageSize: "A4", orientation: "landscape", margins: "normal", layout: "fit" } });
+
+    await ctx.go();
+
+    expect(ctx.warn).toBe(true);
+    expect(String(ctx.warnText)).toBe("Overall: Too wide for one page even when shrunk, so it was split into 3 parts.");
+  });
+
+  it("restores every prepared table even when printing fails", async () => {
+    const restoreA = jest.fn();
+    const restoreB = jest.fn();
+    (printTables as jest.Mock).mockRejectedValue(new Error("boom"));
+    const ctx = multiContext({ parts: [part("A", "peak-award-summary", { prepare: async () => restoreA }), part("B", "overall-progress", { prepare: async () => restoreB })] });
+
+    await ctx.go();
+
+    expect(restoreA).toHaveBeenCalledTimes(1);
+    expect(restoreB).toHaveBeenCalledTimes(1);
+    expect(String(ctx.warnText)).toContain("boom");
+  });
+
+  it("remembers the page setup under its own key", async () => {
+    (printTables as jest.Mock).mockResolvedValue([
+      { zoom: 1, overflow: false, bands: 1 },
+      { zoom: 1, overflow: false, bands: 1 },
+    ]);
+    await multiContext({ settings: { pageSize: "A3", orientation: "portrait", margins: "narrow", layout: "fit" } }).go();
+
+    expect(initialMultiPartSettings("oas-summary", PARTS())).toEqual({ pageSize: "A3", orientation: "portrait", margins: "narrow", layout: "fit" });
+  });
+
+  // Edge prints every page at the first page's size, so one orientation has to suit every table.
+  it("defaults to landscape when any table prefers it", () => {
+    expect(initialMultiPartSettings("oas-summary", PARTS()).orientation).toBe("landscape");
+    expect(initialMultiPartSettings("oas-summary", [part("A", "peak-award-summary")]).orientation).toBe("portrait");
   });
 });

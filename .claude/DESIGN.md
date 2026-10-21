@@ -448,6 +448,12 @@ unreliable. `jsPDF` survives **only** behind the React `DataGrid.tsx`; don't use
    a component, not an element.
 3. If the table pages or collapses groups, pass `:prepare` (show every row, return a restore). Only
    rendered rows print. See `PresentAwardsTableVue.prepareForPrint`.
+4. **Several tables in one printout** (e.g. the OAS Summary tab): pass `:parts` (`label`, `profile`, `target`,
+   optional `prepare`) and a `settings-key` instead of `profile`/`target`. Every part always prints; Edge's own
+   Pages box picks pages. Each table gets its own section, header and footer (named page `summit-part-N`), with
+   a page break between. **One page setup for all**: Edge prints every page at the first page's size
+   (spike 2026-10-21), so mixed portrait/landscape isn't possible. `printTables` itself still accepts a
+   per-part layout if a page ever needs it.
 
 **Profile rules:**
 
@@ -475,6 +481,8 @@ React pages still use the plain `xlsx` dump in `gridExport.ts`.
 
 - A page's Excel button calls `exportExcelSheet({ printProfile, meta, fileNameParts, build })`. It
   handles the timestamp, header, logo, file name and download; the page only reports success or failure.
+  For several tabs in one file, call `exportExcelWorkbook({ sheets: [{ printProfile, build }], meta, fileNameParts })`;
+  each sheet takes its title from its own print profile. Excel caps tab names at 31 characters.
 - Dates go in as real Excel dates via `parseDisplayDate` (UTC midnight; a local-midnight date
   shows a day early in Australia).
 - To follow a `v-data-table`'s on-screen sort, sort with Vuetify's own `sortItems` and the
