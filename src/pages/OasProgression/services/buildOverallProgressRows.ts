@@ -36,7 +36,6 @@ export interface OverallProgressColumnSort {
   descending: boolean;
 }
 
-/** Highest first, then lowest first, then cleared. */
 export function nextColumnSort(current: OverallProgressColumnSort | null, key: string): OverallProgressColumnSort | null {
   if (!current || current.key !== key) return { key, descending: true };
   return current.descending ? { key, descending: false } : null;
@@ -47,7 +46,7 @@ function stageSortValue(cell: StageProgressDisplay): number | null {
   return Number(cell.stage) * 100 + Number(cell.nextStageProgress ?? 0);
 }
 
-/** "-" always sorts last. Ties keep the incoming order, so the Sort by choice breaks them. An unknown column key leaves rows as given. */
+/** "-" always sorts last. Ties keep the incoming order, so the Sort by choice breaks them. */
 export function sortOverallProgressRows(rows: OverallProgressRow[], columns: OverallProgressColumn[], sort: OverallProgressColumnSort | null): OverallProgressRow[] {
   const columnIndex = sort ? columns.findIndex((c) => c.key === sort.key) : -1;
   if (!sort || columnIndex === -1) return rows;

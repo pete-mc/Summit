@@ -384,7 +384,6 @@ export async function printTable(o: PrintOptions): Promise<LayoutResult> {
   return printViaSrcdoc(html, page, (doc) => layoutTable(doc, fit), declaredPrintWeights(options.fontCss || ""));
 }
 
-/** One LayoutResult per part, in order. */
 export async function printTables(o: MultiPartPrintOptions): Promise<LayoutResult[]> {
   const options = withPrintDefaults(o);
   const html = buildMultiPartDocument(options);

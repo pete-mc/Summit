@@ -16,9 +16,7 @@ export interface LayoutOptions {
   bandLabel?: string;
   partFooter?: string;
   footerMode?: "margin-box" | "table";
-  /** Defaults to the document's first print table. */
   table?: HTMLTableElement;
-  /** Band pages are named `{prefix}-{n}`. */
   bandPagePrefix?: string;
   /** Left/right footers for band pages, when the unnamed @page doesn't carry them (multi-part printouts). */
   bandFooter?: { left: string; right: string };
@@ -153,7 +151,7 @@ function splitIntoBands(doc: Document, original: HTMLTableElement, available: nu
   // Gotcha: named pages force a break, which would strand the header alone on page 1.
   const part = original.closest<HTMLElement>(".summit-print-part");
   const header = part?.querySelector(".summit-print-header") ?? doc.querySelector(".summit-print-header");
-  // Bands carry their own page names; the spike only proved un-nested named pages.
+  // Gotcha: Edge is only known to handle un-nested named pages, so the bands' own page names replace the part's.
   part?.style.removeProperty("page");
   const firstBand = frag.firstElementChild;
   original.replaceWith(frag);

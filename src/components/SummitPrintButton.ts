@@ -16,16 +16,14 @@ export function initialPrintSettings(profile: string): PageSettings {
   return { ...getPrintProfile(profile).defaults, ...loadPrintSettings(profile) };
 }
 
-/** One table in a multi-table printout. */
 export interface PrintButtonPart {
-  /** Names the table in a layout warning. */
   label: string;
   profile: string;
   target: () => Element | null | undefined;
   prepare?: () => Promise<(() => void) | void>;
 }
 
-/** One page setup for every table. Landscape if any table's profile prefers it: Edge can't mix orientations in one printout. */
+/** Gotcha: one page setup for every table, landscape if any prefers it. Edge prints every page at the first page's size. */
 export function initialMultiPartSettings(settingsKey: string, parts: PrintButtonPart[]): PageSettings {
   const orientation: Orientation = parts.some((p) => getPrintProfile(p.profile).defaults.orientation === "landscape") ? "landscape" : "portrait";
   return { ...getPrintProfile(parts[0]?.profile).defaults, orientation, ...loadPrintSettings(settingsKey) };
@@ -36,13 +34,11 @@ export default defineComponent({
   name: "SummitPrintButton",
   components: { SummitPillButton },
   props: {
-    /** One-table mode. */
     profile: { type: String, default: "" },
-    /** A function, so it's read at click time after Vuetify has rendered. One-table mode. */
+    /** A function, so it's read at click time after Vuetify has rendered. */
     target: { type: Function as PropType<() => Element | null | undefined>, default: undefined },
-    /** Multi-table mode: one printout, a page break between tables, one page setup for all. */
+    /** Replaces profile/target/prepare to print several tables as one printout. */
     parts: { type: Array as PropType<PrintButtonPart[]>, default: undefined },
-    /** Multi-table mode: where the shared page setup is remembered. */
     settingsKey: { type: String, default: "" },
     title: { type: String, default: undefined },
     subtitle: { type: String, default: undefined },
@@ -51,7 +47,7 @@ export default defineComponent({
     footer: { type: [Object, String] as PropType<PrintFooter | string>, default: undefined },
     vars: { type: Object as PropType<Record<string, string>>, default: undefined },
     label: { type: String, default: "Print / PDF" },
-    /** Prepares the table (only rendered rows print) and returns a restore function, which always runs. One-table mode. */
+    /** Prepares the table (only rendered rows print) and returns a restore function, which always runs. */
     prepare: { type: Function as PropType<() => Promise<(() => void) | void>>, default: undefined },
   },
   data() {

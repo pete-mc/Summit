@@ -9,7 +9,7 @@ const SHEET_NAME = "Overall";
 const STAGE_COLUMN_WIDTH = 5.5;
 const MEMBER_WIDTH_MIN = 12;
 const MEMBER_WIDTH_MAX = 40;
-/** Points. The rotated header row grows with its longest line. */
+/** Points. */
 const HEADER_POINTS_PER_CHAR = 6.5;
 const HEADER_MIN_HEIGHT = 48;
 

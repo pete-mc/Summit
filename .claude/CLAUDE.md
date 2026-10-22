@@ -50,6 +50,9 @@ Upstream maintainer prefers a near-zero-comment codebase. Rules:
 - Keep only gotchas/learnings (non-obvious "why", Terrain/browser quirks, cross-file sync rules), as a short header above the function or constant, prefixed `Gotcha:` or `Learning:` where it helps.
 - No history ("requested live", "previously…", "Stage N"), no restating code, no section banners, no commented-out code. History goes in commit messages / PR descriptions.
 - Tests: keep a one-line "why this test exists" note when it records a past bug.
+- Before every commit, list the comments you added (`git diff --cached -- src tests | grep -E '^\+.*(//|/\*|<!--)'`) and
+  check each against these rules. Typical slips: labelling modes or props ("One-table mode."), restating a
+  short function, option docs that just repeat the name, and words like "spike"/"Stage N" that are history.
 
 The original long-form comments (design reasoning, history, rejected approaches) were removed on 2026-10-20. They are preserved at git tag `pre-comment-cleanup` (commit `d05617b`, Summit 3.2.4 + our work). To read them: `git show pre-comment-cleanup:<path>` or `git log -p pre-comment-cleanup -- <path>`.
 

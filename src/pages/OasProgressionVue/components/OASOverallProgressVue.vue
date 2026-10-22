@@ -93,7 +93,7 @@
   user-select: none;
 }
 
-/* Like Vuetify's own sortable headers: faint arrow on hover, solid when this column is sorted. The icon always takes its space so headers don't jump. */
+/* The icon always takes its space, so headers don't jump when it appears. */
 .oas-overall-progress-sort-icon {
   display: block;
   margin: 2px auto 0;
