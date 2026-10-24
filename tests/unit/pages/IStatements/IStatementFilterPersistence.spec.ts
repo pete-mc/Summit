@@ -1,5 +1,5 @@
 import { defaultIStatementFilters, loadIStatementFilters, saveIStatementFilters } from "@/pages/IStatements/services/IStatementFilterPersistence";
-import { OAS_STREAMS } from "@/pages/OasProgression/services/buildOASProgressionRows";
+import { OAS_STREAMS } from "@/pages/OasProgress/services/buildOASProgressRows";
 
 const KEY = "summit.iStatements.filters";
 

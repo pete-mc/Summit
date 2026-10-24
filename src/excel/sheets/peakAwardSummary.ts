@@ -1,7 +1,7 @@
 import type { Cell, Image, Row } from "write-excel-file/browser";
-import type { PeakAwardBox, PeakAwardMemberRow } from "@/pages/OasProgression/services/buildPeakAwardSummaryRows";
-import type { PeakAwardRequirement } from "@/pages/OasProgression/data/peakAwardRequirements";
-import { getMemberDisplayName, type NameFormat } from "@/pages/OasProgression/services/getMemberDisplayName";
+import type { PeakAwardBox, PeakAwardMemberRow } from "@/pages/OasProgress/services/buildPeakAwardSummaryRows";
+import type { PeakAwardRequirement } from "@/pages/OasProgress/data/peakAwardRequirements";
+import { getMemberDisplayName, type NameFormat } from "@/pages/OasProgress/services/getMemberDisplayName";
 import { buildHeaderBlock, EXCEL_COLOURS, HEADER_BLOCK_ROWS, outlinedBar, type ExcelHeader, type ExcelSheet } from "../summitExcel";
 
 const CORE_SKILL_TITLES = ["Bushcraft", "Bushwalking", "Camping"];

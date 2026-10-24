@@ -27,13 +27,13 @@ closest existing implementation. If it exposes anything equivalent to a
 cross-Skill statement view, compare a sample. Treat divergence as a question to
 investigate, not automatically a bug in either tool.
 
-## 3. Regression check on OAS Progression
+## 3. Regression check on OAS Progress
 
 Stage 1 may have added `export` keywords to
-`buildOASProgressionRows.ts`, and both pages share the template cache.
+`buildOASProgressRows.ts`, and both pages share the template cache.
 
-- Open OAS Progression and confirm it is unchanged in behaviour.
-- Open I Statements first, then OAS Progression, and confirm the shared cache
+- Open OAS Progress and confirm it is unchanged in behaviour.
+- Open I Statements first, then OAS Progress, and confirm the shared cache
   causes no cross-contamination (they cache different things under different key
   prefixes, but confirm rather than assume).
 
@@ -47,7 +47,7 @@ Stage 1 may have added `export` keywords to
 
 ## 5. Documentation
 
-- **`.claude/DESIGN.md`** — add the I Statements page to the "OasProgressionVue's
+- **`.claude/DESIGN.md`** — add the I Statements page to the "OasProgressVue's
   type scale" section, noting it deliberately shares the `--oas-vue-*` scale.
   If a new colour token was added for the square, document it with the others.
 - **`.claude/I_Statement/PLAN.md`** — mark stages complete as they land, matching
@@ -59,7 +59,7 @@ Stage 1 may have added `export` keywords to
 
 One commit per stage rather than a single large one, following the repo's
 existing message style (`feat:` / `fix:` / `refactor:` / `docs:`, lower-case
-summary). The PLAN-file reorganisation into `OASProgression/` and `I_Statement/`
+summary). The PLAN-file reorganisation into `OASProgress/` and `I_Statement/`
 should be its own `docs:` commit, separate from feature work, since it touches
 unrelated files.
 

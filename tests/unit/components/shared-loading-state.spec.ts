@@ -11,9 +11,9 @@ const I_CONTENT = read("src/pages/IStatements/components/IStatementsContent.vue"
 const I_CONTENT_TS = read("src/pages/IStatements/components/IStatementsContent.ts");
 const AWARDS_CONTENT = read("src/pages/PresentAwardsVue/components/PresentAwardsVueContent.vue");
 const AWARDS_CONTENT_TS = read("src/pages/PresentAwardsVue/components/PresentAwardsVueContent.ts");
-const OAS_CONTENT = read("src/pages/OasProgressionVue/components/OasProgressionVueContent.vue");
-const OAS_CONTENT_TS = read("src/pages/OasProgressionVue/components/OasProgressionVueContent.ts");
-const OAS_PAGE = read("src/pages/OasProgressionVue/OasProgressionVue.ts");
+const OAS_CONTENT = read("src/pages/OasProgressVue/components/OasProgressVueContent.vue");
+const OAS_CONTENT_TS = read("src/pages/OasProgressVue/components/OasProgressVueContent.ts");
+const OAS_PAGE = read("src/pages/OasProgressVue/OasProgressVue.ts");
 
 /** Strips comments so assertions test what the file DOES, not what it says about itself. */
 const withoutComments = (source: string) => source.replace(/<!--[\s\S]*?-->/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
@@ -21,7 +21,7 @@ const withoutComments = (source: string) => source.replace(/<!--[\s\S]*?-->/g, "
 const PAGES: Array<[string, string, string]> = [
   ["I Statements", I_CONTENT, I_CONTENT_TS],
   ["Present Awards", AWARDS_CONTENT, AWARDS_CONTENT_TS],
-  ["OAS Progression", OAS_CONTENT, OAS_CONTENT_TS],
+  ["OAS Progress", OAS_CONTENT, OAS_CONTENT_TS],
 ];
 
 describe("SummitLoadingState — one indicator, normalised props", () => {
@@ -99,14 +99,14 @@ describe("Present Awards — the reported bug", () => {
   });
 });
 
-describe("OAS Progression — gains a progress bar and an error state", () => {
+describe("OAS Progress — gains a progress bar and an error state", () => {
   it("no longer swallows a failed load", () => {
     expect(OAS_PAGE).toContain("this.loadError = true");
     expect(OAS_CONTENT_TS).toContain("loadError");
   });
 
   it("clears in-flight streams on failure so the bar cannot stick", () => {
-    const handler = OAS_PAGE.slice(OAS_PAGE.indexOf("failed to load OAS progression data"));
+    const handler = OAS_PAGE.slice(OAS_PAGE.indexOf("failed to load OAS progress data"));
     expect(handler.slice(0, handler.indexOf("},"))).toContain("new Set<string>()");
   });
 

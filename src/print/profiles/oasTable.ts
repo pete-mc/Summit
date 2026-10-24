@@ -8,7 +8,7 @@ const oasTable: PrintProfile = {
   repeatColumns: 1,
 
   header: {
-    title: "OAS Progression - Table",
+    title: "OAS Progress - Table",
   },
 
   transform(table) {

@@ -12,15 +12,15 @@ see **Outcome** at the foot of this file.
 in Summit: a Vue SFC shell that manually mounts a React 18 root, which renders
 `components/PresentAwards.tsx` on top of the generic `src/components/DataGrid.tsx`.
 
-The OAS Progression page has since been rebuilt as a pure Vue 2.7 + Vuetify 2 page
-(`src/pages/OasProgressionVue/`), and its **Table view** (`OASProgressionTableVue`) is now the
+The OAS Progress page has since been rebuilt as a pure Vue 2.7 + Vuetify 2 page
+(`src/pages/OasProgressVue/`), and its **Table view** (`OASProgressTableVue`) is now the
 house style for a data table: a `v-data-table` with a per-column filter row, dropdown filters for
 low-cardinality columns, Clear-filters, filter-aware Excel/PDF export, and a pill-button header
 row. A second page (`src/pages/IStatements/`) has already proved the pattern is repeatable.
 
 The user wants Present Awards brought up to that same style and feature set, written against the
 new Vue standard rather than React — built as a **new replica page alongside the existing one**,
-exactly as `OasProgressionVue` was built alongside the React `OasProgression`.
+exactly as `OasProgressVue` was built alongside the React `OasProgress`.
 
 **Intended outcome:** a `/summit/tools/presentawards-vue` page that renders the same award data,
 supports the same save-to-hidden-calendar-event workflow, and gains the OAS table's filtering,
@@ -33,7 +33,7 @@ unit data.
 |---|---|
 | Interactive cells | **Vuetify native** — `v-simple-checkbox` for Present, `v-menu` + `v-date-picker` for the Presented date. No React components on the new page. |
 | Features to carry across | **All four** — per-column filter row + Clear filters, Excel + PDF export over filtered rows, Refresh button, saved filter state in localStorage. |
-| Existing React page | **Keep both.** New route + new nav entry; React page untouched. Archiving/promotion is a separate later decision, mirroring how OAS Progression was eventually promoted. |
+| Existing React page | **Keep both.** New route + new nav entry; React page untouched. Archiving/promotion is a separate later decision, mirroring how OAS Progress was eventually promoted. |
 
 ## Scope
 
@@ -128,7 +128,7 @@ filter-box toggles, group-count fix), `ec03b43` (promotion, alignment and paddin
 | `/summit/tools/presentawards-legacy` | React original | No — linked from Home under "Development tools" |
 
 The Vue page deliberately took over the **original** URL so existing bookmarks land on it, the
-same as the OAS Progression promotion (`16c4ada`). Both pages read and write the same storage
+same as the OAS Progress promotion (`16c4ada`). Both pages read and write the same storage
 event, so switching between them is safe and the legacy banner says so.
 
 ### Divergences from the React page, all deliberate
@@ -253,8 +253,8 @@ Nothing blocking. Local SVG badge artwork is done (see "Badge artwork" above and
 ## Key references
 
 - `.claude/BadgeManifest/PLAN.md` — the shared badge lookup this page's icon column reads from
-- `.claude/OASProgression/PLAN_VUE.md` — why the second Vue instance is required
-- `.claude/OASProgression/PLAN_VUESTAGE_5.md` — the Table view build, including the three CSS
+- `.claude/OASProgress/PLAN_VUE.md` — why the second Vue instance is required
+- `.claude/OASProgress/PLAN_VUESTAGE_5.md` — the Table view build, including the three CSS
   mechanics (`::v-deep`, the two 20px global overrides, the `#body.prepend` hover leak)
 - `.claude/I_Statement/PLAN_STAGE_2.md` — the "second time we did this" page recipe
 - `.claude/DESIGN.md` — the `--summit-*` tokens and the `--oas-vue-*` scale rule

@@ -22,7 +22,7 @@ hashed SVG URLs were evaluated and rejected.
 ## Display filter box
 
 "Show previously presented" and "Group by member" moved out of the header row into a `Display`
-fieldset, mirroring `OASProgressionFiltersVue`. Two reasons beyond consistency: the header row had
+fieldset, mirroring `OASProgressFiltersVue`. Two reasons beyond consistency: the header row had
 reached six buttons and was wrapping, and a checkbox shows its state directly where a toggling
 label ("Ungroup" vs "Group by Member") has to be decoded each time.
 
@@ -63,7 +63,7 @@ tables now state their cell padding explicitly.
 
 ## Promotion
 
-Follows `16c4ada`, the OAS Progression archival, exactly:
+Follows `16c4ada`, the OAS Progress archival, exactly:
 
 | Route | Page | In nav? |
 |---|---|---|

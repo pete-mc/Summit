@@ -21,12 +21,12 @@ describe("PresentAwardsVueFilterPersistence", () => {
   });
 
   it("writes under its own key, leaving the OAS page's state alone", () => {
-    window.localStorage.setItem("summit.oasProgressionVue.filters", '{"viewMode":"table"}');
+    window.localStorage.setItem("summit.oasProgressVue.filters", '{"viewMode":"table"}');
 
     savePresentAwardsVueFilters(sampleState);
 
     expect(window.localStorage.getItem(STORAGE_KEY)).not.toBeNull();
-    expect(window.localStorage.getItem("summit.oasProgressionVue.filters")).toBe('{"viewMode":"table"}');
+    expect(window.localStorage.getItem("summit.oasProgressVue.filters")).toBe('{"viewMode":"table"}');
   });
 
   it("returns null when nothing has been saved", () => {

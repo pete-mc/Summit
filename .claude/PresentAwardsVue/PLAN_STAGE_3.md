@@ -6,7 +6,7 @@ toggle.
 
 ## The filter row
 
-Port `OASProgressionTableVue.vue`'s `#body.prepend` block near-verbatim. The load-bearing finding
+Port `OASProgressTableVue.vue`'s `#body.prepend` block near-verbatim. The load-bearing finding
 from `PLAN_VUESTAGE_5.md`, which must not be re-litigated:
 
 > `header.<value>` scoped slots only customize a cell **within** the single existing header `<tr>`
@@ -30,7 +30,7 @@ Each cell is a `v-select` (when `header.filterType === "select"`) or a `v-text-f
 
 `type` gets a dropdown because `TerrainAchievementsType` has only 10 values and the displayed
 strings are already normalised by `SummitAchievement`. Derive its options from **all** loaded
-items, not the filtered set — `columnFilterOptions` in `OASProgressionTableVue.ts:82-95` explains
+items, not the filtered set — `columnFilterOptions` in `OASProgressTableVue.ts:82-95` explains
 why: picking one filter must never shrink another column's own option list.
 
 **The Presented dropdown needs its own handling.** `presented` is not a boolean like the OAS
@@ -46,7 +46,7 @@ than shipping a filter that silently returns nothing.
 
 ## The filter function
 
-`PresentAwardsTableVue.ts` exports it, mirroring `filterOASProgressionRows`:
+`PresentAwardsTableVue.ts` exports it, mirroring `filterOASProgressRows`:
 
 ```ts
 export function filterPresentAwardRows(items: SummitAchievement[], columnFilters: Record<string, string> = {}): SummitAchievement[];

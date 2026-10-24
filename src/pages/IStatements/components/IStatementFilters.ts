@@ -1,5 +1,5 @@
 import { defineComponent, type PropType } from "vue";
-import { OAS_STREAMS } from "@/pages/OasProgression/services/buildOASProgressionRows";
+import { OAS_STREAMS } from "@/pages/OasProgress/services/buildOASProgressRows";
 import { ALL_STAGES, type IStatementFilters } from "../services/filterIStatementMatrix";
 import { titleCaseSegment } from "../services/buildIStatementMatrix";
 import SummitPillButton from "@/components/SummitPillButton.vue";

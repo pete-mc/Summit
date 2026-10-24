@@ -24,7 +24,7 @@ Parent plan: [PLAN.md](PLAN.md). Builds on Stage 4 (`7ddd7a8`). Requested by the
 
 ## C. OAS Table tab (item 2), kept simple
 The user may revamp this tab, so:
-- An `oas-table` profile: title "OAS Progression - Table", A4 landscape, fit. Its transform removes the in-table filter row.
+- An `oas-table` profile: title "OAS Progress - Table", A4 landscape, fit. Its transform removes the in-table filter row.
 - `prepareForPrint` shows every row and restores paging, the same pattern as Present Awards minus the groups. The `items-per-page` literal becomes `.sync`-bound.
 - Filter line: the column filters that are set, using the table's own column names.
 - "PDF Export" is replaced by Print / PDF, and the old jsPDF handler is removed. Excel Export is unchanged.
@@ -42,7 +42,7 @@ The user may revamp this tab, so:
   - `variant="minor"`, the default: outlined in `--color-base-blue` on white.
   - `variant="major"`: filled `--color-scouts-medium-blue`, white text.
   - Colours go through v-btn's `color` prop (Vuetify accepts `var(--…)`), so Present Awards' green Save (`!important`) still overrides `major`.
-- **Replaces the four scoped `.oas-vue-pill-btn` copies:** OasProgressionVueContent, PresentAwardsVueContent, IStatementsContent and SummitPrintButton.
+- **Replaces the four scoped `.oas-vue-pill-btn` copies:** OasProgressVueContent, PresentAwardsVueContent, IStatementsContent and SummitPrintButton.
   - **Behaviour change:** the I Statements **Reset** button now actually gets the pill look. Its rule lived in the parent's scoped CSS and never reached it.
 - Guarded by `tests/unit/components/summit-pill-button.spec.ts`. DESIGN.md is updated.
 

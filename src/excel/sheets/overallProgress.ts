@@ -1,6 +1,6 @@
 import type { Cell, Image, Row } from "write-excel-file/browser";
-import type { OverallProgressRow } from "@/pages/OasProgression/services/buildOverallProgressRows";
-import type { StageProgressDisplay } from "@/pages/OasProgression/services/filterHeatMapSections";
+import type { OverallProgressRow } from "@/pages/OasProgress/services/buildOverallProgressRows";
+import type { StageProgressDisplay } from "@/pages/OasProgress/services/filterHeatMapSections";
 import { buildHeaderBlock, EXCEL_COLOURS, HEADER_BLOCK_ROWS, type ExcelHeader, type ExcelSheet } from "../summitExcel";
 
 const SHEET_NAME = "Overall";

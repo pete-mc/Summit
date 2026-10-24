@@ -3,7 +3,7 @@ import { peakAwardSummaryWidths } from "@/print/profiles/peakAwardSummary";
 import { mountSummaryTable } from "./summaryFixture";
 
 const GENERATED = new Date(2026, 9, 10, 14, 5); // 10/10/2026 02:05 pm local
-const SUMMARY_TITLE = "OAS Progression - Summary - Towards Peak Award";
+const SUMMARY_TITLE = "OAS Progress - Summary - Towards Peak Award";
 const CONTEXT_VARS = { unit: "Example Venturer Unit", group: "1st Example Group", section: "Venturer Scouts" };
 
 function parse(html: string): Document {

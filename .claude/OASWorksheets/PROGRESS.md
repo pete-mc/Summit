@@ -9,8 +9,8 @@ overview and decisions; PLAN_STAGE_1..4.md for per-stage detail.
 
 **Done** 2026-10-01. `npm test` / `npx tsc --noEmit` / `npm run build` all green.
 
-- New: `src/pages/OasProgression/services/getMemberDisplayName.ts`,
-  `src/pages/OasProgressionVue/services/buildWorksheetPages.ts`.
+- New: `src/pages/OasProgress/services/getMemberDisplayName.ts`,
+  `src/pages/OasProgressVue/services/buildWorksheetPages.ts`.
 - Extracted `getMemberDisplayName` out of `OASHeatMapVue.ts` (was a private
   `displayName` function) so the heat map and worksheet resolve codenames/hidden
   last names identically.
@@ -21,7 +21,7 @@ overview and decisions; PLAN_STAGE_1..4.md for per-stage detail.
   (a narrower shape) can reuse them directly rather than being force-fit with fake
   heat-map-only fields. A deliberate deviation from the plan's own draft code, which
   had sketched unsafe casts instead — see PLAN_STAGE_1.md §2 for why that's wrong.
-- 19 new tests in `tests/unit/pages/OasProgressionVue/services/buildWorksheetPages.spec.ts`.
+- 19 new tests in `tests/unit/pages/OasProgressVue/services/buildWorksheetPages.spec.ts`.
 
 Not yet verified live in the browser — no UI exists yet at this stage (by design).
 
@@ -30,17 +30,17 @@ Not yet verified live in the browser — no UI exists yet at this stage (by desi
 **Done** 2026-10-01, including live verification. `npm test` / `npx tsc --noEmit` /
 `npm run build` all green.
 
-- Replaced the "Show Table"/"Show Heatmap" button in `OasProgressionVueContent.vue`
+- Replaced the "Show Table"/"Show Heatmap" button in `OasProgressVueContent.vue`
   with a Vuetify `v-tabs` strip, matching Terrain's captured Programming-page tab
   styling (`grow`, `height="40"`, `color="primary"`, `background-color="grey
 lighten-5"`).
-- `OasProgressionVueContent.ts`: `onToggleViewModeClick` → `onViewModeTabChange`;
+- `OasProgressVueContent.ts`: `onToggleViewModeClick` → `onViewModeTabChange`;
   added exported `sanitiseViewMode` so a corrupted/future-version persisted
   `viewMode` falls back to `"heatmap"` instead of selecting nothing.
-- Updated `oas-progression-vue-render-contract.spec.ts`, which had source-text
+- Updated `oas-progress-vue-render-contract.spec.ts`, which had source-text
   assertions pinning the old button's exact wording from a prior stage — rewritten
   to assert the new tab contract instead of leaving stale coverage.
-- New `tests/unit/pages/OasProgressionVue/components/OasProgressionVueContent.spec.ts`
+- New `tests/unit/pages/OasProgressVue/components/OasProgressVueContent.spec.ts`
   (6 tests).
 
 ### Bug caught live, fixed same day: tab selection always landed on Table
@@ -59,7 +59,7 @@ tab's real (index-based) identity, so Vuetify's mandatory-selection logic always
 landed on the same tab regardless of which one was clicked.
 
 **Fix**: `tab-value="heatmap"` / `tab-value="table"`, with a comment above the
-`<v-tabs>` block in `OasProgressionVueContent.vue` explaining the trap so it isn't
+`<v-tabs>` block in `OasProgressVueContent.vue` explaining the trap so it isn't
 "corrected" back by someone who hasn't read Vuetify's source. Also corrected in
 PLAN_STAGE_2.md's own code sketches (which had the same mistake) and in the
 render-contract test (which was asserting the broken markup).
@@ -76,22 +76,22 @@ reload.
 pre-existing UNC smoke test) / `npx tsc --noEmit` / `npm run build` all green.
 
 - Widened `viewMode` to `"heatmap" | "table" | "worksheets"` in
-  `OASProgressionVueFilterPersistence.ts`, which also now carries six `worksheet*` filter keys,
+  `OASProgressVueFilterPersistence.ts`, which also now carries six `worksheet*` filter keys,
   independent of the heat map's own (see that file's comment for why — different jobs, shouldn't
   cross-narrow each other).
 - New: `OASWorksheetFiltersVue.vue`/`.ts` (Skills, Stage from/to, Use codenames, Hide last name,
-  Break by patrol, Hide completed, Reset) — a separate component from `OASProgressionFiltersVue`,
+  Break by patrol, Hide completed, Reset) — a separate component from `OASProgressFiltersVue`,
   not a reuse, per the plan's §3 rationale.
 - New: `OASWorksheetsVue.vue`/`.ts` — one plain `<table>` per `WorksheetPage`, with a sticky
   group-band + statement column, three-state cell rendering (empty tick-box / dated / dated+green),
   and patrol-span column headers.
-- `OasProgressionVueContent.vue`/`.ts`: third tab wired in (labelled "Worksheets"), the three-way
+- `OasProgressVueContent.vue`/`.ts`: third tab wired in (labelled "Worksheets"), the three-way
   view switch moved from `v-if`/`v-else-if` to explicit `v-if`s per the plan, Table's Excel/PDF
   export buttons now correctly gated to `viewMode === 'table'` only (not a bare `v-else`, which
   would have also caught `'worksheets'`).
 - New tests: `OASWorksheetsVue.spec.ts` (11 tests — cell-class mapping, date formatting,
   `pageSet`/`hasPages` wiring, patrol-span column alignment). Extended
-  `OasProgressionVueContent.spec.ts` and `oas-progression-vue-render-contract.spec.ts` for the
+  `OasProgressVueContent.spec.ts` and `oas-progress-vue-render-contract.spec.ts` for the
   third tab and the worksheet-specific filter keys.
 
 ### A real design gap found and fixed while implementing: "break by patrol" needed to reorder columns, not just label them
@@ -145,7 +145,7 @@ unsuitable: it rasterizes its one element to a single canvas/JPEG and slices tha
 repeating `<thead>`), and its section-break logic is hardcoded to the heat map's own CSS classes
 (`.oas-heatmap-skill-title-row` etc). A bitmap also can't honour `display: table-header-group`.
 
-**Built instead**: `src/pages/OasProgressionVue/services/printWorksheets.ts` — opens the
+**Built instead**: `src/pages/OasProgressVue/services/printWorksheets.ts` — opens the
 Worksheets view's already-rendered `<table class="oas-worksheet-page">` elements (cloned via
 `outerHTML`, not rebuilt from data a second time) in a brand-new window with a small
 self-contained print stylesheet, then calls `print()` there. A `printed` guard stops both the
@@ -162,14 +162,14 @@ squeezed — flagged, never silently clipped. If a real large unit needs this, i
 
 ### What shipped
 
-- `OASProgressionVueFilterPersistence.ts`: added `worksheetOrientation: "portrait" | "landscape"`
+- `OASProgressVueFilterPersistence.ts`: added `worksheetOrientation: "portrait" | "landscape"`
   (default `"landscape"`). No `worksheetMembersPerSheet` key — that was only for the
   not-implemented splitting.
 - `OASWorksheetFiltersVue` gained a "Print orientation" select.
 - `OASWorksheetsVue`: `pageExceedsColumnLimit()` (exported, independently tested),
   `hasOverflowingPages` computed, the warning banner, and `printCurrentPages()` (reads the live
   DOM's rendered tables, hands them to `printWorksheets`).
-- `OasProgressionVueContent.vue`/`.ts`: a "Print" button on the Worksheets tab
+- `OasProgressVueContent.vue`/`.ts`: a "Print" button on the Worksheets tab
   (`onWorksheetPrintClick`), calling the child via `ref="worksheets"` — same pattern as the heat
   map's own `ref="heatMap"` / `getExportTable()`. Shows feedback if the popup was blocked.
 - New tests: `printWorksheets.spec.ts` (6 — popup-blocked handling, written markup, orientation,
@@ -291,7 +291,7 @@ is the pre-existing UNC smoke test) / `npx tsc --noEmit` / `npm run build` all g
   constants (usable width, `MAX_FITTING_MEMBER_COLUMNS` for Layout A, transposed column width and
   font-size bounds for Layout B) — both the component and `printWorksheets.ts`'s margin now read
   from this instead of two independently-chosen numbers.
-- **`OASProgressionVueFilterPersistence.ts`**: `worksheetOrientation` removed entirely, replaced by
+- **`OASProgressVueFilterPersistence.ts`**: `worksheetOrientation` removed entirely, replaced by
   `worksheetLayout: "membersAsColumns" | "membersAsRows"`. Printing is unconditionally landscape now
   (`buildPrintStylesheet()` takes no parameter) — portrait was dropped per the user's direction.
 - **`OASWorksheetFiltersVue`**: the orientation select replaced by a "Layout" select.
@@ -384,7 +384,7 @@ and ask me" / "let me know before fixing" instructions:
 
 Before the user's screenshot, the "let me know before fixing" gap item was diagnosed (wrongly) as
 a sticky-offset mismatch from an unconstrained title cell. The user's actual screenshot (a
-3-member unit, Terrain's live OAS Progression Worksheets tab) showed something different: a large
+3-member unit, Terrain's live OAS Progress Worksheets tab) showed something different: a large
 blank horizontal band between the I-Statement text and the member columns, which sat pushed to the
 far right of the browser window — not misaligned content, empty space.
 

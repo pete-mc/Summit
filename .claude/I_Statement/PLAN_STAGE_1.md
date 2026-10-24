@@ -9,9 +9,9 @@ New file: `src/pages/IStatements/services/buildIStatementMatrix.ts`
 
 ## 1. Reuse, don't duplicate
 
-The OAS Progression page already solved several of these problems. **Import
+The OAS Progress page already solved several of these problems. **Import
 these rather than rewriting**, from
-[`buildOASProgressionRows.ts`](../../src/pages/OasProgression/services/buildOASProgressionRows.ts):
+[`buildOASProgressRows.ts`](../../src/pages/OasProgress/services/buildOASProgressRows.ts):
 
 Export status verified 2026-09-24 by reading the file:
 
@@ -28,7 +28,7 @@ it (rather than writing a parallel fetcher) is what gives both pages one shared
 warm cache.
 
 Adding those two `export` keywords is the only permitted change to that file —
-no behaviour changes to the OAS Progression page.
+no behaviour changes to the OAS Progress page.
 
 ⚠️ The `checkbox` input `logbook_up_to_date` ("My logbook is up to date at the
 end of this stage.") appears in the *Verify* group of essentially **every**
@@ -38,7 +38,7 @@ rule is to exclude inputs whose `type` is not `verifiable_checkbox`. Confirm
 against several real templates before hardcoding that — `flattenOASTemplate`
 currently filters only on `id === "file_uploader"`, so this page needs its own
 additional filter. Do **not** change `flattenOASTemplate` itself; the OAS
-Progression page depends on its current behaviour.
+Progress page depends on its current behaviour.
 
 ## 2. Normalisation (agreed: normalised label text)
 
@@ -108,19 +108,19 @@ Steps:
    Report progress **after the trees resolve** so the total is known and the bar
    is genuinely determinate.
 3. Fetch all templates. **Bound the concurrency** — do not fire ~180 simultaneous
-   `fetch`es at Terrain. `fetchOASProgressionForStream` (line 310) uses
+   `fetch`es at Terrain. `fetchOASProgressForStream` (line 310) uses
    `Promise.all` over one stream's stages, which is fine at that scale, but here
    it would be all nine Skills at once.
 
    Copy the worker-pool idiom already in this file at
-   `fetchAllOASProgression` (line 316) — a shared `queue` array with N `worker()`
+   `fetchAllOASProgress` (line 316) — a shared `queue` array with N `worker()`
    loops doing `queue.shift()`, awaited via `Promise.all`. Same pattern, but
    queueing template links instead of streams, and calling `onProgress` as each
    completes. Suggest 6–8 workers.
 4. For each template, flatten to I-statements, filter out non-`verifiable_checkbox`
    inputs (see §1), normalise each label, and accumulate into the row map.
 5. Build `groups` from the tuples actually seen, sorted by Skill (in
-   `OAS_STREAMS` order, not alphabetical — it matches the OAS Progression page's
+   `OAS_STREAMS` order, not alphabetical — it matches the OAS Progress page's
    ordering) then by branch alphabetically, with the trunk branch
    (`branch === skill`) sorted first within a Skill.
 6. Sort rows. **Default order: by number of cells descending** (most-reused

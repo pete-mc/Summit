@@ -45,7 +45,7 @@ unsaved ticks immediately — and a stored-but-unticked award correctly counts a
 
 ## One layout consequence
 
-Six buttons is more than the shared `.oas-progression-view-row` was built for, so the row now
+Six buttons is more than the shared `.oas-progress-view-row` was built for, so the row now
 wraps (`flex-wrap: wrap` plus a `--summit-space-sm` gap) rather than overflowing on a narrow
 window. If it ever feels cramped, collapsing Excel/PDF into a single export menu is the next move.
 

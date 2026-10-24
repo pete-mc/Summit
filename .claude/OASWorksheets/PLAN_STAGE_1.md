@@ -4,16 +4,16 @@
 
 No UI in this stage. Pure functions only, fully unit-testable without a browser.
 
-New file: `src/pages/OasProgressionVue/services/buildWorksheetPages.ts`
-New file: `tests/unit/pages/OasProgressionVue/buildWorksheetPages.spec.ts`
+New file: `src/pages/OasProgressVue/services/buildWorksheetPages.ts`
+New file: `tests/unit/pages/OasProgressVue/buildWorksheetPages.spec.ts`
 
 ## 1. No new fetching — the data is already loaded
 
 Verified 2026-10-01 by reading
-[`buildOASProgressionRows.ts`](../../src/pages/OasProgression/services/buildOASProgressionRows.ts):
-`OASProgressionRow` (line 15) already carries every field a worksheet page needs.
+[`buildOASProgressRows.ts`](../../src/pages/OasProgress/services/buildOASProgressRows.ts):
+`OASProgressRow` (line 15) already carries every field a worksheet page needs.
 
-| Worksheet element | `OASProgressionRow` field | Note |
+| Worksheet element | `OASProgressRow` field | Note |
 | ----------------- | ------------------------- | ---- |
 | Page's Skill | `stream` | Terrain's field name for what the UI calls **Skill**. |
 | Page's Stream | `branch` | Terrain's `branch`; the UI calls this **Stream**. Equals `stream` on the trunk. |
@@ -34,19 +34,19 @@ So this stage imports types and reuses existing helpers. It fetches nothing.
 ## 2. Reuse, don't duplicate
 
 `displayName(memberName, memberId, hideLastName, useCodenames)` already exists at
-[`OASHeatMapVue.ts:64`](../../src/pages/OasProgressionVue/components/OASHeatMapVue.ts#L64)
+[`OASHeatMapVue.ts:64`](../../src/pages/OasProgressVue/components/OASHeatMapVue.ts#L64)
 but is **module-private**. The worksheet needs identical behaviour — the same member
 must get the same codename on the heat map and on the worksheet, or the two views
 contradict each other.
 
 **Extract it** to a new shared service
-`src/pages/OasProgression/services/getMemberDisplayName.ts`, and have
+`src/pages/OasProgress/services/getMemberDisplayName.ts`, and have
 `OASHeatMapVue.ts` import it rather than keeping its own copy. It is four lines; the
 point is that there is one of them. `getCodename` already lives in that folder, so
 this is where its caller belongs too.
 
 Also reuse, all already exported from
-[`filterHeatMapSections.ts`](../../src/pages/OasProgression/services/filterHeatMapSections.ts):
+[`filterHeatMapSections.ts`](../../src/pages/OasProgress/services/filterHeatMapSections.ts):
 
 | Symbol | Line | Use |
 | ------ | ---- | --- |
@@ -152,7 +152,7 @@ export interface BuildWorksheetPagesOptions {
 }
 
 export function buildWorksheetPages(
-  rows: OASProgressionRow[],
+  rows: OASProgressRow[],
   options: BuildWorksheetPagesOptions,
 ): WorksheetPageSet;
 ```
@@ -170,7 +170,7 @@ Steps, in this order — the order matters:
 4. Group the surviving rows into pages by `(stream, branch, stage)` — i.e. by
    `(skill, stream, stage)` in UI terms.
 5. Within a page, group by `inputGroup`, preserving **template order, not alphabetical**.
-   `fetchOASProgressionForStage` already returns rows sorted by the template's own
+   `fetchOASProgressForStage` already returns rows sorted by the template's own
    `sortIndex` (line 294–295), so first-seen order is the template's order. Sorting
    the group titles would put `Do` before `Plan`. **Emit no group that has no rows.**
 6. Within a group, one `WorksheetRow` per distinct `inputId`, cells in `members` order.
@@ -280,7 +280,7 @@ nothing left to check off on that sheet. The service's job is only to carry the
 
 ## 6. Tests
 
-`tests/unit/pages/OasProgressionVue/buildWorksheetPages.spec.ts`. Hand-written
+`tests/unit/pages/OasProgressVue/buildWorksheetPages.spec.ts`. Hand-written
 fixtures, small — not captured real data. Cover:
 
 - One page per `(skill, stream, stage)`; a stream fixture (Bushcraft trunk stages 1–3

@@ -26,7 +26,7 @@ const skillHeatmap: PrintProfile = {
 
   // No "Section" line: the logo and unit name already say it.
   header: {
-    title: "OAS Progression - Heatmap",
+    title: "OAS Progress - Heatmap",
   },
 
   copyComputed: [

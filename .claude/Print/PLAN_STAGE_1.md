@@ -50,9 +50,9 @@ Parent plan: [PLAN.md](PLAN.md). Source being ported: `resources/Print module/oa
 - The dialog's Portrait/Landscape `v-btn-toggle` rendered as dark rounded pills on Terrain, so it's replaced with a radio row. The selects now use `hide-details` to remove the empty gaps.
 - Logos resized to fit 10 cm × 10 cm at 300 dpi (see PLAN.md "Section logos").
 - The header no longer has the Section line or Sort by.
-- The Summary title is now "OAS Progression - Summary for Peak Award".
+- The Summary title is now "OAS Progress - Summary for Peak Award".
 
-## Live checks for the user (Edge, hard refresh on the OAS Progression page)
+## Live checks for the user (Edge, hard refresh on the OAS Progress page)
 
 1. Click **Print / PDF** on the Summary tab, choose A4 landscape, and click Continue. Does the print preview appear with styled output?
    - If an error snackbar mentions "print styles were blocked", Terrain's CSP is the cause, and the print-frame fallback gets added.

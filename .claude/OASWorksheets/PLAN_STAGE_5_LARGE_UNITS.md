@@ -157,7 +157,7 @@ against the new rendered heights, not re-derived from the old numbers. This is e
 worksheetLayout: "membersAsColumns" | "membersAsRows";
 ```
 
-Remove `worksheetOrientation` from `OASProgressionVueFilterState` entirely, and the orientation
+Remove `worksheetOrientation` from `OASProgressVueFilterState` entirely, and the orientation
 `v-select` from `OASWorksheetFiltersVue`. Replace with a `worksheetLayout` toggle (a `v-select` or
 a small `v-btn-toggle`, matching whichever reads more clearly as "layout" rather than "filter" —
 decide at build time, not load-bearing either way). Default to `membersAsColumns` (today's

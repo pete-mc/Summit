@@ -1,9 +1,9 @@
 import { unzipSync, strFromU8 } from "fflate";
 import { boxCells, buildPeakAwardSummarySheet, type PeakAwardSummarySheetInput } from "@/excel/sheets/peakAwardSummary";
 import { EXCEL_COLOURS, HEADER_BLOCK_ROWS, workbookToBlob } from "@/excel/summitExcel";
-import { PEAK_AWARD_REQUIREMENTS } from "@/pages/OasProgression/data/peakAwardRequirements";
+import { PEAK_AWARD_REQUIREMENTS } from "@/pages/OasProgress/data/peakAwardRequirements";
 import { TerrainAchievementsSection } from "@/shared";
-import type { PeakAwardBox, PeakAwardMemberRow } from "@/pages/OasProgression/services/buildPeakAwardSummaryRows";
+import type { PeakAwardBox, PeakAwardMemberRow } from "@/pages/OasProgress/services/buildPeakAwardSummaryRows";
 
 const VENTURER = PEAK_AWARD_REQUIREMENTS[TerrainAchievementsSection.Venturer]; // 5 core, 12 progressions, special 4
 const SCOUT = PEAK_AWARD_REQUIREMENTS[TerrainAchievementsSection.Scout]; // 5 core, 10 progressions, no special
@@ -44,7 +44,7 @@ function memberRow(id: string, first: string, last: string, core: [number, numbe
   };
 }
 
-const HEADER = { title: "OAS Progression - Summary - Towards Peak Award", subtitle: "Sample Group · Sample Unit", metaLine: "Generated: 12/10/2026" };
+const HEADER = { title: "OAS Progress - Summary - Towards Peak Award", subtitle: "Sample Group · Sample Unit", metaLine: "Generated: 12/10/2026" };
 
 function input(overrides: Partial<PeakAwardSummarySheetInput> = {}): PeakAwardSummarySheetInput {
   return {

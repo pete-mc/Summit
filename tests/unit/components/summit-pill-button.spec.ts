@@ -37,7 +37,7 @@ describe("SummitPillButton", () => {
   });
 
   it("is used by every page's toolbar pill buttons", () => {
-    expect(read("src/pages/OasProgressionVue/components/OasProgressionVueContent.vue")).toContain("<SummitPillButton");
+    expect(read("src/pages/OasProgressVue/components/OasProgressVueContent.vue")).toContain("<SummitPillButton");
     expect(read("src/pages/PresentAwardsVue/components/PresentAwardsVueContent.vue")).toContain('<SummitPillButton variant="major" class="present-awards-save-btn"');
     expect(read("src/pages/IStatements/components/IStatementFilters.vue")).toContain("<SummitPillButton");
     expect(read("src/components/SummitPrintButton.vue")).toContain("<SummitPillButton");

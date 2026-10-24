@@ -18,7 +18,7 @@ Parent plan: [PLAN.md](PLAN.md). Started 2026-10-12, after the user approved the
 - **`src/excel/sheets/peakAwardSummary.ts`:** builds the Summary sheet from `filteredPeakAwardSummaryRows`, the same rows and order as the screen.
   - Box counts come from the section's `PeakAwardRequirement`.
   - % is the screen's truncated whole percent, stored as a number formatted `0%`.
-- **`OasProgressionVueContent`:** an "Excel Export" pill beside Print / PDF on the Summary tab.
+- **`OasProgressVueContent`:** an "Excel Export" pill beside Print / PDF on the Summary tab.
   - Shown only when the section is known, since there's no table otherwise.
   - Shows a spinner while exporting; reports success or failure in the existing feedback line.
 - **`summitPrint.ts`:** `resolveHeaderFooter` takes `HeaderFooterOptions` (the print options without `source`), so it can be used without a table. No behaviour change.
@@ -36,7 +36,7 @@ Parent plan: [PLAN.md](PLAN.md). Started 2026-10-12, after the user approved the
 
 ## Live check (user)
 
-1. Hard-refresh onto OAS Progression → Summary. Click **Excel Export**. The file should download as `Summit - OAS Progression - Summary - {your unit} - {today}.xlsx`.
+1. Hard-refresh onto OAS Progress → Summary. Click **Excel Export**. The file should download as `Summit - OAS Progress - Summary - {your unit} - {today}.xlsx`.
 2. **Logo present?** This is the one thing the tests can't prove: fetching the logo from the extension inside Terrain's page. If it's missing, DevTools shows a `[summitExcel] Section logo left out…` warning; send me that line.
 3. The rows match the screen, including after changing the Member/Patrol filters and the sort. The meta line lists the filters.
 4. Open the file in Excel desktop, Excel online and Google Sheets.

@@ -48,7 +48,7 @@ describe("buildMultiPartDocument", () => {
     const sections = Array.from(doc.querySelectorAll<HTMLElement>("section.summit-print-part"));
 
     expect(sections.map((s) => s.dataset.summitPrintPart)).toEqual(["1", "2"]);
-    expect(sections.map((s) => s.querySelector("h1")?.textContent)).toEqual(["OAS Progression - Summary - Towards Peak Award", "OAS Progression - Summary - Overall"]);
+    expect(sections.map((s) => s.querySelector("h1")?.textContent)).toEqual(["OAS Progress - Summary - Towards Peak Award", "OAS Progress - Summary - Overall"]);
     expect(sections.map((s) => s.querySelector(".summit-print-subtitle")?.textContent)).toEqual(["1st Example Group · Example Venturer Unit", "1st Example Group · Example Venturer Unit"]);
     expect(sections[0].querySelector("table.summit-print-profile-peak-award-summary")).not.toBeNull();
     expect(sections[1].querySelector("table.summit-print-profile-overall-progress")).not.toBeNull();
@@ -62,8 +62,8 @@ describe("buildMultiPartDocument", () => {
     expect(sections.map((s) => s.getAttribute("style"))).toEqual(["page: summit-part-1", "page: summit-part-2"]);
     expect(html).toMatch(/@page \{\s*size: 297mm 210mm;/);
     expect(html.match(/[^-]size: \d+mm/g)).toHaveLength(1);
-    expect(html).toMatch(/@page summit-part-1 \{[^}]*@bottom-left \{\s*content: "OAS Progression - Summary - Towards Peak Award · Example Venturer Unit"/);
-    expect(html).toMatch(/@page summit-part-2 \{[^}]*@bottom-left \{\s*content: "OAS Progression - Summary - Overall · Example Venturer Unit"/);
+    expect(html).toMatch(/@page summit-part-1 \{[^}]*@bottom-left \{\s*content: "OAS Progress - Summary - Towards Peak Award · Example Venturer Unit"/);
+    expect(html).toMatch(/@page summit-part-2 \{[^}]*@bottom-left \{\s*content: "OAS Progress - Summary - Overall · Example Venturer Unit"/);
     expect(html).toContain('content: "Page " counter(page) " of " counter(pages)');
   });
 
@@ -147,8 +147,8 @@ describe("layoutParts (widths stubbed — jsdom has no layout engine)", () => {
     const { doc } = layOut();
     const firstBand = doc.querySelector('[data-summit-print-part="2"] .summit-print-band');
 
-    expect(firstBand?.querySelector(".summit-print-header h1")?.textContent).toBe("OAS Progression - Summary - Overall");
-    expect(doc.querySelector('[data-summit-print-part="1"] .summit-print-header h1')?.textContent).toBe("OAS Progression - Summary - Towards Peak Award");
+    expect(firstBand?.querySelector(".summit-print-header h1")?.textContent).toBe("OAS Progress - Summary - Overall");
+    expect(doc.querySelector('[data-summit-print-part="1"] .summit-print-header h1')?.textContent).toBe("OAS Progress - Summary - Towards Peak Award");
   });
 
   it("gives the band pages the part's own left/right footers as well as the part number", () => {
@@ -157,7 +157,7 @@ describe("layoutParts (widths stubbed — jsdom has no layout engine)", () => {
       .map((s) => s.textContent)
       .join("\n");
 
-    expect(bandCss).toMatch(/@page summit-part-2-band-1 \{[^]*?@bottom-left \{\s*content: "OAS Progression - Summary - Overall · Example Venturer Unit"/);
+    expect(bandCss).toMatch(/@page summit-part-2-band-1 \{[^]*?@bottom-left \{\s*content: "OAS Progress - Summary - Overall · Example Venturer Unit"/);
     expect(bandCss).toMatch(/@page summit-part-2-band-1 \{[^]*?counter\(page\)/);
   });
 });

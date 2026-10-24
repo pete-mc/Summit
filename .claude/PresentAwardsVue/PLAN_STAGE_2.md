@@ -3,7 +3,7 @@
 **Goal:** the Vue page can tick awards as presented, adjust the presentation date, and write back
 to the storage event. Feature parity with the React page, minus filters/export.
 
-This is the stage with genuinely new ground: both prior Vue pages (`OasProgressionVue`,
+This is the stage with genuinely new ground: both prior Vue pages (`OasProgressVue`,
 `IStatements`) are **read-only**. Nothing in the codebase yet shows an editable `v-data-table`.
 
 ## The state-ownership problem
@@ -35,7 +35,7 @@ test stay untouched.
 
 > Vue 2 gotcha: a bare `Set` prop must be declared
 > `type: null as unknown as PropType<Set<string>>`, or Vue 2's constructor check logs a spurious
-> invalid-prop warning (see `OasProgressionVueContent.ts:71`). Also, Vue 2 does **not** make `Set`
+> invalid-prop warning (see `OasProgressVueContent.ts:71`). Also, Vue 2 does **not** make `Set`
 > contents reactive — reassign a new `Set` on every change rather than calling `.add()`/`.delete()`
 > on the existing one, or the table will not re-render.
 >

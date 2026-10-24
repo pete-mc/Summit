@@ -2,8 +2,8 @@ import { loadPrintSettings, savePrintSettings } from "@/print/printSettings";
 import { existsSync } from "fs";
 import { resolve } from "path";
 import { getSectionLabel, getSectionLogoFile, getSectionLogoUrl, SECTION_KEYS } from "@/print/sectionLogo";
-import { buildSummaryPrintMeta, describePatrols } from "@/pages/OasProgressionVue/services/oasPrintMeta";
-import type { OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
+import { buildSummaryPrintMeta, describePatrols } from "@/pages/OasProgressVue/services/oasPrintMeta";
+import type { OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
 
 describe("printSettings", () => {
   beforeEach(() => window.localStorage.clear());
@@ -59,7 +59,7 @@ describe("sectionLogo", () => {
 });
 
 describe("Summary print meta", () => {
-  const base = { summaryMemberFilter: "", summarySelectedPatrols: null, summarySortBy: "progress" } as unknown as OASProgressionVueFilterState;
+  const base = { summaryMemberFilter: "", summarySelectedPatrols: null, summarySortBy: "progress" } as unknown as OASProgressVueFilterState;
 
   it("describes patrol selections", () => {
     expect(describePatrols(null, ["Kookaburra", "Possum"])).toBe("All");

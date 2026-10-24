@@ -1,4 +1,4 @@
-# Plan: Formatted Excel export (`summit-excel`), starting with OAS Progression → Summary
+# Plan: Formatted Excel export (`summit-excel`), starting with OAS Progress → Summary
 
 Status: **Stages 0 and 1 done (2026-10-12). Stage 2 (Heatmap) done (2026-10-13). Stage 3 (Present Awards) done (2026-10-13).** See [PLAN_STAGE_3.md](PLAN_STAGE_3.md). See [PLAN_STAGE_0.md](PLAN_STAGE_0.md), [PLAN_STAGE_1.md](PLAN_STAGE_1.md) and [PLAN_STAGE_2.md](PLAN_STAGE_2.md).
 
@@ -28,7 +28,7 @@ Status: **Stages 0 and 1 done (2026-10-12). Stage 2 (Heatmap) done (2026-10-13).
 | 9 | Rows | **What's on screen:** current filters and order, same rule as the printout. |
 | 10 | Excel features | **Freeze header rows + Member column.** No filter dropdowns, no in-file print setup. |
 | 11 | Button | **Separate "Excel Export" pill** beside Print / PDF. |
-| 12 | File name | `Summit - OAS Progression - Summary - {Unit} - {yyyymmdd}.xlsx`. Characters Windows forbids in file names (`\ / : * ? " < > \|`) in the unit name become `-`. |
+| 12 | File name | `Summit - OAS Progress - Summary - {Unit} - {yyyymmdd}.xlsx`. Characters Windows forbids in file names (`\ / : * ? " < > \|`) in the unit name become `-`. |
 | 13 | Apps to verify in | **Excel desktop, Excel online, Google Sheets.** |
 
 ### Confirmed after Stage 1 (user, 2026-10-12)

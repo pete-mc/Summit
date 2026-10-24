@@ -46,9 +46,9 @@ already introduced for save feedback. One feedback element, shared.
 </v-btn>
 ```
 
-Rightmost in the header row, matching `OasProgressionVueContent.vue:13`.
+Rightmost in the header row, matching `OasProgressVueContent.vue:13`.
 
-It re-runs `loadPresentedAwards()`. **No cache to clear** — unlike OAS Progression, this page has
+It re-runs `loadPresentedAwards()`. **No cache to clear** — unlike OAS Progress, this page has
 no `OASTemplateCache` involvement; every fetch is live. So `onReloadClick` is simply the Stage 1
 load path again, guarded by `isReloading`.
 
@@ -60,7 +60,7 @@ button labelled "Refresh" is the kind of thing that costs a leader an evening's 
 ## Filter persistence
 
 **`services/PresentAwardsVueFilterPersistence.ts`** — mirror
-`OASProgressionVueFilterPersistence.ts` exactly:
+`OASProgressVueFilterPersistence.ts` exactly:
 
 ```ts
 const STORAGE_KEY = "summit.presentAwardsVue.filters";

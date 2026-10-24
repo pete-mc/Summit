@@ -9,7 +9,7 @@ import { TerrainRootState } from "@/types/terrainState";
 
 const logger = createLogger("PresentAwardsVue");
 
-/** Gotcha: content mounts as a second Vue instance, because Terrain's Vue has no Vuetify components (see OasProgressionVue.ts). */
+/** Gotcha: content mounts as a second Vue instance, because Terrain's Vue has no Vuetify components (see OasProgressVue.ts). */
 interface ContentInstance {
   items: SummitAchievement[];
   loadState: string;

@@ -92,7 +92,7 @@ state, not render state, and the content component never needs to see it.
 ## 1c. Content root
 
 **`components/PresentAwardsVueContent.vue`** — `<v-app>` wrapping a `.oas-vue-content` div that
-**redeclares the same three custom properties** as `OasProgressionVueContent.vue`:
+**redeclares the same three custom properties** as `OasProgressVueContent.vue`:
 
 ```css
 .oas-vue-content {
@@ -109,7 +109,7 @@ Per `DESIGN.md`, this duplication is deliberate and mandated — do **not** inve
 Also copy the `.oas-vue-pill-btn.v-btn` block verbatim (it is duplicated in both existing content
 SFCs — that is the established pattern, not an oversight to fix here).
 
-Stage 1 content is just a header row placeholder (`.oas-progression-view-row` with a
+Stage 1 content is just a header row placeholder (`.oas-progress-view-row` with a
 `<v-spacer>`), a loading line, and the table.
 
 ## 1d. Naive table

@@ -20,7 +20,7 @@ const peakAwardSummary: PrintProfile = {
 
   // No "Section" line: the logo and unit name already say it.
   header: {
-    title: "OAS Progression - Summary - Towards Peak Award",
+    title: "OAS Progress - Summary - Towards Peak Award",
   },
 
   columnWidths: peakAwardSummaryWidths,

@@ -17,7 +17,7 @@ Parent plan: [PLAN.md](PLAN.md). Questions answered by the user 2026-10-12.
   - `OASHeatMapVue.getExportView()`; squares carry a `state`, and `stateClass` is derived from it, with the same class names as before.
   - `src/excel/sheets/skillHeatmap.ts`.
   - The Heatmap Excel Export button.
-  - `runExcelExport` in `OasProgressionVueContent`, shared by Summary and Heatmap.
+  - `runExcelExport` in `OasProgressVueContent`, shared by Summary and Heatmap.
 - **Choices made in building (to confirm):**
   - **Spacer columns:** a narrow blank column before each stage, standing in for the screen's cell padding. Without it, neighbouring stages' squares run together.
   - **Continuous bars:** no white gaps inside a bar, so a bar reads differently from a row of squares.
@@ -44,7 +44,7 @@ Parent plan: [PLAN.md](PLAN.md). Questions answered by the user 2026-10-12.
 | 11 | Title rows | Section titles grey and bold; patrol rows lighter grey; in the member layout, the member's patrol follows their name. All as on screen. |
 | 12 | Header | Header block, logo and filter line use the printout's Heatmap wording (`skill-heatmap` profile + `heatmapPrintMeta`). The title block, table header and first column are frozen. |
 | 13 | Button | **Excel Export** beside Print / PDF. |
-| 14 | File name | `Summit - OAS Progression - Heatmap - {Unit} - yyyymmdd.xlsx` |
+| 14 | File name | `Summit - OAS Progress - Heatmap - {Unit} - yyyymmdd.xlsx` |
 
 ## Technical approach (proposal)
 

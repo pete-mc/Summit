@@ -2,7 +2,7 @@
 
 # PLAN.md — OAS Worksheets
 
-A third view on the OAS Progression page: a printable per-Stage/per-Skill checkoff
+A third view on the OAS Progress page: a printable per-Stage/per-Skill checkoff
 sheet a leader takes to an activity and fills in by hand.
 
 ## What it is for
@@ -70,7 +70,7 @@ re-open them during implementation without asking.
 
 In:
 
-- A third view on the existing OAS Progression page, reached by a Vuetify `v-tabs`
+- A third view on the existing OAS Progress page, reached by a Vuetify `v-tabs`
   control replacing the current "Show Table"/"Show Heatmap" button.
 - Filters: Skills, Stage from, Stage to (a subset of the heat map's own row).
 - Display options: Use codenames, Hide last name, Break by patrol, Hide completed.
@@ -78,7 +78,7 @@ In:
 
 Out, unless asked for later:
 
-- Any new Terrain fetching. `OASProgressionRow` already carries every field the
+- Any new Terrain fetching. `OASProgressRow` already carries every field the
   worksheet needs (see Stage 1) — this is a new view over data the page has loaded.
 - Editing. The worksheet is read-only on screen; it is filled in on paper.
 - Excel export. The reference is an xlsx, but the deliverable is something to print.
@@ -88,7 +88,7 @@ Out, unless asked for later:
 
 | Stage | File | What |
 | ----- | ---- | ---- |
-| 1 | [PLAN_STAGE_1.md](PLAN_STAGE_1.md) | Data layer — pure functions turning `OASProgressionRow[]` into worksheet pages. No UI. |
+| 1 | [PLAN_STAGE_1.md](PLAN_STAGE_1.md) | Data layer — pure functions turning `OASProgressRow[]` into worksheet pages. No UI. |
 | 2 | [PLAN_STAGE_2.md](PLAN_STAGE_2.md) | The `v-tabs` view switcher, replacing the Show Table / Show Heatmap button. |
 | 3 | [PLAN_STAGE_3.md](PLAN_STAGE_3.md) | The worksheet component — filters, display options, on-screen rendering. |
 | 4 | [PLAN_STAGE_4.md](PLAN_STAGE_4.md) | Print/PDF: page breaks, repeated headers, column fitting. |
@@ -124,7 +124,7 @@ Each stage carries its own verification section. Across the feature:
 
 - `npm test` passes, including new specs.
 - `npm run build` succeeds; load `dist/` unpacked in Edge and check the real page.
-- **Hard-refresh directly onto `/summit/reports/oasprogression`**, not just by
+- **Hard-refresh directly onto `/summit/reports/oasprogress`**, not just by
   navigating from Summit home — Summit's content-script CSS loses cascade ties, so
   those two paths can render differently (DESIGN.md).
 - Print preview is the real test for Stage 4; tests cannot cover pagination.

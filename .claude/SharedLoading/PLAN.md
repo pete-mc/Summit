@@ -20,7 +20,7 @@ them was right. This table describes the state *before* the fix.
 | ---- | -------------------- | ------------ | ------------ |
 | **I Statements** | `loadState`: `loading-trees` / `loading-templates` / `ready` / `error` | ✅ indeterminate, then determinate with a running count | ✅ message + Retry |
 | **Present Awards** | `loadState`: `loading` / `ready` / `error` — **tracked correctly, barely used** | ❌ | ❌ text only, no retry |
-| **OAS Progression** | `loadingStreams: Set<string>` — a countdown, not a state | ❌ | ❌ **none at all** |
+| **OAS Progress** | `loadingStreams: Set<string>` — a countdown, not a state | ❌ | ❌ **none at all** |
 
 ### The Present Awards bug is not "no spinner"
 
@@ -34,10 +34,10 @@ That reads as *"there are no awards"*, not *"still loading"* — which is why th
 "takes a moment" in a way worth reporting. The information was already in the
 component; nothing displayed it.
 
-### OAS Progression failed silently
+### OAS Progress failed silently
 
-`loadOasProgressionData()`'s catch block in
-[OasProgressionVue.ts](../../src/pages/OasProgressionVue/OasProgressionVue.ts) only called
+`loadOasProgressData()`'s catch block in
+[OasProgressVue.ts](../../src/pages/OasProgressVue/OasProgressVue.ts) only called
 `logger.error`. There was no error flag on the component, so a failure left a permanently
 empty heat map with no message on screen. Fixing that was in scope because "all should be
 the same style" cannot be true while one page has no error state to style.
@@ -86,15 +86,15 @@ strictly better than a shared class, which is what the `.oas-vue-filter-panel` e
   Unambiguous: an empty table never masquerades as a loaded one. This is what
   I Statements already does.
   > **Revised while building.** This holds for a *first* load only. Both Present Awards
-  > and OAS Progression gate on `hasContent` instead, because each re-runs its load with
+  > and OAS Progress gate on `hasContent` instead, because each re-runs its load with
   > content already on screen — see "Found while building" below. I Statements, which has
   > no such path, works exactly as written here.
-- **OAS Progression gets a determinate bar and a real error state.** It already counts
+- **OAS Progress gets a determinate bar and a real error state.** It already counts
   9 streams down, so the running count comes almost free.
 
 ## What must not regress
 
-- **OAS Progression's per-stream reload.** `reloadStream` re-adds one stream to
+- **OAS Progress's per-stream reload.** `reloadStream` re-adds one stream to
   `loadingStreams` mid-session. That must keep working and must NOT blank the whole
   page — only a first load has nothing to show. Treat "first load" as
   `items.length === 0`.
@@ -110,12 +110,12 @@ strictly better than a shared class, which is what the `.oas-vue-filter-panel` e
 | 1 | `SummitLoadingState.vue` + unit tests | ✅ 22 tests |
 | 2 | I Statements onto it (behaviour-neutral — proves the component covers the reference case) | ✅ |
 | 3 | Present Awards: gate body, add bar + error/retry | ✅ |
-| 4 | OAS Progression: `loadError` flag, determinate bar, error state | ✅ |
+| 4 | OAS Progress: `loadError` flag, determinate bar, error state | ✅ |
 | 5 | Live verification | ✅ confirmed working in browser 2026-09-29 |
 
 ## Found while building
 
-**OAS Progression should NOT hide its body, unlike the other two.** The plan said all three
+**OAS Progress should NOT hide its body, unlike the other two.** The plan said all three
 would. Building it showed that is wrong for this page: streams arrive one at a time and the
 heat map renders each as it lands, so hiding everything until all nine finish makes the page
 feel *slower*, and a per-stream reload would blank a full screen to refresh one skill. The bar
@@ -137,7 +137,7 @@ feedback outside it: only a genuine first load has nothing to show, and a backgr
 already reported by the Save and refresh buttons' own spinners.
 
 That makes `hasContent` the shared idea across all three pages, arrived at twice for different
-reasons — OAS Progression for incremental streams, Present Awards for the save round-trip.
+reasons — OAS Progress for incremental streams, Present Awards for the save round-trip.
 
 **Jest cannot import `.vue`, and the alias made it worse.** The project convention is a
 `jest.mock(..., { virtual: true })` stub per `.vue` import, documented in
@@ -153,8 +153,8 @@ Verified in the browser by the developer; reported working.
 - [x] Present Awards on a slow load shows a bar, not an empty table.
 - [x] Present Awards saving does **not** blank the table — the `hasContent` gate, and the one
       thing most likely to have been a regression.
-- [x] OAS Progression shows a running count as the 9 streams land.
-- [x] OAS Progression per-stream reload does **not** blank the page.
+- [x] OAS Progress shows a running count as the 9 streams land.
+- [x] OAS Progress per-stream reload does **not** blank the page.
 - [x] I Statements looks unchanged — same two phases, same counts.
 - [x] All three bars are the same height, colour and position relative to the header row.
 

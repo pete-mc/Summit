@@ -9,14 +9,14 @@ built with — so new work stays visually consistent with both.
 ## Summit is now built on Vue 2.7 + Vuetify 2 — new UI work should use it
 
 **New pages should be Vue 2.7 + Vuetify 2 components**, following the pattern in
-`src/pages/OasProgressionVue/`, `src/pages/PresentAwardsVue/`, and
+`src/pages/OasProgressVue/`, `src/pages/PresentAwardsVue/`, and
 `src/pages/IStatements/`. This is a deliberate shift, not a stray experiment: the
-Vuetify build of OAS Progression proved out well enough (see
-`.claude/OASProgression/PLAN_VUE.md`) that it replaced the original React page as the
+Vuetify build of OAS Progress proved out well enough (see
+`.claude/OASProgress/PLAN_VUE.md`) that it replaced the original React page as the
 one linked from Summit's nav menu — see `src/router/SummitRouter.ts`, where
-`/summit/reports/oasprogression` and `/summit/tools/PresentAwards` route to the Vue
-components. OAS Progression's React original has since been deleted outright (its
-shared, non-UI service layer survives under `src/pages/OasProgression/services/`,
+`/summit/reports/oasprogress` and `/summit/tools/PresentAwards` route to the Vue
+components. OAS Progress's React original has since been deleted outright (its
+shared, non-UI service layer survives under `src/pages/OasProgress/services/`,
 still imported by the Vue page and I Statements — only the React components/route were
 removed). Present Awards' React original went the same way on 2026-10-12: its page and
 `-legacy` route were deleted, while its model and storage service survive under
@@ -26,7 +26,7 @@ React (18.2) is **not** gone — it's still live and routed for pages that haven
 rebuilt: `Home`, `MilestoneReport`, `OasReport`, `PeakAward`, `Topo`,
 `SummitCalendar`, `DisplayOptions` (see `src/pages/` and `SummitRouter.ts`). Keep
 maintaining these in React; don't rewrite a page to Vue just because this file says
-Vue is now the default — that's a decision worth its own plan (as OAS Progression's
+Vue is now the default — that's a decision worth its own plan (as OAS Progress's
 was), not an incidental side effect of an unrelated change.
 
 **So, for new work:** building a new page or materially reworking an existing one →
@@ -90,7 +90,7 @@ purple `#7d6694` to yellow `#ecb206`, and complete from pale green `#b3c9b3` to 
 brand green via `var(--summit-color-bg-primary)`. The old values are still in
 `index.css` as comments. The OAS heat map, the Summary tab, I Statements and their
 printouts all follow these tokens, so changing a colour here changes all of them. There is a fourth state class, `.oas-heatmap-square-hidden` (the OAS
-Progression page's "Hide answered" filter), which correctly has **no** token: it sets
+Progress page's "Hide answered" filter), which correctly has **no** token: it sets
 `visibility: hidden` and clears the border so the square holds its slot while showing
 nothing. Note that `.oas-heatmap-square` carries the border independently of the state
 classes, so any future "invisible" state must clear `border-color` too — setting only a
@@ -112,22 +112,22 @@ These apply to the still-active React pages (`Home`, `MilestoneReport`, `OasRepo
 - Reusable pieces live in `src/components/`; page-level views live in
   `src/pages/<FeatureName>/`. Feature-specific styling still goes in the shared
   `index.css`, namespaced with a feature prefix (see `oas-*` classes for the OAS
-  Progression heat-map) rather than a per-feature stylesheet.
+  Progress heat-map) rather than a per-feature stylesheet.
 - Naming convention for new classes: `<feature>-<element>[-<modifier>]`, e.g.
   `oas-heatmap-square-awarded`, `calendar-legend-swatch`. Keep this when adding
   classes for a new feature area.
 
 ## The `--oas-vue-*` type scale (Vuetify pages)
 
-`src/pages/OasProgressionVue/` was the first page built on real Vuetify 2 components
-(see `.claude/OASProgression/PLAN_VUE.md`), evaluating whether Vuetify was worth
+`src/pages/OasProgressVue/` was the first page built on real Vuetify 2 components
+(see `.claude/OASProgress/PLAN_VUE.md`), evaluating whether Vuetify was worth
 adopting more broadly — it was, and Vuetify is now the default for new pages (see
-above). `OasProgressionVue` became the primary OAS Progression page (route
-`/summit/reports/oasprogression`); the original React version has since been deleted
+above). `OasProgressVue` became the primary OAS Progress page (route
+`/summit/reports/oasprogress`); the original React version has since been deleted
 outright, as Present Awards' later was too — see the top of this file. It does not use Summit's
 `--summit-*` tokens; it has its own small type scale, defined once as CSS custom
 properties on `.oas-vue-content` in
-[`OasProgressionVueContent.vue`](../src/pages/OasProgressionVue/components/OasProgressionVueContent.vue):
+[`OasProgressVueContent.vue`](../src/pages/OasProgressVue/components/OasProgressVueContent.vue):
 
 ```css
 --oas-vue-font-size-heading: 18px;   /* filter labels: Member, Skills, Display, etc. */
@@ -136,7 +136,7 @@ properties on `.oas-vue-content` in
 ```
 
 Custom properties inherit through the DOM regardless of Vue's scoped-CSS component
-boundaries, so `OASProgressionFiltersVue.vue`, `OASProgressionTableVue.vue`, and
+boundaries, so `OASProgressFiltersVue.vue`, `OASProgressTableVue.vue`, and
 `OASHeatMapVue.vue` all reference these (`var(--oas-vue-font-size-body)`, etc.)
 instead of each hardcoding its own copy of a pixel value.
 
@@ -318,17 +318,17 @@ itself (Vuetify typically exposes theme colors as `--v-primary-base` etc.).
 
 This was the `.claude/DEV_NOTES.md` entry:
 
-> Filter area doesn't have same space below it, as per OAS Progression, Present Awards etc. This
+> Filter area doesn't have same space below it, as per OAS Progress, Present Awards etc. This
 > layout should be standard for every page we make.
 
 The duplication was the cause, and it failed in both directions at once:
 
-- OAS Progression declared the class with `gap: 12px`, Present Awards with `gap: 8px` — two
+- OAS Progress declared the class with `gap: 12px`, Present Awards with `gap: 8px` — two
   copies, free to drift, and drifted.
 - **I Statements declared it nowhere at all.** The class was on its markup, looked load-bearing,
   and did nothing. Nothing flagged this, because a class that matches no rule is not an error.
 - `.istatement-panel` and `.present-awards-panel` were dead the same way — written on their pages'
-  root elements, defined nowhere. Only `.oas-progression-panel` existed.
+  root elements, defined nowhere. Only `.oas-progress-panel` existed.
 
 None of the copies set space *below* the panel, so the gap before the table came from whatever
 the next element happened to bring. The shared rule sets `margin-bottom` explicitly.
@@ -338,7 +338,7 @@ the next element happened to bring. The shared rule sets `margin-bottom` explici
 Awards overrides `.oas-heatmap-controls`, because it has one checkbox group rather than a full
 filter row) stays local and says why in a comment.
 
-Guarded by `tests/unit/components/istatement-matches-oas-progression.spec.ts`, which fails if any
+Guarded by `tests/unit/components/istatement-matches-oas-progress.spec.ts`, which fails if any
 page redeclares the class.
 
 ## A shared *component* beats a shared *class*
@@ -361,7 +361,7 @@ So:
   → `index.css`, declared once, per the section above.
 
 Pages still differ in *when* they show a shared component. The three Vue pages all use
-`SummitLoadingState`, but OAS Progression shows it alongside partial content while the other two
+`SummitLoadingState`, but OAS Progress shows it alongside partial content while the other two
 replace their body with it — its nine skills stream in one at a time, so hiding everything until
 all nine land would feel slower. That is a real behavioural difference, argued in
 `.claude/SharedLoading/PLAN.md`, not drift. Consistency means the same component and the same
@@ -397,7 +397,7 @@ changing the value will appear to fix it in one navigation path and not the othe
 
 The fix is to state the rule yourself, scoped to your component and reaching through
 `::v-deep` where it targets Vuetify-rendered elements, so the layout no longer depends
-on which stylesheet won. Both `PresentAwardsTableVue.vue` and `OASProgressionTableVue.vue`
+on which stylesheet won. Both `PresentAwardsTableVue.vue` and `OASProgressTableVue.vue`
 now restate their cell padding this way.
 
 ## Sticky table cells need an opaque background *stated*, not inherited
@@ -462,7 +462,7 @@ unreliable. `jsPDF` survives **only** behind the React `DataGrid.tsx`; don't use
   `copyComputed`.
 - Remove screen-only parts (filter rows, buttons, tick boxes) in `transform`.
 - **Header conventions (user decisions):**
-  - title "Page - View", e.g. "OAS Progression - Heatmap";
+  - title "Page - View", e.g. "OAS Progress - Heatmap";
   - subtitle `{group} · {unit}`;
   - the section logo;
   - no Section line;
@@ -517,8 +517,8 @@ This section keeps a record of decisions this file used to document differently,
 anyone cross-referencing old commits/plans against current guidance. Nothing here is
 current advice.
 
-- **"Summit does NOT use a component library."** Until the OAS Progression Vuetify
-  rebuild (`.claude/OASProgression/PLAN_VUE.md`), this file said Summit was plain
+- **"Summit does NOT use a component library."** Until the OAS Progress Vuetify
+  rebuild (`.claude/OASProgress/PLAN_VUE.md`), this file said Summit was plain
   React with hand-written CSS and explicitly argued against adopting Vuetify. That
   rebuild proved out well enough that Vuetify became the default for new pages — see
   the top of this file for current guidance. The original reasoning (Summit has its

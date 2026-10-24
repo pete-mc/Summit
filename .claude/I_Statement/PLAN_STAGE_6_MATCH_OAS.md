@@ -1,19 +1,19 @@
-# PLAN_STAGE_6_MATCH_OAS.md — match OAS Progression's layout, style and table structure
+# PLAN_STAGE_6_MATCH_OAS.md — match OAS Progress's layout, style and table structure
 
 **Status:** stages 1–4 built 2026-09-29, 13 tests passing, build clean. **Stage 5 (live
 verification) outstanding** — sticky behaviour on both axes cannot be unit tested.
 
 Addresses:
 
-> - match layout, style and spacing of OAS progression page.
-> - Make sure table structure and style is using same elements as the OAS progression page.
+> - match layout, style and spacing of OAS progress page.
+> - Make sure table structure and style is using same elements as the OAS progress page.
 
 ## Why the two pages drifted
 
-I Statements was built alongside the OAS Progression *React* page and copied its markup:
+I Statements was built alongside the OAS Progress *React* page and copied its markup:
 a hand-written `<table class="oas-heatmap-table">` with a green `.oas-heatmap-thead`.
 
-OAS Progression Vue then moved on. It now renders through `v-data-table` with Terrain's own
+OAS Progress Vue then moved on. It now renders through `v-data-table` with Terrain's own
 frame, and deliberately dropped the green header (see `SPIKE_HEATMAP_DATATABLE.md` and the
 comment in `OASHeatMapVue.vue`) — Terrain does not style table headers at all.
 
@@ -36,18 +36,18 @@ independently, and one page having no copy at all is how I Statements ended up u
 The shared rule also sets the space *below* the panel, which no page set. That is the DEV_NOTES
 entry itself:
 
-> Filter area doesn't have same space below it, as per OAS Progression, Present Awards etc. This
+> Filter area doesn't have same space below it, as per OAS Progress, Present Awards etc. This
 > layout should be standard for every page we make.
 
-Present Awards used `gap: 8px` and OAS Progression `gap: 12px`. Standardising on **12px** — OAS
-Progression is the page being matched to, and it is the one with a full filter row where the
+Present Awards used `gap: 8px` and OAS Progress `gap: 12px`. Standardising on **12px** — OAS
+Progress is the page being matched to, and it is the one with a full filter row where the
 tighter value looked cramped.
 
 One deliberate exception stays per-page: `.oas-heatmap-controls` on Present Awards drops the
 bordered card look, because that page has a single checkbox group rather than a full filter row.
 That is a real difference, not drift, so it stays local.
 
-### 2. Table structure — `v-data-table`, same as OAS Progression
+### 2. Table structure — `v-data-table`, same as OAS Progress
 
 The ask is explicitly "same elements". `IStatementHeatMap` becomes a `v-data-table` configured
 exactly as `OASHeatMapVue` is:
@@ -97,13 +97,13 @@ need an explicit opaque background — `--color-white` to match the frame, not t
 1. ✅ `.oas-vue-filter-panel` into `index.css`; both per-page copies removed.
 2. ✅ `IStatementHeatMap` onto `v-data-table` with hand-written header/body slots.
 3. ✅ Green header dropped; sticky cells given explicit opaque backgrounds.
-4. ✅ 13 render-contract tests in `istatement-matches-oas-progression.spec.ts`.
+4. ✅ 13 render-contract tests in `istatement-matches-oas-progress.spec.ts`.
 5. ⬜ **Live verification** — see below.
 
 ### Two things found while building that the plan did not anticipate
 
 **The dead page-level classes.** `.istatement-panel` and `.present-awards-panel` were written on
-their pages' root elements and defined nowhere — only `.oas-progression-panel` existed. They
+their pages' root elements and defined nowhere — only `.oas-progress-panel` existed. They
 looked load-bearing and did nothing, which is a second instance of the same failure as the filter
 panel, and nothing flags it: a class matching no rule is not an error. All three now share one
 rule in `index.css`.
@@ -127,5 +127,5 @@ Worth checking in the browser:
       specificity trap above would have broken.
 - [ ] Zebra striping reaches the frozen first column, rather than leaving it a solid block.
 - [ ] Group-start borders still separate the ~20 stream blocks.
-- [ ] Filter panel spacing matches OAS Progression and Present Awards side by side — the point
+- [ ] Filter panel spacing matches OAS Progress and Present Awards side by side — the point
       of the whole exercise.

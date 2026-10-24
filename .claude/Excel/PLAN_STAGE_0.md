@@ -20,7 +20,7 @@ Parent plan: [PLAN.md](PLAN.md). Started 2026-10-12.
 2. **Size: small.** The library's own minified browser bundle, including fflate, is **71 KB**. For comparison, `xlsx` is 251 KB (mini) to 882 KB (full).
 3. **Apps: waiting on the user** (Excel desktop, Excel online, Google Sheets).
 4. **Build: works.**
-   - A temporary import in `OasProgressionVueContent.ts` compiled through webpack (only the existing react-datepicker warning) and landed in `dist/scripts/summit.js`.
+   - A temporary import in `OasProgressVueContent.ts` compiled through webpack (only the existing react-datepicker warning) and landed in `dist/scripts/summit.js`.
    - The import was then removed and `dist/` rebuilt clean.
    - TypeScript types resolve with the repo's `moduleResolution: node`, and Jest runs the library (via its `require` build).
 

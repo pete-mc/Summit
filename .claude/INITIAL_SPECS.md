@@ -210,7 +210,7 @@ per statement, etc.
 
 ## GUI
 
-### OAS Progression
+### OAS Progress
 
 Something that gives the leader a 'heat map' view of their Units progress through the OAS's.
 Refer to attached sketch @"P:\Dev\personal\terrain_summit\resources\GUI sketch heatmap.jpeg"

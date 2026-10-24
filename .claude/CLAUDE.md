@@ -3,7 +3,7 @@
 This is a project to expand the capability of Summit, an extension used with the Scouts Australia Terrain site. It's a TS browser extension; new UI work is built with Vue 2.7 + Vuetify 2 (matching Terrain's own stack), with a shrinking set of still-active React 18.2 pages not yet rebuilt. See `.claude/DESIGN.md` for which pages are which and why.
 
 The user should be prompted to describe what they want, in a chat or through a specification md file.
-Coding agent firms up requirements via collaborative dialog, writes PLAN.md or multiple PLAN_STAGE_X.md files for each stage or component. Plans are grouped per feature in a subfolder under `.claude/` (e.g. `.claude/OASProgression/`, `.claude/I_Statement/`).
+Coding agent firms up requirements via collaborative dialog, writes PLAN.md or multiple PLAN_STAGE_X.md files for each stage or component. Plans are grouped per feature in a subfolder under `.claude/` (e.g. `.claude/OASProgress/`, `.claude/I_Statement/`).
 Coding agent then writes code against plan.
 You can update these instructions based on the specific project.
 

@@ -131,7 +131,7 @@ Two options, in order of preference:
 1. **Print only the worksheet, by rendering it to its own document** — reuse
    `exportElementToPdf` from [`gridExport.ts`](../../src/components/gridExport.ts), which
    the heat map already uses for its PDF export (`onPdfExportClick`,
-   `OasProgressionVueContent.ts:154`). It takes an element and produces a PDF from it
+   `OasProgressVueContent.ts:154`). It takes an element and produces a PDF from it
    alone, so Terrain's chrome never enters the picture. **This is the recommended path**
    — it sidesteps the cascade problem entirely rather than fighting it.
 2. Browser print with `@media print` rules hiding Terrain's chrome, using `!important`
@@ -147,7 +147,7 @@ rasterises or clips, option 2 becomes the path and the chrome-hiding work is rea
 
 Add a worksheet-specific button to the existing export row, following the per-view
 pattern already there (`v-if="filters.viewMode === 'heatmap'"` at
-`OasProgressionVueContent.vue:9`):
+`OasProgressVueContent.vue:9`):
 
 ```vue
 <v-btn v-if="filters.viewMode === 'worksheets'" outlined color="primary"
@@ -155,7 +155,7 @@ pattern already there (`v-if="filters.viewMode === 'heatmap'"` at
 ```
 
 Keep `.oas-vue-pill-btn` — it matches Terrain's own bordered pill button, measured from
-the live site (see its comment in `OasProgressionVueContent.vue`). Reuse the existing
+the live site (see its comment in `OasProgressVueContent.vue`). Reuse the existing
 `exportFeedback` mechanism for success/failure messaging rather than adding a second one.
 
 No Excel export. The reference is an xlsx, but the deliverable is paper (PLAN.md scope).

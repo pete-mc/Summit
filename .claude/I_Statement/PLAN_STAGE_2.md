@@ -8,7 +8,7 @@ this stage hardcodes "all 9 Skills, stages 1–9".
 
 ## Files
 
-Mirror the `OasProgressionVue` structure exactly — each component is a `.vue`
+Mirror the `OasProgressVue` structure exactly — each component is a `.vue`
 template plus a sibling `.ts` referenced via `<script lang="ts" src="./X.ts">`:
 
 ```
@@ -18,17 +18,17 @@ src/pages/IStatements/
     IStatementsContent.vue   + IStatementsContent.ts     <- owns state, defines the type scale
 ```
 
-Read [`OasProgressionVue.ts`](../../src/pages/OasProgressionVue/OasProgressionVue.ts)
-and [`OasProgressionVueContent.ts`](../../src/pages/OasProgressionVue/components/OasProgressionVueContent.ts)
+Read [`OasProgressVue.ts`](../../src/pages/OasProgressVue/OasProgressVue.ts)
+and [`OasProgressVueContent.ts`](../../src/pages/OasProgressVue/components/OasProgressVueContent.ts)
 first and follow whatever they do for mounting the second Vue instance and
-Vuetify — **do not** invent a different mounting approach. `.claude/OASProgression/PLAN_VUE.md`
+Vuetify — **do not** invent a different mounting approach. `.claude/OASProgress/PLAN_VUE.md`
 explains why a second Vue instance is required; that reasoning applies here
 unchanged.
 
 ## Type scale
 
 `IStatementsContent.vue` defines the same custom properties on its root element
-that `OasProgressionVueContent.vue` does:
+that `OasProgressVueContent.vue` does:
 
 ```css
 --oas-vue-font-size-heading: 18px;
@@ -47,9 +47,9 @@ inherit through scoped-CSS boundaries.
 In [`SummitRouter.ts`](../../src/router/SummitRouter.ts):
 
 - `this.router.addRoute({ path: "/summit/reports/istatements", component: IStatements })`,
-  placed next to the `oasprogression` route.
+  placed next to the `oasprogress` route.
 - A nav item `{ title: "I Statements", to: "/summit/reports/istatements", items: [], locked: false, roles: [true, false] }`
-  in the `Reports` group in `initNavMenu()`, directly after "OAS Progression".
+  in the `Reports` group in `initNavMenu()`, directly after "OAS Progress".
 
 Also export the page from `src/pages/index.ts` alongside the others.
 
@@ -77,7 +77,7 @@ useful.
 ## Caching note
 
 Because templates share the `template.<link>` cache keys with the OAS
-Progression page, a user who has already opened that page will see a much faster
+Progress page, a user who has already opened that page will see a much faster
 first load here. Conversely this page warms the cache for that one. Worth a
 one-line comment in the service; don't build a separate cache.
 

@@ -5,7 +5,7 @@
 ## Purpose
 
 A new Summit page showing **every Skill+Stream combination that relates to each
-I-statement**. Where the OAS Progression page answers *"how far has each member
+I-statement**. Where the OAS Progress page answers *"how far has each member
 got?"*, this page answers *"where does this I-statement appear across the whole
 OAS framework?"* — it is **member-independent**: no unit, member, patrol or
 achievement data is involved at all.
@@ -28,7 +28,7 @@ uses another. This plan always writes the **UI** name first.
 | **I-statement**     | `input.label`       | "I can explain the 'buddy' system." |
 
 Nine Skills exist, already listed in
-[`buildOASProgressionRows.ts`](../../src/pages/OasProgression/services/buildOASProgressionRows.ts):
+[`buildOASProgressRows.ts`](../../src/pages/OasProgress/services/buildOASProgressRows.ts):
 `bushcraft, bushwalking, camping, aquatics, boating, paddling, alpine, cycling,
 vertical`.
 
@@ -47,7 +47,7 @@ still modelled as a Skill+Stream pair where Stream == Skill.
   that stage doesn't exist for that combination.
 - **Cell** — a **purple square** if that I-statement appears in that
   Skill+Stream at that Stage; empty otherwise.
-- Heat-map visual style matches the OAS Progression page.
+- Heat-map visual style matches the OAS Progress page.
 
 ## Filters (agreed)
 
@@ -60,12 +60,12 @@ still modelled as a Skill+Stream pair where Stream == Skill.
    - hide empty **I-statement rows**
 
 All filters **persist** across visits, mirroring
-[`OASProgressionVueFilterPersistence.ts`](../../src/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence.ts).
+[`OASProgressVueFilterPersistence.ts`](../../src/pages/OasProgressVue/services/OASProgressVueFilterPersistence.ts).
 
 ## Data sourcing (agreed)
 
 Fetch **all 9 Skills' trees and every template they reference**, cached. This is
-the complete-picture option. Templates are shared with the OAS Progression page
+the complete-picture option. Templates are shared with the OAS Progress page
 via the existing `template.<templateLink>` cache keys in
 [`OASTemplateCache.ts`](../../src/helpers/OASTemplateCache.ts) (1-day TTL), so a
 warm cache from either page benefits the other.
@@ -75,9 +75,9 @@ First load shows a **determinate progress bar with a running count**
 
 ## Technology
 
-Vue + Vuetify 2, following `src/pages/OasProgressionVue/` exactly — the
+Vue + Vuetify 2, following `src/pages/OasProgressVue/` exactly — the
 `.vue` + separate `.ts` file pairing, the `--oas-vue-*` type scale, the second
-Vue instance pattern. See `.claude/OASProgression/PLAN_VUE.md` for why that
+Vue instance pattern. See `.claude/OASProgress/PLAN_VUE.md` for why that
 architecture exists, and `.claude/DESIGN.md` for the styling rules.
 
 ## Stages
@@ -89,7 +89,7 @@ architecture exists, and `.claude/DESIGN.md` for the styling rules.
 | 3 | [PLAN_STAGE_3.md](PLAN_STAGE_3.md) | The heat-map table itself — grouped headers, purple squares. | Complete |
 | 4 | [PLAN_STAGE_4.md](PLAN_STAGE_4.md) | Filters + persistence + hide-empty logic. | Complete |
 | 5 | [PLAN_STAGE_5.md](PLAN_STAGE_5.md) | Verification in the live browser, and docs. | Docs done; merge audit outstanding |
-| 6 | [PLAN_STAGE_6_MATCH_OAS.md](PLAN_STAGE_6_MATCH_OAS.md) | Match OAS Progression's layout, spacing and table elements — `v-data-table`, green header dropped, shared filter-panel class. | Built; live verification outstanding |
+| 6 | [PLAN_STAGE_6_MATCH_OAS.md](PLAN_STAGE_6_MATCH_OAS.md) | Match OAS Progress's layout, spacing and table elements — `v-data-table`, green header dropped, shared filter-panel class. | Built; live verification outstanding |
 
 ## Decisions that changed during implementation
 
@@ -121,7 +121,7 @@ Each stage is independently buildable and verifiable. Stage 1 has no UI; stages
 ## Out of scope (explicitly)
 
 - Member/unit/achievement data, progress, or per-member anything.
-- PDF/Excel export — the OAS Progression page has these; **not** requested here.
+- PDF/Excel export — the OAS Progress page has these; **not** requested here.
   Left out deliberately rather than forgotten; easy to add later since the
   table is a plain `<table>` like the existing one.
 - Rendering `dialog_text` (the unused verifier-guidance field — see the separate

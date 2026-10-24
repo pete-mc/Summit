@@ -2,10 +2,10 @@ import { unzipSync, strFromU8 } from "fflate";
 import { buildOverallProgressSheet, stageText, type OverallProgressSheetInput } from "@/excel/sheets/overallProgress";
 import { buildPeakAwardSummarySheet } from "@/excel/sheets/peakAwardSummary";
 import { HEADER_BLOCK_ROWS, workbookToBlob } from "@/excel/summitExcel";
-import { PEAK_AWARD_REQUIREMENTS } from "@/pages/OasProgression/data/peakAwardRequirements";
+import { PEAK_AWARD_REQUIREMENTS } from "@/pages/OasProgress/data/peakAwardRequirements";
 import { TerrainAchievementsSection } from "@/shared";
 
-const HEADER = { title: "OAS Progression - Summary - Overall", subtitle: "Sample Group · Sample Unit", metaLine: "Generated: 21/10/2026" };
+const HEADER = { title: "OAS Progress - Summary - Overall", subtitle: "Sample Group · Sample Unit", metaLine: "Generated: 21/10/2026" };
 
 function input(overrides: Partial<OverallProgressSheetInput> = {}): OverallProgressSheetInput {
   return {
@@ -96,7 +96,7 @@ describe("workbookToBlob with both Summary sheets", () => {
       requirement: PEAK_AWARD_REQUIREMENTS[TerrainAchievementsSection.Scout],
       nameFormat: "full",
       specialConditionText: "",
-      header: { ...HEADER, title: "OAS Progression - Summary - Towards Peak Award" },
+      header: { ...HEADER, title: "OAS Progress - Summary - Towards Peak Award" },
       logo: null,
     });
 

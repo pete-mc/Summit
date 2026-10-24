@@ -11,7 +11,7 @@ Parent plan: [PLAN.md](PLAN.md). Builds on Stage 1 (`c815fb7`).
    - **"Answered" hidden (I7):** `.oas-heatmap-square-hidden` stays invisible in print.
    - **Not-started bars:** their border is copied as well as their fill.
 2. Header:
-   - Title "OAS Progression - Heatmap", following the user's Summary title pattern.
+   - Title "OAS Progress - Heatmap", following the user's Summary title pattern.
    - No Section line, no sort order (user, 2026-10-10).
 3. The filters line (`buildHeatmapPrintMeta`) shows only what changes *who or what* is shown, and only when it isn't the default "everything":
    - Member: contains "…", when set.

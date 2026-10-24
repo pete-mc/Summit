@@ -1,9 +1,9 @@
 import { buildIStatementMatrix, normaliseIStatement, titleCaseSegment } from "@/pages/IStatements/services/buildIStatementMatrix";
-import { getCachedOASTemplate, getCachedOASTree } from "@/pages/OasProgression/services/buildOASProgressionRows";
+import { getCachedOASTemplate, getCachedOASTree } from "@/pages/OasProgress/services/buildOASProgressRows";
 import type { OASTemplate, OASTree } from "@/types/terrainTypes";
 
-jest.mock("@/pages/OasProgression/services/buildOASProgressionRows", () => {
-  const actual = jest.requireActual("@/pages/OasProgression/services/buildOASProgressionRows");
+jest.mock("@/pages/OasProgress/services/buildOASProgressRows", () => {
+  const actual = jest.requireActual("@/pages/OasProgress/services/buildOASProgressRows");
   return { ...actual, getCachedOASTree: jest.fn(), getCachedOASTemplate: jest.fn() };
 });
 

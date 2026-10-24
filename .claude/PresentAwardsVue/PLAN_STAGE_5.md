@@ -5,8 +5,8 @@ with tests.
 
 ## The three CSS mechanics — copy, don't rediscover
 
-All three are documented at length in `.claude/OASProgression/PLAN_VUESTAGE_5.md` and implemented
-in `OASProgressionTableVue.vue`'s `<style scoped>` block. Port that block essentially verbatim.
+All three are documented at length in `.claude/OASProgress/PLAN_VUESTAGE_5.md` and implemented
+in `OASProgressTableVue.vue`'s `<style scoped>` block. Port that block essentially verbatim.
 Each cost real debugging time; none should be re-derived.
 
 **1. `::v-deep` is mandatory for anything Vuetify renders.** Vue 2's scoped CSS stamps its
@@ -76,7 +76,7 @@ functions directly:
 
 - `tests/unit/pages/PresentAwardsVue/services/PresentAwardsVueFilterPersistence.spec.ts` —
   round-trip, corrupt JSON, missing key, localStorage throwing. Model on the existing
-  `tests/unit/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence.spec.ts`.
+  `tests/unit/pages/OasProgressVue/services/OASProgressVueFilterPersistence.spec.ts`.
 - `tests/unit/pages/PresentAwardsVue/filterPresentAwardRows.spec.ts` — empty filters return
   everything; filters AND; case-insensitive; and specifically the **Presented Yes/No special
   case** from Stage 3, which is the one piece of filter logic that is not shared substring
@@ -90,14 +90,14 @@ functions directly:
   looking wrong.
 
 **Source-text contract tests** — `fs.readFileSync` + `expect(source).toContain(...)`, following
-`tests/unit/components/oas-progression-table-vue-render-contract.spec.ts`:
+`tests/unit/components/oas-progress-table-vue-render-contract.spec.ts`:
 
 - `tests/unit/components/present-awards-table-vue-render-contract.spec.ts` — asserts the
   `#body.prepend` slot is used (not `header.<value>`), that `v-simple-checkbox` and `v-date-picker`
   are present, that `:close-on-content-click="false"` is set on the menu, and that `::v-deep`
   appears wherever a Vuetify-internal class is targeted.
 - `tests/unit/router/summit-router-presentawards-vue-route.spec.ts` — route path and nav entry
-  registered, following the existing `summit-router-oasprogression-vue-route.spec.ts`.
+  registered, following the existing `summit-router-oasprogress-vue-route.spec.ts`.
 
 ## Live verification
 
@@ -123,5 +123,5 @@ hid every scoped style in the project.
 Append a short "Outcome" section to `PLAN.md` recording what shipped, anything that diverged from
 plan, and the open question of whether the Vue page should eventually take over the
 `/summit/tools/PresentAwards` route with the React page archived to `-legacy` — the same promotion
-OAS Progression went through. That decision stays with the user after they have compared the two
+OAS Progress went through. That decision stays with the user after they have compared the two
 side by side.

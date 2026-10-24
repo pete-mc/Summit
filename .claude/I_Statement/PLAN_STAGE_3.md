@@ -25,7 +25,7 @@ A two-row `<thead>` giving the grouped columns:
   `groups.length × 9` cells, each either empty or containing the purple square
   `<div>`.
 
-Follow [`OASHeatMapVue.vue`](../../src/pages/OasProgressionVue/components/OASHeatMapVue.vue)
+Follow [`OASHeatMapVue.vue`](../../src/pages/OasProgressVue/components/OASHeatMapVue.vue)
 for the wrapper/scroll/table class pattern (`.oas-heatmap-scroll` etc.) and its
 scoped-style approach of pinning `font-size`/`font-family` to the shared scale.
 

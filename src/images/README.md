@@ -54,7 +54,7 @@ After a refresh:
 
 1. `git diff --stat src/images/terrain` shows which artwork Terrain changed, added or removed.
 2. `npm test -- badgeManifest`. It fails if a manifest row points at a file that no longer exists.
-3. Rebuild, reload the unpacked extension and check Present Awards and OAS Progression.
+3. Rebuild, reload the unpacked extension and check Present Awards and OAS Progress.
 
 ### Adding a new Terrain award
 

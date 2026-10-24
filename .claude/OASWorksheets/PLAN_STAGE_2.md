@@ -86,7 +86,7 @@ is needed).
 
 ## 2. Where it goes
 
-[`OasProgressionVueContent.vue`](../../src/pages/OasProgressionVue/components/OasProgressionVueContent.vue).
+[`OasProgressVueContent.vue`](../../src/pages/OasProgressVue/components/OasProgressVueContent.vue).
 Currently line 14 holds the toggle button:
 
 ```vue
@@ -94,7 +94,7 @@ Currently line 14 holds the toggle button:
 ```
 
 Replace it. The tab strip is a **full-width row of its own, below the export/refresh
-row**, not another item inside `.oas-progression-view-row` — a 40px grow tab bar does
+row**, not another item inside `.oas-progress-view-row` — a 40px grow tab bar does
 not belong in a right-aligned button row.
 
 Layout after this stage:
@@ -113,7 +113,7 @@ extends for the worksheet.
 ## 3. State — reuse `viewMode`, don't add a parallel index
 
 `filters.viewMode` already exists and is already persisted (see
-[`OASProgressionVueFilterPersistence.ts`](../../src/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence.ts)),
+[`OASProgressVueFilterPersistence.ts`](../../src/pages/OasProgressVue/services/OASProgressVueFilterPersistence.ts)),
 typed `"heatmap" | "table"`. Stage 3 widens it to include `"worksheets"`.
 
 `v-tabs`'s `v-model` is a **numeric index** by default, which would mean a second source
@@ -138,7 +138,7 @@ attributes on top of it — duplicating what Vuetify already emits is how those 
 
 ## 5. Tests
 
-Extend `tests/unit/pages/OasProgressionVue/` with a spec on the content component, or
+Extend `tests/unit/pages/OasProgressVue/` with a spec on the content component, or
 add to its existing one if present. Jest cannot parse an SFC, so a `.vue` import in a
 component under test needs a `jest.mock(..., { virtual: true })` stub — see the top of
 `tests/unit/pages/PresentAwardsVue/PresentAwardsVueContent.spec.ts` (noted in
@@ -162,7 +162,7 @@ Cover the logic, not Vuetify's rendering:
   DevTools — see the warning in §1.
 - Switching tabs still switches the view; the correct export buttons show per view.
 - Reload the page: the selected tab persists.
-- **Hard-refresh directly onto `/summit/reports/oasprogression`.** Summit's CSS is
+- **Hard-refresh directly onto `/summit/reports/oasprogress`.** Summit's CSS is
   injected as a content-script stylesheet and loses cascade ties, so a control can
   render correctly when navigated to and wrongly on a cold load (DESIGN.md). A 40px
   tab bar whose height depends on an inherited rule is exactly the shape of thing this

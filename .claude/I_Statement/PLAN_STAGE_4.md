@@ -5,9 +5,9 @@
 New: `src/pages/IStatements/components/IStatementFilters.vue` + `.ts`
 New: `src/pages/IStatements/services/IStatementFilterPersistence.ts`
 
-Model both on their `OasProgressionVue` counterparts
-([`OASProgressionFiltersVue.vue`](../../src/pages/OasProgressionVue/components/OASProgressionFiltersVue.vue),
-[`OASProgressionVueFilterPersistence.ts`](../../src/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence.ts)).
+Model both on their `OasProgressVue` counterparts
+([`OASProgressFiltersVue.vue`](../../src/pages/OasProgressVue/components/OASProgressFiltersVue.vue),
+[`OASProgressVueFilterPersistence.ts`](../../src/pages/OasProgressVue/services/OASProgressVueFilterPersistence.ts)).
 Read them before writing these — match the label/heading markup and the
 `--oas-vue-font-size-heading` treatment for filter labels.
 

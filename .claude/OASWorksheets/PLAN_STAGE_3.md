@@ -7,20 +7,20 @@ of the pages Stage 1 builds. Printing is Stage 4 — get it right on screen firs
 
 New files:
 
-- `src/pages/OasProgressionVue/components/OASWorksheetsVue.vue` + `.ts`
-- `src/pages/OasProgressionVue/components/OASWorksheetFiltersVue.vue` + `.ts`
-- `tests/unit/pages/OasProgressionVue/OASWorksheetsVue.spec.ts`
+- `src/pages/OasProgressVue/components/OASWorksheetsVue.vue` + `.ts`
+- `src/pages/OasProgressVue/components/OASWorksheetFiltersVue.vue` + `.ts`
+- `tests/unit/pages/OasProgressVue/OASWorksheetsVue.spec.ts`
 
 ## 1. Wire the third tab
 
 Widen `viewMode` in
-[`OASProgressionVueFilterPersistence.ts`](../../src/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence.ts)
+[`OASProgressVueFilterPersistence.ts`](../../src/pages/OasProgressVue/services/OASProgressVueFilterPersistence.ts)
 to `"heatmap" | "table" | "worksheets"`, add `<v-tab value="worksheets">Worksheets</v-tab>`
 to the Stage 2 strip, and render the new component from
-`OasProgressionVueContent.vue` alongside the existing two.
+`OasProgressVueContent.vue` alongside the existing two.
 
 **Label it "Worksheets" in the GUI**, per DEV_NOTES ("called 'OAS Worksheets', or just
-'Worksheets' in the GUI") — the tab sits on a page already titled OAS Progression, so
+'Worksheets' in the GUI") — the tab sits on a page already titled OAS Progress, so
 the "OAS" prefix is redundant there.
 
 The content component currently branches `heatmap` / else-table (lines 34–63). Three
@@ -33,7 +33,7 @@ nine skills should see Bushcraft's sheets as soon as they arrive.
 
 ## 2. New filter state
 
-Added to `OASProgressionVueFilterState`, all persisted with the rest:
+Added to `OASProgressVueFilterState`, all persisted with the rest:
 
 ```ts
 /** Worksheets view only. */
@@ -60,7 +60,7 @@ PLAN_STAGE_1.md §2). If the user later wants last-name ordering, it is one more
 
 ## 3. The filter row
 
-A new `OASWorksheetFiltersVue` component — **not** a reuse of `OASProgressionFiltersVue`.
+A new `OASWorksheetFiltersVue` component — **not** a reuse of `OASProgressFiltersVue`.
 That component is bound tightly to the heat map's own filter object and carries six
 checkboxes the worksheet has no use for (`hideEmptyStreams`, `hideEmptyTopColumns`,
 `onlyInProgress`, `hideAnswered`, plus `groupBy` and `sortBy` selects). Reusing it would
@@ -83,12 +83,12 @@ later-requested Hide completed:
 | Reset filters | `v-btn text` | resets the `worksheet*` keys only |
 
 **Copy the heat map filter row's structure and class usage, not its CSS.** Take from
-[`OASProgressionFiltersVue.vue`](../../src/pages/OasProgressionVue/components/OASProgressionFiltersVue.vue):
+[`OASProgressFiltersVue.vue`](../../src/pages/OasProgressVue/components/OASProgressFiltersVue.vue):
 
 - `.oas-vue-filter-panel` on the root — **put the class on and stop.** Do not redeclare
   it in this component's `<style>`. That duplication is exactly what DESIGN.md's
   "declare it once" section is about, and
-  `tests/unit/components/istatement-matches-oas-progression.spec.ts` will fail if you do.
+  `tests/unit/components/istatement-matches-oas-progress.spec.ts` will fail if you do.
 - `.oas-heatmap-controls` for the control row, `.oas-heatmap-display-group` fieldset for
   the checkbox cluster, `.oas-vue-filter-heading-match` on the `<legend>`.
 - The `#selection` slot summary (`"{n} selected"`) and the chip row for Skills.
@@ -167,7 +167,7 @@ heat map.
 
 Format the date for printing here, not in the service (PLAN_STAGE_1.md keeps it ISO).
 The xlsx shows both `03/02/2024` and `02/11/24`; use `DD/MM/YY` for column width, via
-`moment` (already a dependency, used by `buildOASProgressionRows.ts`).
+`moment` (already a dependency, used by `buildOASProgressRows.ts`).
 
 The empty box must be visible **on paper**, which is the whole point — a `1px solid
 var(--color-light-mid-charcoal, #b7c2cc)` inner box with a fixed min-height, not just an

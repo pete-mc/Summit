@@ -1,5 +1,5 @@
 import type { Cell, Image, Row } from "write-excel-file/browser";
-import type { HeatMapExportView, MemberRowView, StageCellView } from "@/pages/OasProgressionVue/components/OASHeatMapVue";
+import type { HeatMapExportView, MemberRowView, StageCellView } from "@/pages/OasProgressVue/components/OASHeatMapVue";
 import { buildHeaderBlock, EXCEL_COLOURS, HEADER_BLOCK_ROWS, outlinedBar, type ExcelHeader, type ExcelSheet } from "../summitExcel";
 
 /** A stage is as wide as its most squares in any row (min 2, so bars stay visible). */
