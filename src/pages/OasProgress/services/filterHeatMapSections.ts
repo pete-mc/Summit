@@ -62,6 +62,10 @@ export function groupMembersByPatrol<T extends HasPatrolName>(members: T[]): Pat
     .map(([patrolName, patrolMembers]) => ({ patrolName, members: patrolMembers }));
 }
 
+export function groupRowsByPatrol<T extends HasPatrolName>(rows: T[], breakByPatrol: boolean): PatrolGroupOf<T>[] {
+  return breakByPatrol ? groupMembersByPatrol(rows) : [{ patrolName: "", members: rows }];
+}
+
 export function collectPatrolNames(sections: HeatMapSection[]): string[] {
   const names = new Set<string>();
   sections.forEach((section) => {

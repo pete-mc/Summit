@@ -79,4 +79,8 @@ describe("Summary print meta", () => {
   it("leaves out the Patrol line when there is no patrol choice to make", () => {
     expect(buildSummaryPrintMeta(base, ["Kookaburra"], false)).toEqual([]);
   });
+
+  it("notes hidden not-started skills, using the Heatmap's wording", () => {
+    expect(buildSummaryPrintMeta({ ...base, summaryShowNotStartedSkills: false }, ["Kookaburra"], false)).toEqual([{ label: "Hidden", value: "Skills not started" }]);
+  });
 });

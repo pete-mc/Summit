@@ -17,6 +17,7 @@ function input(overrides: Partial<OverallProgressSheetInput> = {}): OverallProgr
       {
         memberId: "m1",
         displayName: "Alex Example",
+        patrolName: "Possum",
         cells: [
           { stage: "3", nextStageProgress: "10" },
           { stage: "-", nextStageProgress: null },
@@ -25,12 +26,14 @@ function input(overrides: Partial<OverallProgressSheetInput> = {}): OverallProgr
       {
         memberId: "m2",
         displayName: "Blake Sample",
+        patrolName: "Kookaburra",
         cells: [
           { stage: "5", nextStageProgress: null },
           { stage: "4", nextStageProgress: "02" },
         ],
       },
     ],
+    breakByPatrol: false,
     header: HEADER,
     logo: null,
     ...overrides,
@@ -87,6 +90,14 @@ describe("buildOverallProgressSheet", () => {
     expect(stageWidths).toHaveLength(2);
     expect(new Set(stageWidths).size).toBe(1);
   });
+
+  it("adds a title row spanning the table above each patrol when breaking by patrol", () => {
+    const body = buildOverallProgressSheet(input({ breakByPatrol: true })).rows.slice(HEADER_BLOCK_ROWS + 1);
+
+    expect(body.map((r) => (r[0] as { value: unknown }).value)).toEqual(["Kookaburra", "Blake Sample", "Possum", "Alex Example"]);
+    expect(body[0][0]).toMatchObject({ columnSpan: 3, fontWeight: "bold" });
+    body.forEach((r) => expect(r).toHaveLength(3));
+  });
 });
 
 describe("workbookToBlob with both Summary sheets", () => {
@@ -96,6 +107,7 @@ describe("workbookToBlob with both Summary sheets", () => {
       requirement: PEAK_AWARD_REQUIREMENTS[TerrainAchievementsSection.Scout],
       nameFormat: "full",
       specialConditionText: "",
+      breakByPatrol: false,
       header: { ...HEADER, title: "OAS Progress - Summary - Towards Peak Award" },
       logo: null,
     });

@@ -30,43 +30,52 @@
 
       <template #body>
         <tbody>
-          <tr v-for="row in rowViews" :key="row.memberId" :data-oas-member="row.memberId">
-            <td class="oas-heatmap-member-name">{{ row.displayName }}</td>
-            <td class="oas-heatmap-highest-stage">{{ row.progressText }}</td>
-            <td class="oas-heatmap-highest-stage">{{ row.progressPercentText }}</td>
-            <td v-for="coreSkill in row.coreSkills" :key="coreSkill.title" class="oas-heatmap-stage-cell">
-              <div v-if="coreSkill.kind === 'bar'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete oas-peak-award-summary-bar" :style="{ width: barWidthPx(coreSkill.boxCount) }" :title="coreSkill.barTitle"></div>
-              <div v-else class="oas-heatmap-squares">
-                <div v-for="(box, index) in coreSkill.boxes" :key="index" :class="['oas-heatmap-square', box.met ? 'oas-heatmap-square-answered' : 'oas-heatmap-square-unanswered']" :title="box.title"></div>
-              </div>
-            </td>
-            <td class="oas-heatmap-stage-cell">
-              <div class="oas-peak-award-summary-row">
-                <div v-if="row.progressions.kind === 'bar'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete oas-peak-award-summary-bar" :style="{ width: barWidthPx(row.progressions.boxCount) }" :title="row.progressions.barTitle"></div>
+          <template v-for="group in rowGroups">
+            <tr v-if="group.patrolName" :key="'patrol::' + group.patrolName" class="oas-heatmap-patrol-title-row" :data-oas-patrol-title="group.patrolName">
+              <td :colspan="dataTableHeaders.length">{{ group.patrolName }}</td>
+            </tr>
+            <tr v-for="row in group.members" :key="row.memberId" :data-oas-member="row.memberId">
+              <td class="oas-heatmap-member-name">{{ row.displayName }}</td>
+              <td class="oas-heatmap-highest-stage">{{ row.progressText }}</td>
+              <td class="oas-heatmap-highest-stage">{{ row.progressPercentText }}</td>
+              <td v-for="coreSkill in row.coreSkills" :key="coreSkill.title" class="oas-heatmap-stage-cell">
+                <div v-if="coreSkill.kind === 'bar'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete oas-peak-award-summary-bar" :style="{ width: barWidthPx(coreSkill.boxCount) }" :title="coreSkill.barTitle"></div>
                 <div v-else class="oas-heatmap-squares">
-                  <div v-for="(box, index) in row.progressions.boxes" :key="index" :class="['oas-heatmap-square', box.met ? 'oas-heatmap-square-answered' : 'oas-heatmap-square-unanswered']" :title="box.title"></div>
+                  <div v-for="(box, index) in coreSkill.boxes" :key="index" :class="['oas-heatmap-square', box.met ? 'oas-heatmap-square-answered' : 'oas-heatmap-square-unanswered']" :title="box.title"></div>
                 </div>
-                <span class="oas-peak-award-summary-text">{{ row.progressions.text }}</span>
-              </div>
-            </td>
-            <td v-if="hasSpecial && row.special" class="oas-heatmap-stage-cell">
-              <div class="oas-peak-award-summary-row">
-                <div v-if="row.special.kind === 'bar'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete oas-peak-award-summary-bar" :style="{ width: barWidthPx(row.special.boxCount) }" :title="row.special.barTitle"></div>
-                <div v-else class="oas-heatmap-squares">
-                  <div v-for="(box, index) in row.special.boxes" :key="index" :class="['oas-heatmap-square', box.met ? 'oas-heatmap-square-answered' : 'oas-heatmap-square-unanswered']" :title="box.title"></div>
+              </td>
+              <td class="oas-heatmap-stage-cell">
+                <div class="oas-peak-award-summary-row">
+                  <div
+                    v-if="row.progressions.kind === 'bar'"
+                    class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete oas-peak-award-summary-bar"
+                    :style="{ width: barWidthPx(row.progressions.boxCount) }"
+                    :title="row.progressions.barTitle"
+                  ></div>
+                  <div v-else class="oas-heatmap-squares">
+                    <div v-for="(box, index) in row.progressions.boxes" :key="index" :class="['oas-heatmap-square', box.met ? 'oas-heatmap-square-answered' : 'oas-heatmap-square-unanswered']" :title="box.title"></div>
+                  </div>
+                  <span class="oas-peak-award-summary-text">{{ row.progressions.text }}</span>
                 </div>
-                <span class="oas-peak-award-summary-text">{{ row.special.text }}</span>
-              </div>
-            </td>
-          </tr>
+              </td>
+              <td v-if="hasSpecial && row.special" class="oas-heatmap-stage-cell">
+                <div class="oas-peak-award-summary-row">
+                  <div v-if="row.special.kind === 'bar'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete oas-peak-award-summary-bar" :style="{ width: barWidthPx(row.special.boxCount) }" :title="row.special.barTitle"></div>
+                  <div v-else class="oas-heatmap-squares">
+                    <div v-for="(box, index) in row.special.boxes" :key="index" :class="['oas-heatmap-square', box.met ? 'oas-heatmap-square-answered' : 'oas-heatmap-square-unanswered']" :title="box.title"></div>
+                  </div>
+                  <span class="oas-peak-award-summary-text">{{ row.special.text }}</span>
+                </div>
+              </td>
+            </tr>
+          </template>
         </tbody>
       </template>
     </v-data-table>
   </div>
 </template>
 
-<script lang="ts" src="./OASPeakAwardSummaryVue.ts">
-</script>
+<script lang="ts" src="./OASPeakAwardSummaryVue.ts"></script>
 
 <style scoped>
 .oas-heatmap-data-table {

@@ -4,6 +4,7 @@ import type { PropType } from "vue";
 import type { PeakAwardBox, PeakAwardMemberRow } from "@/pages/OasProgress/services/buildPeakAwardSummaryRows";
 import { getMemberDisplayName } from "@/pages/OasProgress/services/getMemberDisplayName";
 import type { NameFormat } from "@/pages/OasProgress/services/getMemberDisplayName";
+import { groupRowsByPatrol, type PatrolGroupOf } from "@/pages/OasProgress/services/filterHeatMapSections";
 import { formatStream, skillTitle } from "./OASHeatMapVue";
 
 export { skillTitle };
@@ -63,6 +64,7 @@ interface ProgressionsCellView extends BoxGroupView {
 interface SummaryRowView {
   memberId: string;
   displayName: string;
+  patrolName: string | null;
   coreSkills: CoreSkillCellView[];
   progressText: string;
   progressPercentText: string;
@@ -94,6 +96,7 @@ export function buildRowView(row: PeakAwardMemberRow, nameFormat: NameFormat): S
   return {
     memberId: row.memberId,
     displayName: getMemberDisplayName(row.firstName, row.lastName, row.memberId, nameFormat),
+    patrolName: row.patrolName,
     coreSkills: row.coreSkills.map(buildCoreSkillCellView),
     progressText: `${row.progressScore} of ${row.progressTotal}`,
     progressPercentText: `${row.progressPercent}%`,
@@ -110,10 +113,14 @@ export default defineComponent({
     /** False for Joey/Cub/Scout: the Special column is left out entirely. */
     hasSpecial: { type: Boolean, required: true },
     specialConditionText: { type: String, default: "" },
+    breakByPatrol: { type: Boolean, default: false },
   },
   computed: {
     rowViews(): SummaryRowView[] {
       return this.rows.map((row) => buildRowView(row, this.nameFormat));
+    },
+    rowGroups(): PatrolGroupOf<SummaryRowView>[] {
+      return groupRowsByPatrol(this.rowViews, this.breakByPatrol);
     },
     dataTableHeaders(): Array<{ text: string; value: string; sortable: boolean }> {
       const headers = [

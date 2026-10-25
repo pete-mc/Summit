@@ -37,20 +37,24 @@
 
       <template #body>
         <tbody>
-          <tr v-for="row in rows" :key="row.memberId" :data-oas-member="row.memberId">
-            <td class="oas-heatmap-member-name">{{ row.displayName }}</td>
-            <td v-for="(cell, index) in row.cells" :key="columns[index].key" class="oas-overall-progress-cell">
-              {{ cell.stage }}<span v-if="cell.nextStageProgress" class="oas-heatmap-stage-progress">.{{ cell.nextStageProgress }}</span>
-            </td>
-          </tr>
+          <template v-for="group in rowGroups">
+            <tr v-if="group.patrolName" :key="'patrol::' + group.patrolName" class="oas-heatmap-patrol-title-row" :data-oas-patrol-title="group.patrolName">
+              <td :colspan="columns.length + 1">{{ group.patrolName }}</td>
+            </tr>
+            <tr v-for="row in group.members" :key="row.memberId" :data-oas-member="row.memberId">
+              <td class="oas-heatmap-member-name">{{ row.displayName }}</td>
+              <td v-for="(cell, index) in row.cells" :key="columns[index].key" class="oas-overall-progress-cell">
+                {{ cell.stage }}<span v-if="cell.nextStageProgress" class="oas-heatmap-stage-progress">.{{ cell.nextStageProgress }}</span>
+              </td>
+            </tr>
+          </template>
         </tbody>
       </template>
     </v-data-table>
   </div>
 </template>
 
-<script lang="ts" src="./OASOverallProgressVue.ts">
-</script>
+<script lang="ts" src="./OASOverallProgressVue.ts"></script>
 
 <style scoped>
 .oas-heatmap-data-table {

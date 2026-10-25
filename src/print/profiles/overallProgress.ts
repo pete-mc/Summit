@@ -1,5 +1,6 @@
 import type { PrintProfile } from "../summitPrint";
 import { columnCount } from "../printFit";
+import { patrolTitleRowCss } from "./heatmapShared";
 
 const NAME_WEIGHT = 14;
 const STAGE_COLUMN_WEIGHT = 3;
@@ -46,7 +47,7 @@ table.summit-print-profile-overall-progress td.oas-heatmap-member-name { text-al
 }
 .summit-print-profile-overall-progress .oas-overall-progress-stream-label { font-weight: 400; color: #555; }
 .summit-print-profile-overall-progress .oas-heatmap-stage-progress { font-size: 0.8em; }
-`,
+${patrolTitleRowCss("overall-progress")}`,
 };
 
 export default overallProgress;

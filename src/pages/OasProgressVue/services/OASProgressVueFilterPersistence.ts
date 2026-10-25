@@ -9,6 +9,9 @@ export interface OASProgressVueFilterState {
   summarySortBy: "firstName" | "lastName" | "progress";
   /** Overall Progress table only. Overrides summarySortBy until cleared; choosing a Sort by option clears it. */
   summaryColumnSort: { key: string; descending: boolean } | null;
+  /** Overall table only: off hides columns no listed member has started. */
+  summaryShowNotStartedSkills: boolean;
+  summaryBreakByPatrol: boolean;
   /** Gotcha: "none" is still accepted because old saved state may hold it. The heat map renders it as "skill". */
   groupBy: "skill" | "member" | "none";
   memberFilter: string;

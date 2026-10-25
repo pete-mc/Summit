@@ -52,6 +52,7 @@ function input(overrides: Partial<PeakAwardSummarySheetInput> = {}): PeakAwardSu
     requirement: VENTURER,
     nameFormat: "full",
     specialConditionText: "4 above Stage 3",
+    breakByPatrol: false,
     header: HEADER,
     logo: null,
     ...overrides,
@@ -86,6 +87,18 @@ describe("buildPeakAwardSummarySheet", () => {
     expect(tableRows.length).toBe(4);
     tableRows.forEach((r) => expect(r.length).toBe(VENTURER_COLUMNS));
     expect(sheet.options.columns).toHaveLength(VENTURER_COLUMNS);
+  });
+
+  it("adds a full-width patrol title row above each patrol when breaking by patrol", () => {
+    const rows = [
+      { ...memberRow("m1", "Alex", "Example", [5, 5, 5], 12, 4), patrolName: "Possum" },
+      { ...memberRow("m2", "Blake", "Sample", [5, 3, 0], 9, 2), patrolName: "Kookaburra" },
+    ];
+    const body = buildPeakAwardSummarySheet(input({ rows, breakByPatrol: true })).rows.slice(FIRST_DATA_ROW);
+
+    expect(body.map((r) => (r[0] as { value: unknown }).value)).toEqual(["Kookaburra", "Blake Sample", "Possum", "Alex Example"]);
+    expect(body[0][0]).toMatchObject({ columnSpan: VENTURER_COLUMNS });
+    body.forEach((r) => expect(r).toHaveLength(VENTURER_COLUMNS));
   });
 
   it("writes Member, 'X of Y' progress and a sortable percent", () => {

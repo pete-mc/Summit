@@ -1,6 +1,7 @@
 import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import type { OverallProgressColumn, OverallProgressColumnSort, OverallProgressRow } from "@/pages/OasProgress/services/buildOverallProgressRows";
+import { groupRowsByPatrol, type PatrolGroupOf } from "@/pages/OasProgress/services/filterHeatMapSections";
 import { formatStream, skillTitle } from "./OASHeatMapVue";
 
 export interface OverallProgressHeaderView {
@@ -21,8 +22,12 @@ export default defineComponent({
     columns: { type: Array as PropType<OverallProgressColumn[]>, required: true },
     rows: { type: Array as PropType<OverallProgressRow[]>, required: true },
     columnSort: { type: Object as PropType<OverallProgressColumnSort | null>, default: null },
+    breakByPatrol: { type: Boolean, default: false },
   },
   computed: {
+    rowGroups(): PatrolGroupOf<OverallProgressRow>[] {
+      return groupRowsByPatrol(this.rows, this.breakByPatrol);
+    },
     headerViews(): OverallProgressHeaderView[] {
       return this.columns.map((column) => buildHeaderView(column, this.columnSort));
     },

@@ -22,12 +22,13 @@ export function describePatrols(selected: string[] | null, options: string[]): s
   return chosen.join(", ");
 }
 
-/** Only filters that change who is listed. Sort is visible in the printout itself. */
+/** Only filters that change who or what is listed. Sort and break by patrol are visible in the printout itself. */
 export function buildSummaryPrintMeta(filters: OASProgressVueFilterState, patrolOptions: string[], canFilterByPatrol: boolean): MetaEntry[] {
   const meta: MetaEntry[] = [];
   const member = filters.summaryMemberFilter.trim();
   if (member) meta.push({ label: "Member", value: `contains "${member}"` });
   if (canFilterByPatrol) meta.push({ label: "Patrol", value: describePatrols(filters.summarySelectedPatrols, patrolOptions) });
+  if (filters.summaryShowNotStartedSkills === false) meta.push({ label: "Hidden", value: "Skills not started" });
   return meta;
 }
 

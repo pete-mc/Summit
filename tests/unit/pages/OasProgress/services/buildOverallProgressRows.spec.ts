@@ -1,4 +1,4 @@
-import { buildOverallProgressColumns, buildOverallProgressRows, nextColumnSort, sortOverallProgressRows } from "@/pages/OasProgress/services/buildOverallProgressRows";
+import { buildOverallProgressColumns, buildOverallProgressRows, hideNotStartedColumns, nextColumnSort, sortOverallProgressRows } from "@/pages/OasProgress/services/buildOverallProgressRows";
 import type { HeatMapStage, HeatMapSection, SectionMemberRow, SkillHeatMapData } from "@/pages/OasProgress/services/groupRowsForHeatMap";
 
 function makeCell(overrides: Partial<HeatMapStage["cells"][number]> = {}) {
@@ -46,7 +46,7 @@ describe("buildOverallProgressRows", () => {
     });
     const grouped = { bushcraft: makeSkill([makeSection([member])]) };
 
-    const [row] = buildOverallProgressRows(grouped, [{ memberId: "m1", displayName: "Alex" }]);
+    const [row] = buildOverallProgressRows(grouped, [{ memberId: "m1", displayName: "Alex", patrolName: null }]);
 
     expect(row.cells).toEqual([{ stage: "3", nextStageProgress: "01" }]);
   });
@@ -60,7 +60,7 @@ describe("buildOverallProgressRows", () => {
   it("shows '-' for a started stream until the trunk is fully awarded", () => {
     const grouped = aquaticsWithSwimmer(makeMemberRow({ trunkFullyAwarded: false, stages: startedStreamStages }));
 
-    const [row] = buildOverallProgressRows(grouped, [{ memberId: "m1", displayName: "Alex" }]);
+    const [row] = buildOverallProgressRows(grouped, [{ memberId: "m1", displayName: "Alex", patrolName: null }]);
 
     expect(row.cells[1]).toEqual({ stage: "-", nextStageProgress: null });
   });
@@ -69,7 +69,7 @@ describe("buildOverallProgressRows", () => {
   it("shows '-' for an unstarted stream even once the trunk is fully awarded", () => {
     const grouped = aquaticsWithSwimmer(makeMemberRow({ trunkFullyAwarded: true, stages: [{ stage: 4, complete: false, cells: [makeCell()] }] }));
 
-    const [row] = buildOverallProgressRows(grouped, [{ memberId: "m1", displayName: "Alex" }]);
+    const [row] = buildOverallProgressRows(grouped, [{ memberId: "m1", displayName: "Alex", patrolName: null }]);
 
     expect(row.cells).toEqual([
       { stage: "3", nextStageProgress: null },
@@ -80,7 +80,7 @@ describe("buildOverallProgressRows", () => {
   it("shows the heat map's stream value once the stream is started", () => {
     const grouped = aquaticsWithSwimmer(makeMemberRow({ trunkFullyAwarded: true, stages: startedStreamStages }));
 
-    const [row] = buildOverallProgressRows(grouped, [{ memberId: "m1", displayName: "Alex" }]);
+    const [row] = buildOverallProgressRows(grouped, [{ memberId: "m1", displayName: "Alex", patrolName: null }]);
 
     expect(row.cells[1]).toEqual({ stage: "3", nextStageProgress: "01" });
   });
@@ -89,8 +89,8 @@ describe("buildOverallProgressRows", () => {
     const grouped = { bushcraft: makeSkill([makeSection([makeMemberRow({ memberId: "a" }), makeMemberRow({ memberId: "b" }), makeMemberRow({ memberId: "c" })])]) };
 
     const rows = buildOverallProgressRows(grouped, [
-      { memberId: "c", displayName: "C" },
-      { memberId: "a", displayName: "A" },
+      { memberId: "c", displayName: "C", patrolName: null },
+      { memberId: "a", displayName: "A", patrolName: null },
     ]);
 
     expect(rows.map((r) => r.memberId)).toEqual(["c", "a"]);
@@ -115,7 +115,7 @@ describe("sortOverallProgressRows", () => {
   const columns = [{ key: "camping::", skill: "camping", stream: null }];
 
   function makeRow(memberId: string, stage: string, nextStageProgress: string | null = null) {
-    return { memberId, displayName: memberId, cells: [{ stage, nextStageProgress }] };
+    return { memberId, displayName: memberId, patrolName: null, cells: [{ stage, nextStageProgress }] };
   }
 
   const rows = [makeRow("none", "-"), makeRow("two", "2"), makeRow("twoTicks", "2", "03"), makeRow("five", "5"), makeRow("alsoTwo", "2")];
@@ -135,5 +135,34 @@ describe("sortOverallProgressRows", () => {
   it("leaves rows in the given order when there is no sort or the column no longer exists", () => {
     expect(sortOverallProgressRows(rows, columns, null)).toBe(rows);
     expect(sortOverallProgressRows(rows, columns, { key: "gone::", descending: true })).toBe(rows);
+  });
+});
+
+describe("hideNotStartedColumns", () => {
+  const columns = [
+    { key: "camping::", skill: "camping", stream: null },
+    { key: "aquatics::", skill: "aquatics", stream: null },
+    { key: "aquatics::swimming", skill: "aquatics", stream: "swimming" },
+  ];
+  const dash = { stage: "-", nextStageProgress: null };
+
+  function makeRow(memberId: string, cells: Array<{ stage: string; nextStageProgress: string | null }>) {
+    return { memberId, displayName: memberId, patrolName: null, cells };
+  }
+
+  it("drops columns where every listed member shows '-', and the matching cells", () => {
+    const rows = [makeRow("a", [{ stage: "2", nextStageProgress: null }, dash, dash]), makeRow("b", [dash, dash, { stage: "4", nextStageProgress: "01" }])];
+
+    const view = hideNotStartedColumns(columns, rows);
+
+    expect(view.columns.map((c) => c.key)).toEqual(["camping::", "aquatics::swimming"]);
+    expect(view.rows.map((r) => r.cells.map((c) => c.stage))).toEqual([
+      ["2", "-"],
+      ["-", "4"],
+    ]);
+  });
+
+  it("keeps every column when nobody is listed", () => {
+    expect(hideNotStartedColumns(columns, []).columns).toEqual(columns);
   });
 });

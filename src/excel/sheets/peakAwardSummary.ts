@@ -2,7 +2,8 @@ import type { Cell, Image, Row } from "write-excel-file/browser";
 import type { PeakAwardBox, PeakAwardMemberRow } from "@/pages/OasProgress/services/buildPeakAwardSummaryRows";
 import type { PeakAwardRequirement } from "@/pages/OasProgress/data/peakAwardRequirements";
 import { getMemberDisplayName, type NameFormat } from "@/pages/OasProgress/services/getMemberDisplayName";
-import { buildHeaderBlock, EXCEL_COLOURS, HEADER_BLOCK_ROWS, outlinedBar, type ExcelHeader, type ExcelSheet } from "../summitExcel";
+import { groupRowsByPatrol } from "@/pages/OasProgress/services/filterHeatMapSections";
+import { buildHeaderBlock, EXCEL_COLOURS, excelTitleRow, HEADER_BLOCK_ROWS, outlinedBar, type ExcelHeader, type ExcelSheet } from "../summitExcel";
 
 const CORE_SKILL_TITLES = ["Bushcraft", "Bushwalking", "Camping"];
 const SHEET_NAME = "Towards Peak Award";
@@ -17,6 +18,7 @@ export interface PeakAwardSummarySheetInput {
   requirement: PeakAwardRequirement;
   nameFormat: NameFormat;
   specialConditionText: string;
+  breakByPatrol: boolean;
   header: ExcelHeader;
   logo: Image | null;
 }
@@ -99,7 +101,7 @@ function buildMemberRow(row: PeakAwardMemberRow, nameFormat: NameFormat, hasSpec
 }
 
 export function buildPeakAwardSummarySheet(input: PeakAwardSummarySheetInput): ExcelSheet {
-  const { rows, requirement, nameFormat, specialConditionText, header, logo } = input;
+  const { rows, requirement, nameFormat, specialConditionText, breakByPatrol, header, logo } = input;
   const hasSpecial = !!requirement.special;
   const tableHeader = buildTableHeader(requirement, specialConditionText);
   const names = rows.map((r) => getMemberDisplayName(r.firstName, r.lastName, r.memberId, nameFormat));
@@ -112,11 +114,14 @@ export function buildPeakAwardSummarySheet(input: PeakAwardSummarySheetInput): E
   columns.push(spacer, ...boxColumns(requirement.totalProgressions), { width: WIDTH.countText });
   if (hasSpecial && requirement.special) columns.push(spacer, ...boxColumns(requirement.special.minCount), { width: WIDTH.countText });
 
+  const body: Row[] = [];
+  groupRowsByPatrol(rows, breakByPatrol).forEach((group) => {
+    if (group.patrolName) body.push(excelTitleRow(group.patrolName, columns.length, { backgroundColor: EXCEL_COLOURS.mutedRow }));
+    group.members.forEach((r) => body.push(buildMemberRow(r, nameFormat, hasSpecial)));
+  });
+
   return {
-    rows: buildHeaderBlock(header, !!logo).concat(
-      tableHeader,
-      rows.map((r) => buildMemberRow(r, nameFormat, hasSpecial)),
-    ),
+    rows: buildHeaderBlock(header, !!logo).concat(tableHeader, body),
     options: {
       sheet: SHEET_NAME,
       columns,

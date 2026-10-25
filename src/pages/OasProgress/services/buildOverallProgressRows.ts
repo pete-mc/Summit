@@ -12,6 +12,7 @@ export interface OverallProgressColumn {
 export interface OverallProgressRow {
   memberId: string;
   displayName: string;
+  patrolName: string | null;
   /** Aligned with the columns. */
   cells: StageProgressDisplay[];
 }
@@ -63,17 +64,28 @@ export function sortOverallProgressRows(rows: OverallProgressRow[], columns: Ove
 }
 
 /** Cells match the heat map's Stage column. Rows follow the given member order, so the caller's filters and sort apply. */
-export function buildOverallProgressRows(grouped: Record<string, SkillHeatMapData>, members: Array<{ memberId: string; displayName: string }>): OverallProgressRow[] {
+export function buildOverallProgressRows(grouped: Record<string, SkillHeatMapData>, members: Array<{ memberId: string; displayName: string; patrolName: string | null }>): OverallProgressRow[] {
   const sections = orderedSections(grouped);
   const membersBySection = sections.map((section) => new Map<string, SectionMemberRow>(section.members.map((m) => [m.memberId, m])));
 
-  return members.map(({ memberId, displayName }) => ({
+  return members.map(({ memberId, displayName, patrolName }) => ({
     memberId,
     displayName,
+    patrolName,
     cells: sections.map((section, index) => {
       const member = membersBySection[index].get(memberId);
       if (!member) return NO_PROGRESS;
       return formatStageProgress(member.highestStage, member.stages, section.stream !== null, section.trunkStageCount, member.trunkFullyAwarded);
     }),
   }));
+}
+
+/** Judged on the rows given, so filtering to a patrol or member trims columns to what they have started. No rows keeps every column. */
+export function hideNotStartedColumns(columns: OverallProgressColumn[], rows: OverallProgressRow[]): { columns: OverallProgressColumn[]; rows: OverallProgressRow[] } {
+  if (rows.length === 0) return { columns, rows };
+  const keep = columns.map((_, index) => rows.some((row) => row.cells[index].stage !== "-"));
+  return {
+    columns: columns.filter((_, index) => keep[index]),
+    rows: rows.map((row) => ({ ...row, cells: row.cells.filter((_, index) => keep[index]) })),
+  };
 }

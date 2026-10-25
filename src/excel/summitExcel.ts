@@ -36,6 +36,10 @@ export function outlinedBar(width: number, fill: string, outline: string): Cell[
   }));
 }
 
+export function excelTitleRow(text: string, totalColumns: number, style: Record<string, unknown>): Row {
+  return [{ value: text, type: String, columnSpan: totalColumns, fontWeight: "bold", ...style } as Cell, ...Array.from({ length: totalColumns - 1 }, () => null)];
+}
+
 const FORBIDDEN_FILE_CHARS = /[\\/:*?"<>|]/g;
 
 /** Empty parts are dropped rather than leaving "- -". */

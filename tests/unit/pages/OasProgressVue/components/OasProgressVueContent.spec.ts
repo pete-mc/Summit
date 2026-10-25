@@ -28,6 +28,8 @@ function makeStoredFilters(overrides: Partial<OASProgressVueFilterState> = {}): 
     summarySelectedPatrols: [],
     summarySortBy: "firstName",
     summaryColumnSort: null,
+    summaryShowNotStartedSkills: true,
+    summaryBreakByPatrol: false,
     groupBy: "skill",
     memberFilter: "",
     nameFormat: "full",
@@ -149,6 +151,8 @@ describe("OasProgressVueContent view mode", () => {
           viewMode: "summary",
           summaryMemberFilter: "someone",
           summarySortBy: "lastName",
+          summaryShowNotStartedSkills: false,
+          summaryBreakByPatrol: true,
           memberFilter: "someone else",
           worksheetShowCompleted: false,
         }),
@@ -159,6 +163,8 @@ describe("OasProgressVueContent view mode", () => {
 
       expect(context.filters.summaryMemberFilter).toBe("");
       expect(context.filters.summarySortBy).toBe("firstName");
+      expect(context.filters.summaryShowNotStartedSkills).toBe(true);
+      expect(context.filters.summaryBreakByPatrol).toBe(false);
       expect(context.filters.memberFilter).toBe("someone else");
       expect(context.filters.worksheetShowCompleted).toBe(false);
     });

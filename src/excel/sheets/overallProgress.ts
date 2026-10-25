@@ -1,7 +1,8 @@
 import type { Cell, Image, Row } from "write-excel-file/browser";
 import type { OverallProgressRow } from "@/pages/OasProgress/services/buildOverallProgressRows";
 import type { StageProgressDisplay } from "@/pages/OasProgress/services/filterHeatMapSections";
-import { buildHeaderBlock, EXCEL_COLOURS, HEADER_BLOCK_ROWS, type ExcelHeader, type ExcelSheet } from "../summitExcel";
+import { groupRowsByPatrol } from "@/pages/OasProgress/services/filterHeatMapSections";
+import { buildHeaderBlock, EXCEL_COLOURS, excelTitleRow, HEADER_BLOCK_ROWS, type ExcelHeader, type ExcelSheet } from "../summitExcel";
 
 const SHEET_NAME = "Overall";
 
@@ -16,6 +17,7 @@ const HEADER_MIN_HEIGHT = 48;
 export interface OverallProgressSheetInput {
   headers: Array<{ skillLabel: string; streamLabel: string | null }>;
   rows: OverallProgressRow[];
+  breakByPatrol: boolean;
   header: ExcelHeader;
   logo: Image | null;
 }
@@ -58,12 +60,18 @@ function buildMemberRow(row: OverallProgressRow): Row {
 }
 
 export function buildOverallProgressSheet(input: OverallProgressSheetInput): ExcelSheet {
-  const { headers, rows, header, logo } = input;
+  const { headers, rows, breakByPatrol, header, logo } = input;
   const longestName = rows.reduce((max, r) => Math.max(max, r.displayName.length), "Member".length);
   const columns = [{ width: Math.min(MEMBER_WIDTH_MAX, Math.max(MEMBER_WIDTH_MIN, longestName + 2)) }].concat(headers.map(() => ({ width: STAGE_COLUMN_WIDTH })));
 
+  const body: Row[] = [];
+  groupRowsByPatrol(rows, breakByPatrol).forEach((group) => {
+    if (group.patrolName) body.push(excelTitleRow(group.patrolName, columns.length, { backgroundColor: EXCEL_COLOURS.mutedRow }));
+    group.members.forEach((row) => body.push(buildMemberRow(row)));
+  });
+
   return {
-    rows: buildHeaderBlock(header, !!logo).concat([buildTableHeader(headers)], rows.map(buildMemberRow)),
+    rows: buildHeaderBlock(header, !!logo).concat([buildTableHeader(headers)], body),
     options: {
       sheet: SHEET_NAME,
       columns,

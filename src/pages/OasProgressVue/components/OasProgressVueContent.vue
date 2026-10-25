@@ -37,13 +37,13 @@
       <template v-if="hasContent && filters.viewMode === 'summary'">
         <p v-if="!peakAwardRequirement" class="oas-peak-award-summary-no-section">Could not determine this unit's section.</p>
         <template v-else>
-          <OASPeakAwardSummaryFiltersVue :filters="filters" :patrol-filter-options="patrolFilterOptions" :can-filter-by-patrol="canFilterByPatrol" @update:filters="onFiltersUpdate" @reset="onResetFilters" />
+          <OASPeakAwardSummaryFiltersVue :filters="filters" :available-patrols="availablePatrols" :patrol-filter-options="patrolFilterOptions" :can-filter-by-patrol="canFilterByPatrol" @update:filters="onFiltersUpdate" @reset="onResetFilters" />
 
           <h3 class="oas-summary-section-heading">Towards Peak Award</h3>
-          <OASPeakAwardSummaryVue ref="summary" :rows="filteredPeakAwardSummaryRows" :name-format="filters.summaryNameFormat" :has-special="!!peakAwardRequirement.special" :special-condition-text="specialConditionText" />
+          <OASPeakAwardSummaryVue ref="summary" :rows="filteredPeakAwardSummaryRows" :name-format="filters.summaryNameFormat" :break-by-patrol="filters.summaryBreakByPatrol" :has-special="!!peakAwardRequirement.special" :special-condition-text="specialConditionText" />
 
           <h3 class="oas-summary-section-heading">Overall</h3>
-          <OASOverallProgressVue ref="overallProgress" :columns="overallProgressColumns" :rows="overallProgressRows" :column-sort="filters.summaryColumnSort" @sort-column="onOverallProgressSortColumn" />
+          <OASOverallProgressVue ref="overallProgress" :columns="overallProgressView.columns" :rows="overallProgressView.rows" :break-by-patrol="filters.summaryBreakByPatrol" :column-sort="filters.summaryColumnSort" @sort-column="onOverallProgressSortColumn" />
         </template>
       </template>
 

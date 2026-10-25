@@ -23,3 +23,12 @@ export function stripInlineSizes(table: HTMLTableElement, selector: string): voi
     el.style.removeProperty("height");
   });
 }
+
+/** Gotcha: kept in sync by hand with the patrol rows in skillHeatmap.ts. */
+export function patrolTitleRowCss(profileName: string): string {
+  const row = `table.summit-print-profile-${profileName} tr.oas-heatmap-patrol-title-row`;
+  return `
+${row} { break-after: avoid; page-break-after: avoid; }
+${row} > td { background: #f0f3f6; font-weight: 600; font-size: 8.5pt; padding: 0.9mm 1.6mm; text-align: left; }
+`;
+}

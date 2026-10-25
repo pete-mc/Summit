@@ -1,6 +1,6 @@
 import type { PrintProfile } from "../summitPrint";
 import { columnCount } from "../printFit";
-import { SQUARE_COLOUR_PROPS, stripInlineSizes } from "./heatmapShared";
+import { patrolTitleRowCss, SQUARE_COLOUR_PROPS, stripInlineSizes } from "./heatmapShared";
 
 /** Widths depend on the printed table, because the Special column only exists for some sections. */
 const WIDTHS_WITH_SPECIAL = [14, 8, 6, 12, 12, 12, 23, 13];
@@ -70,7 +70,7 @@ table.summit-print-profile-peak-award-summary th.oas-heatmap-member-header { tex
   font-size: 8pt;
   color: #333;
 }
-`,
+${patrolTitleRowCss("peak-award-summary")}`,
 };
 
 export default peakAwardSummary;

@@ -53,6 +53,25 @@
 
       <NameFormatSelect :value="filters.summaryNameFormat" @input="patch({ summaryNameFormat: $event })" />
 
+      <v-select
+        :value="showSelection"
+        :items="showOptions"
+        item-text="text"
+        item-value="value"
+        label="Show"
+        multiple
+        dense
+        hide-details
+        style="max-width: 220px"
+        class="oas-vue-filter-select"
+        :menu-props="{ contentClass: 'oas-vue-show-menu' }"
+        @change="onShowChange"
+      >
+        <template #selection="{ index }">
+          <span v-if="index === 0" class="oas-vue-select-summary">{{ showSelection.length }} selected</span>
+        </template>
+      </v-select>
+
       <v-btn text color="primary" @click="resetFilters">Reset filters</v-btn>
     </div>
   </div>

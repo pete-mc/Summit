@@ -31,7 +31,15 @@ import OASPeakAwardSummaryFiltersVue from "./OASPeakAwardSummaryFiltersVue.vue";
 import OASPeakAwardSummaryVue from "./OASPeakAwardSummaryVue.vue";
 import OASOverallProgressVue from "./OASOverallProgressVue.vue";
 import { buildHeaderView } from "./OASOverallProgressVue";
-import { buildOverallProgressColumns, buildOverallProgressRows, nextColumnSort, sortOverallProgressRows, type OverallProgressColumn, type OverallProgressRow } from "@/pages/OasProgress/services/buildOverallProgressRows";
+import {
+  buildOverallProgressColumns,
+  buildOverallProgressRows,
+  hideNotStartedColumns,
+  nextColumnSort,
+  sortOverallProgressRows,
+  type OverallProgressColumn,
+  type OverallProgressRow,
+} from "@/pages/OasProgress/services/buildOverallProgressRows";
 import { getMemberDisplayName } from "@/pages/OasProgress/services/getMemberDisplayName";
 
 const logger = createLogger("OasProgressVueContent");
@@ -80,6 +88,8 @@ const DEFAULT_FILTERS: OASProgressVueFilterState = {
   summarySelectedPatrols: null,
   summarySortBy: "firstName",
   summaryColumnSort: null,
+  summaryShowNotStartedSkills: true,
+  summaryBreakByPatrol: false,
   groupBy: "skill",
   memberFilter: "",
   nameFormat: "full",
@@ -109,7 +119,7 @@ const DEFAULT_FILTERS: OASProgressVueFilterState = {
 const VALID_VIEW_MODES: OASProgressVueFilterState["viewMode"][] = ["summary", "heatmap", "table", "worksheets"];
 
 /** Each tab's "Reset filters" resets only its own keys. Table has none: its filters live in tableColumnFilters. viewMode is never reset. */
-const SUMMARY_FILTER_KEYS = ["summaryMemberFilter", "summaryNameFormat", "summarySelectedPatrols", "summarySortBy", "summaryColumnSort"] as const;
+const SUMMARY_FILTER_KEYS = ["summaryMemberFilter", "summaryNameFormat", "summarySelectedPatrols", "summarySortBy", "summaryColumnSort", "summaryShowNotStartedSkills", "summaryBreakByPatrol"] as const;
 const HEATMAP_FILTER_KEYS = [
   "groupBy",
   "memberFilter",
@@ -241,8 +251,13 @@ export default defineComponent({
       const members = this.filteredPeakAwardSummaryRows.map((row) => ({
         memberId: row.memberId,
         displayName: getMemberDisplayName(row.firstName, row.lastName, row.memberId, this.filters.summaryNameFormat),
+        patrolName: row.patrolName,
       }));
       return sortOverallProgressRows(buildOverallProgressRows(this.grouped, members), this.overallProgressColumns, this.filters.summaryColumnSort);
+    },
+    overallProgressView(): { columns: OverallProgressColumn[]; rows: OverallProgressRow[] } {
+      const all = { columns: this.overallProgressColumns, rows: this.overallProgressRows };
+      return this.filters.summaryShowNotStartedSkills ? all : hideNotStartedColumns(all.columns, all.rows);
     },
     /** Always both: Edge's own Pages box can pick pages. */
     summaryPrintParts(): PrintButtonPart[] {
@@ -370,13 +385,21 @@ export default defineComponent({
               requirement,
               nameFormat: this.filters.summaryNameFormat,
               specialConditionText: this.specialConditionText,
+              breakByPatrol: this.filters.summaryBreakByPatrol,
               header,
               logo,
             }),
         },
         {
           printProfile: "overall-progress",
-          build: (header, logo) => buildOverallProgressSheet({ headers: this.overallProgressColumns.map((c) => buildHeaderView(c)), rows: this.overallProgressRows, header, logo }),
+          build: (header, logo) =>
+            buildOverallProgressSheet({
+              headers: this.overallProgressView.columns.map((c) => buildHeaderView(c)),
+              rows: this.overallProgressView.rows,
+              breakByPatrol: this.filters.summaryBreakByPatrol,
+              header,
+              logo,
+            }),
         },
       ];
       await this.runExcelExport("Summary", this.summaryPrintMeta, sheets);
