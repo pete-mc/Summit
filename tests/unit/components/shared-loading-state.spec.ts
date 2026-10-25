@@ -88,12 +88,6 @@ describe("Present Awards — the reported bug", () => {
     expect(state.slice(0, state.indexOf("},"))).toContain("!this.hasContent");
   });
 
-  it("keeps save/export feedback outside the content gate", () => {
-    // The "Saved." confirmation lands while the post-save reload is in flight.
-    const beforeGate = AWARDS_CONTENT.slice(0, AWARDS_CONTENT.indexOf('v-if="hasContent"', AWARDS_CONTENT.indexOf("<SummitLoadingState")));
-    expect(beforeGate).toContain("data-grid-export-feedback");
-  });
-
   it("drops the old 'try reloading the page' text now Retry works", () => {
     expect(AWARDS_CONTENT).not.toContain("Try reloading the page");
   });

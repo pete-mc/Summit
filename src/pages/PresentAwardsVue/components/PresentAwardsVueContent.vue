@@ -14,9 +14,6 @@
 
       <SummitLoadingState :state="sharedLoadState" error-message="Could not load awards." :on-retry="onReloadClick" />
 
-      <!-- Gotcha: outside the ready gate, because Save triggers a reload and would hide "Saved." -->
-      <div v-if="feedback" role="status" class="data-grid-export-feedback">{{ feedback }}</div>
-
       <template v-if="hasContent">
         <PresentAwardsFiltersVue :filters="displayFilters" @update:filters="onDisplayFiltersUpdate" @reset="onResetFilters" />
 

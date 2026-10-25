@@ -6,6 +6,8 @@ jest.mock("@/print/summitPrint", () => {
   return { __esModule: true, ...actual, printTable: jest.fn(), printTables: jest.fn() };
 });
 
+jest.mock("@/helpers/TerrainToast", () => ({ showTerrainToast: jest.fn() }));
+import { showTerrainToast } from "@/helpers/TerrainToast";
 import SummitPrintButton, { initialMultiPartSettings, type PrintButtonPart } from "@/components/SummitPrintButton";
 import { printTable, printTables } from "@/print/summitPrint";
 
@@ -19,8 +21,6 @@ function context(overrides: Record<string, unknown> = {}): GoContext {
     target: () => document.createElement("table"),
     busy: false,
     open: true,
-    warn: false,
-    warnText: "",
     $nextTick: async () => undefined,
     ...overrides,
   };
@@ -33,6 +33,7 @@ function context(overrides: Record<string, unknown> = {}): GoContext {
 beforeEach(() => {
   (printTable as jest.Mock).mockReset();
   (printTables as jest.Mock).mockReset();
+  (showTerrainToast as jest.Mock).mockClear();
   window.localStorage.clear();
   jest.spyOn(console, "error").mockImplementation(() => undefined);
 });
@@ -66,8 +67,7 @@ describe("SummitPrintButton prepare/restore", () => {
 
     await ctx.go();
     expect(restore).toHaveBeenCalledTimes(1);
-    expect(ctx.warn).toBe(true);
-    expect(String(ctx.warnText)).toContain("boom");
+    expect(showTerrainToast).toHaveBeenCalledWith(expect.stringContaining("boom"), "error");
   });
 
   it("prints without a prepare hook (the OAS tabs)", async () => {
@@ -116,8 +116,7 @@ describe("SummitPrintButton with several tables", () => {
 
     await ctx.go();
 
-    expect(ctx.warn).toBe(true);
-    expect(String(ctx.warnText)).toBe("Overall: Too wide for one page even when shrunk, so it was split into 3 parts.");
+    expect(showTerrainToast).toHaveBeenCalledWith("Overall: Too wide for one page even when shrunk, so it was split into 3 parts.", "info");
   });
 
   it("restores every prepared table even when printing fails", async () => {
@@ -130,7 +129,7 @@ describe("SummitPrintButton with several tables", () => {
 
     expect(restoreA).toHaveBeenCalledTimes(1);
     expect(restoreB).toHaveBeenCalledTimes(1);
-    expect(String(ctx.warnText)).toContain("boom");
+    expect(showTerrainToast).toHaveBeenCalledWith(expect.stringContaining("boom"), "error");
   });
 
   it("remembers the page setup under its own key", async () => {

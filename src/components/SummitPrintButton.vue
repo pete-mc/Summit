@@ -30,8 +30,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <v-snackbar v-model="warn" timeout="6000" color="warning">{{ warnText }}</v-snackbar>
   </span>
 </template>
 

@@ -10,4 +10,5 @@ export { clearSummitCalendarEditorDraft, loadSummitCalendarEditorDraft, saveSumm
 export { getContrastTextColor } from "./SummitCalendarContrastText";
 export { clearCache, loadCached, saveCached } from "./SummitCache";
 export { createLogger, setLogLevel } from "./Logger";
+export { showTerrainToast, type ToastKind } from "./TerrainToast";
 export { getMilestoneLeadRequirement } from "./MilestoneRequirements";

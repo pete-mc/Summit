@@ -500,6 +500,17 @@ React pages still use the plain `xlsx` dump in `gridExport.ts`.
 - File name: `Summit - {Page} - {View} - {Unit} - {yyyymmdd}.xlsx`.
 - The title block, the table header and the Member column are frozen.
 
+## Notifications: use Terrain's own toast
+
+Short messages ("Excel export complete", "Saved.", errors, print layout notes) go through
+`showTerrainToast(message, kind?, timeoutMs?)` in `src/helpers/TerrainToast.ts`. It dispatches Terrain's
+own `snackbar/setSnack` Vuex action, so the message appears in Terrain's top-right snackbar with
+Terrain's icon (`success` → `check`, `error` → `nope`, `info` → `info`).
+
+- Don't add inline status lines or a page-level `v-snackbar`. The old `.data-grid-export-feedback` line was removed 2026-10-25.
+- The toast lives in Terrain's app shell, so a page reload or a content `v-if` can't hide it.
+- Always passes a timeout: Terrain's action otherwise reuses whatever the last caller set.
+
 ## Verification
 
 No build step needed to check this file — it's documentation. When adding new shared

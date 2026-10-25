@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ColumnDef, SortingState, flexRender, getCoreRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
 import { exportGridToExcel, exportGridToPdf, GridExportColumn, GridExportRow } from "@/components/gridExport";
+import { showTerrainToast } from "@/helpers/TerrainToast";
 
 export type DataGridToolbarAction = "excel" | "pdf";
 
@@ -115,7 +116,6 @@ export const DataGrid = <TData extends object>({ id, data, columns, toolbarActio
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(pageSizeOptions[0] ?? DEFAULT_PAGE_SIZE_OPTIONS[0]);
-  const [exportFeedback, setExportFeedback] = useState("");
 
   useEffect(() => {
     const initialPageSize = pageSizeOptions[0] ?? DEFAULT_PAGE_SIZE_OPTIONS[0];
@@ -252,10 +252,10 @@ export const DataGrid = <TData extends object>({ id, data, columns, toolbarActio
         rows: mappedRows,
         columns: resolvedExportColumns,
       });
-      setExportFeedback("Excel export complete");
+      showTerrainToast("Excel export complete");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      setExportFeedback(`Excel export failed: ${message}`);
+      showTerrainToast(`Excel export failed: ${message}`, "error");
     }
   };
 
@@ -272,10 +272,10 @@ export const DataGrid = <TData extends object>({ id, data, columns, toolbarActio
         columns: resolvedExportColumns,
         orientation: exportOptions.orientation,
       });
-      setExportFeedback("PDF export complete");
+      showTerrainToast("PDF export complete");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      setExportFeedback(`PDF export failed: ${message}`);
+      showTerrainToast(`PDF export failed: ${message}`, "error");
     }
   };
 
@@ -355,12 +355,6 @@ export const DataGrid = <TData extends object>({ id, data, columns, toolbarActio
               {action.label}
             </button>
           ))}
-        </div>
-      )}
-
-      {exportFeedback && (
-        <div data-grid-export-feedback="true" role="status" className="data-grid-export-feedback">
-          {exportFeedback}
         </div>
       )}
 

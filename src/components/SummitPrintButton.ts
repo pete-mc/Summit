@@ -5,6 +5,7 @@ import { getTerrainPrintContext } from "@/print/printContext";
 import { loadPrintSettings, savePrintSettings } from "@/print/printSettings";
 import { browserLacksFooterSupport } from "@/print/printSupport";
 import { createLogger } from "@/helpers/Logger";
+import { showTerrainToast } from "@/helpers/TerrainToast";
 import SummitPillButton from "@/components/SummitPillButton.vue";
 
 const logger = createLogger("SummitPrintButton");
@@ -54,8 +55,6 @@ export default defineComponent({
     return {
       open: false,
       busy: false,
-      warn: false,
-      warnText: "",
       settings: this.parts?.length ? initialMultiPartSettings(this.settingsKey, this.parts) : initialPrintSettings(this.profile),
       lacksFooterSupport: browserLacksFooterSupport(),
       pageSizes: Object.keys(PAGE_SIZES),
@@ -79,7 +78,7 @@ export default defineComponent({
         }
       } catch (err) {
         logger.error("Print failed:", err);
-        this.showWarning(`Could not prepare the printout: ${err instanceof Error ? err.message : String(err)}`);
+        showTerrainToast(`Could not prepare the printout: ${err instanceof Error ? err.message : String(err)}`, "error");
       } finally {
         restores.forEach((restore) => {
           try {
@@ -148,11 +147,7 @@ export default defineComponent({
           return "";
         })
         .filter((m) => m !== "");
-      if (messages.length) this.showWarning(messages.join(" "));
-    },
-    showWarning(text: string) {
-      this.warnText = text;
-      this.warn = true;
+      if (messages.length) showTerrainToast(messages.join(" "), "info");
     },
   },
 });

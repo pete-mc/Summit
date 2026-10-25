@@ -23,7 +23,7 @@ import { buildPeakAwardSummarySheet } from "@/excel/sheets/peakAwardSummary";
 import { buildOverallProgressSheet } from "@/excel/sheets/overallProgress";
 import { buildSkillHeatmapSheet } from "@/excel/sheets/skillHeatmap";
 import type { HeatMapExportView } from "./OASHeatMapVue";
-import { createLogger } from "@/helpers";
+import { createLogger, showTerrainToast } from "@/helpers";
 import type { OASProgressRow } from "@/pages/OasProgress/services/buildOASProgressRows";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
 import type { TerrainAchievementsSection } from "@/shared";
@@ -189,7 +189,6 @@ export default defineComponent({
       filters: loadInitialFilters() as OASProgressVueFilterState,
       isReloading: false,
       isExcelExporting: false,
-      exportFeedback: "",
       tableColumnFilters: {} as Record<string, string>,
     };
   },
@@ -366,11 +365,11 @@ export default defineComponent({
           rows: this.tableFilteredItems as unknown as GridExportRow[],
           columns: TABLE_EXPORT_COLUMNS,
         });
-        this.exportFeedback = "Excel export complete";
+        showTerrainToast("Excel export complete");
       } catch (e) {
         logger.error("Table Excel export failed:", e);
         const message = e instanceof Error ? e.message : "Unknown error";
-        this.exportFeedback = `Excel export failed: ${message}`;
+        showTerrainToast(`Excel export failed: ${message}`, "error");
       }
     },
     async onSummaryExcelExportClick() {
@@ -413,10 +412,10 @@ export default defineComponent({
       this.isExcelExporting = true;
       try {
         await exportExcelWorkbook({ sheets, meta, fileNameParts: ["OAS Progress", viewName] });
-        this.exportFeedback = "Excel export complete";
+        showTerrainToast("Excel export complete");
       } catch (e) {
         logger.error(`${viewName} Excel export failed:`, e);
-        this.exportFeedback = `Excel export failed: ${e instanceof Error ? e.message : "Unknown error"}`;
+        showTerrainToast(`Excel export failed: ${e instanceof Error ? e.message : "Unknown error"}`, "error");
       } finally {
         this.isExcelExporting = false;
       }
@@ -425,7 +424,7 @@ export default defineComponent({
       const worksheets = this.$refs.worksheets as unknown as WorksheetsVueInstance | undefined;
       const opened = worksheets?.printCurrentPages();
       if (opened === false) {
-        this.exportFeedback = "Could not open the print window — check your browser's popup blocker.";
+        showTerrainToast("Could not open the print window — check your browser's popup blocker.", "error");
       }
     },
   },

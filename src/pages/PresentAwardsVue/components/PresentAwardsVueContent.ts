@@ -13,7 +13,7 @@ import type { PresentAwardsExportView } from "./PresentAwardsTableVue";
 import { DEFAULT_FILTERS, loadPresentAwardsVueFilters, savePresentAwardsVueFilters, type PresentAwardsVueFilterState } from "../services/PresentAwardsVueFilterPersistence";
 import { exportExcelSheet } from "@/excel/summitExcel";
 import { buildPresentAwardsSheet } from "@/excel/sheets/presentAwards";
-import { createLogger } from "@/helpers";
+import { createLogger, showTerrainToast } from "@/helpers";
 
 const logger = createLogger("PresentAwardsVueContent");
 
@@ -23,7 +23,6 @@ interface PresentAwardsTablePrintApi {
   getExportView(): PresentAwardsExportView;
 }
 
-const FEEDBACK_TIMEOUT_MS = 4000;
 /** Longer: a merge notice tells the user something new. */
 const MERGE_FEEDBACK_TIMEOUT_MS = 10000;
 
@@ -54,8 +53,6 @@ export default defineComponent({
       /** Gotcha: Vue 2 can't see added keys either, so replace rather than index-assign. */
       presentedDates: {} as Record<string, string>,
       isSaving: false,
-      feedback: "",
-      feedbackTimer: undefined as ReturnType<typeof setTimeout> | undefined,
       columnFilters: initialFilters.columnFilters,
       showPreviouslyPresented: initialFilters.showPreviouslyPresented,
       groupByMember: initialFilters.groupByMember,
@@ -71,9 +68,6 @@ export default defineComponent({
         this.resetEditState();
       },
     },
-  },
-  beforeDestroy() {
-    if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
   },
   computed: {
     /** Gotcha: Save and Refresh re-run the load. Gating on loadState alone would blank the table on every save. */
@@ -159,13 +153,6 @@ export default defineComponent({
       this.groupByMember = DEFAULT_FILTERS.groupByMember;
       this.persistFilters();
     },
-    showFeedback(message: string, timeoutMs: number = FEEDBACK_TIMEOUT_MS) {
-      if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
-      this.feedback = message;
-      this.feedbackTimer = setTimeout(() => {
-        this.feedback = "";
-      }, timeoutMs);
-    },
     async onExcelExportClick() {
       const table = this.$refs.table as unknown as PresentAwardsTablePrintApi | undefined;
       if (!table) return;
@@ -177,10 +164,10 @@ export default defineComponent({
           fileNameParts: ["Present Awards"],
           build: (header, logo) => buildPresentAwardsSheet({ view: table.getExportView(), header, logo }),
         });
-        this.showFeedback("Excel export complete");
+        showTerrainToast("Excel export complete");
       } catch (e) {
         logger.error("Excel export failed:", e);
-        this.showFeedback(`Excel export failed: ${e instanceof Error ? e.message : "Unknown error"}`);
+        showTerrainToast(`Excel export failed: ${e instanceof Error ? e.message : "Unknown error"}`, "error");
       } finally {
         this.isExcelExporting = false;
       }
@@ -207,7 +194,7 @@ export default defineComponent({
     },
     async onSaveClick() {
       if (this.selectedIds.size === 0) {
-        this.showFeedback(NOTHING_SELECTED_MESSAGE);
+        showTerrainToast(NOTHING_SELECTED_MESSAGE, "info");
         return;
       }
 
@@ -220,11 +207,11 @@ export default defineComponent({
         const outcome = this.onSave ? await this.onSave(presentedItems) : {};
         // A merge notice replaces "Saved." and stays up longer.
         if (outcome.error) {
-          this.showFeedback(`Save failed: ${outcome.error}`);
+          showTerrainToast(`Save failed: ${outcome.error}`, "error");
         } else if (outcome.mergeNotice) {
-          this.showFeedback(outcome.mergeNotice, MERGE_FEEDBACK_TIMEOUT_MS);
+          showTerrainToast(outcome.mergeNotice, "info", MERGE_FEEDBACK_TIMEOUT_MS);
         } else {
-          this.showFeedback(SAVED_MESSAGE);
+          showTerrainToast(SAVED_MESSAGE);
         }
       } finally {
         this.isSaving = false;

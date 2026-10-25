@@ -32,8 +32,6 @@
 
       <SummitLoadingState :state="sharedLoadState" :done="streamsDone" :total="totalStreams" error-message="Could not load OAS progress data." :on-retry="onReloadAllClick" />
 
-      <div v-if="exportFeedback" role="status" class="data-grid-export-feedback">{{ exportFeedback }}</div>
-
       <template v-if="hasContent && filters.viewMode === 'summary'">
         <p v-if="!peakAwardRequirement" class="oas-peak-award-summary-no-section">Could not determine this unit's section.</p>
         <template v-else>
