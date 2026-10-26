@@ -39,14 +39,21 @@ export interface BoxGroupView {
   boxes: Array<{ met: boolean; title: string | null }>;
 }
 
-/** Gotcha: the bar's stage is boxes.length (the highest reached), not the last award's own stage. */
+function boxTooltip(box: PeakAwardBox): string | null {
+  return awardTooltip(box.award, box.award?.stage ?? 0);
+}
+
+/** Gotcha: Progressions/Special boxes are awards from different skills, so the bar lists every award, not just the last one. */
 export function buildBoxGroupView(boxes: PeakAwardBox[]): BoxGroupView {
   const allMet = boxes.length > 0 && boxes.every((b) => b.met);
   if (allMet) {
-    const lastAward = boxes[boxes.length - 1]?.award ?? null;
-    return { kind: "bar", boxCount: boxes.length, barTitle: awardTooltip(lastAward, boxes.length) ?? undefined, boxes: [] };
+    const barTitle = boxes
+      .map(boxTooltip)
+      .filter((title): title is string => title !== null)
+      .join("\n");
+    return { kind: "bar", boxCount: boxes.length, barTitle: barTitle || undefined, boxes: [] };
   }
-  return { kind: "boxes", boxCount: boxes.length, boxes: boxes.map((b) => ({ met: b.met, title: awardTooltip(b.award, b.award?.stage ?? 0) })) };
+  return { kind: "boxes", boxCount: boxes.length, boxes: boxes.map((b) => ({ met: b.met, title: boxTooltip(b) })) };
 }
 
 interface CoreSkillCellView extends BoxGroupView {

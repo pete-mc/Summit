@@ -51,7 +51,7 @@ describe("awardTooltip", () => {
     expect(awardTooltip(award, 5)).not.toContain("Bushcraft");
   });
 
-  it("uses the stage number passed in, not the award's own stage (for a collapsed bar describing the whole group)", () => {
+  it("uses the stage number passed in", () => {
     const award = makeAward({ stage: 2 });
 
     expect(awardTooltip(award, 9)).toContain("Stage 9");
@@ -92,15 +92,26 @@ describe("buildBoxGroupView", () => {
     expect(view.boxes[2].title).toContain("Stage 3");
   });
 
-  it("collapses into a single bar once every box is met, with the bar's own tooltip using the box count as the stage", () => {
+  it("collapses into a single bar once every box is met, with a tooltip line per award", () => {
     const boxes: PeakAwardBox[] = [makeBox({ met: true, award: makeAward({ stage: 1 }) }), makeBox({ met: true, award: makeAward({ stage: 2 }) })];
 
     const view = buildBoxGroupView(boxes);
 
     expect(view.kind).toBe("bar");
     expect(view.boxCount).toBe(2);
-    expect(view.barTitle).toContain("Stage 2");
+    expect(view.barTitle?.split("\n")).toHaveLength(2);
     expect(view.boxes).toEqual([]);
+  });
+
+  // A full Scout Progressions bar (10 awards) used to claim "Stage 10" in one skill.
+  it("a full bar of awards from different skills keeps each award's own skill and stage", () => {
+    const boxes: PeakAwardBox[] = [makeBox({ met: true, award: makeAward({ stream: "paddling", branch: "paddling", stage: 2 }) }), makeBox({ met: true, award: makeAward({ stream: "camping", branch: "camping", stage: 3 }) })];
+
+    const view = buildBoxGroupView(boxes);
+
+    expect(view.barTitle?.split("\n")[0]).toContain("Paddling - Stage 2");
+    expect(view.barTitle?.split("\n")[1]).toContain("Camping - Stage 3");
+    expect(view.barTitle).not.toContain("Stage 10");
   });
 
   it("renders as individual (empty) boxes, not a bar, when there are zero boxes to begin with", () => {
