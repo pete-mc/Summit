@@ -1,6 +1,6 @@
 import { buildPrintDocument, getPrintProfile, resolveHeaderFooter } from "@/print/summitPrint";
-import { buildOasTablePrintMeta } from "@/pages/OasProgressionVue/services/oasPrintMeta";
-import OASProgressionTableVue from "@/pages/OasProgressionVue/components/OASProgressionTableVue";
+import { buildOasTablePrintMeta } from "@/pages/OasProgressVue/services/oasPrintMeta";
+import OASProgressTableVue from "@/pages/OasProgressVue/components/OASProgressTableVue";
 
 const VARS = { unit: "Example Venturer Unit", group: "1st Example Group", section: "Venturer Scouts" };
 const GENERATED = new Date(2026, 9, 12, 9, 0);
@@ -10,9 +10,9 @@ afterEach(() => {
 });
 
 describe("oas-table profile", () => {
-  it("is titled per the OAS Progression pattern, A4 landscape, with only Generated in the meta", () => {
+  it("is titled per the OAS Progress pattern, A4 landscape, with only Generated in the meta", () => {
     const profile = getPrintProfile("oas-table");
-    expect(profile.header.title).toBe("OAS Progression - Table");
+    expect(profile.header.title).toBe("OAS Progress - Table");
     expect(profile.defaults).toMatchObject({ pageSize: "A4", orientation: "landscape", layout: "fit" });
     const r = resolveHeaderFooter({ source: document.body, profile: "oas-table", vars: VARS, generated: GENERATED });
     expect(r.header.meta.map((m) => m.label)).toEqual(["Generated"]);
@@ -51,9 +51,9 @@ describe("buildOasTablePrintMeta", () => {
   });
 });
 
-describe("OASProgressionTableVue.prepareForPrint", () => {
+describe("OASProgressTableVue.prepareForPrint", () => {
   it("shows every row on one page, then restores the user's paging", async () => {
-    const prepareForPrint = (OASProgressionTableVue as unknown as { methods: { prepareForPrint(this: unknown): Promise<() => void> } }).methods.prepareForPrint;
+    const prepareForPrint = (OASProgressTableVue as unknown as { methods: { prepareForPrint(this: unknown): Promise<() => void> } }).methods.prepareForPrint;
     const ctx = { itemsPerPage: 50, page: 4, $nextTick: jest.fn(async () => undefined) };
 
     const restore = await prepareForPrint.call(ctx);

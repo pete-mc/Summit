@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <div class="oas-vue-content istatement-panel">
-      <div class="oas-progression-view-row">
+      <div class="oas-progress-view-row">
         <span v-if="loadState === 'loading-trees'">Loading skill trees...</span>
         <span v-else-if="loadState === 'loading-templates'">Loading templates {{ progressDone }}/{{ progressTotal }}...</span>
         <span v-else-if="loadState === 'ready'">{{ summaryText }}</span>
@@ -34,7 +34,7 @@
 </script>
 
 <style scoped>
-/* Same --oas-vue-* scale as OAS Progression, so sibling pages can't drift. */
+/* Same --oas-vue-* scale as OAS Progress, so sibling pages can't drift. */
 .oas-vue-content {
   --oas-vue-font-size-heading: 18px;
   --oas-vue-font-size-body: 14px;

@@ -1,12 +1,12 @@
 import Vue from "vue";
-import OASHeatMapVueOptions from "@/pages/OasProgressionVue/components/OASHeatMapVue";
-import { UNASSIGNED_PATROL } from "@/pages/OasProgression/services/filterHeatMapSections";
-import type { OASProgressionRow } from "@/pages/OasProgression/services/buildOASProgressionRows";
+import OASHeatMapVueOptions from "@/pages/OasProgressVue/components/OASHeatMapVue";
+import { UNASSIGNED_PATROL } from "@/pages/OasProgress/services/filterHeatMapSections";
+import type { OASProgressRow } from "@/pages/OasProgress/services/buildOASProgressRows";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
 
 /** Learning: Jest has no .vue transform, so the options object is tested directly with `new Vue(options)`. */
 
-function makeRow(overrides: Partial<OASProgressionRow> = {}): OASProgressionRow {
+function makeRow(overrides: Partial<OASProgressRow> = {}): OASProgressRow {
   return {
     unitId: "unit-1",
     stream: "bushcraft",
@@ -42,7 +42,7 @@ function makeMember(overrides: Partial<TerrainUnitMember> = {}): TerrainUnitMemb
 }
 
 interface MountProps {
-  items: OASProgressionRow[];
+  items: OASProgressRow[];
   trunkStageCounts: Record<string, number>;
   members: TerrainUnitMember[];
   visibleStreams: string[];
@@ -354,7 +354,7 @@ describe("OASHeatMapVue render contract", () => {
   });
 
   describe("showEmptyTopStages", () => {
-    function stagesFor(rows: OASProgressionRow[], showEmptyTopStages: boolean): number[] {
+    function stagesFor(rows: OASProgressRow[], showEmptyTopStages: boolean): number[] {
       const vm = mountLogic({ items: rows, trunkStageCounts: { bushcraft: 9 }, members: [makeMember()], visibleStreams: ["bushcraft"], visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9], sortBy: "firstName", showEmptyTopStages });
       return vm.allStages as number[];
     }
@@ -385,7 +385,7 @@ describe("OASHeatMapVue render contract", () => {
       makeRow({ stream: "paddling", branch: "kayaking", stage: 4, inputId: "kayak", answered: true }),
     ];
 
-    function sectionTitlesFor(rows: OASProgressionRow[], visibleStreams: string[], trunkStageCounts: Record<string, number>, showEmptySkillRows: boolean): string[] {
+    function sectionTitlesFor(rows: OASProgressRow[], visibleStreams: string[], trunkStageCounts: Record<string, number>, showEmptySkillRows: boolean): string[] {
       const vm = mountLogic({ items: rows, trunkStageCounts, members: [makeMember()], visibleStreams, visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9], sortBy: "firstName", showEmptySkillRows });
       return (vm.sections as Array<{ title: string }>).map((s) => s.title);
     }

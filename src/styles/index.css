@@ -354,11 +354,6 @@
   color: #605e5c;
 }
 
-.data-grid-export-feedback {
-  font-size: var(--summit-font-size-sm);
-  color: var(--summit-color-bg-primary);
-}
-
 .summit-dialog-surface {
   background: var(--summit-color-bg-surface);
   border: 1px solid var(--summit-color-border-default);
@@ -455,7 +450,7 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
 }
 
 /* Shared page layout for every Vuetify page, so sibling pages can't drift. */
-.oas-progression-panel,
+.oas-progress-panel,
 .present-awards-panel,
 .istatement-panel {
   display: flex;
@@ -634,7 +629,7 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   margin: 2px 0;
 }
 
-.oas-progression-view-row {
+.oas-progress-view-row {
   display: flex;
   align-items: center;
   gap: var(--summit-space-md);

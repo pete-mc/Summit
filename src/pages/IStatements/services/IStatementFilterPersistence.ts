@@ -1,4 +1,4 @@
-import { OAS_STREAMS } from "@/pages/OasProgression/services/buildOASProgressionRows";
+import { OAS_STREAMS } from "@/pages/OasProgress/services/buildOASProgressRows";
 import { ALL_STAGES, type IStatementFilters } from "./filterIStatementMatrix";
 
 const I_STATEMENT_FILTERS_KEY = "summit.iStatements.filters";

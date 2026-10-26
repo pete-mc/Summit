@@ -1,5 +1,5 @@
 import { type OASTemplate } from "@/types/terrainTypes";
-import { OAS_STREAMS, flattenOASTemplate, flattenOASTree, getCachedOASTemplate, getCachedOASTree } from "@/pages/OasProgression/services/buildOASProgressionRows";
+import { OAS_STREAMS, flattenOASTemplate, flattenOASTree, getCachedOASTemplate, getCachedOASTree } from "@/pages/OasProgress/services/buildOASProgressRows";
 
 const TEMPLATE_FETCH_CONCURRENCY = 6;
 

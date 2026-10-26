@@ -31,7 +31,9 @@
     "build-prod": "webpack --config webpack.config.js --mode production",
     "build": "webpack --config webpack.config.js --mode development",
     "build-watch": "webpack --config webpack.config.js --mode development --watch",
-    "start": "webpack-dev-server --config webpack.config.js --mode development"
+    "start": "webpack-dev-server --config webpack.config.js --mode development",
+    "images:terrain": "node src/images/extract-terrain-images.js",
+    "images:terrain": "node src/images/extract-terrain-images.js"
   },
   "browserslist": {
     "production": [

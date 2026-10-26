@@ -1,7 +1,9 @@
 import { loadPrintSettings, savePrintSettings } from "@/print/printSettings";
-import { getSectionLabel, getSectionLogoUrl } from "@/print/sectionLogo";
-import { buildSummaryPrintMeta, describePatrols } from "@/pages/OasProgressionVue/services/oasPrintMeta";
-import type { OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
+import { existsSync } from "fs";
+import { resolve } from "path";
+import { getSectionLabel, getSectionLogoFile, getSectionLogoUrl, SECTION_KEYS } from "@/print/sectionLogo";
+import { buildSummaryPrintMeta, describePatrols } from "@/pages/OasProgressVue/services/oasPrintMeta";
+import type { OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
 
 describe("printSettings", () => {
   beforeEach(() => window.localStorage.clear());
@@ -23,10 +25,20 @@ describe("printSettings", () => {
 describe("sectionLogo", () => {
   afterEach(() => document.documentElement.removeAttribute("data-summit-extension-url"));
 
-  it("maps every Terrain section value to its exact file (mixed .jpg/.png)", () => {
+  it("has a logo file on disk for every section, since the name is built from a pattern", () => {
+    const missing = SECTION_KEYS.map(getSectionLogoFile).filter((file) => !existsSync(resolve(__dirname, "../../../src/images/sections", file)));
+    expect(missing).toEqual([]);
+  });
+
+  it("maps every Terrain section value to its logo URL, case-insensitively", () => {
+    document.documentElement.setAttribute("data-summit-extension-url", "chrome-extension://abc/");
+    expect(getSectionLogoUrl("Cub")).toBe("chrome-extension://abc/images/sections/Section_Cub_Vert_FullCol.jpg");
+  });
+
+  it("maps every Terrain section value to its exact file", () => {
     document.documentElement.setAttribute("data-summit-extension-url", "chrome-extension://abc/");
     expect(getSectionLogoUrl("joey")).toBe("chrome-extension://abc/images/sections/Section_Joey_Vert_FullCol.jpg");
-    expect(getSectionLogoUrl("cub")).toBe("chrome-extension://abc/images/sections/Section_Cub_Vert_FullCol.png");
+    expect(getSectionLogoUrl("cub")).toBe("chrome-extension://abc/images/sections/Section_Cub_Vert_FullCol.jpg");
     expect(getSectionLogoUrl("scout")).toBe("chrome-extension://abc/images/sections/Section_Scout_Vert_FullCol.jpg");
     expect(getSectionLogoUrl("venturer")).toBe("chrome-extension://abc/images/sections/Section_Venturer_Vert_FullCol.jpg");
     expect(getSectionLogoUrl("rover")).toBe("chrome-extension://abc/images/sections/Section_Rover_Vert_FullCol.jpg");
@@ -47,7 +59,7 @@ describe("sectionLogo", () => {
 });
 
 describe("Summary print meta", () => {
-  const base = { summaryMemberFilter: "", summarySelectedPatrols: null, summarySortBy: "progress" } as unknown as OASProgressionVueFilterState;
+  const base = { summaryMemberFilter: "", summarySelectedPatrols: null, summarySortBy: "progress" } as unknown as OASProgressVueFilterState;
 
   it("describes patrol selections", () => {
     expect(describePatrols(null, ["Kookaburra", "Possum"])).toBe("All");
@@ -66,5 +78,9 @@ describe("Summary print meta", () => {
 
   it("leaves out the Patrol line when there is no patrol choice to make", () => {
     expect(buildSummaryPrintMeta(base, ["Kookaburra"], false)).toEqual([]);
+  });
+
+  it("notes hidden not-started skills, using the Heatmap's wording", () => {
+    expect(buildSummaryPrintMeta({ ...base, summaryShowNotStartedSkills: false }, ["Kookaburra"], false)).toEqual([{ label: "Hidden", value: "Skills not started" }]);
   });
 });

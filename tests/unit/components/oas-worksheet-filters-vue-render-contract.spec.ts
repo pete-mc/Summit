@@ -5,8 +5,8 @@ const REPO_ROOT = path.resolve(__dirname, "../../..");
 
 /** Gating lives in the template (no @vue/test-utils), so these are source-text checks. */
 describe("OASWorksheetFiltersVue wiring and gating rules", () => {
-  const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASWorksheetFiltersVue.ts"), "utf8");
-  const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASWorksheetFiltersVue.vue"), "utf8");
+  const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASWorksheetFiltersVue.ts"), "utf8");
+  const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASWorksheetFiltersVue.vue"), "utf8");
 
   // Same Patrol control as the Heat Map, bound to its own worksheetSelectedPatrols.
   it("has a Patrol multi-select gated on canFilterByPatrol, bound to filters.worksheetSelectedPatrols", () => {
@@ -16,7 +16,7 @@ describe("OASWorksheetFiltersVue wiring and gating rules", () => {
     expect(templateSource).toContain('@change="patch({ worksheetSelectedPatrols: $event })"');
   });
 
-  it("declares patrolFilterOptions and canFilterByPatrol as props, matching OASProgressionFiltersVue's own", () => {
+  it("declares patrolFilterOptions and canFilterByPatrol as props, matching OASProgressFiltersVue's own", () => {
     expect(tsSource).toContain("patrolFilterOptions: { type: Array as PropType<string[]>, required: true }");
     expect(tsSource).toContain("canFilterByPatrol: { type: Boolean, default: true }");
   });

@@ -1,9 +1,9 @@
 import { unzipSync, strFromU8 } from "fflate";
 import { boxCells, buildPeakAwardSummarySheet, type PeakAwardSummarySheetInput } from "@/excel/sheets/peakAwardSummary";
 import { EXCEL_COLOURS, HEADER_BLOCK_ROWS, workbookToBlob } from "@/excel/summitExcel";
-import { PEAK_AWARD_REQUIREMENTS } from "@/pages/OasProgression/data/peakAwardRequirements";
+import { PEAK_AWARD_REQUIREMENTS } from "@/pages/OasProgress/data/peakAwardRequirements";
 import { TerrainAchievementsSection } from "@/shared";
-import type { PeakAwardBox, PeakAwardMemberRow } from "@/pages/OasProgression/services/buildPeakAwardSummaryRows";
+import type { PeakAwardBox, PeakAwardMemberRow } from "@/pages/OasProgress/services/buildPeakAwardSummaryRows";
 
 const VENTURER = PEAK_AWARD_REQUIREMENTS[TerrainAchievementsSection.Venturer]; // 5 core, 12 progressions, special 4
 const SCOUT = PEAK_AWARD_REQUIREMENTS[TerrainAchievementsSection.Scout]; // 5 core, 10 progressions, no special
@@ -44,7 +44,7 @@ function memberRow(id: string, first: string, last: string, core: [number, numbe
   };
 }
 
-const HEADER = { title: "OAS Progression - Summary for Peak Award", subtitle: "Sample Group · Sample Unit", metaLine: "Generated: 12/10/2026" };
+const HEADER = { title: "OAS Progress - Summary - Towards Peak Award", subtitle: "Sample Group · Sample Unit", metaLine: "Generated: 12/10/2026" };
 
 function input(overrides: Partial<PeakAwardSummarySheetInput> = {}): PeakAwardSummarySheetInput {
   return {
@@ -52,6 +52,7 @@ function input(overrides: Partial<PeakAwardSummarySheetInput> = {}): PeakAwardSu
     requirement: VENTURER,
     nameFormat: "full",
     specialConditionText: "4 above Stage 3",
+    breakByPatrol: false,
     header: HEADER,
     logo: null,
     ...overrides,
@@ -86,6 +87,18 @@ describe("buildPeakAwardSummarySheet", () => {
     expect(tableRows.length).toBe(4);
     tableRows.forEach((r) => expect(r.length).toBe(VENTURER_COLUMNS));
     expect(sheet.options.columns).toHaveLength(VENTURER_COLUMNS);
+  });
+
+  it("adds a full-width patrol title row above each patrol when breaking by patrol", () => {
+    const rows = [
+      { ...memberRow("m1", "Alex", "Example", [5, 5, 5], 12, 4), patrolName: "Possum" },
+      { ...memberRow("m2", "Blake", "Sample", [5, 3, 0], 9, 2), patrolName: "Kookaburra" },
+    ];
+    const body = buildPeakAwardSummarySheet(input({ rows, breakByPatrol: true })).rows.slice(FIRST_DATA_ROW);
+
+    expect(body.map((r) => (r[0] as { value: unknown }).value)).toEqual(["Kookaburra", "Blake Sample", "Possum", "Alex Example"]);
+    expect(body[0][0]).toMatchObject({ columnSpan: VENTURER_COLUMNS });
+    body.forEach((r) => expect(r).toHaveLength(VENTURER_COLUMNS));
   });
 
   it("writes Member, 'X of Y' progress and a sortable percent", () => {

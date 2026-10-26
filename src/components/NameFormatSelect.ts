@@ -1,6 +1,6 @@
 import { defineComponent } from "vue";
 import type { PropType } from "vue";
-import { NAME_FORMAT_OPTIONS, type NameFormat } from "@/pages/OasProgression/services/getMemberDisplayName";
+import { NAME_FORMAT_OPTIONS, type NameFormat } from "@/pages/OasProgress/services/getMemberDisplayName";
 
 export default defineComponent({
   name: "NameFormatSelect",

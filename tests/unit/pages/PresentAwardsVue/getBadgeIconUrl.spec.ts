@@ -14,12 +14,12 @@ describe("getBadgeIconUrl", () => {
   });
 
   it("resolves an OAS skill badge to its bundled artwork", () => {
-    expect(getBadgeIconUrl("bushwalking")).toBe(`${EXTENSION_URL}images/oas-skills/oas-bushwalking.svg`);
+    expect(getBadgeIconUrl("bushwalking")).toBe(`${EXTENSION_URL}images/terrain/icon--oas-bushwalking.svg`);
   });
 
   it("resolves an additional award to its bundled artwork", () => {
-    expect(getBadgeIconUrl("walkabout_100")).toBe(`${EXTENSION_URL}images/aawards/aawards-walkabout-100.svg`);
-    expect(getBadgeIconUrl("camper_award_25")).toBe(`${EXTENSION_URL}images/aawards/aawards-camperaward-25.svg`);
+    expect(getBadgeIconUrl("walkabout_100")).toBe(`${EXTENSION_URL}images/terrain/additional-award-badges/walkabout_100.svg`);
+    expect(getBadgeIconUrl("camper_award_25")).toBe(`${EXTENSION_URL}images/terrain/additional-award-badges/camper_award_25.svg`);
   });
 
   it("keys the camper awards as Terrain names them, not after the artwork filename", () => {
@@ -32,13 +32,13 @@ describe("getBadgeIconUrl", () => {
     const awards = ["camper_award_10", "camper_award_25", "camper_award_50", "camper_award_75", "camper_award_100", "walkabout_10", "walkabout_50", "walkabout_100"];
 
     awards.forEach((award) => {
-      expect(getBadgeIconUrl(award)).toContain("images/aawards/");
+      expect(getBadgeIconUrl(award)).toContain("images/terrain/additional-award-badges/");
       expect(hasBadgeIcon(award)).toBe(true);
     });
   });
 
   it("accepts hyphen and space variants of an award id, so punctuation drift cannot break a lookup", () => {
-    const expected = `${EXTENSION_URL}images/aawards/aawards-walkabout-100.svg`;
+    const expected = `${EXTENSION_URL}images/terrain/additional-award-badges/walkabout_100.svg`;
 
     expect(getBadgeIconUrl("walkabout-100")).toBe(expected);
     expect(getBadgeIconUrl("Walkabout 100")).toBe(expected);
@@ -68,7 +68,7 @@ describe("getBadgeIconUrl", () => {
     const skills = ["bushcraft", "bushwalking", "camping", "aquatics", "boating", "paddling", "alpine", "cycling", "vertical"];
 
     skills.forEach((skill) => {
-      expect(getBadgeIconUrl(skill)).toContain("images/oas-skills/");
+      expect(getBadgeIconUrl(skill)).toContain("images/terrain/icon--oas-");
       expect(hasBadgeIcon(skill)).toBe(true);
     });
   });

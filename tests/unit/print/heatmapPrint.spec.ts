@@ -1,8 +1,8 @@
 import { buildPrintDocument, getPrintProfile, resolveHeaderFooter } from "@/print/summitPrint";
 import { skillHeatmapWidths } from "@/print/profiles/skillHeatmap";
 import { BASE_PRINT_CSS } from "@/print/printStyles";
-import { buildHeatmapPrintMeta } from "@/pages/OasProgressionVue/services/oasPrintMeta";
-import type { OASProgressionVueFilterState } from "@/pages/OasProgressionVue/services/OASProgressionVueFilterPersistence";
+import { buildHeatmapPrintMeta } from "@/pages/OasProgressVue/services/oasPrintMeta";
+import type { OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
 
 const VARS = { unit: "Example Venturer Unit", group: "1st Example Group", section: "Venturer Scouts" };
 const GENERATED = new Date(2026, 9, 10, 14, 5);
@@ -52,9 +52,9 @@ afterEach(() => {
 });
 
 describe("skill-heatmap profile", () => {
-  it("is registered, titled per the OAS Progression pattern, and has no Section line", () => {
+  it("is registered, titled per the OAS Progress pattern, and has no Section line", () => {
     const profile = getPrintProfile("skill-heatmap");
-    expect(profile.header.title).toBe("OAS Progression - Heatmap");
+    expect(profile.header.title).toBe("OAS Progress - Heatmap");
     const r = resolveHeaderFooter({ source: document.body, profile: "skill-heatmap", vars: VARS, generated: GENERATED });
     expect(r.header.meta.map((m) => m.label)).toEqual(["Generated"]);
     expect(profile.repeatColumns).toBe(1);
@@ -123,7 +123,7 @@ describe("buildHeatmapPrintMeta", () => {
     groupBy: "member",
     breakByPatrol: true,
     sortBy: "lastName",
-  } as unknown as OASProgressionVueFilterState;
+  } as unknown as OASProgressVueFilterState;
 
   it("lists nothing when everything is shown and there's no patrol choice (layout and sort are never listed)", () => {
     expect(buildHeatmapPrintMeta(defaults, ["Possum"], false)).toEqual([]);

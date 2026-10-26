@@ -8,7 +8,7 @@ jest.mock("fflate", () => {
 
 import { buildSkillHeatmapSheet, stageCells, stageWidths } from "@/excel/sheets/skillHeatmap";
 import { EXCEL_COLOURS, HEADER_BLOCK_ROWS, workbookToBlob } from "@/excel/summitExcel";
-import type { HeatMapExportView, MemberRowView, SquareState, StageCellView } from "@/pages/OasProgressionVue/components/OASHeatMapVue";
+import type { HeatMapExportView, MemberRowView, SquareState, StageCellView } from "@/pages/OasProgressVue/components/OASHeatMapVue";
 
 function squares(...states: SquareState[]): StageCellView {
   return { kind: "squares", squares: states.map((state, i) => ({ inputId: `i${i}`, state, stateClass: `oas-heatmap-square-${state}`, groupClass: "", title: "" })) };
@@ -42,7 +42,7 @@ function view(overrides: Partial<HeatMapExportView> = {}): HeatMapExportView {
   };
 }
 
-const HEADER = { title: "OAS Progression - Heatmap", subtitle: "Sample Group · Sample Unit", metaLine: "Generated: 12/10/2026" };
+const HEADER = { title: "OAS Progress - Heatmap", subtitle: "Sample Group · Sample Unit", metaLine: "Generated: 12/10/2026" };
 const fills = (cells: unknown[]) => cells.map((c) => (c ? ((c as { backgroundColor?: string }).backgroundColor ?? "none") : null));
 
 const firstValue = (r: unknown[]) => (r[0] ? (r[0] as { value: string }).value : null);

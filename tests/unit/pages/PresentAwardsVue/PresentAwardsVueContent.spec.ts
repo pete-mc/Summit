@@ -16,6 +16,14 @@ jest.mock("@/excel/summitExcel", () => ({
 }));
 
 import { exportExcelSheet } from "@/excel/summitExcel";
+jest.mock("@/helpers/TerrainToast", () => ({ showTerrainToast: jest.fn() }));
+import { showTerrainToast } from "@/helpers/TerrainToast";
+
+function lastToast(): unknown[] {
+  return (showTerrainToast as jest.Mock).mock.calls.slice(-1)[0] ?? [];
+}
+
+beforeEach(() => (showTerrainToast as jest.Mock).mockClear());
 
 import PresentAwardsVueContent, { DISCARD_EDITS_PROMPT, NOTHING_SELECTED_MESSAGE, SAVED_MESSAGE } from "@/pages/PresentAwardsVue/components/PresentAwardsVueContent";
 
@@ -207,7 +215,7 @@ describe("PresentAwardsVueContent — Excel export", () => {
     expect(request.printProfile).toBe("present-awards");
     expect(request.fileNameParts).toEqual(["Present Awards"]);
     expect(request.meta).toEqual(content.presentAwardsPrintMeta);
-    expect(content.feedback).toBe("Excel export complete");
+    expect(lastToast()).toEqual(["Excel export complete"]);
     expect(content.isExcelExporting).toBe(false);
   });
 
@@ -230,7 +238,7 @@ describe("PresentAwardsVueContent — Excel export", () => {
 
     await content.onExcelExportClick();
 
-    expect(content.feedback).toBe("Excel export failed: disk full");
+    expect(lastToast()).toEqual(["Excel export failed: disk full", "error"]);
     expect(content.isExcelExporting).toBe(false);
   });
 });
@@ -367,7 +375,7 @@ describe("PresentAwardsVueContent — saving", () => {
     await content.onSaveClick();
 
     expect(onSave).not.toHaveBeenCalled();
-    expect(content.feedback).toBe(NOTHING_SELECTED_MESSAGE);
+    expect(lastToast()).toEqual([NOTHING_SELECTED_MESSAGE, "info"]);
   });
 
   it("saves the selected awards with their edited dates applied", async () => {
@@ -382,7 +390,7 @@ describe("PresentAwardsVueContent — saving", () => {
     const saved = onSave.mock.calls[0][0] as SummitAchievement[];
     expect(saved.map((entry) => entry.id)).toEqual(["a"]);
     expect(saved[0].presented).toBe("09/09/2026");
-    expect(content.feedback).toBe(SAVED_MESSAGE);
+    expect(lastToast()).toEqual([SAVED_MESSAGE]);
   });
 
   it("excludes unticked awards from the saved payload", async () => {
@@ -404,8 +412,9 @@ describe("PresentAwardsVueContent — saving", () => {
 
     await content.onSaveClick();
 
-    expect(content.feedback).toBe(notice);
-    expect(content.feedback).not.toBe(SAVED_MESSAGE);
+    expect(lastToast()[0]).toBe(notice);
+    expect(lastToast()[1]).toBe("info");
+    expect(showTerrainToast).toHaveBeenCalledTimes(1);
   });
 
   it("reports a failure message rather than silently swallowing it", async () => {
@@ -414,7 +423,7 @@ describe("PresentAwardsVueContent — saving", () => {
 
     await content.onSaveClick();
 
-    expect(content.feedback).toBe("Save failed: Request failed with status 500");
+    expect(lastToast()).toEqual(["Save failed: Request failed with status 500", "error"]);
   });
 
   it("clears the saving flag even when the save fails", async () => {

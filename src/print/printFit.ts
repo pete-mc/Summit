@@ -16,6 +16,10 @@ export interface LayoutOptions {
   bandLabel?: string;
   partFooter?: string;
   footerMode?: "margin-box" | "table";
+  table?: HTMLTableElement;
+  bandPagePrefix?: string;
+  /** Left/right footers for band pages, when the unnamed @page doesn't carry them (multi-part printouts). */
+  bandFooter?: { left: string; right: string };
 }
 
 export interface LayoutResult {
@@ -28,10 +32,10 @@ export const PRINT_TABLE_SELECTOR = "table.summit-print-table";
 const FOOTER_FONT = '7.5pt "SummitPrintSans", arial, sans-serif';
 
 export function layoutTable(doc: Document, options: LayoutOptions = {}): LayoutResult {
-  const { layout = "fit", minZoom = 0.6, repeatColumns = 1, step = 0.025, bandLabel = "Columns {first} – {last}", partFooter = "Part {part} of {parts}", footerMode = "margin-box" } = options;
+  const { layout = "fit", minZoom = 0.6, repeatColumns = 1, step = 0.025, bandLabel = "Columns {first} – {last}", partFooter = "Part {part} of {parts}", footerMode = "margin-box", bandPagePrefix = "summit-band", bandFooter } = options;
   let splitZoom = options.splitZoom ?? 1;
 
-  const table = doc.querySelector<HTMLTableElement>(PRINT_TABLE_SELECTOR);
+  const table = options.table ?? doc.querySelector<HTMLTableElement>(PRINT_TABLE_SELECTOR);
   if (!table) return { zoom: 1, overflow: false, bands: 1 };
   const available = doc.body.clientWidth;
 
@@ -40,7 +44,7 @@ export function layoutTable(doc: Document, options: LayoutOptions = {}): LayoutR
     if (!r.overflow) return { ...r, bands: 1 };
     splitZoom = minZoom;
   }
-  return splitIntoBands(doc, table, available, { zoom: splitZoom, repeatColumns, bandLabel, partFooter, footerMode });
+  return splitIntoBands(doc, table, available, { zoom: splitZoom, repeatColumns, bandLabel, partFooter, footerMode, bandPagePrefix, bandFooter });
 }
 
 function setZoom(el: HTMLElement, zoom: number): void {
@@ -75,13 +79,21 @@ interface BandOptions {
   bandLabel: string;
   partFooter: string;
   footerMode: "margin-box" | "table";
+  bandPagePrefix: string;
+  bandFooter?: { left: string; right: string };
+}
+
+function bandFooterSlots(footer: { left: string; right: string } | undefined): string {
+  if (!footer) return "";
+  const slot = (name: string, text: string) => (text ? `\n  @bottom-${name} {\n    content: ${cssContent(text)};\n    font: ${FOOTER_FONT}; color: #555;\n    vertical-align: middle;\n  }` : "");
+  return `${slot("left", footer.left)}${slot("right", footer.right)}`;
 }
 
 function partFooterText(partFooter: string, part: number, parts: number): string {
   return partFooter.replace(/\{part\}/g, String(part)).replace(/\{parts\}/g, String(parts));
 }
 
-function splitIntoBands(doc: Document, original: HTMLTableElement, available: number, { zoom, repeatColumns, bandLabel, partFooter, footerMode }: BandOptions): LayoutResult {
+function splitIntoBands(doc: Document, original: HTMLTableElement, available: number, { zoom, repeatColumns, bandLabel, partFooter, footerMode, bandPagePrefix, bandFooter }: BandOptions): LayoutResult {
   // Bands size columns to content instead of fixed % widths.
   original.querySelector("colgroup")?.remove();
   original.classList.remove("summit-print-fixed");
@@ -120,7 +132,7 @@ function splitIntoBands(doc: Document, original: HTMLTableElement, available: nu
   chosen.forEach((g, i) => {
     const section = doc.createElement("section");
     section.className = "summit-print-band";
-    section.style.setProperty("page", `summit-band-${i + 1}`);
+    section.style.setProperty("page", `${bandPagePrefix}-${i + 1}`);
     const label = doc.createElement("div");
     label.className = "summit-print-band-label";
     const first = headers[g[0]];
@@ -136,10 +148,13 @@ function splitIntoBands(doc: Document, original: HTMLTableElement, available: nu
     section.append(label, t);
     frag.appendChild(section);
   });
-  original.replaceWith(frag);
   // Gotcha: named pages force a break, which would strand the header alone on page 1.
-  const header = doc.querySelector(".summit-print-header");
-  const firstBand = doc.querySelector(".summit-print-band");
+  const part = original.closest<HTMLElement>(".summit-print-part");
+  const header = part?.querySelector(".summit-print-header") ?? doc.querySelector(".summit-print-header");
+  // Gotcha: Edge is only known to handle un-nested named pages, so the bands' own page names replace the part's.
+  part?.style.removeProperty("page");
+  const firstBand = frag.firstElementChild;
+  original.replaceWith(frag);
   if (header && firstBand) firstBand.prepend(header);
 
   const style = doc.createElement("style");
@@ -148,7 +163,7 @@ function splitIntoBands(doc: Document, original: HTMLTableElement, available: nu
       ? ""
       : chosen
           .map(
-            (_, i) => `@page summit-band-${i + 1} {
+            (_, i) => `@page ${bandPagePrefix}-${i + 1} {${bandFooterSlots(bandFooter)}
   @bottom-center {
     content: ${cssContent(partFooterText(partFooter, i + 1, bandCount))};
     font: ${FOOTER_FONT}; color: #555;

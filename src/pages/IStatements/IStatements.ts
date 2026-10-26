@@ -2,13 +2,13 @@ import Vue from "vue";
 import { defineComponent } from "vue";
 import IStatementsContent from "./components/IStatementsContent.vue";
 import { buildIStatementMatrix, type IStatementMatrix } from "./services/buildIStatementMatrix";
-import { OAS_STREAMS } from "@/pages/OasProgression/services/buildOASProgressionRows";
+import { OAS_STREAMS } from "@/pages/OasProgress/services/buildOASProgressRows";
 import { clearCache, createLogger } from "@/helpers";
 import { TerrainRootState } from "@/types/terrainState";
 
 const logger = createLogger("IStatements");
 
-/** Gotcha: content mounts as a second Vue instance, because Terrain's Vue has no Vuetify components (see OasProgressionVue.ts). */
+/** Gotcha: content mounts as a second Vue instance, because Terrain's Vue has no Vuetify components (see OasProgressVue.ts). */
 interface ContentInstance {
   matrix: IStatementMatrix | undefined;
   loadState: string;

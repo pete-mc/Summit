@@ -48,7 +48,7 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [
-        { from: 'package.json', to: '' }, { from: 'LICENSE', to: '' }, { from: 'README.md', to: '' }, { from: 'src/summitloader.js', to: 'scripts'},{ from: 'manifest.json', to: '' }, { from: 'src/images', to: 'images', globOptions: { ignore: ['**/Thumbs.db'] } },
+        { from: 'package.json', to: '' }, { from: 'LICENSE', to: '' }, { from: 'README.md', to: '' }, { from: 'src/summitloader.js', to: 'scripts'},{ from: 'manifest.json', to: '' }, { from: 'src/images', to: 'images', globOptions: { ignore: ['**/Thumbs.db', '**/README.md', '**/extract-terrain-images.js'] } },
       ],
     }),
     new VueLoaderPlugin()

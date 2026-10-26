@@ -1,6 +1,6 @@
 import type { Cell, Image, Row } from "write-excel-file/browser";
-import type { HeatMapExportView, MemberRowView, StageCellView } from "@/pages/OasProgressionVue/components/OASHeatMapVue";
-import { buildHeaderBlock, EXCEL_COLOURS, HEADER_BLOCK_ROWS, outlinedBar, type ExcelHeader, type ExcelSheet } from "../summitExcel";
+import type { HeatMapExportView, MemberRowView, StageCellView } from "@/pages/OasProgressVue/components/OASHeatMapVue";
+import { buildHeaderBlock, EXCEL_COLOURS, excelTitleRow, HEADER_BLOCK_ROWS, outlinedBar, type ExcelHeader, type ExcelSheet } from "../summitExcel";
 
 /** A stage is as wide as its most squares in any row (min 2, so bars stay visible). */
 
@@ -70,10 +70,6 @@ function buildTableHeader(view: HeatMapExportView, widths: number[]): Row {
   return row;
 }
 
-function titleRow(text: string, totalColumns: number, style: Record<string, unknown>): Row {
-  return [{ value: text, type: String, columnSpan: totalColumns, fontWeight: "bold", ...style } as Cell, ...nulls(totalColumns - 1)];
-}
-
 function dataRow(label: string, view: MemberRowView, widths: number[]): Row {
   // "-" leaves Stage and Next empty, so it sorts last.
   const hasStage = view.stageDisplay !== "-";
@@ -97,10 +93,10 @@ export function buildSkillHeatmapSheet(input: SkillHeatmapSheetInput): ExcelShee
   const body: Row[] = [];
   view.sections.forEach((section, sectionIndex) => {
     if (sectionIndex > 0) body.push(blankRow());
-    body.push(titleRow(section.patrolName ? `${section.title} — ${section.patrolName}` : section.title, totalColumns, { fontSize: 12, backgroundColor: EXCEL_COLOURS.sectionRow }));
+    body.push(excelTitleRow(section.patrolName ? `${section.title} — ${section.patrolName}` : section.title, totalColumns, { fontSize: 12, backgroundColor: EXCEL_COLOURS.sectionRow }));
     section.groups.forEach((group, groupIndex) => {
       if (groupIndex > 0) body.push(blankRow());
-      if (group.patrolName) body.push(titleRow(group.patrolName, totalColumns, { backgroundColor: EXCEL_COLOURS.mutedRow }));
+      if (group.patrolName) body.push(excelTitleRow(group.patrolName, totalColumns, { backgroundColor: EXCEL_COLOURS.mutedRow }));
       group.rows.forEach((r) => body.push(dataRow(r.label, r.view, widths)));
     });
   });

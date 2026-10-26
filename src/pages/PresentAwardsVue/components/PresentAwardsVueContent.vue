@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <div class="oas-vue-content present-awards-panel">
-      <div class="oas-progression-view-row">
+      <div class="oas-progress-view-row">
         <span v-if="sharedLoadState === 'loading'">Loading awards...</span>
         <v-spacer></v-spacer>
         <template v-if="hasContent">
@@ -13,9 +13,6 @@
       </div>
 
       <SummitLoadingState :state="sharedLoadState" error-message="Could not load awards." :on-retry="onReloadClick" />
-
-      <!-- Gotcha: outside the ready gate, because Save triggers a reload and would hide "Saved." -->
-      <div v-if="feedback" role="status" class="data-grid-export-feedback">{{ feedback }}</div>
 
       <template v-if="hasContent">
         <PresentAwardsFiltersVue :filters="displayFilters" @update:filters="onDisplayFiltersUpdate" @reset="onResetFilters" />
@@ -40,7 +37,7 @@
 </script>
 
 <style scoped>
-/* Deliberately the same --oas-vue-* scale as OAS Progression, so the sibling pages can't drift. */
+/* Deliberately the same --oas-vue-* scale as OAS Progress, so the sibling pages can't drift. */
 .oas-vue-content {
   --oas-vue-font-size-heading: 18px;
   --oas-vue-font-size-body: 14px;
@@ -48,7 +45,7 @@
   padding: 8px 0;
 }
 
-.oas-progression-view-row {
+.oas-progress-view-row {
   flex-wrap: wrap;
   gap: var(--summit-space-sm, 8px);
   margin-bottom: var(--summit-space-lg, 16px);

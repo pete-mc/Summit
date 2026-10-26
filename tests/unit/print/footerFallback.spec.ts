@@ -69,7 +69,7 @@ describe("fallback footer in the print document", () => {
     const doc = new DOMParser().parseFromString(html, "text/html");
     const cell = doc.querySelector("table.summit-print-table > tfoot.summit-print-tfoot td") as HTMLTableCellElement;
     expect(cell.colSpan).toBe(6);
-    expect(doc.querySelector(".summit-print-foot-left")?.textContent).toBe("OAS Progression - Heatmap · Example Venturer Unit");
+    expect(doc.querySelector(".summit-print-foot-left")?.textContent).toBe("OAS Progress - Heatmap · Example Venturer Unit");
     expect(doc.querySelector(".summit-print-foot-center")?.textContent).toMatch(/^Generated 11\/10\/2026/);
     expect(doc.querySelector(".summit-print-foot-right")?.textContent).toBe(""); // was "Page {page} of {pages}"
     expect(html).not.toContain("@bottom-");

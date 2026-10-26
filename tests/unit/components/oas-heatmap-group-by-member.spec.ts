@@ -2,9 +2,9 @@ import * as fs from "fs";
 import * as path from "path";
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
-const HEAT_MAP = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASHeatMapVue.vue"), "utf8");
-const FILTERS = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASProgressionFiltersVue.vue"), "utf8");
-const FILTERS_TS = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASProgressionFiltersVue.ts"), "utf8");
+const HEAT_MAP = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASHeatMapVue.vue"), "utf8");
+const FILTERS = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASProgressFiltersVue.vue"), "utf8");
+const FILTERS_TS = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASProgressFiltersVue.ts"), "utf8");
 const PRINT_PROFILE = fs.readFileSync(path.resolve(REPO_ROOT, "src/print/profiles/skillHeatmap.ts"), "utf8");
 
 describe("OAS heat map — group by Skill or Member", () => {
@@ -46,7 +46,7 @@ describe("OAS heat map — group by Skill or Member", () => {
 });
 
 describe("OAS table view — deliberately not grouped", () => {
-  const TABLE = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressionVue/components/OASProgressionTableVue.vue"), "utf8");
+  const TABLE = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASProgressTableVue.vue"), "utf8");
 
   it("stays flat", () => {
     // Table grouping was deliberately removed; re-adding it is a design decision.

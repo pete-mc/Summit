@@ -1,5 +1,6 @@
 import SummitAchievement from "@/pages/PresentAwards/models/SummitAchievement";
 import { TerrainAchievementsType } from "@/shared";
+import { getBadgeEntry } from "@/shared/badgeManifest";
 import type { TerrainAchievements, TerrainUnitMember } from "@/types/terrainTypes";
 
 function makeMember(overrides: Partial<TerrainUnitMember> = {}): TerrainUnitMember {
@@ -118,6 +119,21 @@ describe("SummitAchievement", () => {
 
     expect(new SummitAchievement(milestone, makeMember(), []).badgeKey).toBe("milestone_scout_2");
     expect(new SummitAchievement(peak, makeMember(), []).badgeKey).toBe("peak_award_scout");
+  });
+
+  it("keys intro to section, adventurous journeys and courses by section, each to its own artwork", () => {
+    const keyFor = (type: string, section: string) => new SummitAchievement(makeAchievement({ type: type as TerrainAchievements["type"], section: section as TerrainAchievements["section"] }), makeMember(), []).badgeKey;
+
+    expect(keyFor(TerrainAchievementsType.IntroSection, "scout")).toBe("intro_section_scout");
+    expect(keyFor(TerrainAchievementsType.AdventurousJourney, "cub")).toBe("adventurous_journey_cub");
+    expect(keyFor(TerrainAchievementsType.CourseReflection, "rover")).toBe("course_reflection_rover");
+    ["intro_section_scout", "adventurous_journey_cub", "course_reflection_rover"].forEach((key) => expect(getBadgeEntry(key)?.file).toBeTruthy());
+  });
+
+  it("gives Introduction to Scouting one badge regardless of section", () => {
+    const achievement = makeAchievement({ type: TerrainAchievementsType.IntroScouting as TerrainAchievements["type"] });
+
+    expect(new SummitAchievement(achievement, makeMember(), []).badgeKey).toBe("intro_scouting");
   });
 
   it("falls back to the type when a milestone has no stage recorded", () => {

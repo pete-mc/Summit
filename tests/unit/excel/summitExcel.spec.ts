@@ -4,22 +4,22 @@ describe("buildExcelFileName", () => {
   const when = new Date(2026, 9, 2, 14, 5);
 
   it("follows 'Summit - {parts} - yyyymmdd.xlsx'", () => {
-    expect(buildExcelFileName(["OAS Progression", "Summary", "Sample Unit"], when)).toBe("Summit - OAS Progression - Summary - Sample Unit - 20261002.xlsx");
+    expect(buildExcelFileName(["OAS Progress", "Summary", "Sample Unit"], when)).toBe("Summit - OAS Progress - Summary - Sample Unit - 20261002.xlsx");
   });
 
   it("replaces characters Windows forbids in file names", () => {
-    expect(buildExcelFileName(["OAS Progression", "Summary", 'A/B: "C"?'], when)).toBe("Summit - OAS Progression - Summary - A-B- -C-- - 20261002.xlsx");
+    expect(buildExcelFileName(["OAS Progress", "Summary", 'A/B: "C"?'], when)).toBe("Summit - OAS Progress - Summary - A-B- -C-- - 20261002.xlsx");
   });
 
   it("drops an empty part rather than leaving '- -'", () => {
-    expect(buildExcelFileName(["OAS Progression", "Summary", ""], when)).toBe("Summit - OAS Progression - Summary - 20261002.xlsx");
+    expect(buildExcelFileName(["OAS Progress", "Summary", ""], when)).toBe("Summit - OAS Progress - Summary - 20261002.xlsx");
   });
 });
 
 describe("resolveExcelHeader", () => {
   it("uses the printout's wording for the same profile", () => {
     const header = resolveExcelHeader("peak-award-summary", [{ label: "Patrol", value: "All" }], { unit: "Sample Unit", group: "Sample Group", section: "Venturer Scouts" }, new Date(2026, 9, 12, 14, 5));
-    expect(header.title).toBe("OAS Progression - Summary for Peak Award");
+    expect(header.title).toBe("OAS Progress - Summary - Towards Peak Award");
     expect(header.subtitle).toBe("Sample Group · Sample Unit");
     expect(header.metaLine).toMatch(/^Patrol: All · Generated: 12\/10\/2026/);
   });
