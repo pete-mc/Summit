@@ -7,11 +7,13 @@
 
 export type PrintLayout = "fit" | "split";
 
+export type RepeatColumns = number | ((table: HTMLTableElement) => number);
+
 export interface LayoutOptions {
   layout?: PrintLayout;
   minZoom?: number;
   splitZoom?: number;
-  repeatColumns?: number;
+  repeatColumns?: RepeatColumns;
   step?: number;
   bandLabel?: string;
   partFooter?: string;
@@ -44,7 +46,8 @@ export function layoutTable(doc: Document, options: LayoutOptions = {}): LayoutR
     if (!r.overflow) return { ...r, bands: 1 };
     splitZoom = minZoom;
   }
-  return splitIntoBands(doc, table, available, { zoom: splitZoom, repeatColumns, bandLabel, partFooter, footerMode, bandPagePrefix, bandFooter });
+  const repeat = typeof repeatColumns === "function" ? repeatColumns(table) : repeatColumns;
+  return splitIntoBands(doc, table, available, { zoom: splitZoom, repeatColumns: repeat, bandLabel, partFooter, footerMode, bandPagePrefix, bandFooter });
 }
 
 function setZoom(el: HTMLElement, zoom: number): void {
@@ -145,7 +148,8 @@ function splitIntoBands(doc: Document, original: HTMLTableElement, available: nu
     if (footerMode === "table" && footCenter && partFooter && !/\{pages?\}/.test(partFooter)) {
       footCenter.textContent = partFooterText(partFooter, i + 1, bandCount);
     }
-    section.append(label, t);
+    if (bandLabel) section.append(label);
+    section.append(t);
     frag.appendChild(section);
   });
   // Gotcha: named pages force a break, which would strand the header alone on page 1.

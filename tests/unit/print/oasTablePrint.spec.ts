@@ -37,14 +37,16 @@ describe("oas-table profile", () => {
 });
 
 describe("buildOasTablePrintMeta", () => {
-  it("lists nothing without column filters", () => {
-    expect(buildOasTablePrintMeta({})).toEqual([]);
+  it("lists only the member without column filters", () => {
+    expect(buildOasTablePrintMeta({}, "Ann Scout")).toEqual([{ label: "Member", value: "Ann Scout" }]);
   });
 
-  it("uses the table's column names, in column order; Yes/No for Answered/Awarded; contains for text boxes", () => {
-    expect(buildOasTablePrintMeta({ awarded: "false", stage: "3", memberName: "ann", answered: "true" })).toEqual([
-      { label: "Member", value: 'contains "ann"' },
+  it("member first, then the table's column names in column order; Yes/No for Answered/Awarded; contains for text boxes", () => {
+    expect(buildOasTablePrintMeta({ awarded: "false", stage: "3", iStatement: "pack", answered: "true", skillStream: "Camping" }, "Ann Scout")).toEqual([
+      { label: "Member", value: "Ann Scout" },
+      { label: "Skill", value: "Camping" },
       { label: "Stage", value: "3" },
+      { label: "I-Statement", value: 'contains "pack"' },
       { label: "Answered", value: "Yes" },
       { label: "Awarded", value: "No" },
     ]);

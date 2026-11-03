@@ -23,7 +23,7 @@ function makeFilters(overrides: Partial<OASProgressVueFilterState> = {}): OASPro
     visibleStreams: [],
     visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     sortBy: "firstName",
-    worksheetVisibleSkills: [],
+    worksheetSkillStream: "camping::camping",
     worksheetVisibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     worksheetNameFormat: "full",
     worksheetBreakByPatrol: false,

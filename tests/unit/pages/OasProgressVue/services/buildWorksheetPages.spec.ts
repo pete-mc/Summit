@@ -29,7 +29,7 @@ function makeRow(overrides: Partial<OASProgressRow> = {}): OASProgressRow {
 
 // [] shows nobody, so default to [UNASSIGNED_PATROL] (makeRow's default).
 const DEFAULT_OPTIONS: BuildWorksheetPagesOptions = {
-  visibleSkills: ["bushcraft", "bushwalking", "camping"],
+  skillStream: "bushcraft::bushcraft",
   visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
   selectedPatrols: [UNASSIGNED_PATROL],
   memberFilter: "",
@@ -44,17 +44,17 @@ function options(overrides: Partial<BuildWorksheetPagesOptions> = {}): BuildWork
 }
 
 describe("buildWorksheetPages", () => {
-  it("builds one page per (skill, stream, stage)", () => {
+  it("builds one page per stage of the chosen Skill - Stream, in stage order", () => {
     const rows = [
+      makeRow({ stream: "bushcraft", branch: "bushcraft", stage: 3, inputId: "a3" }),
       makeRow({ stream: "bushcraft", branch: "bushcraft", stage: 1, inputId: "a1" }),
       makeRow({ stream: "bushcraft", branch: "bushcraft", stage: 2, inputId: "a2" }),
-      makeRow({ stream: "bushcraft", branch: "bushcraft", stage: 3, inputId: "a3" }),
       makeRow({ stream: "bushcraft", branch: "pioneering", stage: 4, inputId: "a4" }),
     ];
 
     const result = buildWorksheetPages(rows, options());
 
-    expect(result.pages.map((p) => p.key)).toEqual(["bushcraft::bushcraft::1", "bushcraft::bushcraft::2", "bushcraft::bushcraft::3", "bushcraft::pioneering::4"]);
+    expect(result.pages.map((p) => p.key)).toEqual(["bushcraft::bushcraft::1", "bushcraft::bushcraft::2", "bushcraft::bushcraft::3"]);
   });
 
   it("gives a member with no progress in a Skill/Stage a column with all-null cells (decision 1)", () => {
@@ -70,7 +70,7 @@ describe("buildWorksheetPages", () => {
   });
 
   it("uses identical members, in identical order, across every page in the set", () => {
-    const rows = [makeRow({ memberId: "m1", memberName: "Amy Scout", stage: 1, inputId: "a1" }), makeRow({ memberId: "m2", memberName: "Jess Example", stage: 4, branch: "pioneering", inputId: "a4" })];
+    const rows = [makeRow({ memberId: "m1", memberName: "Amy Scout", stage: 1, inputId: "a1" }), makeRow({ memberId: "m2", memberName: "Jess Example", stage: 4, inputId: "a4" })];
 
     const result = buildWorksheetPages(rows, options());
 
@@ -110,12 +110,15 @@ describe("buildWorksheetPages", () => {
     expect(result.pages.map((p) => p.stage)).toEqual([1]);
   });
 
-  it("drops whole pages for skills not in visibleSkills", () => {
-    const rows = [makeRow({ stream: "bushcraft", branch: "bushcraft" }), makeRow({ stream: "camping", branch: "camping" })];
+  it("shows only the chosen Skill - Stream: a trunk excludes its own streams, and a stream excludes its trunk", () => {
+    const rows = [
+      makeRow({ stream: "bushcraft", branch: "bushcraft", stage: 4, inputId: "t4" }),
+      makeRow({ stream: "bushcraft", branch: "pioneering", stage: 4, inputId: "p4" }),
+      makeRow({ stream: "camping", branch: "camping", stage: 4, inputId: "c4" }),
+    ];
 
-    const result = buildWorksheetPages(rows, options({ visibleSkills: ["bushcraft"] }));
-
-    expect(result.pages.map((p) => p.skill)).toEqual(["bushcraft"]);
+    expect(buildWorksheetPages(rows, options()).pages.map((p) => p.key)).toEqual(["bushcraft::bushcraft::4"]);
+    expect(buildWorksheetPages(rows, options({ skillStream: "bushcraft::pioneering" })).pages.map((p) => p.key)).toEqual(["bushcraft::pioneering::4"]);
   });
 
   it("resolves codenames and first-name-only via the Names format option", () => {
@@ -149,15 +152,6 @@ describe("buildWorksheetPages", () => {
     const byPatrol = buildWorksheetPages(rows, { ...bothPatrols, breakByPatrol: true });
     expect(byPatrol.members.map((m) => m.memberId)).toEqual(["m2", "m1", "m3"]);
     expect(byPatrol.patrolGroups?.flatMap((g) => g.members.map((m) => m.memberId))).toEqual(byPatrol.members.map((m) => m.memberId));
-  });
-
-  it("orders pages by OAS_SKILLS order, not alphabetically", () => {
-    const rows = [makeRow({ stream: "camping", branch: "camping" }), makeRow({ stream: "bushcraft", branch: "bushcraft" })];
-
-    const result = buildWorksheetPages(rows, options());
-
-    // Only passes if OAS_SKILLS order (not alphabetical) is used.
-    expect(result.pages.map((p) => p.skill)).toEqual(["bushcraft", "camping"]);
   });
 
   it("flags awarded cells distinctly from merely-answered cells", () => {
@@ -388,7 +382,7 @@ describe("transposeWorksheetPage", () => {
   });
 
   it("carries skill/stream/stage/title/key through unchanged", () => {
-    const page = buildWorksheetPages([makeRow({ stream: "bushwalking", branch: "bushwalking", stage: 5 })], options({ visibleSkills: ["bushwalking"] })).pages[0];
+    const page = buildWorksheetPages([makeRow({ stream: "bushwalking", branch: "bushwalking", stage: 5 })], options({ skillStream: "bushwalking::bushwalking" })).pages[0];
 
     const transposed = transposeWorksheetPage(page);
 

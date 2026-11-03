@@ -50,9 +50,10 @@ export function buildHeatmapPrintMeta(filters: OASProgressVueFilterState, patrol
   return meta;
 }
 
-export function buildOasTablePrintMeta(columnFilters: Record<string, string>): MetaEntry[] {
-  const meta: MetaEntry[] = [];
+export function buildOasTablePrintMeta(columnFilters: Record<string, string>, memberName: string): MetaEntry[] {
+  const meta: MetaEntry[] = memberName ? [{ label: "Member", value: memberName }] : [];
   for (const header of TABLE_HEADERS) {
+    if (header.filterType === "member") continue;
     const value = (columnFilters[header.value] ?? "").trim();
     if (!value) continue;
     if (header.filterType !== "select") {
@@ -62,5 +63,15 @@ export function buildOasTablePrintMeta(columnFilters: Record<string, string>): M
     const yesNo = header.value === "answered" || header.value === "awarded" ? YES_NO_OPTIONS.filter((o) => o.value === value)[0] : undefined;
     meta.push({ label: header.text, value: yesNo ? yesNo.text : value });
   }
+  return meta;
+}
+
+/** Layout, name format and break by patrol are visible in the printout itself. */
+export function buildWorksheetsPrintMeta(filters: OASProgressVueFilterState, skillStreamLabel: string, patrolOptions: string[], canFilterByPatrol: boolean): MetaEntry[] {
+  const meta: MetaEntry[] = skillStreamLabel ? [{ label: "Skill", value: skillStreamLabel }] : [];
+  const stages = filters.worksheetVisibleStages.slice().sort((a, b) => a - b);
+  if (stages.length < MAX_STAGE) meta.push({ label: "Stages", value: stages.length ? stages.join(", ") : "None" });
+  if (canFilterByPatrol) meta.push({ label: "Patrol", value: describePatrols(filters.worksheetSelectedPatrols, patrolOptions) });
+  if (!filters.worksheetShowCompleted) meta.push({ label: "Hidden", value: "Members awarded the stage" });
   return meta;
 }

@@ -1,4 +1,4 @@
-import { cellGrid, columnCount, cssContent, sliceColumns } from "@/print/printFit";
+import { cellGrid, columnCount, cssContent, layoutTable, sliceColumns } from "@/print/printFit";
 
 function table(html: string): HTMLTableElement {
   const t = document.createElement("table");
@@ -62,5 +62,31 @@ describe("cssContent", () => {
 
   it("returns an empty CSS string for an empty template", () => {
     expect(cssContent("")).toBe('""');
+  });
+});
+
+describe("layoutTable band labels", () => {
+  function splitTwoWays(bandLabel: string): Document {
+    document.body.innerHTML = `<section class="summit-print-part"><table class="summit-print-table"><thead><tr><th>Member</th><th>One</th><th>Two</th></tr></thead><tbody><tr><td>A</td><td>1</td><td>2</td></tr></tbody></table></section>`;
+    Object.defineProperty(document.body, "clientWidth", { configurable: true, value: 250 });
+    // Fake layout: 100px per column, so all three overflow and two fit.
+    jest.spyOn(HTMLTableElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLTableElement) {
+      return { width: columnCount(this) * 100 } as DOMRect;
+    });
+    layoutTable(document, { layout: "split", bandLabel });
+    return document;
+  }
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it("labels each band by default", () => {
+    expect(splitTwoWays("Columns {first} – {last}").querySelectorAll(".summit-print-band-label")).toHaveLength(2);
+  });
+
+  // The OAS Worksheets I-statement label repeated a whole sentence above every band.
+  it("prints no label when the band label is empty", () => {
+    const doc = splitTwoWays("");
+    expect(doc.querySelectorAll(".summit-print-band")).toHaveLength(2);
+    expect(doc.querySelectorAll(".summit-print-band-label")).toHaveLength(0);
   });
 });

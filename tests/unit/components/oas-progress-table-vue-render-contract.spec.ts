@@ -1,7 +1,7 @@
 import Vue from "vue";
 import * as fs from "fs";
 import * as path from "path";
-import OASProgressTableVueOptions, { filterOASProgressRows } from "@/pages/OasProgressVue/components/OASProgressTableVue";
+import OASProgressTableVueOptions, { buildTableRows, filterOASProgressRows, listTableMembers, skillStreamLabel, type OASTableRow } from "@/pages/OasProgressVue/components/OASProgressTableVue";
 import type { OASProgressRow } from "@/pages/OasProgress/services/buildOASProgressRows";
 
 /** No .vue import in its chain, so it can be `new Vue(options)`'d; the template is checked as source text. */
@@ -19,13 +19,23 @@ function makeRow(overrides: Partial<OASProgressRow> = {}): OASProgressRow {
     iStatement: "I can pack appropriate gear for an overnight hike",
     memberId: "member-1",
     memberName: "Alex Scout",
+    firstName: "Alex",
+    lastName: "Scout",
     patrolName: null,
     answered: true,
     awarded: false,
     date: "2020-11-18",
+    section: null,
     ...overrides,
   };
 }
+
+function makeTableRow(overrides: Partial<OASProgressRow> = {}): OASTableRow {
+  const row = makeRow(overrides);
+  return { ...row, skillStream: skillStreamLabel(row) };
+}
+
+const TABLE_FIELDS = ["memberName", "skillStream", "stage", "inputGroup", "iStatement", "answered", "awarded", "date"];
 
 describe("OASProgressTableVue render contract", () => {
   it("declares the items/columnFilters props and default headers state", () => {
@@ -37,47 +47,38 @@ describe("OASProgressTableVue render contract", () => {
 
     expect(vm.items).toEqual(items);
     expect(vm.columnFilters).toEqual({});
-    expect(vm.headers.map((h) => h.value)).toEqual(["memberName", "stream", "branch", "stage", "inputGroup", "iStatement", "answered", "awarded", "date"]);
+    expect(vm.headers.map((h) => h.value)).toEqual(TABLE_FIELDS);
   });
 
-  it("headers cover the same field set as the React page's flat Table view columns", () => {
-    const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASProgressTableVue.ts"), "utf8");
-    ["memberName", "stream", "branch", "stage", "inputGroup", "iStatement", "answered", "awarded", "date"].forEach((field) => {
-      expect(source).toContain(`value: "${field}"`);
-    });
-  });
-
-  it("Skill/Stream/Stage/Group/Answered/Awarded are dropdown filters; Member/I-Statement/Date stay text", () => {
+  it("Skill/Stage/Group/Answered/Awarded are dropdown filters; Member is the single-member picker; I-Statement/Date stay text", () => {
     const vm = new Vue({
       ...OASProgressTableVueOptions,
       propsData: { items: [] },
     }) as unknown as { headers: Array<{ value: string; filterType?: string }> };
 
     const selectColumns = vm.headers.filter((h) => h.filterType === "select").map((h) => h.value);
-    const textColumns = vm.headers.filter((h) => h.filterType !== "select").map((h) => h.value);
+    const textColumns = vm.headers.filter((h) => !h.filterType || h.filterType === "text").map((h) => h.value);
 
-    expect(selectColumns.sort()).toEqual(["answered", "awarded", "branch", "inputGroup", "stage", "stream"].sort());
-    expect(textColumns.sort()).toEqual(["date", "iStatement", "memberName"].sort());
+    expect(selectColumns.sort()).toEqual(["answered", "awarded", "inputGroup", "skillStream", "stage"].sort());
+    expect(textColumns.sort()).toEqual(["date", "iStatement"].sort());
+    expect(vm.headers.filter((h) => h.filterType === "member").map((h) => h.value)).toEqual(["memberName"]);
   });
 
-  it("columnFilterOptions: Skill options come from OAS_SKILLS, Stage is 1-9, Answered/Awarded are Yes(true)/No(false), Stream/Group are derived from ALL loaded items (not filtered)", () => {
-    const items = [makeRow({ inputGroup: "Plan", branch: "navigation" }), makeRow({ inputGroup: "Do", branch: "safety" }), makeRow({ inputGroup: "Plan", branch: "navigation" })];
+  it("columnFilterOptions: Stage is 1-9, Answered/Awarded are Yes(true)/No(false), Skill/Group are derived from ALL loaded items (not filtered)", () => {
+    const items = [makeRow({ inputGroup: "Plan", branch: "navigation" }), makeRow({ inputGroup: "Do", branch: "safety", memberId: "member-2" }), makeRow({ inputGroup: "Plan", branch: "navigation" })];
     const vm = new Vue({
       ...OASProgressTableVueOptions,
-      propsData: { items, columnFilters: { memberName: "nonexistent" } },
+      propsData: { items, memberId: "member-1", columnFilters: { iStatement: "nonexistent" } },
     }) as unknown as { columnFilterOptions: Record<string, Array<{ text: string; value: string }>> };
 
-    expect(vm.columnFilterOptions.stream.length).toBeGreaterThan(0);
-    expect(vm.columnFilterOptions.stream.map((o) => o.value)).toContain("bushwalking");
     expect(vm.columnFilterOptions.stage.map((o) => o.value)).toEqual(["1", "2", "3", "4", "5", "6", "7", "8", "9"]);
     expect(vm.columnFilterOptions.answered).toEqual([
       { text: "Yes", value: "true" },
       { text: "No", value: "false" },
     ]);
     expect(vm.columnFilterOptions.awarded).toEqual(vm.columnFilterOptions.answered);
-    // Derived from `items` (all loaded rows), NOT `filteredItems` — a memberName filter matching
-    // zero rows must not empty out the Stream/Group dropdowns' own option lists.
-    expect(vm.columnFilterOptions.branch.map((o) => o.value).sort()).toEqual(["navigation", "safety"]);
+    // Derived from `items`, not `filteredItems`: options must not change with the selected member or other filters.
+    expect(vm.columnFilterOptions.skillStream.map((o) => o.value)).toEqual(["Bushwalking - Navigation", "Bushwalking - Safety"]);
     expect(vm.columnFilterOptions.inputGroup.map((o) => o.value).sort()).toEqual(["Do", "Plan"]);
   });
 
@@ -100,7 +101,7 @@ describe("OASProgressTableVue render contract", () => {
   it("template renders a v-select for dropdown columns (bound to columnFilterOptions) and a v-text-field with a search icon for text columns", () => {
     const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASProgressTableVue.vue"), "utf8");
     expect(source).toContain("<v-select");
-    expect(source).toContain("v-if=\"header.filterType === 'select'\"");
+    expect(source).toContain("v-else-if=\"header.filterType === 'select'\"");
     expect(source).toContain(':items="columnFilterOptions[header.value]"');
     expect(source).toContain('prepend-inner-icon="mdi-magnify"');
   });
@@ -149,28 +150,86 @@ describe("OASProgressTableVue render contract", () => {
     expect(source).toContain("Clear filters");
   });
 
-  it("filterOASProgressRows ANDs every non-empty column filter, case-insensitive substring match, empty/missing filters are no-ops", () => {
-    const rows = [makeRow({ memberName: "Alex Scout", iStatement: "I can pack a bag", stream: "bushcraft" }), makeRow({ memberName: "Sam Ranger", iStatement: "I can navigate with a map", stream: "bushwalking" })];
+  it("filterOASProgressRows ANDs every non-empty column filter; text columns are case-insensitive substrings; empty/missing filters are no-ops", () => {
+    const rows = [
+      makeTableRow({ memberName: "Alex Scout", iStatement: "I can pack a bag", stream: "bushcraft", branch: "bushcraft" }),
+      makeTableRow({ memberName: "Sam Ranger", iStatement: "I can navigate with a map", stream: "bushwalking", branch: "bushwalking" }),
+    ];
 
     expect(filterOASProgressRows(rows)).toEqual(rows);
     expect(filterOASProgressRows(rows, {})).toEqual(rows);
-    expect(filterOASProgressRows(rows, { memberName: "  " })).toEqual(rows);
-    expect(filterOASProgressRows(rows, { memberName: "sam" }).map((r) => r.memberName)).toEqual(["Sam Ranger"]);
+    expect(filterOASProgressRows(rows, { iStatement: "  " })).toEqual(rows);
     expect(filterOASProgressRows(rows, { iStatement: "NAVIGATE" }).map((r) => r.memberName)).toEqual(["Sam Ranger"]);
-    // Two column filters ANDed together — both must match the same row.
-    expect(filterOASProgressRows(rows, { memberName: "sam", stream: "bushwalking" }).map((r) => r.memberName)).toEqual(["Sam Ranger"]);
-    expect(filterOASProgressRows(rows, { memberName: "sam", stream: "bushcraft" })).toEqual([]);
-    expect(filterOASProgressRows(rows, { memberName: "nonexistent" })).toEqual([]);
+    expect(filterOASProgressRows(rows, { iStatement: "I can", skillStream: "Bushwalking" }).map((r) => r.memberName)).toEqual(["Sam Ranger"]);
+    expect(filterOASProgressRows(rows, { iStatement: "navigate", skillStream: "Bushcraft" })).toEqual([]);
+  });
+
+  it("dropdown filters match exactly, so a skill's trunk label does not also pull in its streams", () => {
+    const rows = [makeTableRow({ memberName: "Trunk", stream: "camping", branch: "camping" }), makeTableRow({ memberName: "Stream", stream: "camping", branch: "lightweight-camping" })];
+
+    expect(filterOASProgressRows(rows, { skillStream: "Camping" }).map((r) => r.memberName)).toEqual(["Trunk"]);
+    expect(filterOASProgressRows(rows, { skillStream: "Camping - Lightweight Camping" }).map((r) => r.memberName)).toEqual(["Stream"]);
+  });
+
+  it("skillStreamLabel shows just the skill for trunk stages and Skill - Stream otherwise", () => {
+    expect(skillStreamLabel(makeRow({ stream: "vertical", branch: "vertical" }))).toBe("Vertical");
+    expect(skillStreamLabel(makeRow({ stream: "vertical", branch: "abseiling" }))).toBe("Vertical - Abseiling");
+  });
+
+  it("skillStream options follow OAS skill order, trunk before its streams", () => {
+    const items = [makeRow({ stream: "vertical", branch: "climbing" }), makeRow({ stream: "vertical", branch: "vertical" }), makeRow({ stream: "bushcraft", branch: "bushcraft" }), makeRow({ stream: "vertical", branch: "abseiling" })];
+    const vm = new Vue({ ...OASProgressTableVueOptions, propsData: { items, memberId: "member-1" } }) as unknown as { columnFilterOptions: Record<string, Array<{ value: string }>> };
+
+    expect(vm.columnFilterOptions.skillStream.map((o) => o.value)).toEqual(["Bushcraft", "Vertical", "Vertical - Abseiling", "Vertical - Climbing"]);
+  });
+
+  it("listTableMembers lists each member once, sorted by first then last name", () => {
+    const items = [
+      makeRow({ memberId: "m3", memberName: "Sam Ranger", firstName: "Sam", lastName: "Ranger" }),
+      makeRow({ memberId: "m1", memberName: "Alex Van Der Berg", firstName: "Alex", lastName: "Van Der Berg" }),
+      makeRow({ memberId: "m3", memberName: "Sam Ranger", firstName: "Sam", lastName: "Ranger" }),
+      makeRow({ memberId: "m2", memberName: "Alex Scout", firstName: "Alex", lastName: "Scout" }),
+    ];
+
+    expect(listTableMembers(items)).toEqual([
+      { text: "Alex Scout", value: "m2" },
+      { text: "Alex Van Der Berg", value: "m1" },
+      { text: "Sam Ranger", value: "m3" },
+    ]);
+  });
+
+  it("only the selected member's rows reach the table", () => {
+    const items = [makeRow({ memberId: "m1", iStatement: "one" }), makeRow({ memberId: "m2", iStatement: "two" })];
+    expect(buildTableRows(items, "m2").map((r) => r.iStatement)).toEqual(["two"]);
+
+    const vm = new Vue({ ...OASProgressTableVueOptions, propsData: { items, memberId: "m1" } }) as unknown as { filteredItems: OASTableRow[] };
+    expect(vm.filteredItems.map((r) => r.iStatement)).toEqual(["one"]);
+  });
+
+  it("the Member picker is a non-clearable type-to-search box that never emits an empty selection", () => {
+    const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASProgressTableVue.vue"), "utf8");
+    const autocomplete = source.match(/<v-autocomplete[\s\S]*?<\/v-autocomplete>/)?.[0] ?? "";
+    expect(autocomplete).toContain("v-if=\"header.filterType === 'member'\"");
+    expect(autocomplete).toContain(':items="memberOptions"');
+    expect(autocomplete).not.toContain("clearable");
+
+    const emit = jest.fn();
+    const onMemberChange = (OASProgressTableVueOptions as unknown as { methods: { onMemberChange(this: unknown, id: string | null): void } }).methods.onMemberChange;
+    onMemberChange.call({ $emit: emit }, null);
+    onMemberChange.call({ $emit: emit }, "");
+    expect(emit).not.toHaveBeenCalled();
+    onMemberChange.call({ $emit: emit }, "m2");
+    expect(emit).toHaveBeenCalledWith("update:memberId", "m2");
   });
 
   it("dropdown-style exact-value filters work correctly, fixing the reported bug where the Answered/Awarded filter boxes never matched typed Y/N/yes/no (the UI now emits the dropdown's own exact 'true'/'false' value instead of free text)", () => {
-    const rows = [makeRow({ memberName: "Answered Row", answered: true, awarded: false }), makeRow({ memberName: "Unanswered Row", answered: false, awarded: false })];
+    const rows = [makeTableRow({ memberName: "Answered Row", answered: true, awarded: false }), makeTableRow({ memberName: "Unanswered Row", answered: false, awarded: false })];
 
     expect(filterOASProgressRows(rows, { answered: "true" }).map((r) => r.memberName)).toEqual(["Answered Row"]);
     expect(filterOASProgressRows(rows, { answered: "false" }).map((r) => r.memberName)).toEqual(["Unanswered Row"]);
     expect(filterOASProgressRows(rows, { awarded: "false" }).map((r) => r.memberName)).toEqual(["Answered Row", "Unanswered Row"]);
 
-    const stageRows = [makeRow({ memberName: "Stage 3", stage: 3 }), makeRow({ memberName: "Stage 7", stage: 7 })];
+    const stageRows = [makeTableRow({ memberName: "Stage 3", stage: 3 }), makeTableRow({ memberName: "Stage 7", stage: 7 })];
     expect(filterOASProgressRows(stageRows, { stage: "3" }).map((r) => r.memberName)).toEqual(["Stage 3"]);
   });
 

@@ -14,10 +14,13 @@
             <SummitPrintButton profile="skill-heatmap" :target="heatMapPrintTarget" :meta="heatmapPrintMeta" />
           </template>
           <template v-else-if="filters.viewMode === 'table'">
-            <SummitPillButton @click="onTableExcelExportClick">Excel Export</SummitPillButton>
+            <SummitPillButton :loading="isExcelExporting" :disabled="isExcelExporting" @click="onTableExcelExportClick">Excel Export</SummitPillButton>
             <SummitPrintButton profile="oas-table" :target="tablePrintTarget" :prepare="prepareTablePrint" :meta="tablePrintMeta" />
           </template>
-          <SummitPillButton v-else-if="filters.viewMode === 'worksheets'" @click="onWorksheetPrintClick">Print</SummitPillButton>
+          <template v-else-if="filters.viewMode === 'worksheets'">
+            <SummitPillButton :loading="isExcelExporting" :disabled="isExcelExporting" @click="onWorksheetsExcelExportClick">Excel Export</SummitPillButton>
+            <SummitPrintButton profile="oas-worksheets" :targets="worksheetPrintTargets" :meta="worksheetsPrintMeta" />
+          </template>
         </template>
         <v-btn icon title="Refresh data" :loading="isReloading" :disabled="isReloading" @click="onReloadAllClick"><v-icon>mdi-refresh</v-icon></v-btn>
       </div>
@@ -69,12 +72,12 @@
         />
       </template>
 
-      <OASProgressTableVue v-if="hasContent && filters.viewMode === 'table'" ref="table" :items="items" :column-filters.sync="tableColumnFilters" />
+      <OASProgressTableVue v-if="hasContent && filters.viewMode === 'table'" ref="table" :items="items" :member-id="resolvedTableMemberId" :column-filters.sync="tableColumnFilters" @update:memberId="tableMemberId = $event" />
 
       <template v-if="hasContent && filters.viewMode === 'worksheets'">
-        <OASWorksheetFiltersVue :filters="filters" :available-patrols="availablePatrols" :patrol-filter-options="patrolFilterOptions" :can-filter-by-patrol="canFilterByPatrol" @update:filters="onFiltersUpdate" @reset="onResetFilters" />
+        <OASWorksheetFiltersVue :filters="filters" :skill-streams="worksheetSkillStreams" :skill-stream="resolvedWorksheetSkillStream" :available-patrols="availablePatrols" :patrol-filter-options="patrolFilterOptions" :can-filter-by-patrol="canFilterByPatrol" @update:filters="onFiltersUpdate" @reset="onResetFilters" />
 
-        <OASWorksheetsVue ref="worksheets" :items="items" :filters="filters" :available-patrols="availablePatrols" />
+        <OASWorksheetsVue ref="worksheets" :items="items" :filters="filters" :skill-stream="resolvedWorksheetSkillStream" :available-patrols="availablePatrols" />
       </template>
     </div>
   </v-app>

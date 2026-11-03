@@ -468,22 +468,26 @@ unreliable. `jsPDF` survives **only** behind the React `DataGrid.tsx`; don't use
   - no Section line;
   - a meta line listing **only filters that narrow what's shown**, and only when set (never sort
     order or layout).
-- Rows print on white (no zebra). Split printouts repeat only the first (Member) column.
+- Rows print on white (no zebra). Split printouts repeat only the first (Member) column, except
+  OAS Worksheets: `repeatColumns` can be a function of the printed table, and members-as-columns
+  repeats the group band and I-statement.
+- A variable number of tables (one per OAS worksheet sheet) prints through `SummitPrintButton`'s
+  `targets` prop: a function read at click time, each table its own part with `profile`.
 - Fonts: Terrain's Nunito Sans is borrowed into the print document at real weights
-  (`printFonts.ts`). `printWorksheets.ts` uses the same helper.
+  (`printFonts.ts`).
 
 ## Excel export: use summit-excel
 
 **Added 2026-10-12, in progress.** Formatted spreadsheets go through `summit-excel` (`src/excel/`,
 library `write-excel-file`). The plan and decisions are in `.claude/Excel/PLAN.md` and its stage files.
-So far it covers the OAS Summary and Heatmap tabs and Present Awards. The OAS Table tab and the
+It covers every OAS Progress tab (Summary, Heatmap, Table, Worksheets) and Present Awards. Only the
 React pages still use the plain `xlsx` dump in `gridExport.ts`.
 
 - A page's Excel button calls `exportExcelSheet({ printProfile, meta, fileNameParts, build })`. It
   handles the timestamp, header, logo, file name and download; the page only reports success or failure.
   For several tabs in one file, call `exportExcelWorkbook({ sheets: [{ printProfile, build }], meta, fileNameParts })`;
   each sheet takes its title from its own print profile. Excel caps tab names at 31 characters.
-- Dates go in as real Excel dates via `parseDisplayDate` (UTC midnight; a local-midnight date
+- Dates go in as real Excel dates via `parseDisplayDate` or `parseIsoDate` (UTC midnight; a local-midnight date
   shows a day early in Australia).
 - To follow a `v-data-table`'s on-screen sort, sort with Vuetify's own `sortItems` and the
   table's `.sync` sort state (see `sortPresentAwardRows`).

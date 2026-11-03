@@ -1,9 +1,10 @@
 import type { OASProgressRow } from "@/pages/OasProgress/services/buildOASProgressRows";
-import { OAS_SKILLS, filterMembersByPatrol, groupMembersByPatrol, sliceStagesToVisible } from "@/pages/OasProgress/services/filterHeatMapSections";
+import { filterMembersByPatrol, groupMembersByPatrol, sliceStagesToVisible } from "@/pages/OasProgress/services/filterHeatMapSections";
 import type { PatrolGroupOf } from "@/pages/OasProgress/services/filterHeatMapSections";
 import { getMemberDisplayName } from "@/pages/OasProgress/services/getMemberDisplayName";
 import type { NameFormat } from "@/pages/OasProgress/services/getMemberDisplayName";
 import { skillTitle, formatStream } from "@/pages/OasProgressVue/components/OASHeatMapVue";
+import { skillStreamKey } from "./skillStreams";
 
 export interface WorksheetMember {
   memberId: string;
@@ -57,7 +58,8 @@ export interface WorksheetPageSet {
 }
 
 export interface BuildWorksheetPagesOptions {
-  visibleSkills: string[];
+  /** From skillStreamKey(). */
+  skillStream: string;
   visibleStages: number[];
   selectedPatrols: string[];
   memberFilter: string;
@@ -172,14 +174,13 @@ export function buildWorksheetPages(rows: OASProgressRow[], options: BuildWorksh
   const members = buildMemberList(rows, options);
   const memberIndexById = new Map(members.map((m, i) => [m.memberId, i]));
 
-  const visibleSkillSet = new Set(options.visibleSkills);
   const stages = sliceStagesToVisible(
     Array.from({ length: 9 }, (_, i) => i + 1),
     options.visibleStages,
   );
   const stageSet = new Set(stages);
 
-  const filteredRows = rows.filter((row) => visibleSkillSet.has(row.stream) && stageSet.has(row.stage) && memberIndexById.has(row.memberId));
+  const filteredRows = rows.filter((row) => skillStreamKey(row.stream, row.branch) === options.skillStream && stageSet.has(row.stage) && memberIndexById.has(row.memberId));
 
   const pageAccumulators = new Map<string, PageAccumulator>();
   filteredRows.forEach((row) => {
@@ -237,16 +238,7 @@ export function buildWorksheetPages(rows: OASProgressRow[], options: BuildWorksh
 
   const narrowedPages = options.hideCompleted ? builtPages.map((page) => applyHideCompletedToPage(page, members)).filter((page): page is WorksheetPage => page !== null) : builtPages;
 
-  const skillOrderIndex = new Map(OAS_SKILLS.map((s, i) => [s, i]));
-  narrowedPages.sort((a, b) => {
-    const skillDiff = (skillOrderIndex.get(a.skill) ?? OAS_SKILLS.length) - (skillOrderIndex.get(b.skill) ?? OAS_SKILLS.length);
-    if (skillDiff !== 0) return skillDiff;
-    if (a.stage !== b.stage) return a.stage - b.stage;
-    const aIsTrunk = a.stream === a.skill;
-    const bIsTrunk = b.stream === b.skill;
-    if (aIsTrunk !== bIsTrunk) return aIsTrunk ? -1 : 1;
-    return a.stream.localeCompare(b.stream);
-  });
+  narrowedPages.sort((a, b) => a.stage - b.stage);
 
   const patrolGroups: WorksheetPatrolGroup[] | null = options.breakByPatrol ? groupMembersByPatrol(members) : null;
 

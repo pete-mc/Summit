@@ -9,19 +9,21 @@ import SummitLoadingState from "@/components/SummitLoadingState.vue";
 import SummitPrintButton from "@/components/SummitPrintButton.vue";
 import type { PrintButtonPart } from "@/components/SummitPrintButton";
 import SummitPillButton from "@/components/SummitPillButton.vue";
-import { buildHeatmapPrintMeta, buildOasTablePrintMeta, buildSummaryPrintMeta } from "@/pages/OasProgressVue/services/oasPrintMeta";
+import { buildHeatmapPrintMeta, buildOasTablePrintMeta, buildSummaryPrintMeta, buildWorksheetsPrintMeta } from "@/pages/OasProgressVue/services/oasPrintMeta";
 import type { MetaEntry } from "@/print/summitPrint";
-import { filterOASProgressRows } from "./OASProgressTableVue";
+import { buildTableRows, filterOASProgressRows, listTableMembers, type OASTableRow } from "./OASProgressTableVue";
+import type { WorksheetExportView } from "./OASWorksheetsVue";
 import { groupRowsForHeatMap } from "@/pages/OasProgress/services/groupRowsForHeatMap";
 import { buildPeakAwardSummaryRows, sortPeakAwardSummaryRows, type PeakAwardMemberRow } from "@/pages/OasProgress/services/buildPeakAwardSummaryRows";
 import { PEAK_AWARD_REQUIREMENTS, type PeakAwardRequirement } from "@/pages/OasProgress/data/peakAwardRequirements";
 import { collectPatrolNames, hasUnassignedMembers, filterMembersByPatrol, UNASSIGNED_PATROL, OAS_SKILLS } from "@/pages/OasProgress/services/filterHeatMapSections";
 import { loadOASProgressVueFilters, saveOASProgressVueFilters, type OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
-import { exportGridToExcel, type GridExportColumn, type GridExportRow } from "@/components/gridExport";
 import { exportExcelWorkbook, type ExcelWorkbookRequest } from "@/excel/summitExcel";
 import { buildPeakAwardSummarySheet } from "@/excel/sheets/peakAwardSummary";
 import { buildOverallProgressSheet } from "@/excel/sheets/overallProgress";
 import { buildSkillHeatmapSheet } from "@/excel/sheets/skillHeatmap";
+import { buildOasTableSheet } from "@/excel/sheets/oasTable";
+import { buildWorksheetSheet } from "@/excel/sheets/oasWorksheets";
 import type { HeatMapExportView } from "./OASHeatMapVue";
 import { createLogger, showTerrainToast } from "@/helpers";
 import type { OASProgressRow } from "@/pages/OasProgress/services/buildOASProgressRows";
@@ -41,6 +43,7 @@ import {
   type OverallProgressRow,
 } from "@/pages/OasProgress/services/buildOverallProgressRows";
 import { getMemberDisplayName } from "@/pages/OasProgress/services/getMemberDisplayName";
+import { listSkillStreams, skillStreamKey, type SkillStream } from "@/pages/OasProgressVue/services/skillStreams";
 
 const logger = createLogger("OasProgressVueContent");
 
@@ -58,26 +61,14 @@ interface OverallProgressVueInstance {
 }
 
 interface WorksheetsVueInstance {
-  printCurrentPages(): boolean;
+  getPrintTables(): HTMLTableElement[];
+  getExportView(): WorksheetExportView;
 }
 
 interface TableVueInstance {
   prepareForPrint(): Promise<() => void>;
   getPrintTable(): HTMLTableElement | undefined;
 }
-
-// Must match OASProgressTableVue's columns so the export matches the screen.
-const TABLE_EXPORT_COLUMNS: GridExportColumn[] = [
-  { key: "memberName", header: "Member" },
-  { key: "stream", header: "Skill" },
-  { key: "branch", header: "Stream" },
-  { key: "stage", header: "Stage" },
-  { key: "inputGroup", header: "Group" },
-  { key: "iStatement", header: "I-Statement" },
-  { key: "answered", header: "Answered", exportValue: (row) => ((row as unknown as OASProgressRow).answered ? "Yes" : "No") },
-  { key: "awarded", header: "Awarded", exportValue: (row) => ((row as unknown as OASProgressRow).awarded ? "Yes" : "No") },
-  { key: "date", header: "Date", exportValue: (row) => (row as unknown as OASProgressRow).date?.slice(0, 10) ?? "" },
-];
 
 const MAX_STAGE = 9;
 
@@ -106,7 +97,7 @@ const DEFAULT_FILTERS: OASProgressVueFilterState = {
   sortBy: "firstName",
 
   // Worksheets default narrow (Camping, stage 1) to limit processing; it's a print target.
-  worksheetVisibleSkills: ["camping"],
+  worksheetSkillStream: skillStreamKey("camping", "camping"),
   worksheetVisibleStages: [1],
   worksheetNameFormat: "full",
   worksheetSelectedPatrols: null,
@@ -135,7 +126,7 @@ const HEATMAP_FILTER_KEYS = [
   "visibleStages",
   "sortBy",
 ] as const;
-const WORKSHEETS_FILTER_KEYS = ["worksheetVisibleSkills", "worksheetVisibleStages", "worksheetNameFormat", "worksheetSelectedPatrols", "worksheetBreakByPatrol", "worksheetShowCompleted", "worksheetLayout"] as const;
+const WORKSHEETS_FILTER_KEYS = ["worksheetSkillStream", "worksheetVisibleStages", "worksheetNameFormat", "worksheetSelectedPatrols", "worksheetBreakByPatrol", "worksheetShowCompleted", "worksheetLayout"] as const;
 
 const RESETTABLE_FILTER_KEYS_BY_VIEW: Record<OASProgressVueFilterState["viewMode"], readonly (keyof OASProgressVueFilterState)[]> = {
   summary: SUMMARY_FILTER_KEYS,
@@ -190,6 +181,7 @@ export default defineComponent({
       isReloading: false,
       isExcelExporting: false,
       tableColumnFilters: {} as Record<string, string>,
+      tableMemberId: "",
     };
   },
   computed: {
@@ -218,8 +210,23 @@ export default defineComponent({
     canFilterByPatrol(): boolean {
       return this.patrolFilterOptions.length > 1;
     },
-    tableFilteredItems(): OASProgressRow[] {
-      return filterOASProgressRows(this.items, this.tableColumnFilters);
+    tableMemberOptions(): Array<{ text: string; value: string }> {
+      return listTableMembers(this.items);
+    },
+    /** Falls back to the first member while nothing is picked, or when the picked member is no longer listed. */
+    resolvedTableMemberId(): string {
+      const options = this.tableMemberOptions;
+      return options.some((o) => o.value === this.tableMemberId) ? this.tableMemberId : (options[0]?.value ?? "");
+    },
+    worksheetSkillStreams(): SkillStream[] {
+      return listSkillStreams(this.items);
+    },
+    resolvedWorksheetSkillStream(): string {
+      const options = this.worksheetSkillStreams;
+      return options.some((o) => o.key === this.filters.worksheetSkillStream) ? this.filters.worksheetSkillStream : (options[0]?.key ?? "");
+    },
+    tableFilteredItems(): OASTableRow[] {
+      return filterOASProgressRows(buildTableRows(this.items, this.resolvedTableMemberId), this.tableColumnFilters);
     },
     /** Undefined until Terrain resolves the section. Show "could not determine section" rather than guess. */
     peakAwardRequirement(): PeakAwardRequirement | undefined {
@@ -269,7 +276,12 @@ export default defineComponent({
       return buildSummaryPrintMeta(this.filters, this.patrolFilterOptions, this.canFilterByPatrol);
     },
     tablePrintMeta(): MetaEntry[] {
-      return buildOasTablePrintMeta(this.tableColumnFilters);
+      const member = this.tableMemberOptions.find((o) => o.value === this.resolvedTableMemberId);
+      return buildOasTablePrintMeta(this.tableColumnFilters, member?.text ?? "");
+    },
+    worksheetsPrintMeta(): MetaEntry[] {
+      const skillStream = this.worksheetSkillStreams.find((o) => o.key === this.resolvedWorksheetSkillStream);
+      return buildWorksheetsPrintMeta(this.filters, skillStream?.label ?? "", this.patrolFilterOptions, this.canFilterByPatrol);
     },
     heatmapPrintMeta(): MetaEntry[] {
       return buildHeatmapPrintMeta(this.filters, this.patrolFilterOptions, this.canFilterByPatrol);
@@ -357,20 +369,8 @@ export default defineComponent({
       const table = this.$refs.table as unknown as TableVueInstance | undefined;
       return table ? table.prepareForPrint() : undefined;
     },
-    onTableExcelExportClick() {
-      try {
-        exportGridToExcel({
-          fileName: "OASProgressVue.xlsx",
-          title: "OAS Progress",
-          rows: this.tableFilteredItems as unknown as GridExportRow[],
-          columns: TABLE_EXPORT_COLUMNS,
-        });
-        showTerrainToast("Excel export complete");
-      } catch (e) {
-        logger.error("Table Excel export failed:", e);
-        const message = e instanceof Error ? e.message : "Unknown error";
-        showTerrainToast(`Excel export failed: ${message}`, "error");
-      }
+    async onTableExcelExportClick() {
+      await this.runExcelExport("Table", this.tablePrintMeta, [{ printProfile: "oas-table", build: (header, logo) => buildOasTableSheet({ rows: this.tableFilteredItems, header, logo }) }]);
     },
     async onSummaryExcelExportClick() {
       const requirement = this.peakAwardRequirement;
@@ -420,12 +420,18 @@ export default defineComponent({
         this.isExcelExporting = false;
       }
     },
-    onWorksheetPrintClick() {
+    worksheetPrintTargets(): HTMLTableElement[] {
+      return (this.$refs.worksheets as unknown as WorksheetsVueInstance | undefined)?.getPrintTables() ?? [];
+    },
+    async onWorksheetsExcelExportClick() {
       const worksheets = this.$refs.worksheets as unknown as WorksheetsVueInstance | undefined;
-      const opened = worksheets?.printCurrentPages();
-      if (opened === false) {
-        showTerrainToast("Could not open the print window — check your browser's popup blocker.", "error");
-      }
+      if (!worksheets) return;
+      const view = worksheets.getExportView();
+      const sheets: ExcelWorkbookRequest["sheets"] = view.pages.map((page) => ({
+        printProfile: "oas-worksheets",
+        build: (header, logo) => buildWorksheetSheet({ page, membersAsRows: view.membersAsRows, breakByPatrol: view.breakByPatrol, header, logo }),
+      }));
+      await this.runExcelExport("Worksheets", this.worksheetsPrintMeta, sheets);
     },
   },
 });

@@ -30,7 +30,8 @@ export interface OASProgressVueFilterState {
   visibleStages: number[];
   sortBy: "lastName" | "firstName" | "stageProgress";
 
-  worksheetVisibleSkills: string[];
+  /** From skillStreamKey(). A value not in the loaded data falls back to the first Skill - Stream. */
+  worksheetSkillStream: string;
   worksheetVisibleStages: number[];
   worksheetNameFormat: NameFormat;
   worksheetSelectedPatrols: string[] | null;

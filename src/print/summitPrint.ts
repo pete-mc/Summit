@@ -3,7 +3,7 @@
  * the columns, then window.print(). Nothing is screenshotted, so text stays sharp and headers repeat.
  */
 import { BASE_PRINT_CSS } from "./printStyles";
-import { layoutTable, cssContent, columnCount, type LayoutOptions, type LayoutResult, type PrintLayout } from "./printFit";
+import { layoutTable, cssContent, columnCount, type LayoutOptions, type LayoutResult, type PrintLayout, type RepeatColumns } from "./printFit";
 import { footerMode as detectFooterMode, type FooterMode } from "./printSupport";
 import { collectPrintFontCss, declaredPrintWeights, PRINT_FONT_FAMILY, waitForPrintFonts } from "./printFonts";
 import { createLogger } from "@/helpers/Logger";
@@ -81,8 +81,9 @@ export interface PrintProfile {
   copyComputed?: CopyComputedRule[];
   /** 'fit' only; split bands size to content. */
   columnWidths?: ColumnWidths | null;
-  repeatColumns?: number;
-  /** {first}/{last} = header text of the band's first/last column. */
+  /** A function reads the printed table, for profiles whose layouts repeat different leading columns. */
+  repeatColumns?: RepeatColumns;
+  /** {first}/{last} = header text of the band's first/last column. Empty prints no label above each band. */
   bandLabel?: string;
   /** Clone only, never the live table. Runs before columnWidths. */
   transform?: ((clone: HTMLTableElement, source: HTMLTableElement) => void) | null;
@@ -103,7 +104,7 @@ interface ResolvedProfile {
   css: string;
   copyComputed: CopyComputedRule[];
   columnWidths: ColumnWidths | null;
-  repeatColumns: number;
+  repeatColumns: RepeatColumns;
   bandLabel: string;
   transform: ((clone: HTMLTableElement, source: HTMLTableElement) => void) | null;
   stripTooltips: boolean;
@@ -376,12 +377,25 @@ function withPrintDefaults<T extends { generated?: Date; fontCss?: string; foote
   return { ...o, generated: o.generated ?? new Date(), fontCss: o.fontCss ?? collectPrintFontCss(document), footerMode: o.footerMode ?? detectFooterMode() };
 }
 
+const FORBIDDEN_FILE_CHARS = /[\\/:*?"<>|]/g;
+
+/** "OAS Progress - Heatmap - Venturer Unit - 20261103", like the Excel file names. Empty parts are dropped. */
+export function printFileName(o: HeaderFooterOptions): string {
+  const when = o.generated ?? new Date();
+  const pad = (n: number) => (n < 10 ? `0${n}` : String(n));
+  const stamp = `${when.getFullYear()}${pad(when.getMonth() + 1)}${pad(when.getDate())}`;
+  return [resolveHeaderFooter(o).header.title, o.vars?.unit ?? "", stamp]
+    .map((p) => p.replace(FORBIDDEN_FILE_CHARS, "-").trim())
+    .filter((p) => p !== "")
+    .join(" - ");
+}
+
 /** Resolves when the dialog closes; the browser doesn't say whether the user printed or cancelled. */
 export async function printTable(o: PrintOptions): Promise<LayoutResult> {
   const options = withPrintDefaults(o);
   const html = buildPrintDocument(options);
   const { page, fit } = layoutOptions(options);
-  return printViaSrcdoc(html, page, (doc) => layoutTable(doc, fit), declaredPrintWeights(options.fontCss || ""));
+  return printViaSrcdoc(html, page, (doc) => layoutTable(doc, fit), declaredPrintWeights(options.fontCss || ""), printFileName(options));
 }
 
 export async function printTables(o: MultiPartPrintOptions): Promise<LayoutResult[]> {
@@ -389,7 +403,7 @@ export async function printTables(o: MultiPartPrintOptions): Promise<LayoutResul
   const html = buildMultiPartDocument(options);
   const perPart = options.parts.map((part) => partOptions(options, part));
   const layouts = perPart.map((part) => layoutOptions(part));
-  return printViaSrcdoc(html, layouts[0].page, (doc) => layoutParts(doc, perPart, layouts), declaredPrintWeights(options.fontCss || ""));
+  return printViaSrcdoc(html, layouts[0].page, (doc) => layoutParts(doc, perPart, layouts), declaredPrintWeights(options.fontCss || ""), printFileName(perPart[0]));
 }
 
 export function layoutParts(doc: Document, perPart: PrintOptions[], layouts: Array<{ fit: LayoutOptions }>): LayoutResult[] {
@@ -430,9 +444,15 @@ function waitForImages(doc: Document, timeoutMs = 4000): Promise<void> {
   return Promise.race([Promise.all(loads).then(() => undefined), new Promise<void>((resolve) => setTimeout(resolve, timeoutMs))]);
 }
 
-function printViaSrcdoc<T>(html: string, page: ResolvedPage, layout: (doc: Document) => T, fontWeights: number[]): Promise<T> {
+/** Learning: Edge names the PDF from the top page's title, not the iframe's, so the top title is swapped for the print. */
+function printViaSrcdoc<T>(html: string, page: ResolvedPage, layout: (doc: Document) => T, fontWeights: number[], fileName: string): Promise<T> {
   return new Promise((resolve, reject) => {
     const frame = makeHiddenFrame(page.printableWidthPx);
+    const pageTitle = document.title;
+    const cleanUp = () => {
+      frame.remove();
+      document.title = pageTitle;
+    };
     frame.onload = async () => {
       try {
         const doc = frame.contentDocument as Document;
@@ -446,14 +466,15 @@ function printViaSrcdoc<T>(html: string, page: ResolvedPage, layout: (doc: Docum
         await waitForImages(doc);
         const result = layout(doc);
         const done = () => {
-          frame.remove();
+          cleanUp();
           resolve(result);
         };
         win.addEventListener("afterprint", () => setTimeout(done, 0), { once: true });
+        document.title = fileName;
         win.focus();
         win.print();
       } catch (err) {
-        frame.remove();
+        cleanUp();
         reject(err);
       }
     };

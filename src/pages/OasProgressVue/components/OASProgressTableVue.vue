@@ -16,8 +16,23 @@
       <template #body.prepend>
         <tr class="oas-vue-column-filter-row">
           <th v-for="header in headers" :key="header.value">
+            <v-autocomplete
+              v-if="header.filterType === 'member'"
+              :value="memberId"
+              :items="memberOptions"
+              item-text="text"
+              item-value="value"
+              solo
+              flat
+              dense
+              hide-details
+              class="oas-vue-column-filter-input"
+              :aria-label="`Filter ${header.text}`"
+              :data-oas-column-filter="header.value"
+              @change="onMemberChange"
+            ></v-autocomplete>
             <v-select
-              v-if="header.filterType === 'select'"
+              v-else-if="header.filterType === 'select'"
               :value="columnFilters[header.value] || null"
               :items="columnFilterOptions[header.value]"
               item-text="text"

@@ -230,7 +230,8 @@ describe("OasProgressVueContent render contract", () => {
     expect(templateSource).not.toContain("onTablePdfExportClick");
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.ts"), "utf8");
-    expect(tsSource).toContain("exportGridToExcel");
+    expect(tsSource).toContain("buildOasTableSheet");
+    expect(tsSource).not.toContain("exportGridToExcel");
     expect(tsSource).not.toContain("exportGridToPdf");
     expect(tsSource).toContain("onTableExcelExportClick");
   });
@@ -298,12 +299,12 @@ describe("OasProgressVueContent render contract", () => {
 
   it("OASWorksheets Stage 3: the worksheet filter keys are separate from the heat map's own, not shared", () => {
     const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/services/OASProgressVueFilterPersistence.ts"), "utf8");
-    ["worksheetVisibleSkills", "worksheetVisibleStages", "worksheetNameFormat", "worksheetBreakByPatrol", "worksheetShowCompleted"].forEach((key) => {
+    ["worksheetSkillStream", "worksheetVisibleStages", "worksheetNameFormat", "worksheetBreakByPatrol", "worksheetShowCompleted"].forEach((key) => {
       expect(source).toContain(key);
     });
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.ts"), "utf8");
-    expect(tsSource).toContain("worksheetVisibleSkills");
+    expect(tsSource).toContain("worksheetSkillStream");
   });
 
   it("OASWorksheets Stage 3/4: the Table view's Excel/PDF export buttons are gated on viewMode === 'table' specifically, not a bare v-else that would also catch 'worksheets'", () => {
@@ -312,31 +313,16 @@ describe("OasProgressVueContent render contract", () => {
     expect(headerRow).toContain("filters.viewMode === 'table'");
   });
 
-  it("OASWorksheets Stage 4: the Worksheets tab gets its own Print button, wired to printCurrentPages via a ref (not reusing exportElementToPdf)", () => {
+  it("the Worksheets tab prints every worksheet table through summit-print and exports one Excel tab per sheet", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.vue"), "utf8");
-    expect(templateSource).toContain("filters.viewMode === 'worksheets'");
-    expect(templateSource).toContain("onWorksheetPrintClick");
+    expect(templateSource).toContain('<SummitPrintButton profile="oas-worksheets" :targets="worksheetPrintTargets"');
+    expect(templateSource).toContain("onWorksheetsExcelExportClick");
     expect(templateSource).toContain('ref="worksheets"');
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.ts"), "utf8");
-    expect(tsSource).toContain("onWorksheetPrintClick");
-    expect(tsSource).toContain("printCurrentPages");
-    expect(tsSource).not.toContain("worksheets?.getExportTable");
-  });
-
-  it("OASWorksheets Stage 4: printing goes through printWorksheets.ts, not gridExport's exportElementToPdf", () => {
-    const worksheetsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASWorksheetsVue.ts"), "utf8");
-    expect(worksheetsSource).toContain("printWorksheets");
-    expect(worksheetsSource).not.toContain("exportElementToPdf");
-  });
-
-  it("OASWorksheets Stage 4: one sheet per page via break-after/page-break-after, with a :last-of-type reset so no trailing blank page prints", () => {
-    const printSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/services/printWorksheets.ts"), "utf8");
-    expect(printSource).toContain("break-after: page");
-    expect(printSource).toContain("page-break-after: always");
-    expect(printSource).toContain(":last-of-type");
-    expect(printSource).toContain("display: table-header-group");
-    expect(printSource).toContain("break-inside: avoid");
+    expect(tsSource).toContain("getPrintTables()");
+    expect(tsSource).toContain("buildWorksheetSheet");
+    expect(fs.existsSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/services/printWorksheets.ts"))).toBe(false);
   });
 
   it("OASWorksheets Stage 5: worksheetLayout persists (replacing the dropped worksheetOrientation), defaulting to membersAsRows", () => {
@@ -347,15 +333,6 @@ describe("OasProgressVueContent render contract", () => {
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.ts"), "utf8");
     expect(tsSource).toContain('worksheetLayout: "membersAsRows"');
-  });
-
-  it("OASWorksheets print orientation: both layouts print landscape (a Layout-B-specific portrait attempt was tried and reverted live)", () => {
-    const printSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/services/printWorksheets.ts"), "utf8");
-    expect(printSource).toContain("@page { size: A4 ${orientation}");
-
-    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASWorksheetsVue.ts"), "utf8");
-    expect(tsSource).toContain('orientation: "landscape"');
-    expect(tsSource).not.toMatch(/isMembersAsRows\s*\?\s*"portrait"/);
   });
 
   it("OASWorksheets Stage 5: the Layout selector exists in the worksheet filter bar", () => {
