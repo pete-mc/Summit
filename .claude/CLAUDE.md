@@ -32,15 +32,32 @@ The upstream maintainer keeps all LLM tooling out of the repo to avoid collision
 - Code in `src/`/`tests/` must not reference `.claude/` files (plans, DESIGN.md, NAME_RESOLUTION.md, …). Upstream won't have them.
 - The PR branch also keeps upstream's `.gitignore` lines and `.jest-components-results.json` as upstream has them. Our `.claude` ignore lines and our deletion of that Jest file stay on `main` only, so the PR stays focused on features.
 
-Updating the PR branch (do it in a separate worktree, never by checking `summit-dev` out over this one):
+### Unfinished pages are `main`-only too
+
+Present Awards and I Statements are still in development (decided 2026-11-04). They live on `main` but are stripped from `summit-dev`, so the PR doesn't ship them. Excluded paths:
+
+- `src/pages/IStatements/`, `src/pages/PresentAwardsVue/`, `src/pages/PresentAwards/` (the new page's services/model, plus upstream's disabled legacy page, which no longer compiles since `ToastComponent` was replaced)
+- `src/excel/sheets/presentAwards.ts`, `src/print/profiles/presentAwards.ts`
+- Tests: `tests/unit/pages/IStatements/`, `tests/unit/pages/PresentAwardsVue/`, `tests/unit/pages/PresentAwards/`, `tests/unit/excel/presentAwardsSheet.spec.ts`, `tests/unit/print/presentAwardsPrint.spec.ts`, `tests/unit/router/summit-router-presentawards-vue-route.spec.ts`, `tests/unit/components/istatement-matches-oas-progress.spec.ts`, `tests/unit/components/present-awards-table-vue-render-contract.spec.ts`, `tests/unit/models/SummitAchievement.spec.ts`
+- Hand edits on `summit-dev` (re-check after each merge, they may conflict): `src/router/SummitRouter.ts` (no I Statements route/menu item; Present Awards route and menu item in upstream's commented-out form), `src/pages/index.ts` (no `PresentAwardsVue`/`IStatements`/`PresentAwards`), `src/print/profiles/index.ts` (no `presentAwards`).
+
+Rules on `main` that keep this cheap:
+
+- Shared code must not import from those page folders (that's why `getBadgeIconUrl` lives in `src/shared/`).
+- Page-specific tests go in the page's own test folder. Cross-page tests (`shared-loading-state`, `summit-pill-button`) only check the optional pages if their files exist.
+
+When a page is ready, drop it from this list and the strip step, then merge.
+
+Updating the PR branch (do it in a separate worktree, never by checking `summit-dev` out over this one; one is kept at `../summit-dev-wt`):
 
 1. `git merge main` into `summit-dev`.
 2. `git rm -r -q --cached .claude` (new `.claude/` files on `main` would otherwise ride in silently; modify/delete conflicts on `.claude/` files resolve the same way).
 3. `git checkout upstream/main -- .jest-components-results.json`, and remove the `.claude/*` and `.jest-components-results.json` lines from `.gitignore`.
-4. Commit, then verify before pushing: `git ls-tree -r --name-only HEAD | grep '^\.claude/'` must print nothing.
-5. Confirm with the user, then `git push github summit-dev`.
+4. Strip the unfinished pages: `git rm -r -q -f --ignore-unmatch` the excluded paths above, and re-check the hand edits.
+5. Commit, then verify before pushing: `git ls-tree -r --name-only HEAD | grep -E '^\.claude/|src/pages/(IStatements|PresentAwards)|presentAwards'` must print nothing, and `npm run build` + `npm test` must pass (bar the known UNC smoke test).
+6. Confirm with the user, then `git push github summit-dev`.
 
-**Never merge `summit-dev` back into `main`**: its `.claude/` deletion would delete the folder from `main`.
+**Never merge `summit-dev` back into `main`**: its `.claude/` and unfinished-page deletions would delete them from `main`.
 
 ## COMMENTS
 
