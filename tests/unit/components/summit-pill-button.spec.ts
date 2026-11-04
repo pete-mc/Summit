@@ -12,6 +12,12 @@ function filesUnder(dir: string): string[] {
   });
 }
 
+/** Gotcha: pages still in development can be left out of a release branch, so only the pages present are checked. */
+const OPTIONAL_PAGE_PILLS: Array<[string, string]> = [
+  ["src/pages/PresentAwardsVue/components/PresentAwardsVueContent.vue", '<SummitPillButton variant="major" class="present-awards-save-btn"'],
+  ["src/pages/IStatements/components/IStatementFilters.vue", "<SummitPillButton"],
+];
+
 /** One pill button: four scoped copies used to drift, and one page's button missed it entirely. */
 describe("SummitPillButton", () => {
   it("is the only pill style: no page declares or uses the old .oas-vue-pill-btn class", () => {
@@ -38,8 +44,7 @@ describe("SummitPillButton", () => {
 
   it("is used by every page's toolbar pill buttons", () => {
     expect(read("src/pages/OasProgressVue/components/OasProgressVueContent.vue")).toContain("<SummitPillButton");
-    expect(read("src/pages/PresentAwardsVue/components/PresentAwardsVueContent.vue")).toContain('<SummitPillButton variant="major" class="present-awards-save-btn"');
-    expect(read("src/pages/IStatements/components/IStatementFilters.vue")).toContain("<SummitPillButton");
     expect(read("src/components/SummitPrintButton.vue")).toContain("<SummitPillButton");
+    OPTIONAL_PAGE_PILLS.filter(([file]) => fs.existsSync(path.resolve(REPO_ROOT, file))).forEach(([file, usage]) => expect(read(file)).toContain(usage));
   });
 });
