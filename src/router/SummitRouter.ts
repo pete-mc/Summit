@@ -1,5 +1,5 @@
 import FindComponent from "../helpers/FindComponent";
-import { Home, DisplayOptions, MilestoneReport, OasReport, OasProgressVue, Topo, SummitCalendar, PeakAward, PresentAwardsVue, IStatements } from "@/pages";
+import { Home, DisplayOptions, MilestoneReport, OasReport, OasProgressVue, Topo, SummitCalendar, PeakAward } from "@/pages";
 import { NavMenuComponent, NavMenuItem } from "@/types/NavMenu";
 import VueRouter, { Route } from "vue-router";
 import Vue from "vue";
@@ -104,10 +104,10 @@ export default class SummitRouter {
       path: "/summit/tools/DisplayOptions",
       component: DisplayOptions,
     });
-    this.router.addRoute({
-      path: "/summit/tools/PresentAwards",
-      component: PresentAwardsVue,
-    });
+    // this.router.addRoute({
+    //   path: "/summit/tools/PresentAwards",
+    //   component: PresentAwards,
+    // });
     this.router.addRoute({
       path: "/summit/reports/milestone",
       component: MilestoneReport,
@@ -119,10 +119,6 @@ export default class SummitRouter {
     this.router.addRoute({
       path: "/summit/reports/oasprogress",
       component: OasProgressVue,
-    });
-    this.router.addRoute({
-      path: "/summit/reports/istatements",
-      component: IStatements,
     });
     this.router.addRoute({
       path: "/summit/reports/peakaward",
@@ -168,13 +164,6 @@ export default class SummitRouter {
             roles: [true, false],
           },
           {
-            title: "I Statements",
-            to: "/summit/reports/istatements",
-            items: [],
-            locked: false,
-            roles: [true, false],
-          },
-          {
             title: "Peak Award Report",
             to: "/summit/reports/peakaward",
             items: [],
@@ -202,13 +191,13 @@ export default class SummitRouter {
             locked: false,
             roles: [true, false],
           },
-          {
-            title: "Present Awards",
-            to: "/summit/tools/PresentAwards",
-            items: [],
-            locked: false,
-            roles: [true, false],
-          },
+          // {
+          //   title: "Present Awards",
+          //   to: "/summit/tools/PresentAwards",
+          //   items: [],
+          //   locked: false,
+          //   roles: [true, false],
+          // },
           {
             title: "Display Options",
             to: "/summit/tools/DisplayOptions",
