@@ -1,10 +1,12 @@
 import FindComponent from "../helpers/FindComponent";
-import { Home, DisplayOptions, MilestoneReport, OasReport, Topo, SummitCalendar, PeakAward } from "@/pages";
+import { Home, DisplayOptions, MilestoneReport, OasReport, OasProgressVue, Topo, SummitCalendar, PeakAward } from "@/pages";
 import { NavMenuComponent, NavMenuItem } from "@/types/NavMenu";
 import VueRouter, { Route } from "vue-router";
 import Vue from "vue";
-import { InitLogbookRead, InitLogbookWrite, InitProgrammingExportBtn, CheckAward, AwardObserverRouter } from "@/components";
-import { fetchAchievements } from "@/services";
+import { InitLogbookRead, InitLogbookWrite, InitProgrammingExportBtn } from "@/components";
+import { createLogger } from "@/helpers";
+
+const logger = createLogger("SummitRouter");
 
 export default class SummitRouter {
   private static instance: SummitRouter;
@@ -19,8 +21,8 @@ export default class SummitRouter {
     this.router = window.$nuxt.$router;
     this.summitNavMenuItems = [];
     SummitRouter.terrainNavMenuItems = SummitRouter.getTerrainNavMenuItems();
-    this.initRoutes();
     this.initNavMenu();
+    this.initRoutes();
   }
 
   public static getInstance(): SummitRouter {
@@ -30,21 +32,62 @@ export default class SummitRouter {
     return SummitRouter.instance;
   }
 
-  public finaliseSetup(): void {
-    if (SummitRouter.terrainNavMenuItems.length === 0 && window.$nuxt.$store.state.user.username.length != 0) {
+  // Gotcha: Terrain's NavMenu appears only after its async login check. Poll for ~30s; afterEach covers a later login.
+  public finaliseSetup(attempt = 0): void {
+    if (SummitRouter.terrainNavMenuItems.length === 0 && attempt < 300) {
       setTimeout(() => {
         this.resetMenu();
-        this.finaliseSetup();
+        this.finaliseSetup(attempt + 1);
       }, 100);
     }
   }
 
   public resetMenu(): void {
-    SummitRouter.terrainNavMenuItems = SummitRouter.getTerrainNavMenuItems();
+    this.captureTerrainMenu();
     this.initNavMenu();
+    // On a full page load of a Summit URL no navigation follows, so switch the menu here.
+    this.applyMenuForRoute(this.router.currentRoute.path);
+  }
+
+  // Gotcha: only snapshot while Terrain's menu is on screen, or Summit's items get saved as Terrain's.
+  private captureTerrainMenu(): void {
+    const current = SummitRouter.getTerrainNavMenuItems();
+    if (current.length > 0 && !SummitRouter.isSummitMenu(current)) {
+      SummitRouter.terrainNavMenuItems = current;
+    }
+  }
+
+  private applyMenuForRoute(path: string): void {
+    SummitRouter.switchMenu(path.includes("summit") ? this.summitNavMenuItems : SummitRouter.terrainNavMenuItems);
+  }
+
+  private static isSummitMenu(items: NavMenuItem[]): boolean {
+    return items.some((item) => (item.items ?? []).some((sub) => typeof sub.to === "string" && sub.to.startsWith("/summit/")));
   }
 
   private async initRoutes(): Promise<void> {
+    // Gotcha: register hooks BEFORE addRoute(). Each addRoute() re-runs navigation, and on a Summit URL page load those are the only navigations.
+    this.router.beforeEach((to, from, next) => {
+      if (SummitRouter.terrainNavMenuItems.length === 0) {
+        this.captureTerrainMenu();
+        this.initNavMenu();
+      }
+      this.applyMenuForRoute(to.path);
+      next();
+    });
+    this.router.afterEach((to) => {
+      logger.debug("After each");
+      if (this.summitNavMenuItems.length === 0 || SummitRouter.terrainNavMenuItems.length === 0) {
+        setTimeout(() => {
+          this.resetMenu();
+        }, 1000);
+      }
+      window.$nuxt.$nextTick(() => {
+        setTimeout(() => {
+          SummitRouter.pageChecks(to);
+        }, 100);
+      });
+    });
     this.router.addRoute({
       path: "/terrain",
       redirect: "/basecamp",
@@ -74,36 +117,16 @@ export default class SummitRouter {
       component: OasReport,
     });
     this.router.addRoute({
+      path: "/summit/reports/oasprogress",
+      component: OasProgressVue,
+    });
+    this.router.addRoute({
       path: "/summit/reports/peakaward",
       component: PeakAward,
     });
     this.router.addRoute({
       path: "/summit/reports/Topo",
       component: Topo,
-    });
-    this.router.beforeEach((to, from, next) => {
-      if (to.path.includes("summit")) {
-        SummitRouter.switchMenu(this.summitNavMenuItems);
-      } else {
-        if (SummitRouter.terrainNavMenuItems.length === 0) {
-          this.resetMenu();
-        }
-        SummitRouter.switchMenu(SummitRouter.terrainNavMenuItems);
-      }
-      next();
-    });
-    this.router.afterEach((to) => {
-      console.log("After each");
-      if (this.summitNavMenuItems.length === 0 || SummitRouter.terrainNavMenuItems.length === 0) {
-        setTimeout(() => {
-          this.resetMenu();
-        }, 1000);
-      }
-      window.$nuxt.$nextTick(() => {
-        setTimeout(() => {
-          SummitRouter.pageChecks(to);
-        }, 100);
-      });
     });
   }
 
@@ -129,6 +152,13 @@ export default class SummitRouter {
           {
             title: "OAS Summary",
             to: "/summit/reports/oas",
+            items: [],
+            locked: false,
+            roles: [true, false],
+          },
+          {
+            title: "OAS Progress",
+            to: "/summit/reports/oasprogress",
             items: [],
             locked: false,
             roles: [true, false],
@@ -187,8 +217,10 @@ export default class SummitRouter {
       locked: false,
       roles: [true, false],
     };
-    //check if SummitRouter.terrainNavMenuItems has a item with the title "Terrain | Summit"
-    if (!SummitRouter.terrainNavMenuItems.some((item) => item.title === "Terrain | Summit")) SummitRouter.addMenuItems([SummitNavMenuItem]);
+    // Added to the saved Terrain menu, not whichever menu is on screen.
+    if (SummitRouter.terrainNavMenuItems.length > 0 && !SummitRouter.terrainNavMenuItems.some((item) => item.title === "Terrain | Summit")) {
+      SummitRouter.terrainNavMenuItems = SummitRouter.terrainNavMenuItems.concat([SummitNavMenuItem]);
+    }
   }
 
   private static getTerrainNavMenuItems(): NavMenuItem[] {
@@ -200,21 +232,8 @@ export default class SummitRouter {
     return [];
   }
 
-  private static addMenuItems(items: NavMenuItem[]): void {
-    window.$nuxt.$nextTick(() => {
-      const navMenuComponent: NavMenuComponent = FindComponent("NavMenu", window.$nuxt.$root as Vue) as NavMenuComponent;
-      if (navMenuComponent != null) {
-        for (let i = 0; i < items.length; i += 1) {
-          navMenuComponent.items.push(items[i]);
-          this.terrainNavMenuItems = Array.from(navMenuComponent.items);
-        }
-        navMenuComponent.$data.drawer = !navMenuComponent.$data.drawer;
-        navMenuComponent.$data.drawer = !navMenuComponent.$data.drawer;
-      }
-    });
-  }
-
   private static switchMenu(items: NavMenuItem[]): void {
+    if (items.length === 0) return;
     window.$nuxt.$nextTick(() => {
       const navMenuComponent: NavMenuComponent = FindComponent("NavMenu", window.$nuxt.$root as Vue) as NavMenuComponent;
       if (navMenuComponent != null) {
@@ -246,49 +265,6 @@ export default class SummitRouter {
       case "/programming/view-activity":
         if (this.checkElements(`//button[@data-cy='PRINT']`, "exportiCalBtn")) InitProgrammingExportBtn();
         else setTimeout(() => SummitRouter.pageChecks(to), 100);
-        break;
-      case "/milestones":
-        if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0 && $("div.ListItem__title:contains(Milestone 1)").length > 0)
-          CheckAward({ name: "milestone", path: "achievement_meta.stage", value: 1 }).then(() => {
-            AwardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", to, this.pageChecks);
-          });
-        if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0 && $("div.ListItem__title:contains(Milestone 2)").length > 0)
-          CheckAward({ name: "milestone", path: "achievement_meta.stage", value: 2 }).then(() => {
-            AwardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", to, this.pageChecks);
-          });
-        if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0 && $("div.ListItem__title:contains(Milestone 3)").length > 0)
-          CheckAward({ name: "milestone", path: "achievement_meta.stage", value: 3 }).then(() => {
-            AwardObserverRouter($(".Milestones__carousel-image"), "div.presentedAwardListItem", to, this.pageChecks);
-          });
-        break;
-      case "/intro-scouting":
-      case "/intro-section":
-      case "/adventurous-journey":
-      case "/personal-reflection":
-      case "/personal-development":
-      case "/oas":
-      case "/sia":
-        if ($("span.v-chip__content:contains(Awarded)").length > 0 && $("span.presentedAward").length === 0) {
-          console.log("Fetching achievements");
-          const type =
-            [
-              { route: "/oas", type: "outdoor_adventure_skill" },
-              { route: "/sia", type: "special_interest_area" },
-              { route: "/personal-development", type: "course_reflection" },
-              { route: "/intro-scouting", type: "intro_scouting" },
-              { route: "/intro-section", type: "intro_section" },
-              { route: "/adventurous-journey", type: "adventurous_journey" },
-              { route: "/personal-reflection", type: "personal_reflection" },
-            ].find((type) => type.route === to.path)?.type ?? "outdoor_adventure_skill";
-          const header = to.path.startsWith("/intro-") ? $("hr.BaseList__divider").first() : $("div.AchievementOverview__awarded").first();
-          const list = header.next().children("div.List").first();
-          list.addClass("AwardedList");
-          list.children().each((_index, element) => {
-            fetchAchievements(type).then((awards) => {
-              CheckAward({ name: type, parent: $(element), awardsPrefetched: awards });
-            });
-          });
-        } else setTimeout(() => SummitRouter.pageChecks(to), 100);
         break;
     }
   }

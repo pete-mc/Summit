@@ -6,7 +6,9 @@ import { fetchUnitAchievementsFilterd, fetchUnitMembers } from "@/services";
 import { TerrainRootState } from "@/types/terrainState";
 import MilestoneReportTable from "./components/UnitSummary";
 import MilestonePlanningItem from "./models/UnitSummarytem";
-import { TerrainState } from "@/helpers";
+import { TerrainState, createLogger } from "@/helpers";
+
+const logger = createLogger("UnitSummary");
 
 function data() {
   return {
@@ -65,7 +67,7 @@ export default defineComponent({
               m,
             ),
         );
-      console.log(this.items);
+      logger.debug("items", this.items);
       this.renderReactComponent(this.items);
     },
 

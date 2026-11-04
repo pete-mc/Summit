@@ -1,4 +1,7 @@
 import { getLogbookData, saveLogbookData } from "@/services";
+import { createLogger } from "@/helpers";
+
+const logger = createLogger("copyLogbook");
 
 function setClasses(classid: string, classes: string) {
   const button = $("." + classid);
@@ -82,7 +85,7 @@ function createLogbookReadButton(printBtn: JQuery<HTMLElement>, id: string, text
   setClasses(id, printBtn.attr("class") ?? "");
 }
 export async function LoadLogbookData(download?: boolean): Promise<void> {
-  console.debug("Recieved loadLogbook message from Channel");
+  logger.debug("Received loadLogbook message from Channel");
   const data = await getLogbookData(window.$nuxt.$store._vm["logbook/getRecordId"]);
   if (!data) {
     alert("Could not load logbook data");

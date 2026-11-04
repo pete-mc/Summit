@@ -1,8 +1,10 @@
-import { TerrainState } from "@/helpers";
+import { TerrainState, createLogger } from "@/helpers";
 
-export default async function updateMemberCalendars(body: string): Promise<void> {
+const logger = createLogger("updateMemberCalendars");
+
+export default async function updateMemberCalendars(body: string): Promise<boolean> {
   try {
-    if (!TerrainState.getToken()) return;
+    if (!TerrainState.getToken()) return false;
     const response = await fetch(`https://events.terrain.scouts.com.au/members/${TerrainState.getMemberID()}/calendars`, {
       method: "PUT",
       mode: "cors",
@@ -19,8 +21,9 @@ export default async function updateMemberCalendars(body: string): Promise<void>
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
+    return true;
   } catch (e) {
-    console.log("Error updating event: " + e);
-    throw e;
+    logger.error(e);
+    return false;
   }
 }

@@ -1,5 +1,7 @@
-import { TerrainState } from "@/helpers";
+import { TerrainState, createLogger } from "@/helpers";
 import { type TerrainEvent } from "../types/terrainTypes";
+
+const logger = createLogger("fetchActivity");
 
 export default async function fetchActivity(activityId: string | undefined): Promise<TerrainEvent | undefined> {
   try {
@@ -21,7 +23,7 @@ export default async function fetchActivity(activityId: string | undefined): Pro
     }
     return await response.json();
   } catch (e) {
-    console.log(`Error fetching activity: ${e}`);
+    logger.error(e);
     return undefined;
   }
 }

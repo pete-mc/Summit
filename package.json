@@ -31,7 +31,8 @@
     "build-prod": "webpack --config webpack.config.js --mode production",
     "build": "webpack --config webpack.config.js --mode development",
     "build-watch": "webpack --config webpack.config.js --mode development --watch",
-    "start": "webpack-dev-server --config webpack.config.js --mode development"
+    "start": "webpack-dev-server --config webpack.config.js --mode development",
+    "images:terrain": "node src/images/extract-terrain-images.js"
   },
   "browserslist": {
     "production": [
@@ -54,6 +55,7 @@
     "@fullcalendar/timegrid": "^6.1.20",
     "@tanstack/react-table": "^8.21.3",
     "big.js": "^6.2.2",
+    "caniuse-lite": "^1.0.30001820",
     "install": "^0.13.0",
     "jquery": "^3.7.1",
     "jspdf": "^4.2.1",
@@ -62,6 +64,8 @@
     "react": "^18.2.0",
     "react-datepicker": "^9.1.0",
     "react-dom": "^18.2.0",
+    "vuetify": "^2.7.2",
+    "write-excel-file": "^4.1.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -103,7 +107,9 @@
     "webpack-dev-server": "^5.2.3"
   },
   "sideEffects": [
-    "*.css"
+    "*.css",
+    "*.vue",
+    "./src/vuetifySetup.ts"
   ],
   "overrides": {
     "uuid": "^14.0.0"

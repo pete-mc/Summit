@@ -1,4 +1,6 @@
-import { TerrainState } from "@/helpers";
+import { TerrainState, createLogger } from "@/helpers";
+
+const logger = createLogger("fetchSIATemplate");
 
 export default async function fetchSIATemplate(templateId: string): Promise<unknown | undefined> {
   try {
@@ -19,7 +21,7 @@ export default async function fetchSIATemplate(templateId: string): Promise<unkn
     }
     return await response.json();
   } catch (e) {
-    console.log("Error fetching sia template: " + e);
+    logger.error(e);
     return undefined;
   }
 }

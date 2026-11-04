@@ -13,6 +13,14 @@ export const TerrainState = {
     return this.getCurrentProfile().unit.section;
   },
 
+  getUnitName(): string {
+    return this.getCurrentProfile().unit.name;
+  },
+
+  getGroupName(): string {
+    return this.getCurrentProfile().group.name;
+  },
+
   getToken(): string {
     return (window.$nuxt.$store.state as TerrainRootState).auth.idToken;
   },

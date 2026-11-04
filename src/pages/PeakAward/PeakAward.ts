@@ -77,16 +77,10 @@ export default defineComponent({
         },
         {} as { [id: string]: TerrainAchievements[] },
       );
-      console.log(membersMap);
-      console.log(awardsByMember);
       this.items = Object.entries(awardsByMember).map(([memberId, awards]) => {
         const member = membersMap[memberId];
         return new PeakAwardItem(awards, currentSection, member);
       });
-      console.log(this.items);
-
-      console.timeStamp(" Got all items");
-      console.log(this.items);
       this.renderReactComponent(this.items);
     },
 
