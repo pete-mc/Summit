@@ -3,7 +3,7 @@ import type { PropType } from "vue";
 import moment from "moment";
 import SummitAchievement from "@/pages/PresentAwards/models/SummitAchievement";
 import { sortItems } from "vuetify/es5/util/helpers";
-import { getBadgeIconUrl, hasWideIcon } from "../services/getBadgeIconUrl";
+import { getBadgeIconUrl, hasWideIcon } from "@/shared/getBadgeIconUrl";
 
 export interface DataTableHeader {
   text: string;

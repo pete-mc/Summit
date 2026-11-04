@@ -1,6 +1,6 @@
 import { existsSync } from "fs";
 import { resolve } from "path";
-import { getBadgeIconUrl, hasBadgeIcon, hasWideIcon } from "@/pages/PresentAwardsVue/services/getBadgeIconUrl";
+import { getBadgeIconUrl, hasBadgeIcon, hasWideIcon } from "@/shared/getBadgeIconUrl";
 
 const EXTENSION_URL = "chrome-extension://abcdef/";
 
@@ -53,7 +53,7 @@ describe("getBadgeIconUrl", () => {
       const url = getBadgeIconUrl(key);
       expect(url).not.toBeNull();
       const relativePath = (url as string).slice(EXTENSION_URL.length);
-      expect(existsSync(resolve(__dirname, "../../../../src", relativePath))).toBe(true);
+      expect(existsSync(resolve(__dirname, "../../../src", relativePath))).toBe(true);
     });
   });
 

@@ -1,5 +1,7 @@
 <template>
   <div class="oas-vue-table-panel">
+    <v-alert type="info" dense text class="oas-vue-table-notice">Note: This table is a debug tool with potential to be a feature. So it may change or be removed in the future.</v-alert>
+
     <div class="oas-vue-clear-filters-row">
       <v-btn v-if="hasActiveColumnFilters" text small color="primary" class="oas-vue-clear-filters-btn" @click="onClearFiltersClick">Clear filters</v-btn>
     </div>
@@ -79,6 +81,10 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.oas-vue-table-notice {
+  margin-bottom: 0;
 }
 
 /* Reserves the button's height so the table doesn't jump when it appears. */
