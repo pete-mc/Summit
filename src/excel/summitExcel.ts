@@ -166,4 +166,10 @@ export function parseDisplayDate(text: string): Date | null {
   return date.getUTCDate() === day && date.getUTCMonth() === month - 1 ? date : null;
 }
 
+/** Terrain's `YYYY-MM-DD…` dates, at UTC midnight like parseDisplayDate. */
+export function parseIsoDate(text: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(text);
+  return match ? new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]))) : null;
+}
+
 export const EXCEL_DATE_FORMAT = "dd/mm/yyyy";

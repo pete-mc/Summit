@@ -1,6 +1,6 @@
 import { defineComponent } from "vue";
 import type { PropType } from "vue";
-import { getPrintProfile, printTable, printTables, PAGE_SIZES, type LayoutResult, type MetaEntry, type Orientation, type PageSettings, type PrintFooter, type PrintHeader, type PrintLayout } from "@/print/summitPrint";
+import { getPrintProfile, printTable, printTables, PAGE_SIZES, type LayoutResult, type MetaEntry, type Orientation, type PageSettings, type PrintFooter, type PrintHeader, type PrintLayout, type PrintPart } from "@/print/summitPrint";
 import { getTerrainPrintContext } from "@/print/printContext";
 import { loadPrintSettings, savePrintSettings } from "@/print/printSettings";
 import { browserLacksFooterSupport } from "@/print/printSupport";
@@ -40,6 +40,8 @@ export default defineComponent({
     target: { type: Function as PropType<() => Element | null | undefined>, default: undefined },
     /** Replaces profile/target/prepare to print several tables as one printout. */
     parts: { type: Array as PropType<PrintButtonPart[]>, default: undefined },
+    /** Replaces `target` when the number of tables isn't known until click time. Each prints as its own part with `profile`. */
+    targets: { type: Function as PropType<() => Element[]>, default: undefined },
     settingsKey: { type: String, default: "" },
     title: { type: String, default: undefined },
     subtitle: { type: String, default: undefined },
@@ -73,6 +75,8 @@ export default defineComponent({
         await this.$nextTick();
         if (this.parts?.length) {
           await this.printParts(restores);
+        } else if (this.targets) {
+          await this.printTargets(this.targets());
         } else {
           await this.printSingle(restores);
         }
@@ -122,10 +126,20 @@ export default defineComponent({
       }
       const sources = parts.map((p) => p.target());
       if (sources.some((s) => !s)) throw new Error("there is nothing to print yet");
-
+      await this.printSources(
+        parts.map((p, i) => ({ source: sources[i] as Element, profile: p.profile })),
+        parts.map((p) => p.label),
+      );
+    },
+    async printTargets(sources: Element[]) {
+      savePrintSettings(this.profile, this.settings);
+      if (sources.length === 0) throw new Error("there is nothing to print yet");
+      await this.printSources(sources.map((source) => ({ source, profile: this.profile })));
+    },
+    async printSources(parts: PrintPart[], labels: string[] = []) {
       const context = getTerrainPrintContext();
       const results = await printTables({
-        parts: parts.map((p, i) => ({ source: sources[i] as Element, profile: p.profile })),
+        parts,
         meta: this.meta,
         footer: this.footer,
         vars: { ...context.vars, ...(this.vars || {}) },
@@ -135,7 +149,7 @@ export default defineComponent({
       this.warnAboutLayout(
         results,
         parts.map(() => this.settings.layout),
-        parts.map((p) => p.label),
+        labels,
       );
     },
     warnAboutLayout(results: LayoutResult[], layouts: PrintLayout[], labels: string[] = []) {
@@ -146,7 +160,7 @@ export default defineComponent({
           if (result.overflow) return named(i, OVERFLOW_MESSAGE);
           return "";
         })
-        .filter((m) => m !== "");
+        .filter((m, i, all) => m !== "" && all.indexOf(m) === i);
       if (messages.length) showTerrainToast(messages.join(" "), "info");
     },
   },

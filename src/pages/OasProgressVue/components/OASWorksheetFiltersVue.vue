@@ -19,20 +19,26 @@
       </v-select>
 
       <v-select
-        :value="filters.worksheetVisibleSkills"
-        :items="skillOptions"
+        :value="skillStream"
+        :items="skillStreamOptions"
         item-text="text"
         item-value="value"
-        label="Skills"
-        multiple
+        label="Skill"
         dense
         hide-details
-        style="max-width: 220px"
+        style="max-width: 280px"
         class="oas-vue-filter-select"
-        @change="patch({ worksheetVisibleSkills: $event })"
+        @change="patch({ worksheetSkillStream: $event })"
       >
-        <template #selection="{ index }">
-          <span v-if="index === 0" class="oas-vue-select-summary">{{ filters.worksheetVisibleSkills.length }} selected</span>
+        <template #item="{ item, attrs, on }">
+          <v-list-item v-bind="attrs" v-on="on">
+            <v-list-item-action>
+              <v-icon :color="attrs.inputValue ? 'primary' : undefined">{{ attrs.inputValue ? "mdi-radiobox-marked" : "mdi-radiobox-blank" }}</v-icon>
+            </v-list-item-action>
+            <v-list-item-content>
+              <v-list-item-title>{{ item.text }}</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
         </template>
       </v-select>
 

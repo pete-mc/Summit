@@ -1,9 +1,8 @@
 import { defineComponent } from "vue";
 import type { PropType } from "vue";
-import { OAS_SKILLS } from "@/pages/OasProgress/services/filterHeatMapSections";
 import type { OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
 import NameFormatSelect from "@/components/NameFormatSelect.vue";
-import { skillTitle } from "./OASHeatMapVue";
+import type { SkillStream } from "@/pages/OasProgressVue/services/skillStreams";
 
 type ShowOption = "worksheetBreakByPatrol" | "worksheetShowCompleted";
 
@@ -21,18 +20,22 @@ export default defineComponent({
   components: { NameFormatSelect },
   props: {
     filters: { type: Object as PropType<OASProgressVueFilterState>, required: true },
+    skillStreams: { type: Array as PropType<SkillStream[]>, required: true },
+    skillStream: { type: String, required: true },
     availablePatrols: { type: Array as PropType<string[]>, required: true },
     patrolFilterOptions: { type: Array as PropType<string[]>, required: true },
     canFilterByPatrol: { type: Boolean, default: true },
   },
   data() {
     return {
-      skillOptions: OAS_SKILLS.map((skill) => ({ value: skill, text: skillTitle(skill) })),
       stageOptions: STAGE_OPTIONS,
       layoutOptions: LAYOUT_OPTIONS,
     };
   },
   computed: {
+    skillStreamOptions(): Array<{ value: string; text: string }> {
+      return this.skillStreams.map((s) => ({ value: s.key, text: s.label }));
+    },
     showOptions(): ShowSelectItem[] {
       const items: ShowSelectItem[] = [{ header: "Members" }, { value: "worksheetShowCompleted", text: "Awarded" }];
       if (this.availablePatrols.length > 0) {

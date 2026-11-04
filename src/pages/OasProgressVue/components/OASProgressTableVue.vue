@@ -1,5 +1,7 @@
 <template>
   <div class="oas-vue-table-panel">
+    <v-alert type="info" dense text class="oas-vue-table-notice">Note: This table is a debug tool with potential to be a feature. So it may change or be removed in the future.</v-alert>
+
     <div class="oas-vue-clear-filters-row">
       <v-btn v-if="hasActiveColumnFilters" text small color="primary" class="oas-vue-clear-filters-btn" @click="onClearFiltersClick">Clear filters</v-btn>
     </div>
@@ -16,8 +18,23 @@
       <template #body.prepend>
         <tr class="oas-vue-column-filter-row">
           <th v-for="header in headers" :key="header.value">
+            <v-autocomplete
+              v-if="header.filterType === 'member'"
+              :value="memberId"
+              :items="memberOptions"
+              item-text="text"
+              item-value="value"
+              solo
+              flat
+              dense
+              hide-details
+              class="oas-vue-column-filter-input"
+              :aria-label="`Filter ${header.text}`"
+              :data-oas-column-filter="header.value"
+              @change="onMemberChange"
+            ></v-autocomplete>
             <v-select
-              v-if="header.filterType === 'select'"
+              v-else-if="header.filterType === 'select'"
               :value="columnFilters[header.value] || null"
               :items="columnFilterOptions[header.value]"
               item-text="text"
@@ -64,6 +81,10 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.oas-vue-table-notice {
+  margin-bottom: 0;
 }
 
 /* Reserves the button's height so the table doesn't jump when it appears. */

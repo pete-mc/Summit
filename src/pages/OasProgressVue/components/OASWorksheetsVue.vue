@@ -4,16 +4,9 @@
 
     <p v-if="hasSplitPages" class="oas-worksheet-split-note">This unit is large enough that some stages print across more than one sheet — each extra sheet repeats the same rows for its own batch of members.</p>
 
-    <!-- Layout A: members as columns. A plain <table>, not v-data-table, because it needs rowspan and a repeating print thead. -->
+    <!-- v-simple-table, not v-data-table, because it needs rowspan. -->
     <template v-if="!isMembersAsRows">
-      <table
-        v-for="view in columnsLayoutPages"
-        :key="view.page.key"
-        class="oas-worksheet-page oas-worksheet-layout-columns"
-        :data-oas-worksheet-page="view.page.key"
-        :data-oas-worksheet-member-offset="view.memberOffset"
-        :data-oas-worksheet-member-total="view.originalMemberCount"
-      >
+      <v-simple-table v-for="view in columnsLayoutPages" :key="view.page.key" dense class="oas-worksheet-page oas-worksheet-layout-columns" :data-oas-worksheet-page="view.page.key">
         <thead>
           <tr v-if="patrolSpansForPage(view.page).length > 0" class="oas-worksheet-patrol-header-row">
             <th class="oas-worksheet-group-header" colspan="2"></th>
@@ -66,19 +59,12 @@
             </tr>
           </template>
         </tbody>
-      </table>
+      </v-simple-table>
     </template>
 
     <!-- Layout B: members as rows, with rotated I-Statement headers. -->
     <template v-else>
-      <table
-        v-for="view in rowsLayoutPages"
-        :key="view.page.key"
-        class="oas-worksheet-page oas-worksheet-layout-rows"
-        :data-oas-worksheet-page="view.page.key"
-        :data-oas-worksheet-statement-offset="view.statementOffset"
-        :data-oas-worksheet-statement-total="view.originalColumnCount"
-      >
+      <v-simple-table v-for="view in rowsLayoutPages" :key="view.page.key" dense class="oas-worksheet-page oas-worksheet-layout-rows" :data-oas-worksheet-page="view.page.key">
         <thead>
           <tr class="oas-worksheet-group-span-row">
             <th class="oas-worksheet-member-name-header" :style="{ width: view.memberNameColumnWidthPx + 'px', minWidth: view.memberNameColumnWidthPx + 'px' }">{{ view.page.title }}</th>
@@ -131,7 +117,7 @@
             </tr>
           </template>
         </tbody>
-      </table>
+      </v-simple-table>
     </template>
   </div>
 </template>
@@ -156,17 +142,30 @@
   color: var(--summit-color-text-primary);
 }
 
-/* Gotcha: no `min-width: 100%`. On small units it lets the statement column absorb slack and leaves an empty gap. */
+/* Same frame as the Heatmap and Summary tables. width: max-content so the frame hugs the table instead of spanning the page. */
 .oas-worksheet-page {
   width: max-content;
-  border-collapse: separate;
-  border-spacing: 0;
+  max-width: none;
   margin-bottom: var(--summit-space-lg);
   font-size: var(--oas-vue-font-size-body);
   font-family: var(--oas-vue-font-family);
+}
+
+/* Gotcha: Vuetify's wrapper scrolls (overflow-x: auto), which would stop the sticky header and columns sticking to the page. */
+.oas-worksheet-page ::v-deep > .v-data-table__wrapper {
+  overflow: visible;
   background: var(--color-white, #fff);
   border: 1px solid var(--color-light-charcoal, #e5e9ec);
   border-radius: 4px;
+}
+
+.oas-worksheet-page ::v-deep > .v-data-table__wrapper > table {
+  width: max-content;
+}
+
+/* Gotcha: Vuetify's row hover would grey only the cells without their own background, leaving sticky and awarded cells white. */
+.oas-worksheet-page ::v-deep > .v-data-table__wrapper > table > tbody > tr:hover {
+  background: transparent !important;
 }
 
 .oas-worksheet-rotated-text {
@@ -176,7 +175,6 @@
   display: inline-block;
 }
 
-/* Screen only: group-band text stays horizontal. printWorksheets.ts keeps it rotated. */
 .oas-worksheet-group-band .oas-worksheet-rotated-text {
   writing-mode: horizontal-tb;
   transform: none;
@@ -190,10 +188,9 @@
   background: var(--color-white, #fff);
 }
 
+/* Learning: column lines are right borders only. The tables use separate borders (for sticky cells), so a left + right pair would draw a double line. */
 .oas-worksheet-page thead th.oas-worksheet-group-header {
   text-align: left;
-  font-size: var(--oas-vue-font-size-body);
-  font-weight: var(--summit-font-weight-semibold);
   white-space: nowrap;
   padding: 6px 8px;
 }
@@ -202,24 +199,28 @@
 .oas-worksheet-page thead th.oas-worksheet-page-title {
   max-width: 420px;
   white-space: normal;
+  color: var(--summit-color-text-primary);
+  font-size: var(--summit-font-size-lg);
+  font-weight: var(--summit-font-weight-semibold);
+  border-right: 1px solid var(--summit-color-border-default);
 }
 
 /* Learning: a column renders at its wider cell, so the body cell (inline per-page width) decides the width, not this header. */
 .oas-worksheet-page thead th.oas-worksheet-member-header {
+  font-size: var(--oas-vue-font-size-body);
   width: 28px;
   min-width: 28px;
   max-width: 28px;
   height: 140px;
   padding: 6px 2px;
-  font-weight: normal;
+  border-right: 1px solid var(--summit-color-border-subtle);
 }
 
 .oas-worksheet-page thead th.oas-worksheet-patrol-header {
   background: var(--summit-color-bg-muted);
-  font-weight: var(--summit-font-weight-semibold);
+  color: var(--summit-color-text-primary);
   text-align: center;
   padding: 2px 4px;
-  border-bottom: 1px solid var(--summit-color-border-default);
 }
 
 .oas-worksheet-patrol-header-row th.oas-worksheet-group-header {
@@ -239,8 +240,7 @@
   font-weight: var(--summit-font-weight-semibold);
   padding: 4px 2px;
   background: var(--color-white, #fff);
-  border-right: 2px solid var(--summit-color-border-default);
-  border-bottom: 1px solid var(--summit-color-border-subtle);
+  border-right: 1px solid var(--summit-color-border-subtle);
 }
 
 /* The inline per-page width overrides this 350px fallback. A real `width` is needed so the table can't stretch the column. */
@@ -253,8 +253,7 @@
   white-space: normal;
   padding: 4px 8px;
   background: var(--color-white, #fff);
-  border-right: 2px solid var(--summit-color-border-default);
-  border-bottom: 1px solid var(--summit-color-border-subtle);
+  border-right: 1px solid var(--summit-color-border-default);
 }
 
 .oas-worksheet-page td.oas-worksheet-cell {
@@ -262,16 +261,7 @@
   text-align: center;
   vertical-align: middle;
   padding: 4px;
-  border-bottom: 1px solid var(--summit-color-border-subtle);
-}
-
-/* Learning: borders, not background tints, mark patrol/group boundaries. A cell's background should only ever show its own state. */
-.oas-worksheet-patrol-group-start {
-  border-left: 2px solid var(--summit-color-border-default);
-}
-
-.oas-worksheet-patrol-group-end {
-  border-right: 2px solid var(--summit-color-border-default);
+  border-right: 1px solid var(--summit-color-border-subtle);
 }
 
 /* Dark green background, so the text needs the on-primary colour. Print uses its own light green. */
@@ -307,12 +297,14 @@
   text-align: left;
   min-width: 140px;
   padding: 6px 8px;
-  font-weight: var(--summit-font-weight-semibold);
+  border-right: 1px solid var(--summit-color-border-default);
 }
 
-/* The title cell may wrap; the "Member" cell below it must not. */
 .oas-worksheet-layout-rows thead tr.oas-worksheet-group-span-row th.oas-worksheet-member-name-header {
   white-space: normal;
+  color: var(--summit-color-text-primary);
+  font-size: var(--summit-font-size-lg);
+  font-weight: var(--summit-font-weight-semibold);
 }
 
 .oas-worksheet-layout-rows thead tr:not(.oas-worksheet-group-span-row) th.oas-worksheet-member-name-header {
@@ -327,18 +319,20 @@
   text-align: left;
   padding: 4px 8px;
   background: var(--color-white, #fff);
-  border-right: 2px solid var(--summit-color-border-default);
-  border-bottom: 1px solid var(--summit-color-border-subtle);
+  border-right: 1px solid var(--summit-color-border-default);
   white-space: nowrap;
 }
 
 /* Gotcha: rotated text swaps axes. Height is the ~50-char wrap length; width grows with extra wrapped lines. */
+/* Gotcha: Vuetify shrinks header text to 12px; the rotated names and I-statements are content, so they keep the body size. */
 .oas-worksheet-layout-rows thead th.oas-worksheet-statement-header {
+  font-size: var(--oas-vue-font-size-body);
   height: 350px;
   padding: 4px 2px;
   font-weight: normal;
   text-align: left;
   vertical-align: bottom;
+  border-right: 1px solid var(--summit-color-border-subtle);
 }
 
 /* break-word stops one long word forcing the fixed-width column wider. */
@@ -354,5 +348,16 @@
   font-weight: var(--summit-font-weight-semibold);
   padding: 4px 8px;
   text-align: left;
+}
+
+/* Last on purpose: these tie on specificity with the cell rules above, so source order decides. */
+.oas-worksheet-page td.oas-worksheet-patrol-group-end,
+.oas-worksheet-page thead th.oas-worksheet-patrol-group-end {
+  border-right: 1px solid var(--summit-color-border-default);
+}
+
+.oas-worksheet-page td.oas-worksheet-cell:last-child,
+.oas-worksheet-page thead th:last-child {
+  border-right: none;
 }
 </style>

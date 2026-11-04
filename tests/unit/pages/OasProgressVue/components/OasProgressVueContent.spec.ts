@@ -43,7 +43,7 @@ function makeStoredFilters(overrides: Partial<OASProgressVueFilterState> = {}): 
     visibleStreams: ["bushcraft"],
     visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     sortBy: "firstName",
-    worksheetVisibleSkills: ["bushcraft"],
+    worksheetSkillStream: "bushcraft::bushcraft",
     worksheetVisibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     worksheetNameFormat: "full",
     worksheetSelectedPatrols: [],
@@ -130,7 +130,7 @@ describe("OasProgressVueContent view mode", () => {
           memberFilter: "someone",
           sortBy: "lastName",
           summaryMemberFilter: "someone else",
-          worksheetVisibleSkills: ["bushcraft", "bushwalking"],
+          worksheetSkillStream: "bushcraft::pioneering",
         }),
         patrolFilterOptions: [],
       };
@@ -140,7 +140,7 @@ describe("OasProgressVueContent view mode", () => {
       expect(context.filters.memberFilter).toBe("");
       expect(context.filters.sortBy).toBe("firstName");
       expect(context.filters.summaryMemberFilter).toBe("someone else");
-      expect(context.filters.worksheetVisibleSkills).toEqual(["bushcraft", "bushwalking"]);
+      expect(context.filters.worksheetSkillStream).toBe("bushcraft::pioneering");
     });
 
     it("resets Summary's own keys while leaving Heat Map/Worksheets untouched", () => {
@@ -176,7 +176,7 @@ describe("OasProgressVueContent view mode", () => {
       const context = {
         filters: makeStoredFilters({
           viewMode: "worksheets",
-          worksheetVisibleSkills: ["bushcraft", "bushwalking"],
+          worksheetSkillStream: "bushcraft::pioneering",
           worksheetVisibleStages: [3, 4, 5],
           worksheetShowCompleted: false,
           memberFilter: "someone",
@@ -187,7 +187,7 @@ describe("OasProgressVueContent view mode", () => {
 
       methods.onResetFilters.call(context);
 
-      expect(context.filters.worksheetVisibleSkills).toEqual(["camping"]);
+      expect(context.filters.worksheetSkillStream).toBe("camping::camping");
       expect(context.filters.worksheetVisibleStages).toEqual([1]);
       expect(context.filters.worksheetShowCompleted).toBe(true);
       expect(context.filters.memberFilter).toBe("someone");
@@ -387,5 +387,43 @@ describe("OasProgressVueContent — Patrol filter gating", () => {
       const grouped = { bushcraft: { sections: [makeSection([{ patrolName: null }])] } };
       expect(callCanFilterByPatrol(grouped)).toBe(false);
     });
+  });
+});
+
+describe("OasProgressVueContent resolvedTableMemberId", () => {
+  const resolve = (OasProgressVueContent as unknown as { computed: { resolvedTableMemberId(this: unknown): string } }).computed.resolvedTableMemberId;
+  const tableMemberOptions = [
+    { text: "Alex Scout", value: "m1" },
+    { text: "Sam Ranger", value: "m2" },
+  ];
+
+  it("defaults to the first member until one is picked", () => {
+    expect(resolve.call({ tableMemberOptions, tableMemberId: "" })).toBe("m1");
+  });
+
+  it("keeps the picked member while they are listed, and falls back to the first when they are not", () => {
+    expect(resolve.call({ tableMemberOptions, tableMemberId: "m2" })).toBe("m2");
+    expect(resolve.call({ tableMemberOptions, tableMemberId: "gone" })).toBe("m1");
+  });
+
+  it("is empty while no rows have loaded", () => {
+    expect(resolve.call({ tableMemberOptions: [], tableMemberId: "" })).toBe("");
+  });
+});
+
+describe("OasProgressVueContent resolvedWorksheetSkillStream", () => {
+  const resolve = (OasProgressVueContent as unknown as { computed: { resolvedWorksheetSkillStream(this: unknown): string } }).computed.resolvedWorksheetSkillStream;
+  const worksheetSkillStreams = [
+    { key: "bushcraft::bushcraft", skill: "bushcraft", stream: "bushcraft", label: "Bushcraft" },
+    { key: "bushcraft::pioneering", skill: "bushcraft", stream: "pioneering", label: "Bushcraft - Pioneering" },
+  ];
+
+  it("keeps the saved Skill - Stream while it is listed, and falls back to the first when it is not", () => {
+    expect(resolve.call({ worksheetSkillStreams, filters: { worksheetSkillStream: "bushcraft::pioneering" } })).toBe("bushcraft::pioneering");
+    expect(resolve.call({ worksheetSkillStreams, filters: { worksheetSkillStream: "camping::camping" } })).toBe("bushcraft::bushcraft");
+  });
+
+  it("is empty while no rows have loaded", () => {
+    expect(resolve.call({ worksheetSkillStreams: [], filters: { worksheetSkillStream: "camping::camping" } })).toBe("");
   });
 });

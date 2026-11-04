@@ -1,24 +1,19 @@
 import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import moment from "moment";
-import { buildWorksheetPages, evenBatchRanges, splitPageIntoColumnBatches, transposeWorksheetPage, splitTransposedPageIntoColumnBatches } from "@/pages/OasProgressVue/services/buildWorksheetPages";
+import { buildWorksheetPages, splitPageIntoColumnBatches, transposeWorksheetPage, splitTransposedPageIntoColumnBatches } from "@/pages/OasProgressVue/services/buildWorksheetPages";
 import type { WorksheetCell, WorksheetMember, WorksheetPage, WorksheetPageSet, TransposedWorksheetPage } from "@/pages/OasProgressVue/services/buildWorksheetPages";
-import { printWorksheets } from "@/pages/OasProgressVue/services/printWorksheets";
 import {
   maxFittingMemberColumns,
   computeColumnsLayoutMetrics,
   GROUP_BAND_COLUMN_WIDTH_SCREEN_PX,
-  GROUP_BAND_COLUMN_WIDTH_PRINT_PX,
   STATEMENT_COLUMN_WRAP_WIDTH_SCREEN_PX,
-  STATEMENT_COLUMN_WRAP_WIDTH_PRINT_PX,
   STATEMENT_COLUMN_RELAXED_MAX_WIDTH_PX,
   PRINT_USABLE_WIDTH_PX,
   memberNameColumnWidthPx,
   WORKSHEET_FONT_FAMILY,
   WORKSHEET_BODY_FONT_SIZE_SCREEN_PX,
-  WORKSHEET_BODY_FONT_SIZE_PRINT_PX,
   TRANSPOSED_COLUMN_WIDTH_SCREEN_PX,
-  TRANSPOSED_COLUMN_WIDTH_PRINT_PX,
   maxFittingTransposedColumns,
 } from "@/pages/OasProgressVue/services/worksheetPrintPageSize";
 import type { OASProgressRow } from "@/pages/OasProgress/services/buildOASProgressRows";
@@ -90,20 +85,22 @@ export function duplicateMembersForDevPreview(items: OASProgressRow[], duplicate
   return [...items, ...copies];
 }
 
+export interface WorksheetExportView {
+  pages: WorksheetPage[];
+  membersAsRows: boolean;
+  breakByPatrol: boolean;
+}
+
 interface TransposedPageView {
   page: TransposedWorksheetPage;
   columnWidthPx: number;
   memberNameColumnWidthPx: number;
-  statementOffset: number;
-  originalColumnCount: number;
 }
 
 interface ColumnsPageView {
   page: WorksheetPage;
   statementWidthPx: number;
   memberColumnWidthPx: number;
-  memberOffset: number;
-  originalMemberCount: number;
 }
 
 /** Gotcha: before the first ResizeObserver reading the width is 0, and a max of 0 means "never split". Fall back to the print width until then. */
@@ -111,171 +108,12 @@ function usableScreenWidthPx(measuredWidthPx: number): number {
   return measuredWidthPx > 0 ? measuredWidthPx : PRINT_USABLE_WIDTH_PX;
 }
 
-/**
- * Gotcha: print must re-split from its own A4 budget. A wide monitor fits ~29 member columns where A4 fits ~9,
- * so printing the screen's batches clips columns off the page.
- * Works on the live DOM so print matches the screen exactly. The data-oas-worksheet-member-offset/-total
- * attributes give the position in the original unsplit page, so "members X-Y of N" numbering stays correct
- * when an already screen-split table is split again.
- */
-export function splitTableColumnsForPrint(table: HTMLTableElement, maxColumns: number): HTMLTableElement[] {
-  const headerRows = Array.from(table.querySelectorAll<HTMLTableRowElement>("thead tr"));
-  const memberHeaderRow = headerRows[headerRows.length - 1];
-  const patrolHeaderRow = headerRows.length > 1 ? headerRows[0] : null;
-  const bodyRows = Array.from(table.querySelectorAll<HTMLTableRowElement>("tbody tr"));
-
-  const leadingTitleCellCount = 1;
-  const memberCount = memberHeaderRow.children.length - leadingTitleCellCount;
-  const metrics = computeColumnsLayoutMetrics(PRINT_USABLE_WIDTH_PX, GROUP_BAND_COLUMN_WIDTH_PRINT_PX, Math.min(memberCount, Math.max(maxColumns, 1)), STATEMENT_COLUMN_RELAXED_MAX_WIDTH_PX);
-  const batchRanges = evenBatchRanges(memberCount, maxColumns);
-
-  const globalOffset = Number(table.dataset.oasWorksheetMemberOffset ?? "0");
-  const globalTotal = Number(table.dataset.oasWorksheetMemberTotal ?? memberCount);
-  const baseTitle = (table.querySelector<HTMLElement>("th.oas-worksheet-page-title")?.textContent ?? "").replace(/\s*\(members \d+-\d+ of \d+\)$/, "");
-
-  return batchRanges.map(([start, end]) => {
-    const clone = table.cloneNode(false) as HTMLTableElement;
-    const thead = document.createElement("thead");
-    const tbody = document.createElement("tbody");
-
-    if (patrolHeaderRow) {
-      thead.appendChild(sliceHeaderRowColumns(patrolHeaderRow, start, end, true));
-    }
-    const titleRowClone = sliceHeaderRowColumns(memberHeaderRow, start, end, false);
-    const titleCell = titleRowClone.querySelector<HTMLElement>("th.oas-worksheet-page-title");
-    if (titleCell && (batchRanges.length > 1 || globalTotal > memberCount)) {
-      titleCell.textContent = `${baseTitle} (members ${globalOffset + start + 1}-${globalOffset + end} of ${globalTotal})`;
-    }
-    thead.appendChild(titleRowClone);
-    clone.appendChild(thead);
-
-    bodyRows.forEach((row) => {
-      tbody.appendChild(sliceBodyRowColumns(row, start, end));
-    });
-    clone.appendChild(tbody);
-
-    applyColumnsLayoutPrintWidths(clone, metrics.statementWidthPx, metrics.memberColumnWidthPx);
-    return clone;
-  });
-}
-
-/** Keeps the leading cell. With `hasColspans`, clips each patrol span to the overlap with [start, end). */
-function sliceHeaderRowColumns(row: HTMLTableRowElement, start: number, end: number, hasColspans: boolean): HTMLTableRowElement {
-  const clone = row.cloneNode(false) as HTMLTableRowElement;
-  const cells = Array.from(row.children) as HTMLTableCellElement[];
-  clone.appendChild(cells[0].cloneNode(true));
-
-  if (!hasColspans) {
-    cells.slice(1 + start, 1 + end).forEach((cell) => clone.appendChild(cell.cloneNode(true)));
-    return clone;
-  }
-
-  let columnIndex = 0;
-  cells.slice(1).forEach((cell) => {
-    const spanStart = columnIndex;
-    const spanEnd = columnIndex + (cell.colSpan || 1);
-    columnIndex = spanEnd;
-    const overlapStart = Math.max(spanStart, start);
-    const overlapEnd = Math.min(spanEnd, end);
-    if (overlapEnd <= overlapStart) {
-      return;
-    }
-    const cellClone = cell.cloneNode(true) as HTMLTableCellElement;
-    cellClone.colSpan = overlapEnd - overlapStart;
-    clone.appendChild(cellClone);
-  });
-  return clone;
-}
-
-/** The rowspan group-band cell only exists on a group's first row. */
-function sliceBodyRowColumns(row: HTMLTableRowElement, start: number, end: number): HTMLTableRowElement {
-  const clone = row.cloneNode(false) as HTMLTableRowElement;
-  const cells = Array.from(row.children) as HTMLTableCellElement[];
-  const hasGroupBand = cells[0].classList.contains("oas-worksheet-group-band");
-  const fixedCount = hasGroupBand ? 2 : 1;
-
-  cells.slice(0, fixedCount).forEach((cell) => clone.appendChild(cell.cloneNode(true)));
-  cells.slice(fixedCount + start, fixedCount + end).forEach((cell) => clone.appendChild(cell.cloneNode(true)));
-  return clone;
-}
-
-function applyColumnsLayoutPrintWidths(table: HTMLTableElement, statementWidthPx: number, memberColumnWidthPx: number): void {
-  table.querySelectorAll<HTMLElement>(".oas-worksheet-statement").forEach((cell) => {
-    cell.style.width = `${statementWidthPx}px`;
-  });
-  table.querySelectorAll<HTMLElement>(".oas-worksheet-cell, .oas-worksheet-member-header").forEach((cell) => {
-    cell.style.width = `${memberColumnWidthPx}px`;
-    cell.style.minWidth = `${memberColumnWidthPx}px`;
-  });
-}
-
-/**
- * Layout B version of splitTableColumnsForPrint: splits I-Statement columns, and every member row repeats on each batch.
- * The member-name width is re-measured at the print font size, because it decides how many columns fit.
- * Gotcha: the page title is on the FIRST header row's .oas-worksheet-member-name-header. The second row's cell
- * has the same class but just says "Member".
- */
-export function splitRowsTableColumnsForPrint(table: HTMLTableElement, usableWidthPx: number, columnWidthPx: number): HTMLTableElement[] {
-  const headerRows = Array.from(table.querySelectorAll<HTMLTableRowElement>("thead tr"));
-  const groupSpanRow = headerRows[0];
-  const statementHeaderRow = headerRows[1];
-  const bodyRows = Array.from(table.querySelectorAll<HTMLTableRowElement>("tbody tr"));
-
-  const columnCount = statementHeaderRow.children.length - 1;
-  const memberNames = Array.from(table.querySelectorAll<HTMLElement>(".oas-worksheet-member-name-cell")).map((cell) => cell.textContent ?? "");
-  const nameColumnWidthPx = memberNameColumnWidthPx(memberNames, WORKSHEET_BODY_FONT_SIZE_PRINT_PX, WORKSHEET_FONT_FAMILY);
-  const maxColumns = maxFittingTransposedColumns(usableWidthPx, nameColumnWidthPx, columnWidthPx);
-  const batchRanges = evenBatchRanges(columnCount, maxColumns);
-
-  const globalOffset = Number(table.dataset.oasWorksheetStatementOffset ?? "0");
-  const globalTotal = Number(table.dataset.oasWorksheetStatementTotal ?? columnCount);
-  const baseTitle = (groupSpanRow.querySelector<HTMLElement>("th.oas-worksheet-member-name-header")?.textContent ?? "").replace(/\s*\(statements \d+-\d+ of \d+\)$/, "");
-
-  return batchRanges.map(([start, end]) => {
-    const clone = table.cloneNode(false) as HTMLTableElement;
-    const thead = document.createElement("thead");
-    const tbody = document.createElement("tbody");
-
-    const groupSpanRowClone = sliceHeaderRowColumns(groupSpanRow, start, end, true);
-    const titleCell = groupSpanRowClone.querySelector<HTMLElement>("th.oas-worksheet-member-name-header");
-    if (titleCell && (batchRanges.length > 1 || globalTotal > columnCount)) {
-      titleCell.textContent = `${baseTitle} (statements ${globalOffset + start + 1}-${globalOffset + end} of ${globalTotal})`;
-    }
-    thead.appendChild(groupSpanRowClone);
-    thead.appendChild(sliceHeaderRowColumns(statementHeaderRow, start, end, false));
-    clone.appendChild(thead);
-
-    bodyRows.forEach((row) => {
-      tbody.appendChild(row.classList.contains("oas-worksheet-patrol-divider-row") ? (row.cloneNode(true) as HTMLTableRowElement) : sliceRowsBodyRowColumns(row, start, end));
-    });
-    clone.appendChild(tbody);
-
-    clone.querySelectorAll<HTMLElement>(".oas-worksheet-statement-header").forEach((cell) => {
-      cell.style.width = `${columnWidthPx}px`;
-      cell.style.minWidth = `${columnWidthPx}px`;
-    });
-    clone.querySelectorAll<HTMLElement>(".oas-worksheet-member-name-cell").forEach((cell) => {
-      cell.style.width = `${nameColumnWidthPx}px`;
-      cell.style.minWidth = `${nameColumnWidthPx}px`;
-    });
-
-    return clone;
-  });
-}
-
-function sliceRowsBodyRowColumns(row: HTMLTableRowElement, start: number, end: number): HTMLTableRowElement {
-  const clone = row.cloneNode(false) as HTMLTableRowElement;
-  const cells = Array.from(row.children) as HTMLTableCellElement[];
-  clone.appendChild(cells[0].cloneNode(true));
-  cells.slice(1 + start, 1 + end).forEach((cell) => clone.appendChild(cell.cloneNode(true)));
-  return clone;
-}
-
 export default defineComponent({
   name: "OASWorksheetsVue",
   props: {
     items: { type: Array as PropType<OASProgressRow[]>, required: true },
     filters: { type: Object as PropType<OASProgressVueFilterState>, required: true },
+    skillStream: { type: String, required: true },
     availablePatrols: { type: Array as PropType<string[]>, required: true },
   },
   data() {
@@ -289,7 +127,7 @@ export default defineComponent({
       const itemsForDisplay = duplicateMembersForDevPreview(this.items, readDevDuplicateCount());
       const selectedPatrols = this.filters.worksheetSelectedPatrols ?? [];
       return buildWorksheetPages(itemsForDisplay, {
-        visibleSkills: this.filters.worksheetVisibleSkills,
+        skillStream: this.skillStream,
         visibleStages: this.filters.worksheetVisibleStages,
         selectedPatrols,
         memberFilter: "",
@@ -310,12 +148,10 @@ export default defineComponent({
         const batches = splitPageIntoColumnBatches(page, maxColumns);
         const batchSize = batches[0].members.length;
         const metrics = computeColumnsLayoutMetrics(usableWidthPx, GROUP_BAND_COLUMN_WIDTH_SCREEN_PX, batchSize, STATEMENT_COLUMN_RELAXED_MAX_WIDTH_PX);
-        return batches.map((batch, batchIndex) => ({
+        return batches.map((batch) => ({
           page: batch,
           statementWidthPx: metrics.statementWidthPx,
           memberColumnWidthPx: metrics.memberColumnWidthPx,
-          memberOffset: batchIndex * batchSize,
-          originalMemberCount: page.members.length,
         }));
       });
     },
@@ -330,13 +166,10 @@ export default defineComponent({
         );
         const maxColumns = maxFittingTransposedColumns(usableWidthPx, nameColumnWidthPx, TRANSPOSED_COLUMN_WIDTH_SCREEN_PX);
         const batches = splitTransposedPageIntoColumnBatches(transposed, maxColumns);
-        const batchSize = batches[0].columns.length;
-        return batches.map((batch, batchIndex) => ({
+        return batches.map((batch) => ({
           page: batch,
           columnWidthPx: TRANSPOSED_COLUMN_WIDTH_SCREEN_PX,
           memberNameColumnWidthPx: nameColumnWidthPx,
-          statementOffset: batchIndex * batchSize,
-          originalColumnCount: transposed.columns.length,
         }));
       });
     },
@@ -390,24 +223,12 @@ export default defineComponent({
       });
       return classes;
     },
-    /** Returns false when the print popup was blocked. */
-    printCurrentPages(): boolean {
-      const liveTables = Array.from((this.$el as HTMLElement).querySelectorAll<HTMLTableElement>("table.oas-worksheet-page"));
-      if (liveTables.length === 0) {
-        return false;
-      }
-      let tables: HTMLTableElement[];
-      if (this.isMembersAsRows) {
-        tables = liveTables.flatMap((table) => splitRowsTableColumnsForPrint(table, PRINT_USABLE_WIDTH_PX, TRANSPOSED_COLUMN_WIDTH_PRINT_PX));
-      } else {
-        const printMaxColumns = maxFittingMemberColumns(PRINT_USABLE_WIDTH_PX, GROUP_BAND_COLUMN_WIDTH_PRINT_PX, STATEMENT_COLUMN_WRAP_WIDTH_PRINT_PX);
-        tables = liveTables.flatMap((table) => splitTableColumnsForPrint(table, printMaxColumns));
-      }
-      return printWorksheets({
-        pageTables: tables,
-        documentTitle: "Terrain | Summit - OAS Worksheets",
-        orientation: "landscape",
-      });
+    getPrintTables(): HTMLTableElement[] {
+      return Array.from((this.$el as HTMLElement).querySelectorAll<HTMLTableElement>(".oas-worksheet-page table"));
+    },
+    /** Unsplit pages: Excel has no page width. */
+    getExportView(): WorksheetExportView {
+      return { pages: this.pageSet.pages, membersAsRows: this.isMembersAsRows, breakByPatrol: this.filters.worksheetBreakByPatrol };
     },
   },
   mounted() {

@@ -1,4 +1,4 @@
-import { buildPrintDocument, DEFAULT_FOOTER, getPrintProfile, layoutOptions, mergeMeta, resolveHeaderFooter, resolvePage } from "@/print/summitPrint";
+import { buildPrintDocument, DEFAULT_FOOTER, getPrintProfile, layoutOptions, mergeMeta, printFileName, resolveHeaderFooter, resolvePage } from "@/print/summitPrint";
 import { peakAwardSummaryWidths } from "@/print/profiles/peakAwardSummary";
 import { mountSummaryTable } from "./summaryFixture";
 
@@ -156,5 +156,18 @@ describe("buildPrintDocument (Summary profile)", () => {
     const { page, fit } = layoutOptions({ source: document.body, profile: "peak-award-summary", vars: CONTEXT_VARS });
     expect(page.width).toBe(210);
     expect(fit.layout).toBe("fit");
+  });
+});
+
+describe("printFileName", () => {
+  const generated = new Date(2026, 10, 3, 12, 54);
+
+  // Edge suggested "Scouts _ Terrain" for every Save as PDF.
+  it("names the PDF from the printout's title, the unit and the date, like the Excel files", () => {
+    expect(printFileName({ profile: "oas-worksheets", vars: { unit: "Venturer Unit" }, generated })).toBe("OAS Progress - Worksheets - Venturer Unit - 20261103");
+  });
+
+  it("drops a missing unit and characters a file name can't hold", () => {
+    expect(printFileName({ profile: "skill-heatmap", title: "A/B: test", vars: {}, generated })).toBe("A-B- test - 20261103");
   });
 });
