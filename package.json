@@ -32,7 +32,6 @@
     "build": "webpack --config webpack.config.js --mode development",
     "build-watch": "webpack --config webpack.config.js --mode development --watch",
     "start": "webpack-dev-server --config webpack.config.js --mode development",
-    "images:terrain": "node src/images/extract-terrain-images.js",
     "images:terrain": "node src/images/extract-terrain-images.js"
   },
   "browserslist": {
@@ -56,6 +55,7 @@
     "@fullcalendar/timegrid": "^6.1.20",
     "@tanstack/react-table": "^8.21.3",
     "big.js": "^6.2.2",
+    "caniuse-lite": "^1.0.30001820",
     "install": "^0.13.0",
     "jquery": "^3.7.1",
     "jspdf": "^4.2.1",
