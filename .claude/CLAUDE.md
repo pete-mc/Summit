@@ -73,6 +73,10 @@ Upstream maintainer prefers a near-zero-comment codebase. Rules:
 
 The original long-form comments (design reasoning, history, rejected approaches) were removed on 2026-10-20. They are preserved at git tag `pre-comment-cleanup` (commit `d05617b`, Summit 3.2.4 + our work). To read them: `git show pre-comment-cleanup:<path>` or `git log -p pre-comment-cleanup -- <path>`.
 
+## OUTSTANDING WORK
+
+See .claude/OUTSTANDING.md for open items across features. Update it when something is finished or deferred.
+
 ## SPECIFICATIONS
 
 See .claude/INITIAL_SPECS.md for detailed specifications. It may not exist yet.

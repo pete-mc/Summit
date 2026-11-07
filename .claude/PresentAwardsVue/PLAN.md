@@ -1,5 +1,10 @@
 # Present Awards (Vue) — overview plan
 
+> **Held back from PR #164 (2026-11-04).** The user judged the page not ready to ship, so it lives
+> on `main` only and is stripped from `summit-dev` (see "Unfinished pages are `main`-only too" in
+> `.claude/CLAUDE.md`). Before it goes upstream: decide with the user what "ready" means, finish
+> that, then send it as its own PR. The status below predates this decision.
+
 **Status:** Complete, promoted and verified live, 2026-09-28. The Vue page owns
 `/summit/tools/PresentAwards`; the React original is archived at
 `/summit/tools/presentawards-legacy`. Grouping by member, a badge-icon column and

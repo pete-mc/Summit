@@ -1,5 +1,10 @@
 # OAS Progress › Table: one member at a time, combined Skill column
 
+> **Status of the tab (2026-11-04):** the tab is a debug tool that may become a feature. An info
+> banner (`v-alert`, `.oas-vue-table-notice` in `OASProgressTableVue.vue`) says so above the table,
+> and shipped in PR #164. Outstanding: banner not yet checked live in Edge. Whether the tab stays
+> or goes is undecided.
+
 ## Context
 The Table tab lists every I-statement for every member across all 9 skills, so it can run to thousands of rows. That makes print and Excel export impractical. Two changes cut the size down:
 1. The **Member** column filter becomes a single-select dropdown, like Stage. Exactly one member is always selected (no "none"), and it defaults to the first member.

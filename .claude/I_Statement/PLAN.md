@@ -2,6 +2,11 @@
 
 # PLAN.md — "I Statements" Page (Overview)
 
+> **Held back from PR #164 (2026-11-04).** Not ready to ship: it lives on `main` only and is
+> stripped from `summit-dev` (see "Unfinished pages are `main`-only too" in `.claude/CLAUDE.md`).
+> Still open: the stage 5 merge audit, stage 6 live verification, and the user's own doubts that
+> the page is too big and may mislead. Decide its future with the user before any separate PR.
+
 ## Purpose
 
 A new Summit page showing **every Skill+Stream combination that relates to each
