@@ -1,8 +1,10 @@
-import { TerrainState } from "@/helpers";
+import { TerrainState, createLogger } from "@/helpers";
 
-export default async function deleteEvent(eventId: string): Promise<void> {
+const logger = createLogger("deleteEvent");
+
+export default async function deleteEvent(eventId: string): Promise<boolean> {
   try {
-    if (!TerrainState.getToken()) return undefined;
+    if (!TerrainState.getToken()) return false;
     const response = await fetch("https://events.terrain.scouts.com.au/events/" + eventId, {
       method: "DELETE",
       mode: "cors",
@@ -18,8 +20,9 @@ export default async function deleteEvent(eventId: string): Promise<void> {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
+    return true;
   } catch (e) {
-    console.log("Error updating event: " + e);
-    throw e;
+    logger.error(e);
+    return false;
   }
 }

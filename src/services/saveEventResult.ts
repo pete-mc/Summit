@@ -9,6 +9,8 @@ export type SaveEventFailure = {
 export type SaveEventResult =
   | {
       ok: true;
+      /** Set when merged with a concurrent save: when that other save happened. */
+      mergedWith?: Date | null;
     }
   | SaveEventFailure;
 

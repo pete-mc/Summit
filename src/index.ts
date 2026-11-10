@@ -1,3 +1,4 @@
+import "./vuetifySetup";
 import "./styles/index.css";
 import summitModule from "@/modules/summitModule";
 import SummitRouter from "@/router/SummitRouter";

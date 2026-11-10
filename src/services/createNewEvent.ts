@@ -1,5 +1,7 @@
-import { TerrainState } from "@/helpers";
+import { TerrainState, createLogger } from "@/helpers";
 import { normalizeSaveEventFailure, SaveEventResult } from "./saveEventResult";
+
+const logger = createLogger("createNewEvent");
 
 export default async function createNewEvent(body: string): Promise<SaveEventResult> {
   try {
@@ -34,7 +36,7 @@ export default async function createNewEvent(body: string): Promise<SaveEventRes
     const responseText = await response.text();
     return normalizeSaveEventFailure(response.status, responseText);
   } catch (e) {
-    console.log("Error creating event: " + e);
+    logger.error(e);
 
     return {
       ok: false,

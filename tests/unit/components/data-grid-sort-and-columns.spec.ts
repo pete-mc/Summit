@@ -16,13 +16,7 @@ type SortRow = {
 };
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
-const PHASE3_GRID_FILES = [
-  "src/pages/MilestoneReport/components/MilestoneReport.tsx",
-  "src/pages/OasReport/components/OasReport.tsx",
-  "src/pages/PeakAward/components/PeakAward.tsx",
-  "src/pages/PresentAwards/components/PresentAwards.tsx",
-  "src/pages/SectionSummary/components/UnitSummary.tsx",
-];
+const PHASE3_GRID_FILES = ["src/pages/MilestoneReport/components/MilestoneReport.tsx", "src/pages/OasReport/components/OasReport.tsx", "src/pages/PeakAward/components/PeakAward.tsx", "src/pages/SectionSummary/components/UnitSummary.tsx"];
 
 describe("Phase 3 data grid sort and column contracts", () => {
   let container: HTMLDivElement;

@@ -1,5 +1,8 @@
 import { TerrainRootState } from "@/types/terrainState";
 import { defineComponent } from "vue";
+import { createLogger } from "@/helpers";
+
+const logger = createLogger("DisplayOptions");
 
 export default defineComponent({
   data() {
@@ -11,7 +14,7 @@ export default defineComponent({
   methods: {
     updateHelpButton() {
       this.$store.dispatch("Summit/toggleHelpButton", this.helpbutton);
-      console.log("Help button updated to " + this.helpbutton);
+      logger.debug("Help button updated to " + this.helpbutton);
     },
   },
 
