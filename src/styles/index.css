@@ -492,13 +492,6 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   overflow-y: visible;
   border: 1px solid var(--summit-color-border-default);
   border-radius: 6px;
-  box-shadow: none !important;
-  background: linear-gradient(to right, transparent, transparent) !important;
-}
-
-.oas-heatmap-scroll::after,
-.oas-heatmap-scroll::before {
-  display: none !important;
 }
 
 .oas-heatmap-stage-group-header {

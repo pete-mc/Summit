@@ -100,12 +100,6 @@
   letter-spacing: normal;
 }
 
-/* Constrain heatmap scroll container to viewport height minus top elements */
-.oas-vue-content ::v-deep .oas-heatmap-scroll {
-  max-height: calc(100vh - 320px);
-  height: calc(100vh - 320px);
-}
-
 .oas-summary-section-heading {
   margin: var(--summit-space-lg, 16px) 0 var(--summit-space-sm, 8px);
   color: var(--color-scouts-medium-blue, #00348d);
