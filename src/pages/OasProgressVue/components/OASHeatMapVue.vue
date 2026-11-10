@@ -89,9 +89,15 @@
 </script>
 
 <style scoped>
+.oas-heatmap-scroll {
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
 .oas-heatmap-data-table {
   font-size: var(--oas-vue-font-size-body);
   font-family: var(--oas-vue-font-family);
+  width: 100%;
 }
 
 .oas-heatmap-member-patrol {
@@ -104,11 +110,61 @@
   width: max-content;
   border-collapse: collapse;
   border: 1px solid var(--color-light-charcoal, #e5e9ec);
+  box-shadow: none !important;
 }
 
 .oas-heatmap-data-table ::v-deep > .v-data-table__wrapper {
-  background: var(--color-white, #fff);
+  background: var(--color-white, #fff) !important;
   border: 1px solid var(--color-light-charcoal, #e5e9ec);
   border-radius: 4px;
+  overflow: visible !important;
+  box-shadow: none !important;
+}
+
+.oas-heatmap-data-table ::v-deep > .v-data-table__wrapper::after,
+.oas-heatmap-data-table ::v-deep > .v-data-table__wrapper::before {
+  display: none !important;
+}
+
+.oas-heatmap-data-table ::v-deep thead {
+  position: sticky;
+  top: 0;
+  background: var(--color-white, #fff);
+  z-index: 10;
+}
+
+/* Remove any shadow effects from table cells and rows */
+.oas-heatmap-data-table ::v-deep tbody tr,
+.oas-heatmap-data-table ::v-deep tbody td {
+  box-shadow: none !important;
+  background-image: none !important;
+}
+
+/* Override any gradients or shadows on the table body */
+.oas-heatmap-data-table ::v-deep tbody {
+  box-shadow: none !important;
+  background-image: none !important;
+}
+
+/* Remove mask-image effects that create fade/shadow on right edge */
+.oas-heatmap-scroll {
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+  mask: none !important;
+  -webkit-mask: none !important;
+}
+
+.oas-heatmap-data-table {
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+  mask: none !important;
+  -webkit-mask: none !important;
+}
+
+.oas-heatmap-data-table ::v-deep > .v-data-table__wrapper {
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+  mask: none !important;
+  -webkit-mask: none !important;
 }
 </style>
