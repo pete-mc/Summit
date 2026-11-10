@@ -305,6 +305,15 @@ export default defineComponent({
       return this.sections.flatMap((section) => section.patrolGroups.flatMap((group) => group.members.map((member) => ({ memberId: member.memberId }))));
     },
   },
+  mounted() {
+    // Remove the linear-gradient background that Terrain applies to .oas-heatmap-scroll
+    // This gradient creates a fade/shadow effect on the right edge of the heatmap
+    const scrollEl = this.$el as HTMLElement | null;
+    if (scrollEl && scrollEl.classList.contains('oas-heatmap-scroll')) {
+      scrollEl.style.setProperty('background-image', 'none', 'important');
+      scrollEl.style.setProperty('background', 'none', 'important');
+    }
+  },
   methods: {
     /** Gotcha: a $ref on v-data-table is the component, not the <table>, and fails silently. Ask the component instead. */
     getExportTable(): HTMLTableElement | undefined {

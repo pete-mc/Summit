@@ -92,6 +92,8 @@
 .oas-heatmap-scroll {
   overflow-x: auto;
   overflow-y: auto;
+  background-image: none !important;
+  background: none !important;
 }
 
 .oas-heatmap-data-table {
