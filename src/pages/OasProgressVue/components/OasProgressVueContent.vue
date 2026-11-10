@@ -86,6 +86,12 @@
 <script lang="ts" src="./OasProgressVueContent.ts"></script>
 
 <style scoped>
+.oas-heatmap-data-table {
+  font-size: var(--oas-vue-font-size-body);
+  font-family: var(--oas-vue-font-family);
+  width: 100%;
+}
+
 /* The page's one type scale. Custom properties inherit through scoped child components, so they all use these. */
 .oas-vue-content {
   --oas-vue-font-size-heading: 18px;
@@ -98,6 +104,42 @@
 .oas-vue-content ::v-deep .v-tab {
   text-transform: none;
   letter-spacing: normal;
+}
+
+/* Constrain heatmap scroll container to viewport height and width minus top elements */
+.oas-vue-content ::v-deep .oas-heatmap-scroll {
+  max-height: calc(100vh - 320px);
+  height: calc(100vh - 320px);
+  max-width: 100%;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: scroll;
+  scrollbar-width: auto;
+  border: 1px solid var(--color-light-charcoal, #e5e9ec);
+  border-radius: 4px;
+}
+
+/* Vertical scrollbar styling */
+.oas-vue-content ::v-deep .oas-heatmap-scroll::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.oas-vue-content ::v-deep .oas-heatmap-scroll::-webkit-scrollbar-track {
+  background: var(--color-light-charcoal, #e5e9ec);
+}
+
+.oas-vue-content ::v-deep .oas-heatmap-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-charcoal, #748494);
+  border-radius: 6px;
+}
+
+.oas-vue-content ::v-deep .oas-heatmap-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--color-scouts-medium-blue, #00348d);
+}
+
+.oas-vue-content ::v-deep .oas-heatmap-scroll::-webkit-scrollbar-corner {
+  background: var(--color-light-charcoal, #e5e9ec);
 }
 
 .oas-summary-section-heading {
