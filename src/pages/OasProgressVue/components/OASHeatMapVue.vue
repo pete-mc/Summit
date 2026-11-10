@@ -103,12 +103,16 @@
 .oas-heatmap-data-table ::v-deep > .v-data-table__wrapper > table {
   width: max-content;
   border-collapse: collapse;
-  border: 1px solid var(--color-light-charcoal, #e5e9ec);
+  border: none;
+  background: var(--color-white, #fff);
 }
 
 .oas-heatmap-data-table ::v-deep > .v-data-table__wrapper {
-  background: var(--color-white, #fff);
-  border: 1px solid var(--color-light-charcoal, #e5e9ec);
-  border-radius: 4px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: visible !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 12px;
 }
 </style>

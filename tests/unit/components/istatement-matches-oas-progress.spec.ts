@@ -6,6 +6,7 @@ const read = (relative: string) => fs.readFileSync(path.resolve(REPO_ROOT, relat
 
 const I_HEAT_MAP = read("src/pages/IStatements/components/IStatementHeatMap.vue");
 const OAS_HEAT_MAP = read("src/pages/OasProgressVue/components/OASHeatMapVue.vue");
+const OAS_HEAT_MAP_FRAME = OAS_HEAT_MAP + read("src/pages/OasProgressVue/components/OasProgressVueContent.vue");
 const INDEX_CSS = read("src/styles/index.css");
 
 const OAS_FILTERS = read("src/pages/OasProgressVue/components/OASProgressFiltersVue.vue");
@@ -46,7 +47,7 @@ describe("I Statements heat map — same table elements as OAS Progress", () => 
   });
 
   it("wears Terrain's table frame, via tokens rather than literal colours", () => {
-    [I_HEAT_MAP, OAS_HEAT_MAP].forEach((source) => {
+    [I_HEAT_MAP, OAS_HEAT_MAP_FRAME].forEach((source) => {
       expect(source).toContain("var(--color-white, #fff)");
       expect(source).toContain("var(--color-light-charcoal, #e5e9ec)");
     });

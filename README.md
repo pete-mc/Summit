@@ -67,6 +67,8 @@ This project targets Node.js `24.x`.
 
 The output is written to `dist/`.
 
+Keep `vue-loader` on v15 while this project uses Vue 2.7. Vue Loader v17 is not compatible with the current Vue build configuration.
+
 Packaged artifacts are written to `artifacts/Summit.zip`.
 
 ### Local development server
