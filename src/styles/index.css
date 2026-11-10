@@ -493,8 +493,7 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   border: 1px solid var(--summit-color-border-default);
   border-radius: 6px;
   box-shadow: none !important;
-  background: none !important;
-  background-image: none !important;
+  background: linear-gradient(to right, transparent, transparent) !important;
 }
 
 .oas-heatmap-scroll::after,
