@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-11-10 - Release v3.2.6
+
+Production release build with bug fixes and improvements.
+
+### Release Details
+
+- **Version**: 3.2.6
+- **Build Date**: 2026-11-10
+- **Package**: `release-3.2.6.zip` (17.07 MB)
+- **Build Output**: 155 files in dist/ folder
+
+### Changes
+
+- Version bump from 3.2.5 to 3.2.6
+- Production build with optimized assets
+- All dependencies up to date
+
 ## 2026-10-20 - Pathways update
 
 Changes introduced in commit [7690642](https://github.com/pete-mc/Summit/commit/769064220f7cd8d47c5ca1c9a5983ad4ae04fc84) ([#165](https://github.com/pete-mc/Summit/pull/165)).

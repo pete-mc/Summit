@@ -4,12 +4,18 @@
       <h1>Welcome to Terrain | Summit</h1>
             <p v-if="summit_version"><strong>Current version:</strong> {{ summit_version }}</p>
 
+    <div style="background-color: #e3f2fd; border-left: 4px solid #1976d2; padding: 12px; margin: 16px 0; border-radius: 4px;">
+      <strong>✨ What's New:</strong> Introducing the <strong>OAS Progress View</strong>! Get comprehensive insights into member progression with multiple visualization options including Summary, Heatmap, Table, and Worksheets. Access it from the reports menu.
+    </div>
+
     <p>Hi {{ first_name }}, in this dedicated space you'll find an array of tailored tools and features, including the custom Summit
         reports, request forms, and the highly efficient bulk calendar entry tool. Each of these has been designed to
         enhance your Terrain experience.</p>
     <h3>Key Features:</h3>
     <ul>
         <li><strong>Summit Reports:</strong> Access detailed reports that cater specifically to your needs.
+        </li>
+        <li><strong>OAS Progress View:</strong> <em>New!</em> Track and visualize member progress across OAS skills with multiple views including summary, heatmap, detailed table, and worksheets. Easily export to Excel and print your reports.
         </li>
         <li><strong>Bulk Calendar Entry Tool:</strong> Efficiently manage your schedule by entering multiple events at
             once.</li>
