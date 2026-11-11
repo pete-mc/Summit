@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[47],{1310:function(t,n,o){"use strict";o.r(n);var c=o(1),e=o(1257);o.d(n,"Chatbot",(function(){return e.default})),c.a.component("amplify-chatbot",e.default)}}]);
