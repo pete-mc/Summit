@@ -21,43 +21,50 @@ See .claude/DEVENV.md for development environment details.
 | `github`   | GitHub `Antipodn/Summit`     | Public     | User's public fork — push branches here to open PRs to `upstream`.      |
 | `upstream` | GitHub `pete-mc/Summit`      | Public     | Original Summit; all production releases originate here. Fetch only, never push. |
 
-Typical flow: fetch new releases (tags like `3.2.4`) from `upstream` and merge into `main` → push to `origin`. To contribute a change back, push a branch to `github` and open a PR from `Antipodn/Summit` to `pete-mc/Summit`. Confirm with the user before pushing to `github` or opening a PR (both are public).
+Typical flow: fetch new releases (tags like `3.2.6`) from `upstream` and merge into `main` → push to `origin`. To contribute a change back, push a branch to `github` and open a PR from `Antipodn/Summit` to `pete-mc/Summit`. Confirm with the user before pushing to `github` or opening a PR (both are public).
+
+The maintainer **squash-merges** PRs (PR #164 landed as one commit, `2fbefdc` "#166", in 3.2.6) and may push small fixes onto the PR branch first. Consequences:
+
+- Merging that release into `main` conflicts on every file both sides touched, because git can't see our commits are already upstream. Resolve: upstream's version for files the PR shipped (their edits win), `main`'s version for anything tied to the unfinished pages (router, `src/pages/index.ts`, `src/print/profiles/index.ts`, Present Awards files), `.gitignore` = ours plus any new upstream lines. Before committing, `git diff --name-status main <merge-tree>` for silent deletions. Worked example: merge commit `3496727`.
+- If the maintainer changed `package.json`/lock (e.g. held `vue-loader` at v15 — keep it there), run `npm ci` before building.
+- A PR branch is spent once merged. Never reuse it; start the next PR on a fresh branch from `upstream/main`.
 
 ### `.claude/` is Bitbucket-only — NEVER on GitHub
 
 The upstream maintainer keeps all LLM tooling out of the repo to avoid collisions between contributors' tools. So:
 
 - `.claude/` (this file, plans, design notes) lives on `main` and is pushed to `origin` (Bitbucket) only.
-- No branch pushed to `github` may contain `.claude/`. The PR branch is `summit-dev` (PR #164 → `pete-mc/Summit` `main`).
+- No branch pushed to `github` may contain `.claude/`. PR branches are named `pr/<feature>` (e.g. `pr/present-awards`). The old `summit-dev` branch (PR #164, merged 2026-11-10 in 3.2.6) is retired.
 - Code in `src/`/`tests/` must not reference `.claude/` files (plans, DESIGN.md, NAME_RESOLUTION.md, …). Upstream won't have them.
 - The PR branch also keeps upstream's `.gitignore` lines and `.jest-components-results.json` as upstream has them. Our `.claude` ignore lines and our deletion of that Jest file stay on `main` only, so the PR stays focused on features.
 
 ### Unfinished pages are `main`-only too
 
-Present Awards and I Statements are still in development (decided 2026-11-04). They live on `main` but are stripped from `summit-dev`, so the PR doesn't ship them. Excluded paths:
+Present Awards and I Statements are still in development (decided 2026-11-04). They live on `main` but are stripped from PR branches, so a PR doesn't ship them. Excluded paths:
 
 - `src/pages/IStatements/`, `src/pages/PresentAwardsVue/`, `src/pages/PresentAwards/` (the new page's services/model, plus upstream's disabled legacy page, which no longer compiles since `ToastComponent` was replaced)
 - `src/excel/sheets/presentAwards.ts`, `src/print/profiles/presentAwards.ts`
 - Tests: `tests/unit/pages/IStatements/`, `tests/unit/pages/PresentAwardsVue/`, `tests/unit/pages/PresentAwards/`, `tests/unit/excel/presentAwardsSheet.spec.ts`, `tests/unit/print/presentAwardsPrint.spec.ts`, `tests/unit/router/summit-router-presentawards-vue-route.spec.ts`, `tests/unit/components/istatement-matches-oas-progress.spec.ts`, `tests/unit/components/present-awards-table-vue-render-contract.spec.ts`, `tests/unit/models/SummitAchievement.spec.ts`
-- Hand edits on `summit-dev` (re-check after each merge, they may conflict): `src/router/SummitRouter.ts` (no I Statements route/menu item; Present Awards route and menu item in upstream's commented-out form), `src/pages/index.ts` (no `PresentAwardsVue`/`IStatements`/`PresentAwards`), `src/print/profiles/index.ts` (no `presentAwards`).
+- Hand edits on the PR branch (re-check after each merge, they may conflict): `src/router/SummitRouter.ts` (no I Statements route/menu item; Present Awards route and menu item in upstream's commented-out form), `src/pages/index.ts` (no `PresentAwardsVue`/`IStatements`/`PresentAwards`), `src/print/profiles/index.ts` (no `presentAwards`).
 
 Rules on `main` that keep this cheap:
 
 - Shared code must not import from those page folders (that's why `getBadgeIconUrl` lives in `src/shared/`).
 - Page-specific tests go in the page's own test folder. Cross-page tests (`shared-loading-state`, `summit-pill-button`) only check the optional pages if their files exist.
 
-When a page is ready, drop it from this list and the strip step, then merge.
+When a page is ready, drop it from this list and the strip step, then build its PR branch.
 
-Updating the PR branch (do it in a separate worktree, never by checking `summit-dev` out over this one; one is kept at `../summit-dev-wt`):
+Building a PR branch (do it in the separate worktree at `../summit-dev-wt`, never by checking a PR branch out over this one):
 
-1. `git merge main` into `summit-dev`.
-2. `git rm -r -q --cached .claude` (new `.claude/` files on `main` would otherwise ride in silently; modify/delete conflicts on `.claude/` files resolve the same way).
-3. `git checkout upstream/main -- .jest-components-results.json`, and remove the `.claude/*` and `.jest-components-results.json` lines from `.gitignore`.
-4. Strip the unfinished pages: `git rm -r -q -f --ignore-unmatch` the excluded paths above, and re-check the hand edits.
-5. Commit, then verify before pushing: `git ls-tree -r --name-only HEAD | grep -E '^\.claude/|src/pages/(IStatements|PresentAwards)|presentAwards'` must print nothing, and `npm run build` + `npm test` must pass (bar the known UNC smoke test).
-6. Confirm with the user, then `git push github summit-dev`.
+1. `git fetch upstream`, then make sure `main` already has the latest upstream release merged (see the squash-merge notes above).
+2. In the worktree: `git switch -c pr/<feature> upstream/main`, then `git merge main`. To update an open PR later, `git merge main` into the same branch again.
+3. `git rm -r -q --cached .claude` (new `.claude/` files on `main` would otherwise ride in silently; modify/delete conflicts on `.claude/` files resolve the same way).
+4. `git checkout upstream/main -- .jest-components-results.json`, and remove the `.claude/*` and `.jest-components-results.json` lines from `.gitignore`.
+5. Strip whatever is still unfinished: `git rm -r -q -f --ignore-unmatch` the excluded paths above (except the page this PR ships), and re-check the hand edits.
+6. Commit, then verify before pushing: `git ls-tree -r --name-only HEAD | grep -E '^\.claude/'` plus a grep for each still-excluded page must print nothing, and `npm run build` + `npm test` must pass (bar the known UNC smoke test).
+7. Confirm with the user, then `git push github pr/<feature>` and open the PR.
 
-**Never merge `summit-dev` back into `main`**: its `.claude/` and unfinished-page deletions would delete them from `main`.
+**Never merge a PR branch back into `main`**: its `.claude/` and unfinished-page deletions would delete them from `main`. Changes the maintainer makes come back through `upstream` instead.
 
 ## COMMENTS
 
