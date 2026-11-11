@@ -36,7 +36,8 @@ identical. Template files are publicly readable (no auth needed).
 
 ### How Terrain itself does it
 
-`docs/terrain.scouts.com.au/_nuxt/app.21ef2a2f0b1727b63ea0.js`, `loadTemplate()` (~line 1437):
+`docs/terrain.scouts.com.au/_nuxt/app.21ef2a2f0b1727b63ea0.js` in the 2024 snapshot (tag
+`terrain-bundle-2024-03-29`; `app.b1920f6e0e9f191f52fe.js` since the 2026-11-11 refresh), `loadTemplate()` (~line 1437 in the 2024 copy):
 for an existing achievement with `template` and `version`, Terrain loads
 `{templatesApi}/{achievement.template}/{achievement.version}.json`; it only uses
 `latest.json` when starting a new one. This plan copies that rule.

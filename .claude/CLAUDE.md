@@ -60,11 +60,20 @@ Building a PR branch (do it in the separate worktree at `../summit-dev-wt`, neve
 2. In the worktree: `git switch -c pr/<feature> upstream/main`, then `git merge main`. To update an open PR later, `git merge main` into the same branch again.
 3. `git rm -r -q --cached .claude` (new `.claude/` files on `main` would otherwise ride in silently; modify/delete conflicts on `.claude/` files resolve the same way).
 4. `git checkout upstream/main -- .jest-components-results.json`, and remove the `.claude/*` and `.jest-components-results.json` lines from `.gitignore`.
-5. Strip whatever is still unfinished: `git rm -r -q -f --ignore-unmatch` the excluded paths above (except the page this PR ships), and re-check the hand edits.
+5. Strip whatever is still unfinished: `git rm -r -q -f --ignore-unmatch` the excluded paths above (except the page this PR ships), and re-check the hand edits. While `pr/terrain-bundle` is unmerged, also put back upstream's Terrain snapshot: `git rm -r -q docs/terrain.scouts.com.au docs/mirror-terrain.js` then `git checkout upstream/main -- docs/terrain.scouts.com.au`, and check `git diff --quiet upstream/main HEAD -- docs` succeeds.
 6. Commit, then verify before pushing: `git ls-tree -r --name-only HEAD | grep -E '^\.claude/'` plus a grep for each still-excluded page must print nothing, and `npm run build` + `npm test` must pass (bar the known UNC smoke test).
 7. Confirm with the user, then `git push github pr/<feature>` and open the PR.
 
 **Never merge a PR branch back into `main`**: its `.claude/` and unfinished-page deletions would delete them from `main`. Changes the maintainer makes come back through `upstream` instead.
+
+### Terrain bundle snapshot
+
+`docs/terrain.scouts.com.au/` is a full copy of the code Terrain sends to the browser. Grep it for real award ids and Terrain behaviour. Refresh it when Terrain visibly changes, when a Summit page breaks for no obvious reason, or before work that depends on Terrain behaviour. Don't put it on a schedule: Terrain renames nearly every file on each deploy, so each refresh adds about 30 MB of history.
+
+1. `node docs/mirror-terrain.js` (refuses to replace the copy unless the download had zero failures and at least 150 JS files).
+2. Commit it, then `git tag terrain-bundle-YYYY-MM-DD` (older copies: `git diff terrain-bundle-<old> terrain-bundle-<new> --stat -- docs`).
+3. `git push origin main` and `git push origin <tag>`. **Gotcha:** never push these tags to `github`, and never `git push github --tags`. They point at `main` commits, which contain `.claude/`.
+4. To offer a refresh upstream, build `pr/terrain-bundle` from `upstream/main` with only `git checkout main -- docs/terrain.scouts.com.au docs/mirror-terrain.js` (no `git merge main`). See `.claude/TerrainBundle/PLAN.md`.
 
 ## COMMENTS
 

@@ -3,13 +3,14 @@
 One list of open items across features. Details live in each feature's plan; keep this list short and
 remove items once they're done.
 
-Last updated 2026-11-07.
+Last updated 2026-11-11.
 
-## PR #164 (`summit-dev` → `pete-mc/Summit`)
+## Open PRs
 
-- Waiting on maintainer review. The description was edited by hand on 2026-11-04 to match the
-  slimmed-down PR.
-- If the maintainers ask for smaller PRs, the description offers a split (OAS Progress, shared print/Excel).
+- **Terrain bundle refresh (`pr/terrain-bundle`):** only `docs/`. Until it's merged, feature PR branches
+  keep upstream's copy (see the step in CLAUDE.md). Afterwards, drop that step. See
+  [TerrainBundle/PLAN.md](TerrainBundle/PLAN.md).
+- PR #164 merged in 3.2.6 (2026-11-10).
 
 ## Held back from the PR (live on `main` only)
 
@@ -26,6 +27,16 @@ Last updated 2026-11-07.
 - **Heatmap ↔ Worksheets linking**, for easier drill-down (listed under "Still to do" in the PR).
 - **Term-theme finder spike:** planning only. See [OASThemes/PLAN_SPIKE_THEME_FINDER.md](OASThemes/PLAN_SPIKE_THEME_FINDER.md).
 - Print follow-ups: see [Print/PLAN.md](Print/PLAN.md).
+
+## Summit Calendar
+
+- **Concluded events are read-only for everyone, but Terrain lets Group Leaders edit them.** Summit's
+  check at `src/pages/SummitCalendar/components/SummitCalendar.tsx` (`isEditable`, two places) blocks any
+  concluded event. Current Terrain (`docs/terrain.scouts.com.au/`, snapshot 2026-11-11) has
+  `canEdit = isActivityConcluded ? hasRoleGroupLeader : ...`, the role being `group-leader` on the
+  profile's group. Before matching it, check live whether editing Leads/Assists on a concluded event
+  moves the milestone credit on Terrain's server. If it doesn't, Summit should warn instead. A
+  "Leads and Assists are credited when you conclude" warning before concluding is a cheap extra.
 
 ## Code health (existing before these changes, not fixed)
 

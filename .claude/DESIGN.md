@@ -275,7 +275,9 @@ Terrain (`https://terrain.scouts.com.au`) is a separate Nuxt.js (Vue 2) app buil
 **Vuetify 2.x** (Material Design), Material Design Icons (MDI, via
 `materialdesignicons-webfont`), and the **Nunito Sans** typeface (Light/Regular/
 SemiBold). Confirmed directly from the captured frontend in
-[`docs/terrain.scouts.com.au/`](../docs/terrain.scouts.com.au/):
+[`docs/terrain.scouts.com.au/`](../docs/terrain.scouts.com.au/). The counts below come from the 2024
+snapshot (tag `terrain-bundle-2024-03-29`). The 2026-11-11 refresh still confirms Vuetify 2, MDI and
+Nunito Sans, with `vuetify` in 116 files now that every lazy chunk is captured:
 
 - `vuetify` string present across 33 JS chunks; live Vuetify component classes
   (`v-btn`, `v-card`, `v-app-bar`, `v-navigation-drawer`, `v-text-field`) found in

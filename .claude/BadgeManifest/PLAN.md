@@ -19,7 +19,8 @@ This plan fixes both, with the validation test as the load-bearing part.
 ## Source of truth
 
 Terrain's own shipped bundle, captured at `docs/terrain.scouts.com.au/_nuxt/app.*.js`. It contains
-a literal asset map naming every badge SVG Terrain ships. Extracted 2026-09-30:
+a literal asset map naming every badge SVG Terrain ships. Extracted 2026-09-30 from the 2024 snapshot
+(tag `terrain-bundle-2024-03-29`). `badgeManifest.spec.ts` still passes against the 2026-11-11 refresh:
 
 - **32 additional awards** — `"./additional-award-badges/<id>.svg"`
 - **15 milestones** — `"./milestones/<section>/milestone-<1|2|3>.svg"`, 5 sections × 3 stages
