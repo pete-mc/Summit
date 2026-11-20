@@ -57,7 +57,11 @@
 <script lang="ts" src="./OASOverallProgressVue.ts"></script>
 
 <style scoped>
+/* Gotcha: grow the white block to the table, or a table wider than the window spills past it. Vuetify caps .v-data-table at max-width: 100%, so lift that too. */
 .oas-heatmap-data-table {
+  width: max-content;
+  min-width: 100%;
+  max-width: none;
   font-size: var(--oas-vue-font-size-body);
   font-family: var(--oas-vue-font-family);
 }
