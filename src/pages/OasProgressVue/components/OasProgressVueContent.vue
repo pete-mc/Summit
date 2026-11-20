@@ -109,11 +109,10 @@
 /* Constrain heatmap scroll container to viewport height and width minus top elements */
 .oas-vue-content ::v-deep .oas-heatmap-scroll {
   max-height: calc(100vh - 320px);
-  height: calc(100vh - 320px);
   max-width: 100%;
   width: 100%;
   overflow-x: auto;
-  overflow-y: scroll;
+  overflow-y: auto;
   scrollbar-width: auto;
   border: 1px solid var(--color-light-charcoal, #e5e9ec);
   border-radius: 4px;
