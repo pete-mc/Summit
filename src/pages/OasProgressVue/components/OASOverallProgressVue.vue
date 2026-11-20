@@ -68,10 +68,12 @@
   border: 1px solid var(--color-light-charcoal, #e5e9ec);
 }
 
+/* Gotcha: Vuetify's wrapper scrolls sideways itself, which puts the horizontal scrollbar below the last row, out of view inside .oas-heatmap-scroll. */
 .oas-heatmap-data-table ::v-deep > .v-data-table__wrapper {
   background: var(--color-white, #fff);
   border: 1px solid var(--color-light-charcoal, #e5e9ec);
   border-radius: 4px;
+  overflow: visible !important;
 }
 
 /* Every column is as wide as a two-line rotated header, so trunk and stream columns match. */

@@ -90,10 +90,12 @@
   border: 1px solid var(--color-light-charcoal, #e5e9ec);
 }
 
+/* Gotcha: Vuetify's wrapper scrolls sideways itself, which puts the horizontal scrollbar below the last row, out of view inside .oas-heatmap-scroll. */
 .oas-heatmap-data-table ::v-deep > .v-data-table__wrapper {
   background: var(--color-white, #fff);
   border: 1px solid var(--color-light-charcoal, #e5e9ec);
   border-radius: 4px;
+  overflow: visible !important;
 }
 
 /* Keeps the trailing "X of Y" text on the same line as the boxes. */
