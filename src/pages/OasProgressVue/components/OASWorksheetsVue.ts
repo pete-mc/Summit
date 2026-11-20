@@ -53,38 +53,6 @@ interface PatrolBorderClasses {
 
 const NO_PATROL_BORDER: PatrolBorderClasses = { start: false, end: false };
 
-/**
- * Dev aid: preview a large unit without one. In DevTools:
- *   localStorage.setItem("summit.oasWorksheetsVue.devDuplicateMembers", "10")
- * Delete this key, readDevDuplicateCount, duplicateMembersForDevPreview and their use in pageSet once no longer needed.
- */
-export const DEV_DUPLICATE_MEMBERS_STORAGE_KEY = "summit.oasWorksheetsVue.devDuplicateMembers";
-
-export function readDevDuplicateCount(): number {
-  try {
-    const raw = window.localStorage.getItem(DEV_DUPLICATE_MEMBERS_STORAGE_KEY);
-    const parsed = raw ? parseInt(raw, 10) : 0;
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-  } catch {
-    return 0;
-  }
-}
-
-/** Gotcha: the suffix must go on lastName, because sorting and display read firstName/lastName. */
-export function duplicateMembersForDevPreview(items: OASProgressRow[], duplicateCount: number): OASProgressRow[] {
-  if (duplicateCount <= 0) {
-    return items;
-  }
-  const copies: OASProgressRow[] = [];
-  for (let i = 1; i <= duplicateCount; i++) {
-    items.forEach((row) => {
-      const lastName = `${row.lastName} (dev ${i})`;
-      copies.push({ ...row, memberId: `${row.memberId}-dev${i}`, memberName: `${row.firstName} ${lastName}`, lastName });
-    });
-  }
-  return [...items, ...copies];
-}
-
 export interface WorksheetExportView {
   pages: WorksheetPage[];
   membersAsRows: boolean;
@@ -124,9 +92,8 @@ export default defineComponent({
   },
   computed: {
     pageSet(): WorksheetPageSet {
-      const itemsForDisplay = duplicateMembersForDevPreview(this.items, readDevDuplicateCount());
       const selectedPatrols = this.filters.worksheetSelectedPatrols ?? [];
-      return buildWorksheetPages(itemsForDisplay, {
+      return buildWorksheetPages(this.items, {
         skillStream: this.skillStream,
         visibleStages: this.filters.worksheetVisibleStages,
         selectedPatrols,
