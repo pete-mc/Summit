@@ -55,7 +55,14 @@ module.exports = {
   ],
   optimization: {
     minimizer: [
-      new CssMinimizerPlugin(),
+      // Gotcha: cssnano's :is() folding breaks child combinators. It turns Vuetify's
+      // `table > tbody > tr > td` into `table > :is(tbody > tr > td)`, which never matches, so
+      // production builds lose all data-table cell padding.
+      new CssMinimizerPlugin({
+        minimizerOptions: {
+          preset: ['default', { minifySelectors: { convertToIs: false } }],
+        },
+      }),
     ],
     usedExports: true,
   },
