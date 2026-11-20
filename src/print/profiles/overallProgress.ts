@@ -22,7 +22,7 @@ const overallProgress: PrintProfile = {
 
   // No "Section" line: the logo and unit name already say it.
   header: {
-    title: "OAS Progress - Summary - Overall",
+    title: "OAS Progress - Summary",
   },
 
   transform(table) {

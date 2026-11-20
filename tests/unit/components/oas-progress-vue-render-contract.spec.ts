@@ -139,33 +139,31 @@ describe("OasProgressVueContent render contract", () => {
     expect(tsSource).toContain("heatMap.getExportView()");
   });
 
-  it("Summary tab prints both tables through summit-print's SummitPrintButton, asking each table component for its table via getExportTable()", () => {
+  it("Summary and Peak Award tabs each print their one table through SummitPrintButton, asking the table component via getExportTable()", () => {
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.ts"), "utf8");
     expect(tsSource).toContain("?.getExportTable()");
-    expect(tsSource).toContain("summaryPrintTarget()");
-    expect(tsSource).not.toContain("$refs.summaryTable");
+    expect(tsSource).not.toContain("summaryPrintParts");
 
-    const summarySource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASPeakAwardSummaryVue.ts"), "utf8");
-    expect(summarySource).toContain("getExportTable()");
+    const peakAwardSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASPeakAwardSummaryVue.ts"), "utf8");
+    expect(peakAwardSource).toContain("getExportTable()");
 
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.vue"), "utf8");
-    expect(templateSource).toContain('ref="summary"');
-    expect(templateSource).toMatch(/<template v-if="filters\.viewMode === 'summary'">[\s\S]*?<SummitPrintButton[\s\S]*?:parts="summaryPrintParts"[\s\S]*?<\/template>/);
-    expect(tsSource).toContain('profile: "peak-award-summary", target: () => this.summaryPrintTarget()');
-    expect(tsSource).toContain('profile: "overall-progress", target: () => this.overallProgressPrintTarget()');
-    expect(templateSource).not.toContain("onSummaryPdfExportClick");
-    expect(tsSource).not.toContain("onSummaryPdfExportClick");
+    expect(templateSource).toContain('ref="peakAward"');
+    expect(templateSource).toContain('ref="overallProgress"');
+    expect(templateSource).toMatch(/<template v-if="filters\.viewMode === 'summary'">[\s\S]*?<SummitPrintButton profile="overall-progress" :target="overallProgressPrintTarget"[\s\S]*?<\/template>/);
+    expect(templateSource).toMatch(/<template v-else-if="filters\.viewMode === 'peakAward'">[\s\S]*?<SummitPrintButton v-if="peakAwardRequirement" profile="peak-award-summary" :target="peakAwardPrintTarget"[\s\S]*?<\/template>/);
+    expect(templateSource).not.toContain(":parts=");
   });
 
-  it("Summary tab has its own formatted Excel Export of both tables, beside Print / PDF", () => {
+  it("Summary and Peak Award tabs each export only their own table to Excel", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.vue"), "utf8");
-    expect(templateSource).toMatch(/<template v-if="filters\.viewMode === 'summary'">[\s\S]*?@click="onSummaryExcelExportClick">Excel Export<\/SummitPillButton>[\s\S]*?<SummitPrintButton[\s\S]*?:parts="summaryPrintParts"/);
+    expect(templateSource).toMatch(/<template v-if="filters\.viewMode === 'summary'">[\s\S]*?@click="onSummaryExcelExportClick">Excel Export<\/SummitPillButton>/);
+    expect(templateSource).toMatch(/<template v-else-if="filters\.viewMode === 'peakAward'">[\s\S]*?@click="onPeakAwardExcelExportClick">Excel Export<\/SummitPillButton>/);
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.ts"), "utf8");
+    expect(tsSource).toContain('this.runExcelExport("Summary", this.summaryPrintMeta, [sheet])');
+    expect(tsSource).toContain('this.runExcelExport("Peak Award", this.peakAwardPrintMeta, [sheet])');
     expect(tsSource).toContain("rows: this.filteredPeakAwardSummaryRows");
-    expect(tsSource).toContain('printProfile: "peak-award-summary"');
-    expect(tsSource).toContain('printProfile: "overall-progress"');
-    expect(tsSource).toContain('this.runExcelExport("Summary", this.summaryPrintMeta, sheets)');
     expect(tsSource).toContain('exportExcelWorkbook({ sheets, meta, fileNameParts: ["OAS Progress", viewName] })');
   });
 

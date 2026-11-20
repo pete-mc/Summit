@@ -6,8 +6,12 @@
         <v-spacer></v-spacer>
         <template v-if="hasContent">
           <template v-if="filters.viewMode === 'summary'">
-            <SummitPillButton v-if="peakAwardRequirement" :loading="isExcelExporting" :disabled="isExcelExporting" @click="onSummaryExcelExportClick">Excel Export</SummitPillButton>
-            <SummitPrintButton v-if="peakAwardRequirement" :parts="summaryPrintParts" settings-key="oas-summary" :meta="summaryPrintMeta" />
+            <SummitPillButton :loading="isExcelExporting" :disabled="isExcelExporting" @click="onSummaryExcelExportClick">Excel Export</SummitPillButton>
+            <SummitPrintButton profile="overall-progress" :target="overallProgressPrintTarget" :meta="summaryPrintMeta" />
+          </template>
+          <template v-else-if="filters.viewMode === 'peakAward'">
+            <SummitPillButton v-if="peakAwardRequirement" :loading="isExcelExporting" :disabled="isExcelExporting" @click="onPeakAwardExcelExportClick">Excel Export</SummitPillButton>
+            <SummitPrintButton v-if="peakAwardRequirement" profile="peak-award-summary" :target="peakAwardPrintTarget" :meta="peakAwardPrintMeta" />
           </template>
           <template v-else-if="filters.viewMode === 'heatmap'">
             <SummitPillButton :loading="isExcelExporting" :disabled="isExcelExporting" @click="onHeatmapExcelExportClick">Excel Export</SummitPillButton>
@@ -28,6 +32,7 @@
       <!-- Gotcha: v-tab's identity prop is `tab-value`, NOT `value`. `value` is silently dropped and every tab falls back to its index. -->
       <v-tabs v-if="hasContent" :value="filters.viewMode" grow height="40" color="primary" background-color="grey lighten-5" @change="onViewModeTabChange">
         <v-tab tab-value="summary">Summary</v-tab>
+        <v-tab tab-value="peakAward">Peak Award</v-tab>
         <v-tab tab-value="heatmap">Heatmap</v-tab>
         <v-tab tab-value="table">Table</v-tab>
         <v-tab tab-value="worksheets">Worksheets</v-tab>
@@ -36,15 +41,40 @@
       <SummitLoadingState :state="sharedLoadState" :done="streamsDone" :total="totalStreams" error-message="Could not load OAS progress data." :on-retry="onReloadAllClick" />
 
       <template v-if="hasContent && filters.viewMode === 'summary'">
+        <OASSummaryTabFiltersVue
+          :member-filter.sync="filters.summaryMemberFilter"
+          :selected-patrols.sync="filters.summarySelectedPatrols"
+          :sort-by="filters.summarySortBy"
+          :sort-options="summarySortOptions"
+          :name-format.sync="filters.summaryNameFormat"
+          :break-by-patrol.sync="filters.summaryBreakByPatrol"
+          :show-not-started-skills.sync="filters.summaryShowNotStartedSkills"
+          :available-patrols="availablePatrols"
+          :patrol-filter-options="patrolFilterOptions"
+          :can-filter-by-patrol="canFilterByPatrol"
+          @update:sortBy="onSummarySortByUpdate"
+          @sort-reselected="clearSummaryColumnSort"
+          @reset="onResetFilters"
+        />
+        <OASOverallProgressVue ref="overallProgress" :columns="overallProgressView.columns" :rows="overallProgressView.rows" :break-by-patrol="filters.summaryBreakByPatrol" :column-sort="filters.summaryColumnSort" @sort-column="onOverallProgressSortColumn" />
+      </template>
+
+      <template v-if="hasContent && filters.viewMode === 'peakAward'">
         <p v-if="!peakAwardRequirement" class="oas-peak-award-summary-no-section">Could not determine this unit's section.</p>
         <template v-else>
-          <OASPeakAwardSummaryFiltersVue :filters="filters" :available-patrols="availablePatrols" :patrol-filter-options="patrolFilterOptions" :can-filter-by-patrol="canFilterByPatrol" @update:filters="onFiltersUpdate" @reset="onResetFilters" />
-
-          <h3 class="oas-summary-section-heading">Towards Peak Award</h3>
-          <OASPeakAwardSummaryVue ref="summary" :rows="filteredPeakAwardSummaryRows" :name-format="filters.summaryNameFormat" :break-by-patrol="filters.summaryBreakByPatrol" :has-special="!!peakAwardRequirement.special" :special-condition-text="specialConditionText" />
-
-          <h3 class="oas-summary-section-heading">Overall</h3>
-          <OASOverallProgressVue ref="overallProgress" :columns="overallProgressView.columns" :rows="overallProgressView.rows" :break-by-patrol="filters.summaryBreakByPatrol" :column-sort="filters.summaryColumnSort" @sort-column="onOverallProgressSortColumn" />
+          <OASSummaryTabFiltersVue
+            :member-filter.sync="filters.peakAwardMemberFilter"
+            :selected-patrols.sync="filters.peakAwardSelectedPatrols"
+            :sort-by.sync="filters.peakAwardSortBy"
+            :sort-options="peakAwardSortOptions"
+            :name-format.sync="filters.peakAwardNameFormat"
+            :break-by-patrol.sync="filters.peakAwardBreakByPatrol"
+            :available-patrols="availablePatrols"
+            :patrol-filter-options="patrolFilterOptions"
+            :can-filter-by-patrol="canFilterByPatrol"
+            @reset="onResetFilters"
+          />
+          <OASPeakAwardSummaryVue ref="peakAward" :rows="filteredPeakAwardSummaryRows" :name-format="filters.peakAwardNameFormat" :break-by-patrol="filters.peakAwardBreakByPatrol" :has-special="!!peakAwardRequirement.special" :special-condition-text="specialConditionText" />
         </template>
       </template>
 
@@ -139,14 +169,6 @@
 
 .oas-vue-content ::v-deep .oas-heatmap-scroll::-webkit-scrollbar-corner {
   background: var(--color-light-charcoal, #e5e9ec);
-}
-
-.oas-summary-section-heading {
-  margin: var(--summit-space-lg, 16px) 0 var(--summit-space-sm, 8px);
-  color: var(--color-scouts-medium-blue, #00348d);
-  font-size: var(--oas-vue-font-size-heading);
-  font-family: var(--oas-vue-font-family);
-  font-weight: normal;
 }
 
 .oas-peak-award-summary-no-section {

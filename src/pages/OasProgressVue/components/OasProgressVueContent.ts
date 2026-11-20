@@ -7,16 +7,15 @@ import OASWorksheetFiltersVue from "./OASWorksheetFiltersVue.vue";
 import OASWorksheetsVue from "./OASWorksheetsVue.vue";
 import SummitLoadingState from "@/components/SummitLoadingState.vue";
 import SummitPrintButton from "@/components/SummitPrintButton.vue";
-import type { PrintButtonPart } from "@/components/SummitPrintButton";
 import SummitPillButton from "@/components/SummitPillButton.vue";
-import { buildHeatmapPrintMeta, buildOasTablePrintMeta, buildSummaryPrintMeta, buildWorksheetsPrintMeta } from "@/pages/OasProgressVue/services/oasPrintMeta";
+import { buildHeatmapPrintMeta, buildOasTablePrintMeta, buildPeakAwardPrintMeta, buildSummaryPrintMeta, buildWorksheetsPrintMeta } from "@/pages/OasProgressVue/services/oasPrintMeta";
 import type { MetaEntry } from "@/print/summitPrint";
 import { buildTableRows, filterOASProgressRows, listTableMembers, type OASTableRow } from "./OASProgressTableVue";
 import type { WorksheetExportView } from "./OASWorksheetsVue";
 import { groupRowsForHeatMap } from "@/pages/OasProgress/services/groupRowsForHeatMap";
 import { buildPeakAwardSummaryRows, sortPeakAwardSummaryRows, type PeakAwardMemberRow } from "@/pages/OasProgress/services/buildPeakAwardSummaryRows";
 import { PEAK_AWARD_REQUIREMENTS, type PeakAwardRequirement } from "@/pages/OasProgress/data/peakAwardRequirements";
-import { collectPatrolNames, hasUnassignedMembers, filterMembersByPatrol, UNASSIGNED_PATROL, OAS_SKILLS } from "@/pages/OasProgress/services/filterHeatMapSections";
+import { collectPatrolNames, hasUnassignedMembers, UNASSIGNED_PATROL, OAS_SKILLS } from "@/pages/OasProgress/services/filterHeatMapSections";
 import { loadOASProgressVueFilters, saveOASProgressVueFilters, type OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
 import { exportExcelWorkbook, type ExcelWorkbookRequest } from "@/excel/summitExcel";
 import { buildPeakAwardSummarySheet } from "@/excel/sheets/peakAwardSummary";
@@ -29,7 +28,8 @@ import { createLogger, showTerrainToast } from "@/helpers";
 import type { OASProgressRow } from "@/pages/OasProgress/services/buildOASProgressRows";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
 import type { TerrainAchievementsSection } from "@/shared";
-import OASPeakAwardSummaryFiltersVue from "./OASPeakAwardSummaryFiltersVue.vue";
+import OASSummaryTabFiltersVue from "./OASSummaryTabFiltersVue.vue";
+import type { SortOption } from "./OASSummaryTabFiltersVue";
 import OASPeakAwardSummaryVue from "./OASPeakAwardSummaryVue.vue";
 import OASOverallProgressVue from "./OASOverallProgressVue.vue";
 import { buildHeaderView } from "./OASOverallProgressVue";
@@ -44,6 +44,7 @@ import {
 } from "@/pages/OasProgress/services/buildOverallProgressRows";
 import { getMemberDisplayName } from "@/pages/OasProgress/services/getMemberDisplayName";
 import { listSkillStreams, skillStreamKey, type SkillStream } from "@/pages/OasProgressVue/services/skillStreams";
+import { buildUnitMemberList, filterMemberRows, sortMembersByName, type UnitMemberListItem } from "@/pages/OasProgressVue/services/unitMemberList";
 
 const logger = createLogger("OasProgressVueContent");
 
@@ -52,7 +53,7 @@ interface HeatMapVueInstance {
   getExportView(): HeatMapExportView;
 }
 
-interface SummaryVueInstance {
+interface PeakAwardVueInstance {
   getExportTable(): HTMLTableElement | undefined;
 }
 
@@ -81,6 +82,11 @@ const DEFAULT_FILTERS: OASProgressVueFilterState = {
   summaryColumnSort: null,
   summaryShowNotStartedSkills: true,
   summaryBreakByPatrol: false,
+  peakAwardMemberFilter: "",
+  peakAwardNameFormat: "full",
+  peakAwardSelectedPatrols: null,
+  peakAwardSortBy: "firstName",
+  peakAwardBreakByPatrol: false,
   groupBy: "skill",
   memberFilter: "",
   nameFormat: "full",
@@ -107,10 +113,11 @@ const DEFAULT_FILTERS: OASProgressVueFilterState = {
 };
 
 // Catches a stored viewMode that is present but invalid; a missing one is covered by the defaults spread.
-const VALID_VIEW_MODES: OASProgressVueFilterState["viewMode"][] = ["summary", "heatmap", "table", "worksheets"];
+const VALID_VIEW_MODES: OASProgressVueFilterState["viewMode"][] = ["summary", "peakAward", "heatmap", "table", "worksheets"];
 
 /** Each tab's "Reset filters" resets only its own keys. Table has none: its filters live in tableColumnFilters. viewMode is never reset. */
 const SUMMARY_FILTER_KEYS = ["summaryMemberFilter", "summaryNameFormat", "summarySelectedPatrols", "summarySortBy", "summaryColumnSort", "summaryShowNotStartedSkills", "summaryBreakByPatrol"] as const;
+const PEAK_AWARD_FILTER_KEYS = ["peakAwardMemberFilter", "peakAwardNameFormat", "peakAwardSelectedPatrols", "peakAwardSortBy", "peakAwardBreakByPatrol"] as const;
 const HEATMAP_FILTER_KEYS = [
   "groupBy",
   "memberFilter",
@@ -130,6 +137,7 @@ const WORKSHEETS_FILTER_KEYS = ["worksheetSkillStream", "worksheetVisibleStages"
 
 const RESETTABLE_FILTER_KEYS_BY_VIEW: Record<OASProgressVueFilterState["viewMode"], readonly (keyof OASProgressVueFilterState)[]> = {
   summary: SUMMARY_FILTER_KEYS,
+  peakAward: PEAK_AWARD_FILTER_KEYS,
   heatmap: HEATMAP_FILTER_KEYS,
   worksheets: WORKSHEETS_FILTER_KEYS,
   table: [],
@@ -145,15 +153,23 @@ function loadInitialFilters(): OASProgressVueFilterState {
     return DEFAULT_FILTERS;
   }
   const merged = { ...DEFAULT_FILTERS, ...stored };
-  return { ...merged, viewMode: sanitiseViewMode(merged.viewMode) };
+  const summarySortBy = merged.summarySortBy === "lastName" ? "lastName" : "firstName";
+  return { ...merged, viewMode: sanitiseViewMode(merged.viewMode), summarySortBy };
 }
+
+const SUMMARY_SORT_OPTIONS: SortOption[] = [
+  { value: "firstName", text: "First Name" },
+  { value: "lastName", text: "Last Name" },
+];
+
+const PEAK_AWARD_SORT_OPTIONS: SortOption[] = [...SUMMARY_SORT_OPTIONS, { value: "progress", text: "Progress" }];
 
 export default defineComponent({
   name: "OasProgressVueContent",
   components: {
     OASHeatMapVue,
     OASOverallProgressVue,
-    OASPeakAwardSummaryFiltersVue,
+    OASSummaryTabFiltersVue,
     OASPeakAwardSummaryVue,
     OASProgressFiltersVue,
     OASProgressTableVue,
@@ -182,6 +198,8 @@ export default defineComponent({
       isExcelExporting: false,
       tableColumnFilters: {} as Record<string, string>,
       tableMemberId: "",
+      summarySortOptions: SUMMARY_SORT_OPTIONS,
+      peakAwardSortOptions: PEAK_AWARD_SORT_OPTIONS,
     };
   },
   computed: {
@@ -243,18 +261,18 @@ export default defineComponent({
       return buildPeakAwardSummaryRows(this.items, this.members, this.peakAwardRequirement, this.section);
     },
     filteredPeakAwardSummaryRows(): PeakAwardMemberRow[] {
-      const needle = this.filters.summaryMemberFilter.trim().toLowerCase();
-      const nameFiltered = needle ? this.peakAwardSummaryRows.filter((row) => row.memberName.toLowerCase().includes(needle)) : this.peakAwardSummaryRows;
-      const selectedPatrols = this.filters.summarySelectedPatrols ?? [];
-      const patrolFiltered = selectedPatrols.length === 0 ? [] : filterMembersByPatrol(nameFiltered, selectedPatrols);
-      return sortPeakAwardSummaryRows(patrolFiltered, this.filters.summarySortBy);
+      const filtered = filterMemberRows(this.peakAwardSummaryRows, this.filters.peakAwardMemberFilter, this.filters.peakAwardSelectedPatrols ?? []);
+      return sortPeakAwardSummaryRows(filtered, this.filters.peakAwardSortBy);
+    },
+    unitMembers(): UnitMemberListItem[] {
+      return buildUnitMemberList(this.members);
     },
     overallProgressColumns(): OverallProgressColumn[] {
       return buildOverallProgressColumns(this.grouped);
     },
-    /** Starts from the Peak Award rows so both tables share the Summary filters; a column sort then reorders this table only. */
     overallProgressRows(): OverallProgressRow[] {
-      const members = this.filteredPeakAwardSummaryRows.map((row) => ({
+      const filtered = filterMemberRows(this.unitMembers, this.filters.summaryMemberFilter, this.filters.summarySelectedPatrols ?? []);
+      const members = sortMembersByName(filtered, this.filters.summarySortBy).map((row) => ({
         memberId: row.memberId,
         displayName: getMemberDisplayName(row.firstName, row.lastName, row.memberId, this.filters.summaryNameFormat),
         patrolName: row.patrolName,
@@ -265,15 +283,11 @@ export default defineComponent({
       const all = { columns: this.overallProgressColumns, rows: this.overallProgressRows };
       return this.filters.summaryShowNotStartedSkills ? all : hideNotStartedColumns(all.columns, all.rows);
     },
-    /** Always both: Edge's own Pages box can pick pages. */
-    summaryPrintParts(): PrintButtonPart[] {
-      return [
-        { label: "Towards Peak Award", profile: "peak-award-summary", target: () => this.summaryPrintTarget() },
-        { label: "Overall", profile: "overall-progress", target: () => this.overallProgressPrintTarget() },
-      ];
-    },
     summaryPrintMeta(): MetaEntry[] {
       return buildSummaryPrintMeta(this.filters, this.patrolFilterOptions, this.canFilterByPatrol);
+    },
+    peakAwardPrintMeta(): MetaEntry[] {
+      return buildPeakAwardPrintMeta(this.filters, this.patrolFilterOptions, this.canFilterByPatrol);
     },
     tablePrintMeta(): MetaEntry[] {
       const member = this.tableMemberOptions.find((o) => o.value === this.resolvedTableMemberId);
@@ -309,6 +323,9 @@ export default defineComponent({
       if (this.filters.summarySelectedPatrols === null) {
         resolved.summarySelectedPatrols = newOptions;
       }
+      if (this.filters.peakAwardSelectedPatrols === null) {
+        resolved.peakAwardSelectedPatrols = newOptions;
+      }
       if (Object.keys(resolved).length > 0) {
         this.filters = { ...this.filters, ...resolved };
       }
@@ -317,6 +334,12 @@ export default defineComponent({
   methods: {
     onFiltersUpdate(next: OASProgressVueFilterState) {
       this.filters = next;
+    },
+    onSummarySortByUpdate(summarySortBy: OASProgressVueFilterState["summarySortBy"]) {
+      this.filters = { ...this.filters, summarySortBy, summaryColumnSort: null };
+    },
+    clearSummaryColumnSort() {
+      this.filters = { ...this.filters, summaryColumnSort: null };
     },
     onOverallProgressSortColumn(key: string) {
       this.filters = { ...this.filters, summaryColumnSort: nextColumnSort(this.filters.summaryColumnSort, key) };
@@ -336,6 +359,8 @@ export default defineComponent({
       const resolvedPatrols = this.patrolFilterOptions.length > 0 ? this.patrolFilterOptions : null;
       if (this.filters.viewMode === "summary") {
         resetValues.summarySelectedPatrols = resolvedPatrols;
+      } else if (this.filters.viewMode === "peakAward") {
+        resetValues.peakAwardSelectedPatrols = resolvedPatrols;
       } else if (this.filters.viewMode === "worksheets") {
         resetValues.worksheetSelectedPatrols = resolvedPatrols;
       } else if (this.filters.viewMode === "heatmap") {
@@ -355,8 +380,8 @@ export default defineComponent({
     heatMapPrintTarget(): HTMLTableElement | undefined {
       return (this.$refs.heatMap as unknown as HeatMapVueInstance | undefined)?.getExportTable();
     },
-    summaryPrintTarget(): HTMLTableElement | undefined {
-      return (this.$refs.summary as unknown as SummaryVueInstance | undefined)?.getExportTable();
+    peakAwardPrintTarget(): HTMLTableElement | undefined {
+      return (this.$refs.peakAward as unknown as PeakAwardVueInstance | undefined)?.getExportTable();
     },
     overallProgressPrintTarget(): HTMLTableElement | undefined {
       return (this.$refs.overallProgress as unknown as OverallProgressVueInstance | undefined)?.getExportTable();
@@ -373,35 +398,36 @@ export default defineComponent({
       await this.runExcelExport("Table", this.tablePrintMeta, [{ printProfile: "oas-table", build: (header, logo) => buildOasTableSheet({ rows: this.tableFilteredItems, header, logo }) }]);
     },
     async onSummaryExcelExportClick() {
+      const sheet: ExcelWorkbookRequest["sheets"][number] = {
+        printProfile: "overall-progress",
+        build: (header, logo) =>
+          buildOverallProgressSheet({
+            headers: this.overallProgressView.columns.map((c) => buildHeaderView(c)),
+            rows: this.overallProgressView.rows,
+            breakByPatrol: this.filters.summaryBreakByPatrol,
+            header,
+            logo,
+          }),
+      };
+      await this.runExcelExport("Summary", this.summaryPrintMeta, [sheet]);
+    },
+    async onPeakAwardExcelExportClick() {
       const requirement = this.peakAwardRequirement;
       if (!requirement) return;
-      const sheets: ExcelWorkbookRequest["sheets"] = [
-        {
-          printProfile: "peak-award-summary",
-          build: (header, logo) =>
-            buildPeakAwardSummarySheet({
-              rows: this.filteredPeakAwardSummaryRows,
-              requirement,
-              nameFormat: this.filters.summaryNameFormat,
-              specialConditionText: this.specialConditionText,
-              breakByPatrol: this.filters.summaryBreakByPatrol,
-              header,
-              logo,
-            }),
-        },
-        {
-          printProfile: "overall-progress",
-          build: (header, logo) =>
-            buildOverallProgressSheet({
-              headers: this.overallProgressView.columns.map((c) => buildHeaderView(c)),
-              rows: this.overallProgressView.rows,
-              breakByPatrol: this.filters.summaryBreakByPatrol,
-              header,
-              logo,
-            }),
-        },
-      ];
-      await this.runExcelExport("Summary", this.summaryPrintMeta, sheets);
+      const sheet: ExcelWorkbookRequest["sheets"][number] = {
+        printProfile: "peak-award-summary",
+        build: (header, logo) =>
+          buildPeakAwardSummarySheet({
+            rows: this.filteredPeakAwardSummaryRows,
+            requirement,
+            nameFormat: this.filters.peakAwardNameFormat,
+            specialConditionText: this.specialConditionText,
+            breakByPatrol: this.filters.peakAwardBreakByPatrol,
+            header,
+            logo,
+          }),
+      };
+      await this.runExcelExport("Peak Award", this.peakAwardPrintMeta, [sheet]);
     },
     async onHeatmapExcelExportClick() {
       const heatMap = this.$refs.heatMap as unknown as HeatMapVueInstance | undefined;

@@ -32,6 +32,14 @@ export function buildSummaryPrintMeta(filters: OASProgressVueFilterState, patrol
   return meta;
 }
 
+export function buildPeakAwardPrintMeta(filters: OASProgressVueFilterState, patrolOptions: string[], canFilterByPatrol: boolean): MetaEntry[] {
+  const meta: MetaEntry[] = [];
+  const member = filters.peakAwardMemberFilter.trim();
+  if (member) meta.push({ label: "Member", value: `contains "${member}"` });
+  if (canFilterByPatrol) meta.push({ label: "Patrol", value: describePatrols(filters.peakAwardSelectedPatrols, patrolOptions) });
+  return meta;
+}
+
 /** Only filters that change what is shown. Layout options (group by, break by patrol) are visible in the printout. */
 export function buildHeatmapPrintMeta(filters: OASProgressVueFilterState, patrolOptions: string[], canFilterByPatrol: boolean): MetaEntry[] {
   const meta: MetaEntry[] = [];

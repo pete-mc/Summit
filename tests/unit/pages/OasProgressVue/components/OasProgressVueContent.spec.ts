@@ -1,6 +1,6 @@
 // Gotcha: Jest can't parse .vue files, so stub the children.
 jest.mock("@/pages/OasProgressVue/components/OASHeatMapVue.vue", () => ({ __esModule: true, default: { name: "OASHeatMapVue", render: () => null } }), { virtual: true });
-jest.mock("@/pages/OasProgressVue/components/OASPeakAwardSummaryFiltersVue.vue", () => ({ __esModule: true, default: { name: "OASPeakAwardSummaryFiltersVue", render: () => null } }), { virtual: true });
+jest.mock("@/pages/OasProgressVue/components/OASSummaryTabFiltersVue.vue", () => ({ __esModule: true, default: { name: "OASSummaryTabFiltersVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/OasProgressVue/components/OASOverallProgressVue.vue", () => ({ __esModule: true, default: { name: "OASOverallProgressVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/OasProgressVue/components/OASPeakAwardSummaryVue.vue", () => ({ __esModule: true, default: { name: "OASPeakAwardSummaryVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/OasProgressVue/components/OASProgressFiltersVue.vue", () => ({ __esModule: true, default: { name: "OASProgressFiltersVue", render: () => null } }), { virtual: true });
@@ -30,6 +30,11 @@ function makeStoredFilters(overrides: Partial<OASProgressVueFilterState> = {}): 
     summaryColumnSort: null,
     summaryShowNotStartedSkills: true,
     summaryBreakByPatrol: false,
+    peakAwardMemberFilter: "",
+    peakAwardNameFormat: "full",
+    peakAwardSelectedPatrols: [],
+    peakAwardSortBy: "firstName",
+    peakAwardBreakByPatrol: false,
     groupBy: "skill",
     memberFilter: "",
     nameFormat: "full",
@@ -63,6 +68,7 @@ function loadFiltersViaComponentData(): OASProgressVueFilterState {
 describe("sanitiseViewMode", () => {
   it("passes through a recognised viewMode unchanged", () => {
     expect(sanitiseViewMode("summary")).toBe("summary");
+    expect(sanitiseViewMode("peakAward")).toBe("peakAward");
     expect(sanitiseViewMode("table")).toBe("table");
     expect(sanitiseViewMode("heatmap")).toBe("heatmap");
     expect(sanitiseViewMode("worksheets")).toBe("worksheets");
@@ -90,6 +96,36 @@ describe("OasProgressVueContent view mode", () => {
     saveOASProgressVueFilters(makeStoredFilters({ viewMode: "worksheets" }));
 
     expect(loadFiltersViaComponentData().viewMode).toBe("worksheets");
+  });
+
+  it("loads a persisted peakAward viewMode on startup", () => {
+    saveOASProgressVueFilters(makeStoredFilters({ viewMode: "peakAward" }));
+
+    expect(loadFiltersViaComponentData().viewMode).toBe("peakAward");
+  });
+
+  // Summary used to offer Sort by Progress, which belongs to the Peak Award table.
+  it("falls back to First Name for a saved Summary sort of Progress", () => {
+    saveOASProgressVueFilters(makeStoredFilters({ summarySortBy: "progress" as OASProgressVueFilterState["summarySortBy"] }));
+
+    expect(loadFiltersViaComponentData().summarySortBy).toBe("firstName");
+  });
+
+  it("keeps a saved Summary sort of Last Name", () => {
+    saveOASProgressVueFilters(makeStoredFilters({ summarySortBy: "lastName" }));
+
+    expect(loadFiltersViaComponentData().summarySortBy).toBe("lastName");
+  });
+
+  it("choosing a Summary Sort by option clears the column sort", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const methods = (OasProgressVueContent as any).methods;
+    const context = { filters: makeStoredFilters({ summaryColumnSort: { key: "camping", descending: true } }) };
+
+    methods.onSummarySortByUpdate.call(context, "lastName");
+
+    expect(context.filters.summarySortBy).toBe("lastName");
+    expect(context.filters.summaryColumnSort).toBeNull();
   });
 
   it("sanitises a present-but-invalid persisted viewMode back to summary rather than selecting nothing", () => {
@@ -169,6 +205,33 @@ describe("OasProgressVueContent view mode", () => {
       expect(context.filters.worksheetShowCompleted).toBe(false);
     });
 
+    it("resets Peak Award's own keys while leaving Summary untouched", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const methods = (OasProgressVueContent as any).methods;
+      const context = {
+        filters: makeStoredFilters({
+          viewMode: "peakAward",
+          peakAwardMemberFilter: "someone",
+          peakAwardSortBy: "progress",
+          peakAwardNameFormat: "first",
+          peakAwardBreakByPatrol: true,
+          summaryMemberFilter: "someone else",
+          summaryBreakByPatrol: true,
+        }),
+        patrolFilterOptions: ["Eagles", "Wolves"],
+      };
+
+      methods.onResetFilters.call(context);
+
+      expect(context.filters.peakAwardMemberFilter).toBe("");
+      expect(context.filters.peakAwardSortBy).toBe("firstName");
+      expect(context.filters.peakAwardNameFormat).toBe("full");
+      expect(context.filters.peakAwardBreakByPatrol).toBe(false);
+      expect(context.filters.peakAwardSelectedPatrols).toEqual(["Eagles", "Wolves"]);
+      expect(context.filters.summaryMemberFilter).toBe("someone else");
+      expect(context.filters.summaryBreakByPatrol).toBe(true);
+    });
+
     // Start from non-default values so the reset is actually demonstrated.
     it("resets Worksheets' own keys while leaving Heat Map/Summary untouched", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -216,6 +279,10 @@ describe("OasProgressVueContent view mode", () => {
 
   it("defaults summarySelectedPatrols to null for a new user too", () => {
     expect(loadFiltersViaComponentData().summarySelectedPatrols).toBeNull();
+  });
+
+  it("defaults peakAwardSelectedPatrols to null for a new user too", () => {
+    expect(loadFiltersViaComponentData().peakAwardSelectedPatrols).toBeNull();
   });
 
   // Regression: the watcher never fires on reset, so the active tab's patrol must be resolved directly.
@@ -304,6 +371,15 @@ describe("OasProgressVueContent — selectedPatrols: null resolution", () => {
     expect(context.filters.selectedPatrols).toEqual(["Eagles", "Wolves"]);
     expect(context.filters.worksheetSelectedPatrols).toEqual(["Eagles", "Wolves"]);
     expect(context.filters.summarySelectedPatrols).toEqual(["Eagles", "Wolves"]);
+  });
+
+  it("resolves peakAwardSelectedPatrols independently of summarySelectedPatrols", () => {
+    const context = { filters: makeStoredFilters({ summarySelectedPatrols: ["Eagles"], peakAwardSelectedPatrols: null }) };
+
+    patrolFilterOptionsWatcher.call(context, ["Eagles", "Wolves"]);
+
+    expect(context.filters.summarySelectedPatrols).toEqual(["Eagles"]);
+    expect(context.filters.peakAwardSelectedPatrols).toEqual(["Eagles", "Wolves"]);
   });
 
   it("resolves summarySelectedPatrols independently of the other two", () => {
@@ -425,5 +501,36 @@ describe("OasProgressVueContent resolvedWorksheetSkillStream", () => {
 
   it("is empty while no rows have loaded", () => {
     expect(resolve.call({ worksheetSkillStreams: [], filters: { worksheetSkillStream: "camping::camping" } })).toBe("");
+  });
+});
+
+describe("OasProgressVueContent Summary rows", () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const computed = (OasProgressVueContent as any).computed;
+  const unitMembers = [
+    { memberId: "m1", firstName: "Zoe", lastName: "Adams", memberName: "Zoe Adams", patrolName: "Eagles" },
+    { memberId: "m2", firstName: "Amy", lastName: "Young", memberName: "Amy Young", patrolName: "Wolves" },
+  ];
+
+  // Regression: Summary rows came from the Peak Award rows, so an unknown section emptied the Summary table.
+  it("lists members from the page's member list, without needing the unit's section", () => {
+    const context = { unitMembers, grouped: {}, overallProgressColumns: [], section: undefined, filters: makeStoredFilters({ summarySelectedPatrols: ["Eagles", "Wolves"] }) };
+
+    const rows = computed.overallProgressRows.call(context) as Array<{ memberId: string }>;
+
+    expect(rows.map((r) => r.memberId)).toEqual(["m2", "m1"]);
+  });
+
+  it("uses Summary's own member, patrol and sort filters", () => {
+    const context = {
+      unitMembers,
+      grouped: {},
+      overallProgressColumns: [],
+      filters: makeStoredFilters({ summarySelectedPatrols: ["Eagles", "Wolves"], summarySortBy: "lastName", peakAwardSelectedPatrols: [] }),
+    };
+    expect((computed.overallProgressRows.call(context) as Array<{ memberId: string }>).map((r) => r.memberId)).toEqual(["m1", "m2"]);
+
+    context.filters = makeStoredFilters({ summarySelectedPatrols: ["Wolves"] });
+    expect((computed.overallProgressRows.call(context) as Array<{ memberId: string }>).map((r) => r.memberId)).toEqual(["m2"]);
   });
 });

@@ -2,19 +2,19 @@
   <div class="oas-vue-filter-panel">
     <div class="oas-heatmap-controls">
       <v-text-field
-        :value="filters.summaryMemberFilter"
+        :value="memberFilter"
         label="Member"
         prepend-inner-icon="mdi-magnify"
         dense
         hide-details
         clearable
         style="max-width: 220px"
-        @input="patch({ summaryMemberFilter: $event || '' })"
+        @input="$emit('update:memberFilter', $event || '')"
       ></v-text-field>
 
       <v-select
         v-if="canFilterByPatrol"
-        :value="filters.summarySelectedPatrols || []"
+        :value="selectedPatrols || []"
         :items="patrolFilterOptions"
         label="Patrol"
         multiple
@@ -22,15 +22,15 @@
         hide-details
         style="max-width: 220px"
         class="oas-vue-filter-select"
-        @change="patch({ summarySelectedPatrols: $event })"
+        @change="$emit('update:selectedPatrols', $event)"
       >
         <template #selection="{ index }">
-          <span v-if="index === 0" class="oas-vue-select-summary">{{ (filters.summarySelectedPatrols || []).length }} selected</span>
+          <span v-if="index === 0" class="oas-vue-select-summary">{{ (selectedPatrols || []).length }} selected</span>
         </template>
       </v-select>
 
       <v-select
-        :value="filters.summarySortBy"
+        :value="sortBy"
         :items="sortOptions"
         item-text="text"
         item-value="value"
@@ -39,11 +39,11 @@
         hide-details
         style="max-width: 180px"
         class="oas-vue-filter-select"
-        @change="patch({ summarySortBy: $event, summaryColumnSort: null })"
+        @change="$emit('update:sortBy', $event)"
       >
-        <!-- Gotcha: v-select emits no change when the already-selected option is picked, so that click clears the column sort here. -->
+        <!-- Gotcha: v-select emits no change when the already-selected option is picked, so that click is reported as sort-reselected (Summary clears its column sort on it). -->
         <template #item="{ item, on, attrs }">
-          <v-list-item v-bind="attrs" v-on="on" @click="item.value === filters.summarySortBy && patch({ summaryColumnSort: null })">
+          <v-list-item v-bind="attrs" v-on="on" @click="item.value === sortBy && $emit('sort-reselected')">
             <v-list-item-content>
               <v-list-item-title>{{ item.text }}</v-list-item-title>
             </v-list-item-content>
@@ -51,9 +51,10 @@
         </template>
       </v-select>
 
-      <NameFormatSelect :value="filters.summaryNameFormat" @input="patch({ summaryNameFormat: $event })" />
+      <NameFormatSelect :value="nameFormat" @input="$emit('update:nameFormat', $event)" />
 
       <v-select
+        v-if="showOptions.length > 0"
         :value="showSelection"
         :items="showOptions"
         item-text="text"
@@ -72,12 +73,12 @@
         </template>
       </v-select>
 
-      <v-btn text color="primary" @click="resetFilters">Reset filters</v-btn>
+      <v-btn text color="primary" @click="$emit('reset')">Reset filters</v-btn>
     </div>
   </div>
 </template>
 
-<script lang="ts" src="./OASPeakAwardSummaryFiltersVue.ts">
+<script lang="ts" src="./OASSummaryTabFiltersVue.ts">
 </script>
 
 <style scoped>

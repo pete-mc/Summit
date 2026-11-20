@@ -6,7 +6,7 @@ import { groupRowsByPatrol } from "@/pages/OasProgress/services/filterHeatMapSec
 import { buildHeaderBlock, EXCEL_COLOURS, excelTitleRow, HEADER_BLOCK_ROWS, outlinedBar, type ExcelHeader, type ExcelSheet } from "../summitExcel";
 
 const CORE_SKILL_TITLES = ["Bushcraft", "Bushwalking", "Camping"];
-const SHEET_NAME = "Towards Peak Award";
+const SHEET_NAME = "Peak Award";
 
 /** Excel "characters". Box and spacer widths match the Heatmap sheet. */
 const WIDTH = { progress: 11, percent: 6, spacer: 1, box: 2.6, countText: 8 };

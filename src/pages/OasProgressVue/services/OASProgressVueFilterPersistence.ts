@@ -1,17 +1,23 @@
 import type { NameFormat } from "@/pages/OasProgress/services/getMemberDisplayName";
 
 export interface OASProgressVueFilterState {
-  viewMode: "summary" | "heatmap" | "table" | "worksheets";
+  viewMode: "summary" | "peakAward" | "heatmap" | "table" | "worksheets";
   /** Each tab has its own filter keys, so narrowing one view never narrows another. */
   summaryMemberFilter: string;
   summaryNameFormat: NameFormat;
   summarySelectedPatrols: string[] | null;
-  summarySortBy: "firstName" | "lastName" | "progress";
-  /** Overall Progress table only. Overrides summarySortBy until cleared; choosing a Sort by option clears it. */
+  /** Gotcha: old saved state may hold "progress". OasProgressVueContent falls back to firstName. */
+  summarySortBy: "firstName" | "lastName";
+  /** Overrides summarySortBy until cleared; choosing a Sort by option clears it. */
   summaryColumnSort: { key: string; descending: boolean } | null;
-  /** Overall table only: off hides columns no listed member has started. */
+  /** Off hides columns no listed member has started. */
   summaryShowNotStartedSkills: boolean;
   summaryBreakByPatrol: boolean;
+  peakAwardMemberFilter: string;
+  peakAwardNameFormat: NameFormat;
+  peakAwardSelectedPatrols: string[] | null;
+  peakAwardSortBy: "firstName" | "lastName" | "progress";
+  peakAwardBreakByPatrol: boolean;
   /** Gotcha: "none" is still accepted because old saved state may hold it. The heat map renders it as "skill". */
   groupBy: "skill" | "member" | "none";
   memberFilter: string;
