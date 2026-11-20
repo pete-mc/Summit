@@ -1,0 +1,11 @@
+import moment from "moment";
+
+/**
+ * Gotcha: imported awards carry day-first dates ("5/6/2023"). Without explicit formats moment falls back to
+ * the browser's US month-first parse, so 5 June reads as 6 May.
+ */
+const ROW_DATE_FORMATS = [moment.ISO_8601, "D/M/YYYY"];
+
+export function parseRowDate(date: string): moment.Moment {
+  return moment(date, ROW_DATE_FORMATS, true);
+}

@@ -28,6 +28,12 @@ describe("formatAwardDate", () => {
     expect(formatAwardDate("2021-06-15T00:00:00.000Z")).toBe("15/06/2021");
   });
 
+  // Imported awards are day-first; the browser fallback read "5/6/2023" as 6 May.
+  it("reads an imported day-first date as day/month, not US month/day", () => {
+    expect(formatAwardDate("5/6/2023")).toBe("05/06/2023");
+    expect(formatAwardDate("24/6/2023")).toBe("24/06/2023");
+  });
+
   it("returns an empty string for null", () => {
     expect(formatAwardDate(null)).toBe("");
   });

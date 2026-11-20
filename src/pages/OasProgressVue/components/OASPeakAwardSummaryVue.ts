@@ -1,4 +1,4 @@
-import moment from "moment";
+import { parseRowDate } from "@/pages/OasProgressVue/services/parseRowDate";
 import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import type { PeakAwardBox, PeakAwardMemberRow } from "@/pages/OasProgress/services/buildPeakAwardSummaryRows";
@@ -9,10 +9,10 @@ import { formatStream, skillTitle } from "./OASHeatMapVue";
 
 export { skillTitle };
 
-/** Row dates come in several shapes. Unparseable ones are shown as-is. */
+/** Unparseable dates are shown as-is. */
 export function formatAwardDate(date: string | null): string {
   if (!date) return "";
-  const parsed = moment(date);
+  const parsed = parseRowDate(date);
   return parsed.isValid() ? parsed.format("DD/MM/YYYY") : date;
 }
 

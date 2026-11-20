@@ -94,6 +94,11 @@ describe("formatWorksheetDate", () => {
     expect(formatWorksheetDate("2024-02-03")).toBe("03/02/24");
   });
 
+  it("formats an imported day-first date as DD/MM/YY, not as US month/day", () => {
+    expect(formatWorksheetDate("5/6/2023")).toBe("05/06/23");
+    expect(formatWorksheetDate("24/6/2023")).toBe("24/06/23");
+  });
+
   it("returns an empty string for null", () => {
     expect(formatWorksheetDate(null)).toBe("");
   });

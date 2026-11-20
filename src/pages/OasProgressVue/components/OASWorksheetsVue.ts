@@ -1,6 +1,6 @@
 import { defineComponent } from "vue";
 import type { PropType } from "vue";
-import moment from "moment";
+import { parseRowDate } from "@/pages/OasProgressVue/services/parseRowDate";
 import { buildWorksheetPages, splitPageIntoColumnBatches, transposeWorksheetPage, splitTransposedPageIntoColumnBatches } from "@/pages/OasProgressVue/services/buildWorksheetPages";
 import type { WorksheetCell, WorksheetMember, WorksheetPage, WorksheetPageSet, TransposedWorksheetPage } from "@/pages/OasProgressVue/services/buildWorksheetPages";
 import {
@@ -37,7 +37,7 @@ export function formatWorksheetDate(date: string | null): string {
   if (!date) {
     return "";
   }
-  const parsed = moment(date, moment.ISO_8601, true);
+  const parsed = parseRowDate(date);
   return parsed.isValid() ? parsed.format("DD/MM/YY") : date;
 }
 
