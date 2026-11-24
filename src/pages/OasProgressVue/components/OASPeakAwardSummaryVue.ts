@@ -1,20 +1,15 @@
-import { parseRowDate } from "@/pages/OasProgressVue/services/parseRowDate";
+import { formatAwardDate } from "@/pages/OasProgressVue/services/parseRowDate";
 import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import type { PeakAwardBox, PeakAwardMemberRow } from "@/pages/OasProgress/services/buildPeakAwardSummaryRows";
 import { getMemberDisplayName } from "@/pages/OasProgress/services/getMemberDisplayName";
 import type { NameFormat } from "@/pages/OasProgress/services/getMemberDisplayName";
 import { groupRowsByPatrol, type PatrolGroupOf } from "@/pages/OasProgress/services/filterHeatMapSections";
+import type { CellJumps, TabJump } from "@/pages/OasProgressVue/services/tabJumps";
 import { formatStream, skillTitle } from "./OASHeatMapVue";
+import OASTabJumpMenu from "./OASTabJumpMenu.vue";
 
-export { skillTitle };
-
-/** Unparseable dates are shown as-is. */
-export function formatAwardDate(date: string | null): string {
-  if (!date) return "";
-  const parsed = parseRowDate(date);
-  return parsed.isValid() ? parsed.format("DD/MM/YYYY") : date;
-}
+export { formatAwardDate, skillTitle };
 
 /** Gotcha: must match .oas-heatmap-square / .oas-heatmap-squares in src/styles/index.css, so a collapsed bar lines up with the boxes. */
 const HEATMAP_SQUARE_WIDTH_PX = 18;
@@ -114,6 +109,7 @@ export function buildRowView(row: PeakAwardMemberRow, nameFormat: NameFormat): S
 
 export default defineComponent({
   name: "OASPeakAwardSummaryVue",
+  components: { OASTabJumpMenu },
   props: {
     rows: { type: Array as PropType<PeakAwardMemberRow[]>, required: true },
     nameFormat: { type: String as PropType<NameFormat>, default: "full" },
@@ -121,6 +117,12 @@ export default defineComponent({
     hasSpecial: { type: Boolean, required: true },
     specialConditionText: { type: String, default: "" },
     breakByPatrol: { type: Boolean, default: false },
+    /** Aligned with the Core Skills columns. */
+    coreSkillJumps: { type: Object as PropType<CellJumps>, default: () => ({}) },
+    coreSkillHeaderJumps: { type: Array as PropType<TabJump[][]>, default: () => [] },
+    coreSkillsGroupJumps: { type: Array as PropType<TabJump[]>, default: () => [] },
+    /** Keyed by memberId. */
+    memberJumps: { type: Object as PropType<Record<string, TabJump[]>>, default: () => ({}) },
   },
   computed: {
     rowViews(): SummaryRowView[] {
@@ -144,6 +146,16 @@ export default defineComponent({
     },
   },
   methods: {
+    coreSkillJump(memberId: string, index: number): TabJump | null {
+      return this.coreSkillJumps[memberId]?.[index] ?? null;
+    },
+    onCoreSkillClick(memberId: string, index: number) {
+      const jump = this.coreSkillJump(memberId, index);
+      if (jump) this.onJump(jump);
+    },
+    onJump(jump: TabJump) {
+      this.$emit("jump", jump);
+    },
     barWidthPx(count: number): string {
       const width = count * HEATMAP_SQUARE_WIDTH_PX + Math.max(0, count - 1) * HEATMAP_SQUARE_GAP_PX;
       return `${width}px`;

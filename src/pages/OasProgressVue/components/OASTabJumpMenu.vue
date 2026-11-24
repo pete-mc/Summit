@@ -15,3 +15,19 @@
 </template>
 
 <script lang="ts" src="./OASTabJumpMenu.ts"></script>
+
+<style scoped>
+/* Space is always kept, so names and headers don't shift when the button appears. */
+.oas-tab-jump-menu {
+  display: inline-block;
+  visibility: hidden;
+  margin-left: 4px;
+}
+
+th:hover .oas-tab-jump-menu,
+tr:hover .oas-tab-jump-menu,
+.oas-tab-jump-menu:focus-within,
+.oas-tab-jump-menu:has([aria-expanded="true"]) {
+  visibility: visible;
+}
+</style>

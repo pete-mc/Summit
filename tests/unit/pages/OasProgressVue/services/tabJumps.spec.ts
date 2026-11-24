@@ -1,7 +1,21 @@
 import type { OASProgressRow } from "@/pages/OasProgress/services/buildOASProgressRows";
 import type { OverallProgressCell, OverallProgressColumn, OverallProgressRow } from "@/pages/OasProgress/services/buildOverallProgressRows";
+import type { PeakAwardMemberRow } from "@/pages/OasProgress/services/buildPeakAwardSummaryRows";
 import { OAS_SKILLS } from "@/pages/OasProgress/services/filterHeatMapSections";
-import { buildSummaryCellJumps, cellStream, listOutstandingSkillStreams, lowestStagesNeeded, nextStepsCellJump, summaryColumnJumps, summaryMemberJumps } from "@/pages/OasProgressVue/services/tabJumps";
+import {
+  buildPeakAwardCoreSkillJumps,
+  buildSummaryCellJumps,
+  highestAwardedStreams,
+  peakAwardCoreSkillHeaderJumps,
+  peakAwardCoreSkillsGroupJumps,
+  peakAwardMemberJumps,
+  cellStream,
+  listOutstandingSkillStreams,
+  lowestStagesNeeded,
+  nextStepsCellJump,
+  summaryColumnJumps,
+  summaryMemberJumps,
+} from "@/pages/OasProgressVue/services/tabJumps";
 
 function progressRow(overrides: Partial<OASProgressRow>): OASProgressRow {
   return {
@@ -176,5 +190,86 @@ describe("menu order", () => {
   it("lists Open in options in the same order as the tabs", () => {
     expect(summaryMemberJumps(jane, "Jane Smith", people, true).map((j) => j.viewMode)).toEqual(["peakAward", "heatmap"]);
     expect(summaryColumnJumps(trunk, people, { "bushwalking::bushwalking": 1 }).map((j) => j.viewMode)).toEqual(["heatmap", "stageGrid"]);
+  });
+});
+
+describe("Peak Award jumps", () => {
+  const coreSkill = (skill: "bushcraft" | "bushwalking" | "camping", met: boolean) => ({ skill, requiredStage: 5, highestAwardedStage: met ? 5 : 2, boxes: [], met });
+  const peakRow = (overrides: Partial<PeakAwardMemberRow> = {}): PeakAwardMemberRow => ({
+    memberId: "m1",
+    memberName: "Jane Smith",
+    firstName: "Jane",
+    lastName: "Smith",
+    patrolName: null,
+    coreSkills: [coreSkill("bushcraft", false), coreSkill("bushwalking", true), coreSkill("camping", false)],
+    totalProgressions: 0,
+    requiredProgressions: 10,
+    progressionBoxes: [],
+    special: null,
+    progressScore: 0,
+    progressTotal: 0,
+    progressPercent: 0,
+    ...overrides,
+  });
+  const displayName = () => "Jane S";
+
+  describe("highestAwardedStreams", () => {
+    it("picks the stream holding the highest award, the trunk on a tie", () => {
+      const streams = highestAwardedStreams([
+        progressRow({ stream: "bushcraft", branch: "bushcraft", stage: 3, awarded: true }),
+        progressRow({ stream: "bushcraft", branch: "pioneering", stage: 4, awarded: true }),
+        progressRow({ stream: "camping", branch: "camping", stage: 2, awarded: true }),
+        progressRow({ stream: "aquatics", branch: "swimming", stage: 2, awarded: true }),
+        progressRow({ stream: "aquatics", branch: "aquatics", stage: 2, awarded: true }),
+        progressRow({ stream: "vertical", branch: "vertical", stage: 6 }),
+      ]);
+
+      expect(streams).toEqual({ "m1|bushcraft": "pioneering", "m1|camping": "camping", "m1|aquatics": "aquatics" });
+    });
+  });
+
+  describe("buildPeakAwardCoreSkillJumps", () => {
+    it("links only unmet core skills, using the highest award's stream or the trunk", () => {
+      const outstanding = new Set(["m1|bushcraft::pioneering", "m1|bushwalking::bushwalking", "m1|camping::camping"]);
+      const jumps = buildPeakAwardCoreSkillJumps([peakRow()], displayName, { "m1|bushcraft": "pioneering" }, outstanding).m1;
+
+      expect(jumps[0]).toMatchObject({
+        viewMode: "nextSteps",
+        filters: { nextStepsMemberId: "m1", nextStepsSkillStream: "bushcraft::pioneering", nextStepsStage: null },
+        from: { viewMode: "peakAward", tabName: "Peak Award", detail: "Jane S – Bushcraft - Pioneering" },
+      });
+      expect(jumps[1]).toBeNull();
+      expect(jumps[2]?.filters.nextStepsSkillStream).toBe("camping::camping");
+    });
+
+    it("is not a link when that Skill - Stream has nothing outstanding", () => {
+      expect(buildPeakAwardCoreSkillJumps([peakRow()], displayName, {}, new Set()).m1).toEqual([null, null, null]);
+    });
+  });
+
+  describe("peakAwardCoreSkillHeaderJumps", () => {
+    it("offers Heat Map and Stage Grid per core skill, capping Stage Grid at the Peak Award stage", () => {
+      const menus = peakAwardCoreSkillHeaderJumps(people, { "bushcraft::bushcraft": 3, "bushwalking::bushwalking": 6 }, 5);
+
+      expect(menus.map((jumps) => jumps.map((j) => j.viewMode))).toEqual([["heatmap", "stageGrid"], ["heatmap"], ["heatmap"]]);
+      expect(menus[0][1].filters).toMatchObject({ stageGridSkillStream: "bushcraft::bushcraft", stageGridStage: 3 });
+      expect(menus[0][0].filters).toMatchObject({ visibleStreams: ["bushcraft"], selectedPatrols: ["Eagles"], memberFilter: "Sm" });
+      expect(menus[0][0].from).toEqual({ viewMode: "peakAward", tabName: "Peak Award", detail: "Bushcraft" });
+    });
+  });
+
+  it("the Core Skills heading opens Heat Map on all three core skills", () => {
+    const [heatMap] = peakAwardCoreSkillsGroupJumps(people);
+    expect(heatMap.filters).toMatchObject({ groupBy: "skill", visibleStreams: ["bushcraft", "bushwalking", "camping"], selectedPatrols: ["Eagles"] });
+    expect(heatMap.from.detail).toBe("Core Skills");
+  });
+
+  it("a member name opens Summary, then Heat Map, on that member", () => {
+    const jumps = peakAwardMemberJumps(peakRow(), "Jane S", people);
+
+    expect(jumps.map((j) => j.viewMode)).toEqual(["summary", "heatmap"]);
+    expect(jumps[0].filters).toEqual({ summaryMemberFilter: "Jane Smith", summarySelectedPatrols: ["Eagles"] });
+    expect(jumps[1].filters).toMatchObject({ groupBy: "member", memberFilter: "Jane Smith" });
+    expect(jumps[0].from).toEqual({ viewMode: "peakAward", tabName: "Peak Award", detail: "Jane S" });
   });
 });

@@ -164,25 +164,9 @@
   color: var(--summit-color-text-primary);
 }
 
-/* Space is always kept, so names and headers don't shift when the button appears. */
-.oas-tab-jump-menu {
-  display: inline-block;
-  visibility: hidden;
-}
-
 .oas-overall-progress-column-header .oas-tab-jump-menu {
   display: block;
-}
-
-.oas-heatmap-member-name .oas-tab-jump-menu {
-  margin-left: 4px;
-}
-
-th:hover .oas-tab-jump-menu,
-tr:hover .oas-tab-jump-menu,
-.oas-tab-jump-menu:focus-within,
-.oas-tab-jump-menu:has([aria-expanded="true"]) {
-  visibility: visible;
+  margin-left: 0;
 }
 
 .oas-overall-progress-cell-link {

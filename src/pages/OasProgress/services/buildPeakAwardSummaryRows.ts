@@ -4,7 +4,7 @@ import type { PeakAwardRequirement } from "../data/peakAwardRequirements";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
 import type { TerrainAchievementsSection } from "@/shared";
 
-const CORE_SKILLS = ["bushcraft", "bushwalking", "camping"] as const;
+export const CORE_SKILLS = ["bushcraft", "bushwalking", "camping"] as const;
 type CoreSkill = (typeof CORE_SKILLS)[number];
 
 export interface StageAward {

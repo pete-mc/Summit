@@ -1,7 +1,7 @@
 import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import { groupNextStepsRows, type NextStepsRow, type NextStepsGroup } from "@/pages/OasProgressVue/services/nextStepsRows";
-import { formatAwardDate } from "./OASPeakAwardSummaryVue";
+import { formatAwardDate } from "@/pages/OasProgressVue/services/parseRowDate";
 
 export const HEADERS = [
   { text: "Group", value: "inputGroup" },

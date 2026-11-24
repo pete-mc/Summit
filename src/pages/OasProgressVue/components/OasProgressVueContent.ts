@@ -52,7 +52,22 @@ import {
 import { getMemberDisplayName } from "@/pages/OasProgress/services/getMemberDisplayName";
 import { listSkillStreams, skillStreamKey, type SkillStream } from "@/pages/OasProgressVue/services/skillStreams";
 import { buildUnitMemberList, filterMemberRows, sortMembersByName, type UnitMemberListItem } from "@/pages/OasProgressVue/services/unitMemberList";
-import { buildSummaryCellJumps, listOutstandingSkillStreams, lowestStagesNeeded, summaryColumnJumps, summaryMemberJumps, TAB_ORDER, type SummaryCellJumps, type SummaryPeople, type TabJump } from "@/pages/OasProgressVue/services/tabJumps";
+import {
+  buildPeakAwardCoreSkillJumps,
+  buildSummaryCellJumps,
+  highestAwardedStreams,
+  listOutstandingSkillStreams,
+  lowestStagesNeeded,
+  peakAwardCoreSkillHeaderJumps,
+  peakAwardCoreSkillsGroupJumps,
+  peakAwardMemberJumps,
+  summaryColumnJumps,
+  summaryMemberJumps,
+  TAB_ORDER,
+  type CellJumps,
+  type ShownPeople,
+  type TabJump,
+} from "@/pages/OasProgressVue/services/tabJumps";
 
 const logger = createLogger("OasProgressVueContent");
 
@@ -330,10 +345,40 @@ export default defineComponent({
       const all = { columns: this.overallProgressColumns, rows: this.overallProgressRows };
       return this.filters.summaryShowNotStartedSkills ? all : hideNotStartedColumns(all.columns, all.rows);
     },
-    summaryCellJumps(): SummaryCellJumps {
-      return buildSummaryCellJumps(this.overallProgressView.columns, this.overallProgressView.rows, listOutstandingSkillStreams(this.items));
+    summaryCellJumps(): CellJumps {
+      return buildSummaryCellJumps(this.overallProgressView.columns, this.overallProgressView.rows, this.outstandingSkillStreams);
     },
-    summaryPeople(): SummaryPeople {
+    outstandingSkillStreams(): Set<string> {
+      return listOutstandingSkillStreams(this.items);
+    },
+    peakAwardPeople(): ShownPeople {
+      return { selectedPatrols: this.filters.peakAwardSelectedPatrols, memberFilter: this.filters.peakAwardMemberFilter };
+    },
+    peakAwardCoreSkillJumps(): CellJumps {
+      const nameFormat = this.filters.peakAwardNameFormat;
+      const displayName = (row: PeakAwardMemberRow) => getMemberDisplayName(row.firstName, row.lastName, row.memberId, nameFormat);
+      return buildPeakAwardCoreSkillJumps(this.filteredPeakAwardSummaryRows, displayName, highestAwardedStreams(this.items), this.outstandingSkillStreams);
+    },
+    peakAwardCoreSkillMenus(): TabJump[][] {
+      if (!this.peakAwardRequirement) return [];
+      const lowestStages = lowestStagesNeeded(
+        this.items,
+        this.filteredPeakAwardSummaryRows.map((row) => row.memberId),
+      );
+      return peakAwardCoreSkillHeaderJumps(this.peakAwardPeople, lowestStages, this.peakAwardRequirement.coreSkillStage);
+    },
+    peakAwardCoreSkillsGroupMenu(): TabJump[] {
+      return peakAwardCoreSkillsGroupJumps(this.peakAwardPeople);
+    },
+    peakAwardMemberMenus(): Record<string, TabJump[]> {
+      const nameFormat = this.filters.peakAwardNameFormat;
+      const menus: Record<string, TabJump[]> = {};
+      this.filteredPeakAwardSummaryRows.forEach((row) => {
+        menus[row.memberId] = peakAwardMemberJumps(row, getMemberDisplayName(row.firstName, row.lastName, row.memberId, nameFormat), this.peakAwardPeople);
+      });
+      return menus;
+    },
+    summaryPeople(): ShownPeople {
       return { selectedPatrols: this.filters.summarySelectedPatrols, memberFilter: this.filters.summaryMemberFilter };
     },
     summaryColumnMenus(): TabJump[][] {

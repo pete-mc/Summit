@@ -102,6 +102,17 @@ interface TabJump {
 1. `tabJumps.ts` + tests; cell → Next Steps (click, hover style, tooltip, no-link rule); back bar.
 2. Column header ▾ menu (Heat Map, Stage Grid); member name ▾ menu (Heat Map, Peak Award).
 
+3. Peak Award tab (built and checked in Edge 2026-11-24):
+   - **Member name ▾:** Open in Summary (`summaryMemberFilter` = full name) / Open in Heat Map (as Summary's).
+     Peak Award's patrols carry across.
+   - **Core Skills cell** (whole cell, not single boxes): opens Next Steps for that member and core skill. Link only
+     while the requirement is unmet (green bar = no link). Stream = the one holding their highest award of that
+     skill; trunk on a tie or with no awards. No link if that Skill - Stream has nothing outstanding.
+   - **Core Skill column header ▾:** Open in Heat Map (that skill) / Open in Stage Grid (trunk, lowest stage a
+     shown member still needs, **capped at the Peak Award core-skill stage**; left out when all shown have met it).
+   - **"Core Skills" group header ▾:** Open in Heat Map with all three core skills.
+   - Progress, Progressions, Special: no links (they mix skills). Menus stripped from the print.
+
 ## Tests
 
 - `tabJumps.spec.ts`: trunk/stream key conversion; merged-skill stream pick incl. tie → first; no link when

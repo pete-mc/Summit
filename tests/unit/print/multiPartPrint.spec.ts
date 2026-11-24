@@ -91,6 +91,13 @@ describe("buildMultiPartDocument", () => {
     expect(overall.querySelector("th[title]")).toBeNull();
   });
 
+  it("strips the Peak Award table's Open-in menus", () => {
+    const peakAward = parse(buildMultiPartDocument(options())).querySelector("table.summit-print-profile-peak-award-summary") as HTMLTableElement;
+
+    expect(peakAward.querySelector(".oas-heatmap-member-name")).not.toBeNull();
+    expect(peakAward.querySelector(".oas-tab-jump-menu")).toBeNull();
+  });
+
   it("prints a single ticked table as one part", () => {
     const doc = parse(buildMultiPartDocument(options({ parts: [{ source: mountOverallTable(), profile: "overall-progress" }] })));
 

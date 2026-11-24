@@ -2,7 +2,7 @@ import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import type { OverallProgressCell, OverallProgressColumn, OverallProgressColumnSort, OverallProgressRow } from "@/pages/OasProgress/services/buildOverallProgressRows";
 import { groupRowsByPatrol, type PatrolGroupOf } from "@/pages/OasProgress/services/filterHeatMapSections";
-import type { SummaryCellJumps, TabJump } from "@/pages/OasProgressVue/services/tabJumps";
+import type { CellJumps, TabJump } from "@/pages/OasProgressVue/services/tabJumps";
 import { formatStream, skillTitle } from "./OASHeatMapVue";
 import { awardTooltip } from "./OASPeakAwardSummaryVue";
 import OASTabJumpMenu from "./OASTabJumpMenu.vue";
@@ -37,7 +37,7 @@ export default defineComponent({
     rows: { type: Array as PropType<OverallProgressRow[]>, required: true },
     columnSort: { type: Object as PropType<OverallProgressColumnSort | null>, default: null },
     breakByPatrol: { type: Boolean, default: false },
-    cellJumps: { type: Object as PropType<SummaryCellJumps>, default: () => ({}) },
+    cellJumps: { type: Object as PropType<CellJumps>, default: () => ({}) },
     /** Aligned with the columns. */
     columnJumps: { type: Array as PropType<TabJump[][]>, default: () => [] },
     /** Keyed by memberId. */

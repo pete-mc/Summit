@@ -8,7 +8,7 @@ export function summaryTableHtml({ special = true } = {}): string {
   const cols = Array.from({ length: special ? 8 : 7 }, () => "<col>").join("");
   const row = (id: string, name: string) => `
     <tr data-v-abc="" data-oas-member="${id}">
-      <td data-v-abc="" class="oas-heatmap-member-name">${name}</td>
+      <td data-v-abc="" class="oas-heatmap-member-name">${name}<span class="oas-tab-jump-menu"><button>v</button></span></td>
       <td data-v-abc="" class="oas-heatmap-highest-stage">3 of 10</td>
       <td data-v-abc="" class="oas-heatmap-highest-stage">30%</td>
       <td data-v-abc="" class="oas-heatmap-stage-cell"><div data-v-abc="" title="Bar tooltip" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete oas-peak-award-summary-bar" style="width: 94px;"></div></td>

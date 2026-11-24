@@ -103,6 +103,11 @@
             :break-by-patrol="filters.peakAwardBreakByPatrol"
             :has-special="!!peakAwardRequirement.special"
             :special-condition-text="specialConditionText"
+            :core-skill-jumps="peakAwardCoreSkillJumps"
+            :core-skill-header-jumps="peakAwardCoreSkillMenus"
+            :core-skills-group-jumps="peakAwardCoreSkillsGroupMenu"
+            :member-jumps="peakAwardMemberMenus"
+            @jump="onTabJump"
           />
         </template>
       </template>
