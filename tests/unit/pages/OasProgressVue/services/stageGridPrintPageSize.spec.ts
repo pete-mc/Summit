@@ -8,9 +8,9 @@ import {
   PRINT_USABLE_WIDTH_PX,
   GROUP_BAND_COLUMN_WIDTH_SCREEN_PX,
   TRANSPOSED_COLUMN_WIDTH_SCREEN_PX,
-  WORKSHEET_FONT_FAMILY,
-  WORKSHEET_BODY_FONT_SIZE_SCREEN_PX,
-} from "@/pages/OasProgressVue/services/worksheetPrintPageSize";
+  STAGE_GRID_FONT_FAMILY,
+  STAGE_GRID_BODY_FONT_SIZE_SCREEN_PX,
+} from "@/pages/OasProgressVue/services/stageGridPrintPageSize";
 
 describe("maxFittingMemberColumns", () => {
   it("is a straightforward floor-division of the leftover width by the member minimum", () => {
@@ -71,19 +71,19 @@ describe("memberNameColumnWidthPx (Layout B's measured, never-wrapped member-nam
   const fakeMeasure = (text: string) => text.length * 10;
 
   it("sizes to the longest name plus padding, not the shortest or an average", () => {
-    const width = memberNameColumnWidthPx(["Jo", "Alexandra Montgomery-Smith", "Beth"], WORKSHEET_BODY_FONT_SIZE_SCREEN_PX, WORKSHEET_FONT_FAMILY, fakeMeasure);
+    const width = memberNameColumnWidthPx(["Jo", "Alexandra Montgomery-Smith", "Beth"], STAGE_GRID_BODY_FONT_SIZE_SCREEN_PX, STAGE_GRID_FONT_FAMILY, fakeMeasure);
     const longestNameWidth = "Alexandra Montgomery-Smith".length * 10;
     expect(width).toBeGreaterThan(longestNameWidth);
   });
 
   it("never truncates — the returned width is always enough to fit the longest name in full", () => {
     const names = ["A Reasonably Long Member Name"];
-    const width = memberNameColumnWidthPx(names, WORKSHEET_BODY_FONT_SIZE_SCREEN_PX, WORKSHEET_FONT_FAMILY, fakeMeasure);
+    const width = memberNameColumnWidthPx(names, STAGE_GRID_BODY_FONT_SIZE_SCREEN_PX, STAGE_GRID_FONT_FAMILY, fakeMeasure);
     expect(width).toBeGreaterThanOrEqual(fakeMeasure(names[0]));
   });
 
   it("floors at a sensible minimum for an empty list or very short names", () => {
-    const width = memberNameColumnWidthPx([], WORKSHEET_BODY_FONT_SIZE_SCREEN_PX, WORKSHEET_FONT_FAMILY, fakeMeasure);
+    const width = memberNameColumnWidthPx([], STAGE_GRID_BODY_FONT_SIZE_SCREEN_PX, STAGE_GRID_FONT_FAMILY, fakeMeasure);
     expect(width).toBeGreaterThan(0);
   });
 });

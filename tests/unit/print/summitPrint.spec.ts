@@ -164,7 +164,7 @@ describe("printFileName", () => {
 
   // Edge suggested "Scouts _ Terrain" for every Save as PDF.
   it("names the PDF from the printout's title, the unit and the date, like the Excel files", () => {
-    expect(printFileName({ profile: "oas-worksheets", vars: { unit: "Venturer Unit" }, generated })).toBe("OAS Progress - Worksheets - Venturer Unit - 20261103");
+    expect(printFileName({ profile: "oas-stage-grid", vars: { unit: "Venturer Unit" }, generated })).toBe("OAS Progress - Stage Grid - Venturer Unit - 20261103");
   });
 
   it("drops a missing unit and characters a file name can't hold", () => {

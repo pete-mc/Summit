@@ -3,7 +3,7 @@
     <div class="oas-heatmap-controls">
       <v-select
         v-if="canFilterByPatrol"
-        :value="filters.worksheetSelectedPatrols || []"
+        :value="filters.stageGridSelectedPatrols || []"
         :items="patrolFilterOptions"
         label="Patrol"
         multiple
@@ -11,25 +11,14 @@
         hide-details
         style="max-width: 220px"
         class="oas-vue-filter-select"
-        @change="patch({ worksheetSelectedPatrols: $event })"
+        @change="patch({ stageGridSelectedPatrols: $event })"
       >
         <template #selection="{ index }">
-          <span v-if="index === 0" class="oas-vue-select-summary">{{ (filters.worksheetSelectedPatrols || []).length }} selected</span>
+          <span v-if="index === 0" class="oas-vue-select-summary">{{ (filters.stageGridSelectedPatrols || []).length }} selected</span>
         </template>
       </v-select>
 
-      <v-select
-        :value="skillStream"
-        :items="skillStreamOptions"
-        item-text="text"
-        item-value="value"
-        label="Skill"
-        dense
-        hide-details
-        style="max-width: 280px"
-        class="oas-vue-filter-select"
-        @change="patch({ worksheetSkillStream: $event })"
-      >
+      <v-select :value="skillStream" :items="skillStreamOptions" item-text="text" item-value="value" label="Skill" dense hide-details style="max-width: 280px" class="oas-vue-filter-select" @change="onSkillStreamChange">
         <template #item="{ item, attrs, on }">
           <v-list-item v-bind="attrs" v-on="on">
             <v-list-item-action>
@@ -42,24 +31,10 @@
         </template>
       </v-select>
 
-      <v-select
-        :value="filters.worksheetVisibleStages"
-        :items="stageOptions"
-        label="Stages"
-        multiple
-        dense
-        hide-details
-        style="max-width: 140px"
-        class="oas-vue-filter-select"
-        @change="patch({ worksheetVisibleStages: $event })"
-      >
-        <template #selection="{ index }">
-          <span v-if="index === 0" class="oas-vue-select-summary">{{ filters.worksheetVisibleStages.length }} selected</span>
-        </template>
-      </v-select>
+      <v-select :value="stage" :items="stageOptions" label="Stage" dense hide-details style="max-width: 100px" class="oas-vue-filter-select" @change="patch({ stageGridStage: $event })"></v-select>
 
       <v-select
-        :value="filters.worksheetLayout"
+        :value="filters.stageGridLayout"
         :items="layoutOptions"
         item-text="text"
         item-value="value"
@@ -68,10 +43,23 @@
         hide-details
         style="max-width: 190px"
         class="oas-vue-filter-select"
-        @change="patch({ worksheetLayout: $event })"
+        @change="patch({ stageGridLayout: $event })"
       ></v-select>
 
-      <NameFormatSelect :value="filters.worksheetNameFormat" @input="patch({ worksheetNameFormat: $event })" />
+      <v-select
+        :value="filters.stageGridSortBy === 'lastName' ? 'lastName' : 'firstName'"
+        :items="sortOptions"
+        item-text="text"
+        item-value="value"
+        label="Sort by"
+        dense
+        hide-details
+        style="max-width: 180px"
+        class="oas-vue-filter-select"
+        @change="patch({ stageGridSortBy: $event })"
+      ></v-select>
+
+      <NameFormatSelect :value="filters.stageGridNameFormat" @input="patch({ stageGridNameFormat: $event })" />
 
       <v-select
         :value="showSelection"
@@ -97,8 +85,7 @@
   </div>
 </template>
 
-<script lang="ts" src="./OASWorksheetFiltersVue.ts">
-</script>
+<script lang="ts" src="./OASStageGridFiltersVue.ts"></script>
 
 <style scoped>
 /* Gotcha: same as OASProgressFiltersVue.vue. The slot bypasses .v-select__selection sizing. */

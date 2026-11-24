@@ -3,10 +3,10 @@ import type { TerrainUnitMember } from "@/types/terrainTypes";
 
 /**
  * Dev aid: preview a large unit without one, on every tab. In DevTools:
- *   localStorage.setItem("summit.oasWorksheetsVue.devDuplicateMembers", "10")
+ *   localStorage.setItem("summit.oasProgressVue.devDuplicateMembers", "10")
  * Delete this file and its use in OasProgressVue.ts once no longer needed.
  */
-export const DEV_DUPLICATE_MEMBERS_STORAGE_KEY = "summit.oasWorksheetsVue.devDuplicateMembers";
+export const DEV_DUPLICATE_MEMBERS_STORAGE_KEY = "summit.oasProgressVue.devDuplicateMembers";
 
 export function readDevDuplicateCount(): number {
   try {

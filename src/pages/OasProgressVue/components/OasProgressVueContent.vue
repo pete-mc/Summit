@@ -17,13 +17,13 @@
             <SummitPillButton :loading="isExcelExporting" :disabled="isExcelExporting" @click="onHeatmapExcelExportClick">Excel Export</SummitPillButton>
             <SummitPrintButton profile="skill-heatmap" :target="heatMapPrintTarget" :meta="heatmapPrintMeta" />
           </template>
-          <template v-else-if="filters.viewMode === 'table'">
-            <SummitPillButton :loading="isExcelExporting" :disabled="isExcelExporting" @click="onTableExcelExportClick">Excel Export</SummitPillButton>
-            <SummitPrintButton profile="oas-table" :target="tablePrintTarget" :prepare="prepareTablePrint" :meta="tablePrintMeta" />
+          <template v-else-if="filters.viewMode === 'nextSteps'">
+            <SummitPillButton :loading="isExcelExporting" :disabled="isExcelExporting" @click="onNextStepsExcelExportClick">Excel Export</SummitPillButton>
+            <SummitPrintButton profile="oas-next-steps" :target="nextStepsPrintTarget" :meta="nextStepsPrintMeta" />
           </template>
-          <template v-else-if="filters.viewMode === 'worksheets'">
-            <SummitPillButton :loading="isExcelExporting" :disabled="isExcelExporting" @click="onWorksheetsExcelExportClick">Excel Export</SummitPillButton>
-            <SummitPrintButton profile="oas-worksheets" :targets="worksheetPrintTargets" :meta="worksheetsPrintMeta" />
+          <template v-else-if="filters.viewMode === 'stageGrid'">
+            <SummitPillButton :loading="isExcelExporting" :disabled="isExcelExporting" @click="onStageGridExcelExportClick">Excel Export</SummitPillButton>
+            <SummitPrintButton profile="oas-stage-grid" :targets="stageGridPrintTargets" :meta="stageGridPrintMeta" />
           </template>
         </template>
         <v-btn icon title="Refresh data" :loading="isReloading" :disabled="isReloading" @click="onReloadAllClick"><v-icon>mdi-refresh</v-icon></v-btn>
@@ -34,8 +34,8 @@
         <v-tab tab-value="summary">Summary</v-tab>
         <v-tab tab-value="peakAward">Peak Award</v-tab>
         <v-tab tab-value="heatmap">Heatmap</v-tab>
-        <v-tab tab-value="table">Table</v-tab>
-        <v-tab tab-value="worksheets">Worksheets</v-tab>
+        <v-tab tab-value="nextSteps">Next Steps</v-tab>
+        <v-tab tab-value="stageGrid">Stage Grid</v-tab>
       </v-tabs>
 
       <SummitLoadingState :state="sharedLoadState" :done="streamsDone" :total="totalStreams" error-message="Could not load OAS progress data." :on-retry="onReloadAllClick" />
@@ -56,7 +56,14 @@
           @sort-reselected="clearSummaryColumnSort"
           @reset="onResetFilters"
         />
-        <OASOverallProgressVue ref="overallProgress" :columns="overallProgressView.columns" :rows="overallProgressView.rows" :break-by-patrol="filters.summaryBreakByPatrol" :column-sort="filters.summaryColumnSort" @sort-column="onOverallProgressSortColumn" />
+        <OASOverallProgressVue
+          ref="overallProgress"
+          :columns="overallProgressView.columns"
+          :rows="overallProgressView.rows"
+          :break-by-patrol="filters.summaryBreakByPatrol"
+          :column-sort="filters.summaryColumnSort"
+          @sort-column="onOverallProgressSortColumn"
+        />
       </template>
 
       <template v-if="hasContent && filters.viewMode === 'peakAward'">
@@ -74,7 +81,14 @@
             :can-filter-by-patrol="canFilterByPatrol"
             @reset="onResetFilters"
           />
-          <OASPeakAwardSummaryVue ref="peakAward" :rows="filteredPeakAwardSummaryRows" :name-format="filters.peakAwardNameFormat" :break-by-patrol="filters.peakAwardBreakByPatrol" :has-special="!!peakAwardRequirement.special" :special-condition-text="specialConditionText" />
+          <OASPeakAwardSummaryVue
+            ref="peakAward"
+            :rows="filteredPeakAwardSummaryRows"
+            :name-format="filters.peakAwardNameFormat"
+            :break-by-patrol="filters.peakAwardBreakByPatrol"
+            :has-special="!!peakAwardRequirement.special"
+            :special-condition-text="specialConditionText"
+          />
         </template>
       </template>
 
@@ -102,12 +116,38 @@
         />
       </template>
 
-      <OASProgressTableVue v-if="hasContent && filters.viewMode === 'table'" ref="table" :items="items" :member-id="resolvedTableMemberId" :column-filters.sync="tableColumnFilters" @update:memberId="tableMemberId = $event" />
+      <template v-if="hasContent && filters.viewMode === 'nextSteps'">
+        <OASNextStepsFiltersVue
+          :member-id="resolvedNextStepsMemberId"
+          :member-options="nextStepsMemberOptions"
+          :skill-stream="resolvedNextStepsSkillStream"
+          :skill-stream-options="nextStepsSkillStreamOptions"
+          :stage="resolvedNextStepsStage"
+          :stage-options="nextStepsStageOptions"
+          @update:memberId="onNextStepsMemberUpdate"
+          @update:skillStream="onNextStepsSkillStreamUpdate"
+          @update:stage="onNextStepsStageUpdate"
+          @reset="onResetFilters"
+        />
+        <p v-if="nextStepsRows.length === 0" class="oas-next-steps-nothing-outstanding">Every stage has been awarded.</p>
+        <OASNextStepsVue v-else ref="nextSteps" :rows="nextStepsRows" />
+      </template>
 
-      <template v-if="hasContent && filters.viewMode === 'worksheets'">
-        <OASWorksheetFiltersVue :filters="filters" :skill-streams="worksheetSkillStreams" :skill-stream="resolvedWorksheetSkillStream" :available-patrols="availablePatrols" :patrol-filter-options="patrolFilterOptions" :can-filter-by-patrol="canFilterByPatrol" @update:filters="onFiltersUpdate" @reset="onResetFilters" />
+      <template v-if="hasContent && filters.viewMode === 'stageGrid'">
+        <OASStageGridFiltersVue
+          :filters="filters"
+          :skill-streams="stageGridSkillStreams"
+          :skill-stream="resolvedStageGridSkillStream"
+          :stage="resolvedStageGridStage"
+          :stage-options="stageGridStageOptions"
+          :available-patrols="availablePatrols"
+          :patrol-filter-options="patrolFilterOptions"
+          :can-filter-by-patrol="canFilterByPatrol"
+          @update:filters="onFiltersUpdate"
+          @reset="onResetFilters"
+        />
 
-        <OASWorksheetsVue ref="worksheets" :items="items" :filters="filters" :skill-stream="resolvedWorksheetSkillStream" :available-patrols="availablePatrols" />
+        <OASStageGridVue ref="stageGrid" :items="items" :filters="filters" :skill-stream="resolvedStageGridSkillStream" :stage="resolvedStageGridStage" :available-patrols="availablePatrols" />
       </template>
     </div>
   </v-app>
@@ -171,7 +211,8 @@
   background: var(--color-light-charcoal, #e5e9ec);
 }
 
-.oas-peak-award-summary-no-section {
+.oas-peak-award-summary-no-section,
+.oas-next-steps-nothing-outstanding {
   color: var(--summit-color-text-primary, #2a2a2a);
   font-size: var(--oas-vue-font-size-body);
   font-family: var(--oas-vue-font-family);

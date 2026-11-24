@@ -1,7 +1,7 @@
 import type { NameFormat } from "@/pages/OasProgress/services/getMemberDisplayName";
 
 export interface OASProgressVueFilterState {
-  viewMode: "summary" | "peakAward" | "heatmap" | "table" | "worksheets";
+  viewMode: "summary" | "peakAward" | "heatmap" | "nextSteps" | "stageGrid";
   /** Each tab has its own filter keys, so narrowing one view never narrows another. */
   summaryMemberFilter: string;
   summaryNameFormat: NameFormat;
@@ -36,15 +36,22 @@ export interface OASProgressVueFilterState {
   visibleStages: number[];
   sortBy: "lastName" | "firstName" | "stageProgress";
 
+  /** Each falls back when not offered: first member, first Skill - Stream, lowest un-awarded stage (also when null). */
+  nextStepsMemberId: string;
+  nextStepsSkillStream: string;
+  nextStepsStage: number | null;
+
   /** From skillStreamKey(). A value not in the loaded data falls back to the first Skill - Stream. */
-  worksheetSkillStream: string;
-  worksheetVisibleStages: number[];
-  worksheetNameFormat: NameFormat;
-  worksheetSelectedPatrols: string[] | null;
-  worksheetBreakByPatrol: boolean;
-  worksheetShowCompleted: boolean;
-  /** membersAsRows (default) scales to large units; membersAsColumns matches the Topo xlsx/PDF layout. */
-  worksheetLayout: "membersAsColumns" | "membersAsRows";
+  stageGridSkillStream: string;
+  /** null or a stage the Skill - Stream doesn't have falls back to its lowest stage. */
+  stageGridStage: number | null;
+  stageGridNameFormat: NameFormat;
+  stageGridSortBy: "firstName" | "lastName";
+  stageGridSelectedPatrols: string[] | null;
+  stageGridBreakByPatrol: boolean;
+  stageGridShowCompleted: boolean;
+  /** membersAsColumns (default) matches the Topo xlsx/PDF layout; membersAsRows scales to large units. */
+  stageGridLayout: "membersAsColumns" | "membersAsRows";
 }
 
 // Separate from the React page's key, so the two pages can be configured independently.
@@ -55,6 +62,29 @@ export const saveOASProgressVueFilters = (filters: OASProgressVueFilterState) =>
     window.localStorage.setItem(OAS_PROGRESS_VUE_FILTERS_KEY, JSON.stringify(filters));
   } catch {}
 };
+
+const RENAMED_KEY_PREFIXES: Array<[string, string]> = [
+  ["table", "nextSteps"],
+  ["worksheet", "stageGrid"],
+];
+const RENAMED_VIEW_MODES: Record<string, OASProgressVueFilterState["viewMode"]> = { table: "nextSteps", worksheets: "stageGrid" };
+
+function renamedKey(key: string): string {
+  const match = RENAMED_KEY_PREFIXES.find(([oldPrefix]) => key.indexOf(oldPrefix) === 0 && /[A-Z]/.test(key.charAt(oldPrefix.length)));
+  return match ? match[1] + key.slice(match[0].length) : key;
+}
+
+/** Gotcha: older saved state names the Next Steps and Stage Grid tabs "table" and "worksheets", with table* and worksheet* keys. A key already saved under its new name wins. */
+export function migrateRenamedTabs(stored: Record<string, unknown>): Record<string, unknown> {
+  const migrated: Record<string, unknown> = {};
+  Object.keys(stored).forEach((key) => {
+    const newKey = renamedKey(key);
+    if (newKey === key || !(newKey in stored)) migrated[newKey] = stored[key];
+  });
+  const viewMode = migrated.viewMode;
+  if (typeof viewMode === "string" && RENAMED_VIEW_MODES[viewMode]) migrated.viewMode = RENAMED_VIEW_MODES[viewMode];
+  return migrated;
+}
 
 export const loadOASProgressVueFilters = (): Partial<OASProgressVueFilterState> | null => {
   try {
@@ -68,7 +98,7 @@ export const loadOASProgressVueFilters = (): Partial<OASProgressVueFilterState> 
       return null;
     }
 
-    return parsed as Partial<OASProgressVueFilterState>;
+    return migrateRenamedTabs(parsed) as Partial<OASProgressVueFilterState>;
   } catch {
     return null;
   }

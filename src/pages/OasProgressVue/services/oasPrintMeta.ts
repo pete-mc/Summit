@@ -2,7 +2,6 @@ import type { MetaEntry } from "@/print/summitPrint";
 import type { OASProgressVueFilterState } from "./OASProgressVueFilterPersistence";
 import { skillTitle } from "@/pages/OasProgressVue/components/OASHeatMapVue";
 import { OAS_SKILLS } from "@/pages/OasProgress/services/filterHeatMapSections";
-import { HEADERS as TABLE_HEADERS, YES_NO_OPTIONS } from "@/pages/OasProgressVue/components/OASProgressTableVue";
 
 const MAX_STAGE = 9;
 
@@ -58,28 +57,19 @@ export function buildHeatmapPrintMeta(filters: OASProgressVueFilterState, patrol
   return meta;
 }
 
-export function buildOasTablePrintMeta(columnFilters: Record<string, string>, memberName: string): MetaEntry[] {
-  const meta: MetaEntry[] = memberName ? [{ label: "Member", value: memberName }] : [];
-  for (const header of TABLE_HEADERS) {
-    if (header.filterType === "member") continue;
-    const value = (columnFilters[header.value] ?? "").trim();
-    if (!value) continue;
-    if (header.filterType !== "select") {
-      meta.push({ label: header.text, value: `contains "${value}"` });
-      continue;
-    }
-    const yesNo = header.value === "answered" || header.value === "awarded" ? YES_NO_OPTIONS.filter((o) => o.value === value)[0] : undefined;
-    meta.push({ label: header.text, value: yesNo ? yesNo.text : value });
-  }
+export function buildNextStepsPrintMeta(memberName: string, skillStreamLabel: string, stage: number | null): MetaEntry[] {
+  const meta: MetaEntry[] = [];
+  if (memberName) meta.push({ label: "Member", value: memberName });
+  if (skillStreamLabel) meta.push({ label: "Skill", value: skillStreamLabel });
+  if (stage !== null) meta.push({ label: "Stage", value: String(stage) });
   return meta;
 }
 
 /** Layout, name format and break by patrol are visible in the printout itself. */
-export function buildWorksheetsPrintMeta(filters: OASProgressVueFilterState, skillStreamLabel: string, patrolOptions: string[], canFilterByPatrol: boolean): MetaEntry[] {
+export function buildStageGridPrintMeta(filters: OASProgressVueFilterState, skillStreamLabel: string, stage: number | null, patrolOptions: string[], canFilterByPatrol: boolean): MetaEntry[] {
   const meta: MetaEntry[] = skillStreamLabel ? [{ label: "Skill", value: skillStreamLabel }] : [];
-  const stages = filters.worksheetVisibleStages.slice().sort((a, b) => a - b);
-  if (stages.length < MAX_STAGE) meta.push({ label: "Stages", value: stages.length ? stages.join(", ") : "None" });
-  if (canFilterByPatrol) meta.push({ label: "Patrol", value: describePatrols(filters.worksheetSelectedPatrols, patrolOptions) });
-  if (!filters.worksheetShowCompleted) meta.push({ label: "Hidden", value: "Members awarded the stage" });
+  if (stage !== null) meta.push({ label: "Stage", value: String(stage) });
+  if (canFilterByPatrol) meta.push({ label: "Patrol", value: describePatrols(filters.stageGridSelectedPatrols, patrolOptions) });
+  if (!filters.stageGridShowCompleted) meta.push({ label: "Hidden", value: "Members awarded the stage" });
   return meta;
 }

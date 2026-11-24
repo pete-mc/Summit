@@ -4,32 +4,37 @@ import type { OASProgressVueFilterState } from "@/pages/OasProgressVue/services/
 import NameFormatSelect from "@/components/NameFormatSelect.vue";
 import type { SkillStream } from "@/pages/OasProgressVue/services/skillStreams";
 
-type ShowOption = "worksheetBreakByPatrol" | "worksheetShowCompleted";
+type ShowOption = "stageGridBreakByPatrol" | "stageGridShowCompleted";
 
 type ShowSelectItem = { value: ShowOption; text: string } | { header: string } | { divider: true };
 
-const MAX_STAGE = 9;
-const STAGE_OPTIONS = Array.from({ length: MAX_STAGE }, (_, i) => i + 1);
-const LAYOUT_OPTIONS: Array<{ value: OASProgressVueFilterState["worksheetLayout"]; text: string }> = [
-  { value: "membersAsRows", text: "Members as rows" },
+const LAYOUT_OPTIONS: Array<{ value: OASProgressVueFilterState["stageGridLayout"]; text: string }> = [
   { value: "membersAsColumns", text: "Members as columns" },
+  { value: "membersAsRows", text: "Members as rows" },
+];
+
+const SORT_OPTIONS: Array<{ value: OASProgressVueFilterState["stageGridSortBy"]; text: string }> = [
+  { value: "firstName", text: "First name" },
+  { value: "lastName", text: "Last name" },
 ];
 
 export default defineComponent({
-  name: "OASWorksheetFiltersVue",
+  name: "OASStageGridFiltersVue",
   components: { NameFormatSelect },
   props: {
     filters: { type: Object as PropType<OASProgressVueFilterState>, required: true },
     skillStreams: { type: Array as PropType<SkillStream[]>, required: true },
     skillStream: { type: String, required: true },
+    stage: { type: Number as PropType<number | null>, default: null },
+    stageOptions: { type: Array as PropType<number[]>, required: true },
     availablePatrols: { type: Array as PropType<string[]>, required: true },
     patrolFilterOptions: { type: Array as PropType<string[]>, required: true },
     canFilterByPatrol: { type: Boolean, default: true },
   },
   data() {
     return {
-      stageOptions: STAGE_OPTIONS,
       layoutOptions: LAYOUT_OPTIONS,
+      sortOptions: SORT_OPTIONS,
     };
   },
   computed: {
@@ -37,9 +42,9 @@ export default defineComponent({
       return this.skillStreams.map((s) => ({ value: s.key, text: s.label }));
     },
     showOptions(): ShowSelectItem[] {
-      const items: ShowSelectItem[] = [{ header: "Members" }, { value: "worksheetShowCompleted", text: "Awarded" }];
+      const items: ShowSelectItem[] = [{ header: "Members" }, { value: "stageGridShowCompleted", text: "Awarded" }];
       if (this.availablePatrols.length > 0) {
-        items.push({ divider: true }, { header: "Grouping" }, { value: "worksheetBreakByPatrol", text: "Break by patrol" });
+        items.push({ divider: true }, { header: "Grouping" }, { value: "stageGridBreakByPatrol", text: "Break by patrol" });
       }
       return items;
     },
@@ -52,6 +57,10 @@ export default defineComponent({
   methods: {
     patch(partial: Partial<OASProgressVueFilterState>) {
       this.$emit("update:filters", { ...this.filters, ...partial });
+    },
+    /** Saves the stage on screen, so the new skill keeps it if it has that stage (otherwise its lowest shows). */
+    onSkillStreamChange(stageGridSkillStream: string) {
+      this.patch({ stageGridSkillStream, stageGridStage: this.stage });
     },
     onShowChange(selected: ShowOption[]) {
       const partial: Partial<OASProgressVueFilterState> = {};

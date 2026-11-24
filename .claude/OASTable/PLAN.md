@@ -1,5 +1,7 @@
 # OAS Progress › Table: one member at a time, combined Skill column
 
+> **Renamed 2026-11-24:** the Table tab (briefly "I-Statements") is now **Next Steps**, and Worksheets is now **Stage Grid**, in the UI and the code (`OASNextStepsVue`, `OASStageGridVue`, `buildStageGridPages`, print profiles `oas-next-steps` / `oas-stage-grid`). Names below are as they were when written.
+
 > **Status of the tab (2026-11-04):** the tab is a debug tool that may become a feature. An info
 > banner (`v-alert`, `.oas-vue-table-notice` in `OASProgressTableVue.vue`) says so above the table,
 > and shipped in PR #164. Outstanding: banner not yet checked live in Edge. Whether the tab stays

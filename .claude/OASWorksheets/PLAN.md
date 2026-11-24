@@ -1,5 +1,7 @@
 <!-- @format -->
 
+> **Renamed 2026-11-24:** the Table tab (briefly "I-Statements") is now **Next Steps**, and Worksheets is now **Stage Grid**, in the UI and the code (`OASNextStepsVue`, `OASStageGridVue`, `buildStageGridPages`, print profiles `oas-next-steps` / `oas-stage-grid`). Names below are as they were when written.
+
 # PLAN.md — OAS Worksheets
 
 A third view on the OAS Progress page: a printable per-Stage/per-Skill checkoff

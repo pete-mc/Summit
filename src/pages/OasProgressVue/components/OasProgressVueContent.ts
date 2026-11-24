@@ -2,16 +2,18 @@ import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import OASHeatMapVue from "./OASHeatMapVue.vue";
 import OASProgressFiltersVue from "./OASProgressFiltersVue.vue";
-import OASProgressTableVue from "./OASProgressTableVue.vue";
-import OASWorksheetFiltersVue from "./OASWorksheetFiltersVue.vue";
-import OASWorksheetsVue from "./OASWorksheetsVue.vue";
+import OASNextStepsVue from "./OASNextStepsVue.vue";
+import OASStageGridFiltersVue from "./OASStageGridFiltersVue.vue";
+import OASStageGridVue from "./OASStageGridVue.vue";
 import SummitLoadingState from "@/components/SummitLoadingState.vue";
 import SummitPrintButton from "@/components/SummitPrintButton.vue";
 import SummitPillButton from "@/components/SummitPillButton.vue";
-import { buildHeatmapPrintMeta, buildOasTablePrintMeta, buildPeakAwardPrintMeta, buildSummaryPrintMeta, buildWorksheetsPrintMeta } from "@/pages/OasProgressVue/services/oasPrintMeta";
+import { buildHeatmapPrintMeta, buildNextStepsPrintMeta, buildPeakAwardPrintMeta, buildSummaryPrintMeta, buildStageGridPrintMeta } from "@/pages/OasProgressVue/services/oasPrintMeta";
 import type { MetaEntry } from "@/print/summitPrint";
-import { buildTableRows, filterOASProgressRows, listTableMembers, type OASTableRow } from "./OASProgressTableVue";
-import type { WorksheetExportView } from "./OASWorksheetsVue";
+import OASNextStepsFiltersVue from "./OASNextStepsFiltersVue.vue";
+import type { NextStepsFilterOption } from "./OASNextStepsFiltersVue";
+import { buildNextStepsRows, listOutstandingRows, listStageOptions, type NextStepsRow } from "@/pages/OasProgressVue/services/nextStepsRows";
+import type { StageGridExportView } from "./OASStageGridVue";
 import { groupRowsForHeatMap } from "@/pages/OasProgress/services/groupRowsForHeatMap";
 import { buildPeakAwardSummaryRows, sortPeakAwardSummaryRows, type PeakAwardMemberRow } from "@/pages/OasProgress/services/buildPeakAwardSummaryRows";
 import { PEAK_AWARD_REQUIREMENTS, type PeakAwardRequirement } from "@/pages/OasProgress/data/peakAwardRequirements";
@@ -21,8 +23,8 @@ import { exportExcelWorkbook, type ExcelWorkbookRequest } from "@/excel/summitEx
 import { buildPeakAwardSummarySheet } from "@/excel/sheets/peakAwardSummary";
 import { buildOverallProgressSheet } from "@/excel/sheets/overallProgress";
 import { buildSkillHeatmapSheet } from "@/excel/sheets/skillHeatmap";
-import { buildOasTableSheet } from "@/excel/sheets/oasTable";
-import { buildWorksheetSheet } from "@/excel/sheets/oasWorksheets";
+import { buildNextStepsSheet } from "@/excel/sheets/oasNextSteps";
+import { buildStageGridSheet } from "@/excel/sheets/oasStageGrid";
 import type { HeatMapExportView } from "./OASHeatMapVue";
 import { createLogger, showTerrainToast } from "@/helpers";
 import type { OASProgressRow } from "@/pages/OasProgress/services/buildOASProgressRows";
@@ -61,13 +63,12 @@ interface OverallProgressVueInstance {
   getExportTable(): HTMLTableElement | undefined;
 }
 
-interface WorksheetsVueInstance {
+interface StageGridVueInstance {
   getPrintTables(): HTMLTableElement[];
-  getExportView(): WorksheetExportView;
+  getExportView(): StageGridExportView;
 }
 
-interface TableVueInstance {
-  prepareForPrint(): Promise<() => void>;
+interface NextStepsVueInstance {
   getPrintTable(): HTMLTableElement | undefined;
 }
 
@@ -102,20 +103,25 @@ const DEFAULT_FILTERS: OASProgressVueFilterState = {
   visibleStages: Array.from({ length: MAX_STAGE }, (_, i) => i + 1),
   sortBy: "firstName",
 
-  // Worksheets default narrow (Camping, stage 1) to limit processing; it's a print target.
-  worksheetSkillStream: skillStreamKey("camping", "camping"),
-  worksheetVisibleStages: [1],
-  worksheetNameFormat: "full",
-  worksheetSelectedPatrols: null,
-  worksheetBreakByPatrol: false,
-  worksheetShowCompleted: true,
-  worksheetLayout: "membersAsRows",
+  nextStepsMemberId: "",
+  nextStepsSkillStream: "",
+  nextStepsStage: null,
+
+  // Stage Grid default narrow (Camping, stage 1) to limit processing; it's a print target.
+  stageGridSkillStream: skillStreamKey("camping", "camping"),
+  stageGridStage: 1,
+  stageGridNameFormat: "full",
+  stageGridSortBy: "firstName",
+  stageGridSelectedPatrols: null,
+  stageGridBreakByPatrol: false,
+  stageGridShowCompleted: true,
+  stageGridLayout: "membersAsColumns",
 };
 
 // Catches a stored viewMode that is present but invalid; a missing one is covered by the defaults spread.
-const VALID_VIEW_MODES: OASProgressVueFilterState["viewMode"][] = ["summary", "peakAward", "heatmap", "table", "worksheets"];
+const VALID_VIEW_MODES: OASProgressVueFilterState["viewMode"][] = ["summary", "peakAward", "heatmap", "nextSteps", "stageGrid"];
 
-/** Each tab's "Reset filters" resets only its own keys. Table has none: its filters live in tableColumnFilters. viewMode is never reset. */
+/** Each tab's "Reset filters" resets only its own keys. viewMode is never reset. */
 const SUMMARY_FILTER_KEYS = ["summaryMemberFilter", "summaryNameFormat", "summarySelectedPatrols", "summarySortBy", "summaryColumnSort", "summaryShowNotStartedSkills", "summaryBreakByPatrol"] as const;
 const PEAK_AWARD_FILTER_KEYS = ["peakAwardMemberFilter", "peakAwardNameFormat", "peakAwardSelectedPatrols", "peakAwardSortBy", "peakAwardBreakByPatrol"] as const;
 const HEATMAP_FILTER_KEYS = [
@@ -133,14 +139,15 @@ const HEATMAP_FILTER_KEYS = [
   "visibleStages",
   "sortBy",
 ] as const;
-const WORKSHEETS_FILTER_KEYS = ["worksheetSkillStream", "worksheetVisibleStages", "worksheetNameFormat", "worksheetSelectedPatrols", "worksheetBreakByPatrol", "worksheetShowCompleted", "worksheetLayout"] as const;
+const NEXT_STEPS_FILTER_KEYS = ["nextStepsMemberId", "nextStepsSkillStream", "nextStepsStage"] as const;
+const STAGE_GRID_FILTER_KEYS = ["stageGridSkillStream", "stageGridStage", "stageGridNameFormat", "stageGridSortBy", "stageGridSelectedPatrols", "stageGridBreakByPatrol", "stageGridShowCompleted", "stageGridLayout"] as const;
 
-const RESETTABLE_FILTER_KEYS_BY_VIEW: Record<OASProgressVueFilterState["viewMode"], readonly (keyof OASProgressVueFilterState)[]> = {
+const RESETNEXT_STEPS_FILTER_KEYS_BY_VIEW: Record<OASProgressVueFilterState["viewMode"], readonly (keyof OASProgressVueFilterState)[]> = {
   summary: SUMMARY_FILTER_KEYS,
   peakAward: PEAK_AWARD_FILTER_KEYS,
   heatmap: HEATMAP_FILTER_KEYS,
-  worksheets: WORKSHEETS_FILTER_KEYS,
-  table: [],
+  stageGrid: STAGE_GRID_FILTER_KEYS,
+  nextSteps: NEXT_STEPS_FILTER_KEYS,
 };
 
 export function sanitiseViewMode(viewMode: unknown): OASProgressVueFilterState["viewMode"] {
@@ -172,9 +179,10 @@ export default defineComponent({
     OASSummaryTabFiltersVue,
     OASPeakAwardSummaryVue,
     OASProgressFiltersVue,
-    OASProgressTableVue,
-    OASWorksheetFiltersVue,
-    OASWorksheetsVue,
+    OASNextStepsVue,
+    OASNextStepsFiltersVue,
+    OASStageGridFiltersVue,
+    OASStageGridVue,
     SummitLoadingState,
     SummitPillButton,
     SummitPrintButton,
@@ -196,8 +204,6 @@ export default defineComponent({
       filters: loadInitialFilters() as OASProgressVueFilterState,
       isReloading: false,
       isExcelExporting: false,
-      tableColumnFilters: {} as Record<string, string>,
-      tableMemberId: "",
       summarySortOptions: SUMMARY_SORT_OPTIONS,
       peakAwardSortOptions: PEAK_AWARD_SORT_OPTIONS,
     };
@@ -228,23 +234,50 @@ export default defineComponent({
     canFilterByPatrol(): boolean {
       return this.patrolFilterOptions.length > 1;
     },
-    tableMemberOptions(): Array<{ text: string; value: string }> {
-      return listTableMembers(this.items);
+    nextStepsMemberOptions(): NextStepsFilterOption[] {
+      return sortMembersByName(this.unitMembers, "firstName").map((m) => ({ text: m.memberName, value: m.memberId }));
     },
     /** Falls back to the first member while nothing is picked, or when the picked member is no longer listed. */
-    resolvedTableMemberId(): string {
-      const options = this.tableMemberOptions;
-      return options.some((o) => o.value === this.tableMemberId) ? this.tableMemberId : (options[0]?.value ?? "");
+    resolvedNextStepsMemberId(): string {
+      const options = this.nextStepsMemberOptions;
+      return options.some((o) => o.value === this.filters.nextStepsMemberId) ? this.filters.nextStepsMemberId : (options[0]?.value ?? "");
     },
-    worksheetSkillStreams(): SkillStream[] {
+    nextStepsOutstandingRows(): OASProgressRow[] {
+      return listOutstandingRows(this.items, this.resolvedNextStepsMemberId);
+    },
+    nextStepsSkillStreams(): SkillStream[] {
+      return listSkillStreams(this.nextStepsOutstandingRows);
+    },
+    nextStepsSkillStreamOptions(): NextStepsFilterOption[] {
+      return this.nextStepsSkillStreams.map((s) => ({ text: s.label, value: s.key }));
+    },
+    resolvedNextStepsSkillStream(): string {
+      const options = this.nextStepsSkillStreams;
+      return options.some((o) => o.key === this.filters.nextStepsSkillStream) ? this.filters.nextStepsSkillStream : (options[0]?.key ?? "");
+    },
+    nextStepsStageOptions(): number[] {
+      return listStageOptions(this.nextStepsOutstandingRows, this.resolvedNextStepsSkillStream);
+    },
+    resolvedNextStepsStage(): number | null {
+      const stage = this.filters.nextStepsStage;
+      return stage !== null && this.nextStepsStageOptions.indexOf(stage) !== -1 ? stage : (this.nextStepsStageOptions[0] ?? null);
+    },
+    stageGridSkillStreams(): SkillStream[] {
       return listSkillStreams(this.items);
     },
-    resolvedWorksheetSkillStream(): string {
-      const options = this.worksheetSkillStreams;
-      return options.some((o) => o.key === this.filters.worksheetSkillStream) ? this.filters.worksheetSkillStream : (options[0]?.key ?? "");
+    resolvedStageGridSkillStream(): string {
+      const options = this.stageGridSkillStreams;
+      return options.some((o) => o.key === this.filters.stageGridSkillStream) ? this.filters.stageGridSkillStream : (options[0]?.key ?? "");
     },
-    tableFilteredItems(): OASTableRow[] {
-      return filterOASProgressRows(buildTableRows(this.items, this.resolvedTableMemberId), this.tableColumnFilters);
+    stageGridStageOptions(): number[] {
+      return listStageOptions(this.items, this.resolvedStageGridSkillStream);
+    },
+    resolvedStageGridStage(): number | null {
+      const stage = this.filters.stageGridStage;
+      return stage !== null && this.stageGridStageOptions.indexOf(stage) !== -1 ? stage : (this.stageGridStageOptions[0] ?? null);
+    },
+    nextStepsRows(): NextStepsRow[] {
+      return buildNextStepsRows(this.nextStepsOutstandingRows, this.resolvedNextStepsSkillStream, this.resolvedNextStepsStage);
     },
     /** Undefined until Terrain resolves the section. Show "could not determine section" rather than guess. */
     peakAwardRequirement(): PeakAwardRequirement | undefined {
@@ -289,13 +322,14 @@ export default defineComponent({
     peakAwardPrintMeta(): MetaEntry[] {
       return buildPeakAwardPrintMeta(this.filters, this.patrolFilterOptions, this.canFilterByPatrol);
     },
-    tablePrintMeta(): MetaEntry[] {
-      const member = this.tableMemberOptions.find((o) => o.value === this.resolvedTableMemberId);
-      return buildOasTablePrintMeta(this.tableColumnFilters, member?.text ?? "");
+    nextStepsPrintMeta(): MetaEntry[] {
+      const member = this.nextStepsMemberOptions.find((o) => o.value === this.resolvedNextStepsMemberId);
+      const skillStream = this.nextStepsSkillStreams.find((s) => s.key === this.resolvedNextStepsSkillStream);
+      return buildNextStepsPrintMeta(member?.text ?? "", skillStream?.label ?? "", this.resolvedNextStepsStage);
     },
-    worksheetsPrintMeta(): MetaEntry[] {
-      const skillStream = this.worksheetSkillStreams.find((o) => o.key === this.resolvedWorksheetSkillStream);
-      return buildWorksheetsPrintMeta(this.filters, skillStream?.label ?? "", this.patrolFilterOptions, this.canFilterByPatrol);
+    stageGridPrintMeta(): MetaEntry[] {
+      const skillStream = this.stageGridSkillStreams.find((o) => o.key === this.resolvedStageGridSkillStream);
+      return buildStageGridPrintMeta(this.filters, skillStream?.label ?? "", this.resolvedStageGridStage, this.patrolFilterOptions, this.canFilterByPatrol);
     },
     heatmapPrintMeta(): MetaEntry[] {
       return buildHeatmapPrintMeta(this.filters, this.patrolFilterOptions, this.canFilterByPatrol);
@@ -317,8 +351,8 @@ export default defineComponent({
       if (this.filters.selectedPatrols === null) {
         resolved.selectedPatrols = newOptions;
       }
-      if (this.filters.worksheetSelectedPatrols === null) {
-        resolved.worksheetSelectedPatrols = newOptions;
+      if (this.filters.stageGridSelectedPatrols === null) {
+        resolved.stageGridSelectedPatrols = newOptions;
       }
       if (this.filters.summarySelectedPatrols === null) {
         resolved.summarySelectedPatrols = newOptions;
@@ -348,7 +382,7 @@ export default defineComponent({
       this.filters = { ...this.filters, viewMode };
     },
     onResetFilters() {
-      const keysToReset = RESETTABLE_FILTER_KEYS_BY_VIEW[this.filters.viewMode] ?? [];
+      const keysToReset = RESETNEXT_STEPS_FILTER_KEYS_BY_VIEW[this.filters.viewMode] ?? [];
 
       const resetValues: Partial<OASProgressVueFilterState> = {};
       keysToReset.forEach((key) => {
@@ -361,8 +395,8 @@ export default defineComponent({
         resetValues.summarySelectedPatrols = resolvedPatrols;
       } else if (this.filters.viewMode === "peakAward") {
         resetValues.peakAwardSelectedPatrols = resolvedPatrols;
-      } else if (this.filters.viewMode === "worksheets") {
-        resetValues.worksheetSelectedPatrols = resolvedPatrols;
+      } else if (this.filters.viewMode === "stageGrid") {
+        resetValues.stageGridSelectedPatrols = resolvedPatrols;
       } else if (this.filters.viewMode === "heatmap") {
         resetValues.selectedPatrols = resolvedPatrols;
       }
@@ -386,16 +420,21 @@ export default defineComponent({
     overallProgressPrintTarget(): HTMLTableElement | undefined {
       return (this.$refs.overallProgress as unknown as OverallProgressVueInstance | undefined)?.getExportTable();
     },
-    tablePrintTarget(): HTMLTableElement | undefined {
-      return (this.$refs.table as unknown as TableVueInstance | undefined)?.getPrintTable();
+    nextStepsPrintTarget(): HTMLTableElement | undefined {
+      return (this.$refs.nextSteps as unknown as NextStepsVueInstance | undefined)?.getPrintTable();
     },
-    /** Only rendered rows print, so this shows them all and returns a restore function. */
-    async prepareTablePrint(): Promise<(() => void) | void> {
-      const table = this.$refs.table as unknown as TableVueInstance | undefined;
-      return table ? table.prepareForPrint() : undefined;
+    /** A new member or skill starts at its lowest un-awarded stage. */
+    onNextStepsMemberUpdate(nextStepsMemberId: string) {
+      this.filters = { ...this.filters, nextStepsMemberId, nextStepsStage: null };
     },
-    async onTableExcelExportClick() {
-      await this.runExcelExport("Table", this.tablePrintMeta, [{ printProfile: "oas-table", build: (header, logo) => buildOasTableSheet({ rows: this.tableFilteredItems, header, logo }) }]);
+    onNextStepsSkillStreamUpdate(nextStepsSkillStream: string) {
+      this.filters = { ...this.filters, nextStepsSkillStream, nextStepsStage: null };
+    },
+    onNextStepsStageUpdate(nextStepsStage: number) {
+      this.filters = { ...this.filters, nextStepsStage };
+    },
+    async onNextStepsExcelExportClick() {
+      await this.runExcelExport("Next Steps", this.nextStepsPrintMeta, [{ printProfile: "oas-next-steps", build: (header, logo) => buildNextStepsSheet({ rows: this.nextStepsRows, header, logo }) }]);
     },
     async onSummaryExcelExportClick() {
       const sheet: ExcelWorkbookRequest["sheets"][number] = {
@@ -446,18 +485,18 @@ export default defineComponent({
         this.isExcelExporting = false;
       }
     },
-    worksheetPrintTargets(): HTMLTableElement[] {
-      return (this.$refs.worksheets as unknown as WorksheetsVueInstance | undefined)?.getPrintTables() ?? [];
+    stageGridPrintTargets(): HTMLTableElement[] {
+      return (this.$refs.stageGrid as unknown as StageGridVueInstance | undefined)?.getPrintTables() ?? [];
     },
-    async onWorksheetsExcelExportClick() {
-      const worksheets = this.$refs.worksheets as unknown as WorksheetsVueInstance | undefined;
-      if (!worksheets) return;
-      const view = worksheets.getExportView();
+    async onStageGridExcelExportClick() {
+      const stageGrid = this.$refs.stageGrid as unknown as StageGridVueInstance | undefined;
+      if (!stageGrid) return;
+      const view = stageGrid.getExportView();
       const sheets: ExcelWorkbookRequest["sheets"] = view.pages.map((page) => ({
-        printProfile: "oas-worksheets",
-        build: (header, logo) => buildWorksheetSheet({ page, membersAsRows: view.membersAsRows, breakByPatrol: view.breakByPatrol, header, logo }),
+        printProfile: "oas-stage-grid",
+        build: (header, logo) => buildStageGridSheet({ page, membersAsRows: view.membersAsRows, breakByPatrol: view.breakByPatrol, header, logo }),
       }));
-      await this.runExcelExport("Worksheets", this.worksheetsPrintMeta, sheets);
+      await this.runExcelExport("Stage Grid", this.stageGridPrintMeta, sheets);
     },
   },
 });

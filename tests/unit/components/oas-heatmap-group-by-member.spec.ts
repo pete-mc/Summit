@@ -46,7 +46,7 @@ describe("OAS heat map — group by Skill or Member", () => {
 });
 
 describe("OAS table view — deliberately not grouped", () => {
-  const TABLE = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASProgressTableVue.vue"), "utf8");
+  const TABLE = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASNextStepsVue.vue"), "utf8");
 
   it("stays flat", () => {
     // Table grouping was deliberately removed; re-adding it is a design decision.

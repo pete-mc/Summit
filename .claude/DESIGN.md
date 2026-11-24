@@ -136,7 +136,7 @@ properties on `.oas-vue-content` in
 ```
 
 Custom properties inherit through the DOM regardless of Vue's scoped-CSS component
-boundaries, so `OASProgressFiltersVue.vue`, `OASProgressTableVue.vue`, and
+boundaries, so `OASProgressFiltersVue.vue`, `OASNextStepsVue.vue`, and
 `OASHeatMapVue.vue` all reference these (`var(--oas-vue-font-size-body)`, etc.)
 instead of each hardcoding its own copy of a pixel value.
 
@@ -399,8 +399,22 @@ changing the value will appear to fix it in one navigation path and not the othe
 
 The fix is to state the rule yourself, scoped to your component and reaching through
 `::v-deep` where it targets Vuetify-rendered elements, so the layout no longer depends
-on which stylesheet won. Both `PresentAwardsTableVue.vue` and `OASProgressTableVue.vue`
+on which stylesheet won. Both `PresentAwardsTableVue.vue` and `OASNextStepsVue.vue`
 now restate their cell padding this way.
+
+## Table body cells are vertically centred — on screen and in print
+
+Every table body cell (`td`) is `vertical-align: middle`, so a box, a date or a short label lines up
+with the middle of a wrapped I-Statement beside it. Agreed 2026-11-23 for consistency across tabs.
+
+- **State it**, don't rely on the browser or Vuetify default (see "Summit's CSS loses cascade ties"
+  above). One rule on `::v-deep tbody td` per table is enough.
+- **Print profiles follow the same rule.** A profile's `css` must not set `td { vertical-align: top }`.
+- **Inline boxes** (`.oas-heatmap-square` placed inline in a cell) also need `vertical-align: middle`
+  on the box itself, or they sit on the text baseline.
+- **Allowed exceptions**, which must say why in a comment: header cells over rotated text are
+  bottom-aligned so the labels share a baseline (Summary, Stage Grid). A body cell may override only
+  when centring would mislead, e.g. a multi-line block that must read from the top.
 
 ## Sticky table cells need an opaque background *stated*, not inherited
 
@@ -471,9 +485,9 @@ unreliable. `jsPDF` survives **only** behind the React `DataGrid.tsx`; don't use
   - a meta line listing **only filters that narrow what's shown**, and only when set (never sort
     order or layout).
 - Rows print on white (no zebra). Split printouts repeat only the first (Member) column, except
-  OAS Worksheets: `repeatColumns` can be a function of the printed table, and members-as-columns
+  OAS Stage Grid: `repeatColumns` can be a function of the printed table, and members-as-columns
   repeats the group band and I-statement.
-- A variable number of tables (one per OAS worksheet sheet) prints through `SummitPrintButton`'s
+- A variable number of tables (one per OAS Stage Grid sheet) prints through `SummitPrintButton`'s
   `targets` prop: a function read at click time, each table its own part with `profile`.
 - Fonts: Terrain's Nunito Sans is borrowed into the print document at real weights
   (`printFonts.ts`).
@@ -482,7 +496,7 @@ unreliable. `jsPDF` survives **only** behind the React `DataGrid.tsx`; don't use
 
 **Added 2026-10-12, in progress.** Formatted spreadsheets go through `summit-excel` (`src/excel/`,
 library `write-excel-file`). The plan and decisions are in `.claude/Excel/PLAN.md` and its stage files.
-It covers every OAS Progress tab (Summary, Heatmap, Table, Worksheets) and Present Awards. Only the
+It covers every OAS Progress tab (Summary, Peak Award, Heatmap, Next Steps, Stage Grid) and Present Awards. Only the
 React pages still use the plain `xlsx` dump in `gridExport.ts`.
 
 - A page's Excel button calls `exportExcelSheet({ printProfile, meta, fileNameParts, build })`. It

@@ -34,7 +34,7 @@ discarded by this codebase's own code, not to data that was never separated to b
 
 - **Carry `firstName`/`lastName` as their own fields** through every row/view-model shape that
   needs to sort or format by name — `OASProgressRow`, `SectionMemberRow`,
-  `MemberSectionView`, `WorksheetMember` all do this (see "Where this is implemented" below).
+  `MemberSectionView`, `StageGridMember` all do this (see "Where this is implemented" below).
 - **A combined `memberName`/`displayName` string is fine to keep** alongside the separate
   fields, for the one use case where concatenation is lossless: a plain substring search (the
   Member-filter text box) or an export column that's only ever read by a human, never re-parsed
@@ -45,8 +45,8 @@ discarded by this codebase's own code, not to data that was never separated to b
   "Names" display format calls for (Full Name / First Name / FirstName.L / F.LastName /
   Codename). It takes `firstName`/`lastName` as two separate parameters — never a combined
   string — specifically so it never needs to guess how to split one.
-- **Sorting** (`sortMembers()` in `filterHeatMapSections.ts`, `sortWorksheetMembers()` in
-  `buildWorksheetPages.ts`) compares `.firstName`/`.lastName` directly via `localeCompare`,
+- **Sorting** (`sortMembers()` in `filterHeatMapSections.ts`, `sortStageGridMembers()` in
+  `buildStageGridPages.ts`) compares `.firstName`/`.lastName` directly via `localeCompare`,
   never a derived split of a combined string.
 
 ## Where this is implemented
@@ -57,7 +57,7 @@ discarded by this codebase's own code, not to data that was never separated to b
   `firstName`/`lastName` alongside its existing `memberName` convenience string.
 - `src/pages/OasProgress/services/groupRowsForHeatMap.ts` — `SectionMemberRow` likewise.
 - `src/pages/OasProgress/services/groupSectionsByMember.ts` — `MemberSectionView` likewise.
-- `src/pages/OasProgressVue/services/buildWorksheetPages.ts` — `WorksheetMember` carries
+- `src/pages/OasProgressVue/services/buildStageGridPages.ts` — `StageGridMember` carries
   `firstName`/`lastName` alongside `displayName` (the already-formatted string to print).
 - `src/pages/OasProgress/services/getMemberDisplayName.ts` — takes `firstName`/`lastName`,
   never a combined string.

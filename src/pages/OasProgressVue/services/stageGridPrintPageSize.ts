@@ -18,14 +18,11 @@ export const PRINT_USABLE_WIDTH_PX = Math.round(mmToPx(A4_LANDSCAPE_WIDTH_MM - P
 export const STATEMENT_COLUMN_WRAP_WIDTH_SCREEN_PX = 350;
 export const STATEMENT_COLUMN_RELAXED_MAX_WIDTH_PX = 420;
 
-/** Gotcha: duplicates OASWorksheetsVue.vue's CSS. Change both together. */
+/** Gotcha: both duplicate OASStageGridVue.vue's CSS. Change them together. */
 export const GROUP_BAND_COLUMN_WIDTH_SCREEN_PX = 70;
-export const MEMBER_COLUMN_MIN_WIDTH_PX = 70;
+export const MEMBER_COLUMN_MIN_WIDTH_PX = 30;
 
-/**
- * Learning: rotating member headers does not fit more columns, because column width is set by the
- * body content (a date or tick-box), not the header.
- */
+/** Learning: a member column is as wide as the wider of its status box and its rotated name (one line of text). */
 export function maxFittingMemberColumns(usableWidthPx: number, groupBandWidthPx: number, statementWidthPx: number): number {
   return Math.floor((usableWidthPx - groupBandWidthPx - statementWidthPx) / MEMBER_COLUMN_MIN_WIDTH_PX);
 }
@@ -44,8 +41,8 @@ export function computeColumnsLayoutMetrics(usableWidthPx: number, groupBandWidt
   };
 }
 
-export const WORKSHEET_FONT_FAMILY = "NunitoSans-regular, arial, sans-serif";
-export const WORKSHEET_BODY_FONT_SIZE_SCREEN_PX = 14;
+export const STAGE_GRID_FONT_FAMILY = "NunitoSans-regular, arial, sans-serif";
+export const STAGE_GRID_BODY_FONT_SIZE_SCREEN_PX = 14;
 
 const MEMBER_NAME_CELL_HORIZONTAL_PADDING_PX = 16;
 const MEMBER_NAME_COLUMN_MIN_WIDTH_PX = 80;

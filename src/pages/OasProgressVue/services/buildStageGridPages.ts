@@ -6,7 +6,7 @@ import type { NameFormat } from "@/pages/OasProgress/services/getMemberDisplayNa
 import { skillTitle, formatStream } from "@/pages/OasProgressVue/components/OASHeatMapVue";
 import { skillStreamKey } from "./skillStreams";
 
-export interface WorksheetMember {
+export interface StageGridMember {
   memberId: string;
   displayName: string;
   /** Sort on these, never on displayName (it may be a codename). */
@@ -15,7 +15,7 @@ export interface WorksheetMember {
   patrolName: string | null;
 }
 
-export interface WorksheetCell {
+export interface StageGridCell {
   /** `YYYY-MM-DD`, a raw Terrain string that didn't parse, or null. */
   date: string | null;
   answered: boolean;
@@ -24,21 +24,21 @@ export interface WorksheetCell {
   notApplicable?: true;
 }
 
-export interface WorksheetRow {
+export interface StageGridRow {
   inputId: string;
   iStatement: string;
-  cells: WorksheetCell[];
+  cells: StageGridCell[];
 }
 
-export interface WorksheetGroup {
+export interface StageGridGroup {
   title: string;
-  rows: WorksheetRow[];
+  rows: StageGridRow[];
 }
 
-export type WorksheetPatrolGroup = PatrolGroupOf<WorksheetMember>;
+export type StageGridPatrolGroup = PatrolGroupOf<StageGridMember>;
 
 /** One Skill × Stream × Stage. */
-export interface WorksheetPage {
+export interface StageGridPage {
   key: string;
   /** Terrain's `row.stream`. */
   skill: string;
@@ -46,18 +46,18 @@ export interface WorksheetPage {
   stream: string;
   stage: number;
   title: string;
-  groups: WorksheetGroup[];
-  /** Gotcha: always read columns from here, not WorksheetPageSet.members. "Hide completed" can narrow a page, and its cells only line up with this list. */
-  members: WorksheetMember[];
+  groups: StageGridGroup[];
+  /** Gotcha: always read columns from here, not StageGridPageSet.members. "Hide completed" can narrow a page, and its cells only line up with this list. */
+  members: StageGridMember[];
 }
 
-export interface WorksheetPageSet {
-  members: WorksheetMember[];
-  patrolGroups: WorksheetPatrolGroup[] | null;
-  pages: WorksheetPage[];
+export interface StageGridPageSet {
+  members: StageGridMember[];
+  patrolGroups: StageGridPatrolGroup[] | null;
+  pages: StageGridPage[];
 }
 
-export interface BuildWorksheetPagesOptions {
+export interface BuildStageGridPagesOptions {
   /** From skillStreamKey(). */
   skillStream: string;
   visibleStages: number[];
@@ -70,7 +70,7 @@ export interface BuildWorksheetPagesOptions {
   sortBy: "firstName" | "lastName";
 }
 
-function sortWorksheetMembers(members: WorksheetMember[], sortBy: "firstName" | "lastName"): WorksheetMember[] {
+function sortStageGridMembers(members: StageGridMember[], sortBy: "firstName" | "lastName"): StageGridMember[] {
   const sorted = members.slice();
   if (sortBy === "lastName") {
     sorted.sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
@@ -81,14 +81,14 @@ function sortWorksheetMembers(members: WorksheetMember[], sortBy: "firstName" | 
 }
 
 /** Gotcha: with "break by patrol", members must be re-ordered by patrol, or the column order won't match the patrol-span header. */
-function orderMembersByPatrol(members: WorksheetMember[]): WorksheetMember[] {
+function orderMembersByPatrol(members: StageGridMember[]): StageGridMember[] {
   return groupMembersByPatrol(members).flatMap((group) => group.members);
 }
 
 /** Columns are decided once for the whole set, not per page. */
-function buildMemberList(rows: OASProgressRow[], options: BuildWorksheetPagesOptions): WorksheetMember[] {
+function buildMemberList(rows: OASProgressRow[], options: BuildStageGridPagesOptions): StageGridMember[] {
   const seen: string[] = [];
-  const byId = new Map<string, WorksheetMember>();
+  const byId = new Map<string, StageGridMember>();
   rows.forEach((row) => {
     if (byId.has(row.memberId)) {
       return;
@@ -104,11 +104,11 @@ function buildMemberList(rows: OASProgressRow[], options: BuildWorksheetPagesOpt
   });
 
   const needle = options.memberFilter.trim().toLowerCase();
-  const nameFiltered = seen.map((id) => byId.get(id) as WorksheetMember).filter((m) => !needle || m.displayName.toLowerCase().includes(needle));
+  const nameFiltered = seen.map((id) => byId.get(id) as StageGridMember).filter((m) => !needle || m.displayName.toLowerCase().includes(needle));
 
   // Gotcha: unlike filterMembersByPatrol (empty = everyone, which the React page relies on), an empty selection here shows nobody.
   const patrolFiltered = options.selectedPatrols.length === 0 ? [] : filterMembersByPatrol(nameFiltered, options.selectedPatrols);
-  const sorted = sortWorksheetMembers(patrolFiltered, options.sortBy);
+  const sorted = sortStageGridMembers(patrolFiltered, options.sortBy);
 
   return options.breakByPatrol ? orderMembersByPatrol(sorted) : sorted;
 }
@@ -124,14 +124,14 @@ interface PageAccumulator {
   stream: string;
   stage: number;
   groupOrder: string[];
-  groups: Map<string, Map<string, WorksheetRow>>;
+  groups: Map<string, Map<string, StageGridRow>>;
   /** Used to mark the cells a member didn't fill as not-applicable. */
   memberIndicesWithRows: Set<number>;
   filledCells: Set<string>;
 }
 
 /** Guards against `.every()` being vacuously true on an empty page. */
-function isMemberCompleteOnPage(page: WorksheetPage, memberIndex: number): boolean {
+function isMemberCompleteOnPage(page: StageGridPage, memberIndex: number): boolean {
   const allRows = page.groups.flatMap((group) => group.rows);
   if (allRows.length === 0) {
     return false;
@@ -141,7 +141,7 @@ function isMemberCompleteOnPage(page: WorksheetPage, memberIndex: number): boole
 }
 
 /** Gotcha: members and cells must be narrowed together so the indexes stay aligned. */
-function applyHideCompletedToPage(page: WorksheetPage, allMembers: WorksheetMember[]): WorksheetPage | null {
+function applyHideCompletedToPage(page: StageGridPage, allMembers: StageGridMember[]): StageGridPage | null {
   const keepIndices: number[] = [];
   allMembers.forEach((_, index) => {
     if (!isMemberCompleteOnPage(page, index)) {
@@ -170,7 +170,7 @@ function applyHideCompletedToPage(page: WorksheetPage, allMembers: WorksheetMemb
 }
 
 /** Pass the full unfiltered rows; all filtering happens here. */
-export function buildWorksheetPages(rows: OASProgressRow[], options: BuildWorksheetPagesOptions): WorksheetPageSet {
+export function buildStageGridPages(rows: OASProgressRow[], options: BuildStageGridPagesOptions): StageGridPageSet {
   const members = buildMemberList(rows, options);
   const memberIndexById = new Map(members.map((m, i) => [m.memberId, i]));
 
@@ -198,17 +198,17 @@ export function buildWorksheetPages(rows: OASProgressRow[], options: BuildWorksh
       page.groupOrder.push(row.inputGroup);
     }
 
-    let worksheetRow = group.get(row.inputId);
-    if (!worksheetRow) {
-      worksheetRow = { inputId: row.inputId, iStatement: row.iStatement, cells: members.map(() => ({ date: null, answered: false, awarded: false })) };
-      group.set(row.inputId, worksheetRow);
+    let stageGridRow = group.get(row.inputId);
+    if (!stageGridRow) {
+      stageGridRow = { inputId: row.inputId, iStatement: row.iStatement, cells: members.map(() => ({ date: null, answered: false, awarded: false })) };
+      group.set(row.inputId, stageGridRow);
     }
 
     const memberIndex = memberIndexById.get(row.memberId);
     if (memberIndex === undefined) {
       return;
     }
-    worksheetRow.cells[memberIndex] = { date: row.date, answered: row.answered, awarded: row.awarded };
+    stageGridRow.cells[memberIndex] = { date: row.date, answered: row.answered, awarded: row.awarded };
     page.memberIndicesWithRows.add(memberIndex);
     page.filledCells.add(`${row.inputId}#${memberIndex}`);
   });
@@ -216,17 +216,17 @@ export function buildWorksheetPages(rows: OASProgressRow[], options: BuildWorksh
   // Rows on the page but not this statement = a different template version (not-applicable). No rows at all = a plain blank column.
   pageAccumulators.forEach((page) => {
     page.groups.forEach((group) => {
-      group.forEach((worksheetRow) => {
+      group.forEach((stageGridRow) => {
         page.memberIndicesWithRows.forEach((memberIndex) => {
-          if (!page.filledCells.has(`${worksheetRow.inputId}#${memberIndex}`)) {
-            worksheetRow.cells[memberIndex] = { date: null, answered: false, awarded: false, notApplicable: true };
+          if (!page.filledCells.has(`${stageGridRow.inputId}#${memberIndex}`)) {
+            stageGridRow.cells[memberIndex] = { date: null, answered: false, awarded: false, notApplicable: true };
           }
         });
       });
     });
   });
 
-  const builtPages: WorksheetPage[] = Array.from(pageAccumulators.values()).map((acc) => ({
+  const builtPages: StageGridPage[] = Array.from(pageAccumulators.values()).map((acc) => ({
     key: acc.key,
     skill: acc.skill,
     stream: acc.stream,
@@ -236,11 +236,11 @@ export function buildWorksheetPages(rows: OASProgressRow[], options: BuildWorksh
     groups: acc.groupOrder.map((title) => ({ title, rows: Array.from(acc.groups.get(title)!.values()) })),
   }));
 
-  const narrowedPages = options.hideCompleted ? builtPages.map((page) => applyHideCompletedToPage(page, members)).filter((page): page is WorksheetPage => page !== null) : builtPages;
+  const narrowedPages = options.hideCompleted ? builtPages.map((page) => applyHideCompletedToPage(page, members)).filter((page): page is StageGridPage => page !== null) : builtPages;
 
   narrowedPages.sort((a, b) => a.stage - b.stage);
 
-  const patrolGroups: WorksheetPatrolGroup[] | null = options.breakByPatrol ? groupMembersByPatrol(members) : null;
+  const patrolGroups: StageGridPatrolGroup[] | null = options.breakByPatrol ? groupMembersByPatrol(members) : null;
 
   return { members, patrolGroups, pages: narrowedPages };
 }
@@ -258,9 +258,51 @@ export function evenBatchRanges(itemCount: number, maxPerBatch: number): Array<[
   return Array.from({ length: batchCount }, (_, i) => [i * evenBatchSize, Math.min((i + 1) * evenBatchSize, itemCount)] as [number, number]);
 }
 
-/** Returns [page] unchanged when it already fits. */
-export function splitPageIntoColumnBatches(page: WorksheetPage, maxColumns: number): WorksheetPage[] {
-  const ranges = evenBatchRanges(page.members.length, maxColumns);
+function packRuns(runLengths: number[], cap: number): number[] {
+  const batchSizes: number[] = [];
+  runLengths.forEach((length) => {
+    const last = batchSizes.length - 1;
+    if (last >= 0 && batchSizes[last] + length <= cap) batchSizes[last] += length;
+    else batchSizes.push(length);
+  });
+  return batchSizes;
+}
+
+/**
+ * Like evenBatchRanges, but never splits a run (a patrol, or a Plan / Do / Review group) unless it alone is wider
+ * than a sheet. Uses the fewest sheets, then evens them out: runs of 10, 10, 2 with room for 20 give 10 + 12, not 20 + 2.
+ */
+export function runBatchRanges(runLengths: number[], maxPerBatch: number): Array<[number, number]> {
+  const total = runLengths.reduce((sum, length) => sum + length, 0);
+  if (total <= maxPerBatch || maxPerBatch <= 0) {
+    return [[0, total]];
+  }
+  const pieces = runLengths.filter((length) => length > 0).flatMap((length) => evenBatchRanges(length, maxPerBatch).map(([start, end]) => end - start));
+  const fewestBatches = packRuns(pieces, maxPerBatch).length;
+  let cap = Math.max(Math.max.apply(null, pieces), Math.ceil(total / fewestBatches));
+  while (packRuns(pieces, cap).length > fewestBatches) {
+    cap++;
+  }
+  let start = 0;
+  return packRuns(pieces, cap).map((size) => {
+    const range: [number, number] = [start, start + size];
+    start += size;
+    return range;
+  });
+}
+
+export function patrolRunLengths(members: Array<{ patrolName: string | null }>): number[] {
+  const runs: number[] = [];
+  members.forEach((member, index) => {
+    if (index > 0 && member.patrolName === members[index - 1].patrolName) runs[runs.length - 1]++;
+    else runs.push(1);
+  });
+  return runs;
+}
+
+/** Returns [page] unchanged when it already fits. Pass patrolRunLengths to keep patrols together. */
+export function splitPageIntoColumnBatches(page: StageGridPage, maxColumns: number, runLengths: number[] = [page.members.length]): StageGridPage[] {
+  const ranges = runBatchRanges(runLengths, maxColumns);
   if (ranges.length === 1) {
     return [page];
   }
@@ -285,11 +327,11 @@ export interface TransposedStatementColumn {
   inputGroup: string;
 }
 
-export interface TransposedWorksheetRow {
+export interface TransposedStageGridRow {
   memberId: string;
   displayName: string;
   patrolName: string | null;
-  cells: WorksheetCell[];
+  cells: StageGridCell[];
 }
 
 export interface TransposedGroupSpan {
@@ -298,8 +340,8 @@ export interface TransposedGroupSpan {
   columnCount: number;
 }
 
-/** Layout B (members as rows): a WorksheetPage with the row and column axes swapped. */
-export interface TransposedWorksheetPage {
+/** Layout B (members as rows): a StageGridPage with the row and column axes swapped. */
+export interface TransposedStageGridPage {
   key: string;
   skill: string;
   stream: string;
@@ -307,10 +349,10 @@ export interface TransposedWorksheetPage {
   title: string;
   columns: TransposedStatementColumn[];
   groupSpans: TransposedGroupSpan[];
-  rows: TransposedWorksheetRow[];
+  rows: TransposedStageGridRow[];
 }
 
-export function transposeWorksheetPage(page: WorksheetPage): TransposedWorksheetPage {
+export function transposeStageGridPage(page: StageGridPage): TransposedStageGridPage {
   const columns: TransposedStatementColumn[] = [];
   const groupSpans: TransposedGroupSpan[] = [];
 
@@ -324,8 +366,8 @@ export function transposeWorksheetPage(page: WorksheetPage): TransposedWorksheet
     });
   });
 
-  const rows: TransposedWorksheetRow[] = page.members.map((member, memberIndex) => {
-    const cells: WorksheetCell[] = [];
+  const rows: TransposedStageGridRow[] = page.members.map((member, memberIndex) => {
+    const cells: StageGridCell[] = [];
     page.groups.forEach((group) => {
       group.rows.forEach((row) => {
         cells.push(row.cells[memberIndex]);
@@ -346,9 +388,12 @@ export function transposeWorksheetPage(page: WorksheetPage): TransposedWorksheet
   };
 }
 
-/** Splits I-Statement columns; every member row repeats on each batch. Group spans are clipped to each batch. */
-export function splitTransposedPageIntoColumnBatches(page: TransposedWorksheetPage, maxColumns: number): TransposedWorksheetPage[] {
-  const ranges = evenBatchRanges(page.columns.length, maxColumns);
+/** Splits I-Statement columns, keeping each Plan / Do / Review group together where it fits; every member row repeats on each batch. */
+export function splitTransposedPageIntoColumnBatches(page: TransposedStageGridPage, maxColumns: number): TransposedStageGridPage[] {
+  const ranges = runBatchRanges(
+    page.groupSpans.map((span) => span.columnCount),
+    maxColumns,
+  );
   if (ranges.length === 1) {
     return [page];
   }

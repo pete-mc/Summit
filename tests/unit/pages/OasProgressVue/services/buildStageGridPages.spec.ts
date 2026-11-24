@@ -1,4 +1,13 @@
-import { buildWorksheetPages, splitPageIntoColumnBatches, transposeWorksheetPage, splitTransposedPageIntoColumnBatches, type BuildWorksheetPagesOptions, type WorksheetPage } from "@/pages/OasProgressVue/services/buildWorksheetPages";
+import {
+  buildStageGridPages,
+  patrolRunLengths,
+  runBatchRanges,
+  splitPageIntoColumnBatches,
+  transposeStageGridPage,
+  splitTransposedPageIntoColumnBatches,
+  type BuildStageGridPagesOptions,
+  type StageGridPage,
+} from "@/pages/OasProgressVue/services/buildStageGridPages";
 import type { OASProgressRow } from "@/pages/OasProgress/services/buildOASProgressRows";
 import { getCodename } from "@/pages/OasProgress/services/getCodename";
 import { UNASSIGNED_PATROL } from "@/pages/OasProgress/services/filterHeatMapSections";
@@ -28,7 +37,7 @@ function makeRow(overrides: Partial<OASProgressRow> = {}): OASProgressRow {
 }
 
 // [] shows nobody, so default to [UNASSIGNED_PATROL] (makeRow's default).
-const DEFAULT_OPTIONS: BuildWorksheetPagesOptions = {
+const DEFAULT_OPTIONS: BuildStageGridPagesOptions = {
   skillStream: "bushcraft::bushcraft",
   visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
   selectedPatrols: [UNASSIGNED_PATROL],
@@ -39,11 +48,11 @@ const DEFAULT_OPTIONS: BuildWorksheetPagesOptions = {
   sortBy: "firstName",
 };
 
-function options(overrides: Partial<BuildWorksheetPagesOptions> = {}): BuildWorksheetPagesOptions {
+function options(overrides: Partial<BuildStageGridPagesOptions> = {}): BuildStageGridPagesOptions {
   return { ...DEFAULT_OPTIONS, ...overrides };
 }
 
-describe("buildWorksheetPages", () => {
+describe("buildStageGridPages", () => {
   it("builds one page per stage of the chosen Skill - Stream, in stage order", () => {
     const rows = [
       makeRow({ stream: "bushcraft", branch: "bushcraft", stage: 3, inputId: "a3" }),
@@ -52,7 +61,7 @@ describe("buildWorksheetPages", () => {
       makeRow({ stream: "bushcraft", branch: "pioneering", stage: 4, inputId: "a4" }),
     ];
 
-    const result = buildWorksheetPages(rows, options());
+    const result = buildStageGridPages(rows, options());
 
     expect(result.pages.map((p) => p.key)).toEqual(["bushcraft::bushcraft::1", "bushcraft::bushcraft::2", "bushcraft::bushcraft::3"]);
   });
@@ -60,7 +69,7 @@ describe("buildWorksheetPages", () => {
   it("gives a member with no progress in a Skill/Stage a column with all-null cells (decision 1)", () => {
     const rows = [makeRow({ memberId: "m1", memberName: "Amy Scout", stage: 1, inputId: "a1", answered: true, date: "2024-02-03" }), makeRow({ memberId: "m2", memberName: "Jess Example", stage: 1, inputId: "a1" })];
 
-    const result = buildWorksheetPages(rows, options());
+    const result = buildStageGridPages(rows, options());
 
     expect(result.pages).toHaveLength(1);
     const page = result.pages[0];
@@ -72,7 +81,7 @@ describe("buildWorksheetPages", () => {
   it("uses identical members, in identical order, across every page in the set", () => {
     const rows = [makeRow({ memberId: "m1", memberName: "Amy Scout", stage: 1, inputId: "a1" }), makeRow({ memberId: "m2", memberName: "Jess Example", stage: 4, inputId: "a4" })];
 
-    const result = buildWorksheetPages(rows, options());
+    const result = buildStageGridPages(rows, options());
 
     expect(result.pages).toHaveLength(2);
     expect(result.pages[0].members).toBe(result.pages[1].members);
@@ -81,7 +90,7 @@ describe("buildWorksheetPages", () => {
   it("preserves template (first-seen) order for group bands, and omits an empty group", () => {
     const rows = [makeRow({ inputGroup: "Plan", inputId: "p1" }), makeRow({ inputGroup: "Do", inputId: "d1" }), makeRow({ inputGroup: "Review", inputId: "r1" })];
 
-    const result = buildWorksheetPages(rows, options());
+    const result = buildStageGridPages(rows, options());
 
     expect(result.pages[0].groups.map((g) => g.title)).toEqual(["Plan", "Do", "Review"]);
   });
@@ -93,7 +102,7 @@ describe("buildWorksheetPages", () => {
       makeRow({ memberId: "m3", memberName: "Nora", inputId: "a1" }),
     ];
 
-    const result = buildWorksheetPages(rows, options());
+    const result = buildStageGridPages(rows, options());
 
     const page = result.pages[0];
     expect(page.members.map((m) => m.memberId)).toEqual(["m1", "m2", "m3"]);
@@ -105,7 +114,7 @@ describe("buildWorksheetPages", () => {
   it("drops whole pages outside the stage range, not individual rows", () => {
     const rows = [makeRow({ stage: 1, inputId: "a1" }), makeRow({ stage: 5, inputId: "a5" })];
 
-    const result = buildWorksheetPages(rows, options({ visibleStages: [1, 2, 3] }));
+    const result = buildStageGridPages(rows, options({ visibleStages: [1, 2, 3] }));
 
     expect(result.pages.map((p) => p.stage)).toEqual([1]);
   });
@@ -117,17 +126,17 @@ describe("buildWorksheetPages", () => {
       makeRow({ stream: "camping", branch: "camping", stage: 4, inputId: "c4" }),
     ];
 
-    expect(buildWorksheetPages(rows, options()).pages.map((p) => p.key)).toEqual(["bushcraft::bushcraft::4"]);
-    expect(buildWorksheetPages(rows, options({ skillStream: "bushcraft::pioneering" })).pages.map((p) => p.key)).toEqual(["bushcraft::pioneering::4"]);
+    expect(buildStageGridPages(rows, options()).pages.map((p) => p.key)).toEqual(["bushcraft::bushcraft::4"]);
+    expect(buildStageGridPages(rows, options({ skillStream: "bushcraft::pioneering" })).pages.map((p) => p.key)).toEqual(["bushcraft::pioneering::4"]);
   });
 
   it("resolves codenames and first-name-only via the Names format option", () => {
     const rows = [makeRow({ memberId: "m1", memberName: "Amy Scout" })];
 
-    const codenamed = buildWorksheetPages(rows, options({ nameFormat: "codename" }));
+    const codenamed = buildStageGridPages(rows, options({ nameFormat: "codename" }));
     expect(codenamed.members[0].displayName).toBe(getCodename("m1"));
 
-    const firstNameOnly = buildWorksheetPages(rows, options({ nameFormat: "first" }));
+    const firstNameOnly = buildStageGridPages(rows, options({ nameFormat: "first" }));
     expect(firstNameOnly.members[0].displayName).toBe("Amy");
   });
 
@@ -135,9 +144,9 @@ describe("buildWorksheetPages", () => {
     const rows = [makeRow({ memberId: "m1", patrolName: "Wombats" }), makeRow({ memberId: "m2", patrolName: "Kookaburras" })];
     const bothPatrols = options({ selectedPatrols: ["Wombats", "Kookaburras"] });
 
-    expect(buildWorksheetPages(rows, bothPatrols).patrolGroups).toBeNull();
+    expect(buildStageGridPages(rows, bothPatrols).patrolGroups).toBeNull();
 
-    const grouped = buildWorksheetPages(rows, { ...bothPatrols, breakByPatrol: true });
+    const grouped = buildStageGridPages(rows, { ...bothPatrols, breakByPatrol: true });
     expect(grouped.patrolGroups?.map((g) => g.patrolName)).toEqual(["Kookaburras", "Wombats"]);
   });
 
@@ -146,10 +155,10 @@ describe("buildWorksheetPages", () => {
     const rows = [makeRow({ memberId: "m1", memberName: "Amy", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
     const bothPatrols = options({ selectedPatrols: ["Wombats", "Kookaburras"] });
 
-    const unordered = buildWorksheetPages(rows, bothPatrols);
+    const unordered = buildStageGridPages(rows, bothPatrols);
     expect(unordered.members.map((m) => m.memberId)).toEqual(["m1", "m2", "m3"]);
 
-    const byPatrol = buildWorksheetPages(rows, { ...bothPatrols, breakByPatrol: true });
+    const byPatrol = buildStageGridPages(rows, { ...bothPatrols, breakByPatrol: true });
     expect(byPatrol.members.map((m) => m.memberId)).toEqual(["m2", "m1", "m3"]);
     expect(byPatrol.patrolGroups?.flatMap((g) => g.members.map((m) => m.memberId))).toEqual(byPatrol.members.map((m) => m.memberId));
   });
@@ -157,7 +166,7 @@ describe("buildWorksheetPages", () => {
   it("flags awarded cells distinctly from merely-answered cells", () => {
     const rows = [makeRow({ memberId: "m1", inputId: "a1", answered: true, awarded: true, date: "2024-02-03" }), makeRow({ memberId: "m2", inputId: "a1", answered: true, awarded: false, date: "2024-02-03" })];
 
-    const result = buildWorksheetPages(rows, options());
+    const result = buildStageGridPages(rows, options());
 
     const cells = result.pages[0].groups[0].rows[0].cells;
     expect(cells[0]).toEqual({ date: "2024-02-03", answered: true, awarded: true });
@@ -168,7 +177,7 @@ describe("buildWorksheetPages", () => {
     it("leaves every page's members equal to the full set when off (default)", () => {
       const rows = [makeRow({ memberId: "m1", inputId: "a1", awarded: true }), makeRow({ memberId: "m2", inputId: "a1" })];
 
-      const result = buildWorksheetPages(rows, options());
+      const result = buildStageGridPages(rows, options());
 
       expect(result.pages[0].members).toBe(result.members);
     });
@@ -181,7 +190,7 @@ describe("buildWorksheetPages", () => {
         makeRow({ stage: 2, memberId: "m2", inputId: "b1" }),
       ];
 
-      const result = buildWorksheetPages(rows, options({ hideCompleted: true, visibleStages: [1, 2] }));
+      const result = buildStageGridPages(rows, options({ hideCompleted: true, visibleStages: [1, 2] }));
 
       const stage1 = result.pages.find((p) => p.stage === 1)!;
       const stage2 = result.pages.find((p) => p.stage === 2)!;
@@ -196,7 +205,7 @@ describe("buildWorksheetPages", () => {
         makeRow({ memberId: "m3", memberName: "Nora", inputId: "a1", answered: true, date: "2024-02-03" }),
       ];
 
-      const result = buildWorksheetPages(rows, options({ hideCompleted: true }));
+      const result = buildStageGridPages(rows, options({ hideCompleted: true }));
 
       const page = result.pages[0];
       expect(page.members.map((m) => m.memberId)).toEqual(["m1", "m3"]);
@@ -209,7 +218,7 @@ describe("buildWorksheetPages", () => {
     it("does not hide a member who is answered but not yet awarded (pending review)", () => {
       const rows = [makeRow({ memberId: "m1", inputId: "a1", answered: true, awarded: false, date: "2024-02-03" })];
 
-      const result = buildWorksheetPages(rows, options({ hideCompleted: true }));
+      const result = buildStageGridPages(rows, options({ hideCompleted: true }));
 
       expect(result.pages[0].members.map((m) => m.memberId)).toEqual(["m1"]);
     });
@@ -217,7 +226,7 @@ describe("buildWorksheetPages", () => {
     it("drops a page entirely when every member on it is fully awarded", () => {
       const rows = [makeRow({ memberId: "m1", inputId: "a1", awarded: true, answered: true }), makeRow({ memberId: "m2", inputId: "a1", awarded: true, answered: true })];
 
-      const result = buildWorksheetPages(rows, options({ hideCompleted: true }));
+      const result = buildStageGridPages(rows, options({ hideCompleted: true }));
 
       expect(result.pages).toHaveLength(0);
     });
@@ -225,16 +234,16 @@ describe("buildWorksheetPages", () => {
     it("leaves the page-set-level members list unchanged — only per-page members narrow", () => {
       const rows = [makeRow({ memberId: "m1", inputId: "a1", awarded: true, answered: true }), makeRow({ memberId: "m2", inputId: "a1" })];
 
-      const result = buildWorksheetPages(rows, options({ hideCompleted: true }));
+      const result = buildStageGridPages(rows, options({ hideCompleted: true }));
 
       expect(result.members.map((m) => m.memberId)).toEqual(["m1", "m2"]);
     });
   });
 
-  it("stamps every cell awarded across a fully awarded stage, and carries that through to the worksheet", () => {
+  it("stamps every cell awarded across a fully awarded stage, and carries that through to the Stage Grid", () => {
     const rows = [makeRow({ memberId: "m1", inputId: "a1", awarded: true, answered: true, date: "2024-02-03" }), makeRow({ memberId: "m1", inputId: "a2", awarded: true, answered: true, date: "2024-02-03" })];
 
-    const result = buildWorksheetPages(rows, options());
+    const result = buildStageGridPages(rows, options());
 
     const rowsOut = result.pages[0].groups[0].rows;
     expect(rowsOut.every((r) => r.cells[0].awarded && r.cells[0].answered)).toBe(true);
@@ -248,7 +257,7 @@ describe("buildWorksheetPages", () => {
     ];
 
     it("shows the old-only statement, not-applicable for members on the other version", () => {
-      const result = buildWorksheetPages(mixedRows(), options());
+      const result = buildStageGridPages(mixedRows(), options());
 
       const navigation = result.pages[0].groups[0].rows.find((r) => r.inputId === "navigation")!;
       expect(navigation.cells[0].notApplicable).toBeUndefined();
@@ -256,7 +265,7 @@ describe("buildWorksheetPages", () => {
     });
 
     it("still hides an awarded member under Hide completed when a not-applicable cell is on the page", () => {
-      const result = buildWorksheetPages(mixedRows(true), options({ hideCompleted: true }));
+      const result = buildStageGridPages(mixedRows(true), options({ hideCompleted: true }));
 
       expect(result.pages[0].members.map((m) => m.memberId)).toEqual(["m1"]);
     });
@@ -264,9 +273,9 @@ describe("buildWorksheetPages", () => {
 });
 
 describe("splitPageIntoColumnBatches", () => {
-  function makePage(memberCount: number): WorksheetPage {
+  function makePage(memberCount: number): StageGridPage {
     const rows = Array.from({ length: memberCount }, (_, i) => makeRow({ memberId: `m${i}`, memberName: `Member${i}`, inputId: "a1", answered: i === 1, date: i === 1 ? "2024-02-03" : null }));
-    return buildWorksheetPages(rows, options()).pages[0];
+    return buildStageGridPages(rows, options()).pages[0];
   }
 
   it("returns the page unchanged (by reference) when it already fits within maxColumns", () => {
@@ -334,7 +343,7 @@ describe("splitPageIntoColumnBatches", () => {
   });
 });
 
-describe("transposeWorksheetPage", () => {
+describe("transposeStageGridPage", () => {
   it("turns members into rows and I-Statements into columns", () => {
     const rows = [
       makeRow({ memberId: "m1", memberName: "Amy", inputGroup: "Plan", inputId: "p1" }),
@@ -342,9 +351,9 @@ describe("transposeWorksheetPage", () => {
       makeRow({ memberId: "m2", memberName: "Beth", inputGroup: "Plan", inputId: "p1" }),
       makeRow({ memberId: "m2", memberName: "Beth", inputGroup: "Do", inputId: "d1" }),
     ];
-    const page = buildWorksheetPages(rows, options()).pages[0];
+    const page = buildStageGridPages(rows, options()).pages[0];
 
-    const transposed = transposeWorksheetPage(page);
+    const transposed = transposeStageGridPage(page);
 
     expect(transposed.rows.map((r) => r.memberId)).toEqual(["m1", "m2"]);
     expect(transposed.columns.map((c) => c.inputId)).toEqual(["p1", "d1"]);
@@ -352,9 +361,9 @@ describe("transposeWorksheetPage", () => {
 
   it("builds group spans as contiguous column ranges, skipping any empty group", () => {
     const rows = [makeRow({ inputGroup: "Plan", inputId: "p1" }), makeRow({ inputGroup: "Plan", inputId: "p2" }), makeRow({ inputGroup: "Do", inputId: "d1" })];
-    const page = buildWorksheetPages(rows, options()).pages[0];
+    const page = buildStageGridPages(rows, options()).pages[0];
 
-    const transposed = transposeWorksheetPage(page);
+    const transposed = transposeStageGridPage(page);
 
     expect(transposed.groupSpans).toEqual([
       { title: "Plan", startColumnIndex: 0, columnCount: 2 },
@@ -364,9 +373,9 @@ describe("transposeWorksheetPage", () => {
 
   it("keeps each row's cells aligned with `columns`, not the original per-member cell order", () => {
     const rows = [makeRow({ memberId: "m1", memberName: "Amy", inputId: "a1", answered: true, date: "2024-02-03" }), makeRow({ memberId: "m2", memberName: "Beth", inputId: "a1" })];
-    const page = buildWorksheetPages(rows, options()).pages[0];
+    const page = buildStageGridPages(rows, options()).pages[0];
 
-    const transposed = transposeWorksheetPage(page);
+    const transposed = transposeStageGridPage(page);
 
     expect(transposed.rows[0].cells[0].date).toBe("2024-02-03");
     expect(transposed.rows[1].cells[0].date).toBeNull();
@@ -374,17 +383,17 @@ describe("transposeWorksheetPage", () => {
 
   it("preserves patrol order in rows, since it transposes page.members as-is (already patrol-ordered when breakByPatrol is on)", () => {
     const rows = [makeRow({ memberId: "m1", memberName: "Amy", patrolName: "Wombats" }), makeRow({ memberId: "m2", memberName: "Beth", patrolName: "Kookaburras" }), makeRow({ memberId: "m3", memberName: "Cleo", patrolName: "Wombats" })];
-    const page = buildWorksheetPages(rows, options({ selectedPatrols: ["Wombats", "Kookaburras"], breakByPatrol: true })).pages[0];
+    const page = buildStageGridPages(rows, options({ selectedPatrols: ["Wombats", "Kookaburras"], breakByPatrol: true })).pages[0];
 
-    const transposed = transposeWorksheetPage(page);
+    const transposed = transposeStageGridPage(page);
 
     expect(transposed.rows.map((r) => r.memberId)).toEqual(["m2", "m1", "m3"]);
   });
 
   it("carries skill/stream/stage/title/key through unchanged", () => {
-    const page = buildWorksheetPages([makeRow({ stream: "bushwalking", branch: "bushwalking", stage: 5 })], options({ skillStream: "bushwalking::bushwalking" })).pages[0];
+    const page = buildStageGridPages([makeRow({ stream: "bushwalking", branch: "bushwalking", stage: 5 })], options({ skillStream: "bushwalking::bushwalking" })).pages[0];
 
-    const transposed = transposeWorksheetPage(page);
+    const transposed = transposeStageGridPage(page);
 
     expect(transposed.key).toBe(page.key);
     expect(transposed.skill).toBe(page.skill);
@@ -395,15 +404,15 @@ describe("transposeWorksheetPage", () => {
 });
 
 describe("splitTransposedPageIntoColumnBatches", () => {
-  function makeTransposedPage(statementCount: number, memberCount = 1): ReturnType<typeof transposeWorksheetPage> {
+  function makeTransposedPage(statementCount: number, memberCount = 1): ReturnType<typeof transposeStageGridPage> {
     const rows: ReturnType<typeof makeRow>[] = [];
     for (let m = 0; m < memberCount; m++) {
       for (let i = 0; i < statementCount; i++) {
         rows.push(makeRow({ memberId: `m${m}`, memberName: `Member${m}`, inputId: `a${i}`, inputGroup: `Group${i}`, answered: m === 0 && i === 1, date: m === 0 && i === 1 ? "2024-02-03" : null }));
       }
     }
-    const page = buildWorksheetPages(rows, options()).pages[0];
-    return transposeWorksheetPage(page);
+    const page = buildStageGridPages(rows, options()).pages[0];
+    return transposeStageGridPage(page);
   }
 
   it("returns the page unchanged (by reference) when it already fits within maxColumns", () => {
@@ -455,7 +464,7 @@ describe("splitTransposedPageIntoColumnBatches", () => {
 
   it("recomputes a group span's startColumnIndex/columnCount to the overlapping portion when it straddles a batch boundary", () => {
     const rows = Array.from({ length: 20 }, (_, i) => makeRow({ memberId: "m1", inputId: `a${i}`, inputGroup: "Plan" }));
-    const page = transposeWorksheetPage(buildWorksheetPages(rows, options()).pages[0]);
+    const page = transposeStageGridPage(buildStageGridPages(rows, options()).pages[0]);
 
     const batches = splitTransposedPageIntoColumnBatches(page, 8);
 
@@ -486,5 +495,49 @@ describe("splitTransposedPageIntoColumnBatches", () => {
   it("treats maxColumns <= 0 as 'do not split'", () => {
     const page = makeTransposedPage(5);
     expect(splitTransposedPageIntoColumnBatches(page, 0)).toEqual([page]);
+  });
+});
+
+describe("runBatchRanges", () => {
+  it("keeps everything on one sheet when it fits, or when there is no limit", () => {
+    expect(runBatchRanges([5, 5], 10)).toEqual([[0, 10]]);
+    expect(runBatchRanges([5, 5], 0)).toEqual([[0, 10]]);
+  });
+
+  it("never splits a run that fits on a sheet", () => {
+    expect(runBatchRanges([6, 6, 6], 10)).toEqual([
+      [0, 6],
+      [6, 12],
+      [12, 18],
+    ]);
+  });
+
+  it("uses the fewest sheets, then evens them out", () => {
+    expect(runBatchRanges([10, 10, 2], 20)).toEqual([
+      [0, 10],
+      [10, 22],
+    ]);
+  });
+
+  it("splits a run wider than a sheet evenly, and keeps the next run whole", () => {
+    expect(runBatchRanges([25, 4], 10)).toEqual([
+      [0, 9],
+      [9, 18],
+      [18, 25],
+      [25, 29],
+    ]);
+  });
+
+  it("splits one long run evenly, like evenBatchRanges", () => {
+    expect(runBatchRanges([33], 29)).toEqual([
+      [0, 17],
+      [17, 33],
+    ]);
+  });
+});
+
+describe("patrolRunLengths", () => {
+  it("counts neighbouring members of the same patrol", () => {
+    expect(patrolRunLengths([{ patrolName: "Possum" }, { patrolName: "Possum" }, { patrolName: null }, { patrolName: "Wombat" }])).toEqual([2, 1, 1]);
   });
 });

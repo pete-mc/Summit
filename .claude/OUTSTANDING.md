@@ -21,10 +21,9 @@ Last updated 2026-11-11.
 
 ## OAS Progress
 
-- **Table tab banner:** check it live in Edge (reload the unpacked extension, OAS Progress › Table).
-  See [OASTable/PLAN.md](OASTable/PLAN.md).
-- **Table tab future:** stays as a debug tool for now; promote it or remove it later.
-- **Heatmap ↔ Worksheets linking**, for easier drill-down (listed under "Still to do" in the PR).
+- **Next Steps tab** (was Table / I-Statements): print/PDF modelled on Terrain's stage sheets (Guidance,
+  Comments, Verifier columns) is next. See [OASProgress/PLAN_TABLE_REQUIREMENTS.md](OASProgress/PLAN_TABLE_REQUIREMENTS.md).
+- **Heatmap ↔ Stage Grid linking**, for easier drill-down (listed under "Still to do" in the PR).
 - **Term-theme finder spike:** planning only. See [OASThemes/PLAN_SPIKE_THEME_FINDER.md](OASThemes/PLAN_SPIKE_THEME_FINDER.md).
 - Print follow-ups: see [Print/PLAN.md](Print/PLAN.md).
 

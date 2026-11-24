@@ -21,7 +21,7 @@ The external `oas-print` module (`P:\Dev\personal\terrain_summit\resources\Print
 | Topic | Decision |
 |---|---|
 | Existing PDF Export buttons | **Replace them with Print / PDF**, but keep the old export code in the repo for now. Delete it in a later cleanup once the new path is proven. |
-| OAS tabs in scope | **Summary** and **Heatmap** only. Table and Worksheets keep their current exports. `printWorksheets.ts` is untouched. |
+| OAS tabs in scope | **Summary** and **Heatmap** only. Table (now Next Steps) and Worksheets (now Stage Grid) keep their current exports. `printWorksheets.ts` is untouched. |
 | Excel | **Decide later.** Keep the profile and header design reusable, and don't build anything for it. |
 | Header contents | Page title, Group + Unit name, section symbol, and the filters in effect, plus the ideas in the example PDF: a subtitle line, a meta line (Section · Generated), "Part n of m · Stages x–y" labels, and footers with title · date / Part n of m / Page X of Y. |
 | Section symbol | From `src/images/sections/`, using the positive (dark-text) versions the user supplied. See "Section logos" below. |

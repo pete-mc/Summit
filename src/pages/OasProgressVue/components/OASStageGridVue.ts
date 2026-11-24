@@ -1,8 +1,8 @@
 import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import { parseRowDate } from "@/pages/OasProgressVue/services/parseRowDate";
-import { buildWorksheetPages, splitPageIntoColumnBatches, transposeWorksheetPage, splitTransposedPageIntoColumnBatches } from "@/pages/OasProgressVue/services/buildWorksheetPages";
-import type { WorksheetCell, WorksheetMember, WorksheetPage, WorksheetPageSet, TransposedWorksheetPage } from "@/pages/OasProgressVue/services/buildWorksheetPages";
+import { buildStageGridPages, patrolRunLengths, splitPageIntoColumnBatches, transposeStageGridPage, splitTransposedPageIntoColumnBatches } from "@/pages/OasProgressVue/services/buildStageGridPages";
+import type { StageGridCell, StageGridMember, StageGridPage, StageGridPageSet, TransposedStageGridPage } from "@/pages/OasProgressVue/services/buildStageGridPages";
 import {
   maxFittingMemberColumns,
   computeColumnsLayoutMetrics,
@@ -11,29 +11,41 @@ import {
   STATEMENT_COLUMN_RELAXED_MAX_WIDTH_PX,
   PRINT_USABLE_WIDTH_PX,
   memberNameColumnWidthPx,
-  WORKSHEET_FONT_FAMILY,
-  WORKSHEET_BODY_FONT_SIZE_SCREEN_PX,
+  STAGE_GRID_FONT_FAMILY,
+  STAGE_GRID_BODY_FONT_SIZE_SCREEN_PX,
   TRANSPOSED_COLUMN_WIDTH_SCREEN_PX,
   maxFittingTransposedColumns,
-} from "@/pages/OasProgressVue/services/worksheetPrintPageSize";
+} from "@/pages/OasProgressVue/services/stageGridPrintPageSize";
 import type { OASProgressRow } from "@/pages/OasProgress/services/buildOASProgressRows";
 import type { OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
 
-export function worksheetCellClass(cell: WorksheetCell): string {
+export function stageGridCellClass(cell: StageGridCell): string {
   if (cell.notApplicable) {
-    return "oas-worksheet-cell-na";
+    return "oas-stage-grid-cell-na";
   }
   if (cell.awarded) {
-    return "oas-worksheet-cell-awarded";
+    return "oas-stage-grid-cell-awarded";
   }
   if (cell.answered) {
-    return "oas-worksheet-cell-answered";
+    return "oas-stage-grid-cell-answered";
   }
-  return "oas-worksheet-cell-empty";
+  return "oas-stage-grid-cell-empty";
+}
+
+export function stageGridSquareClass(cell: StageGridCell): string {
+  if (cell.awarded) {
+    return "oas-heatmap-square-awarded";
+  }
+  return cell.answered ? "oas-heatmap-square-answered" : "oas-heatmap-square-unanswered";
+}
+
+export function stageGridSquareTitle(cell: StageGridCell): string {
+  const status = cell.awarded ? "Awarded" : cell.answered ? "Answered" : "Not answered";
+  return cell.date ? `${status} ${formatStageGridDate(cell.date)}` : status;
 }
 
 /** Terrain dates that don't parse are shown as-is: better odd than blank. */
-export function formatWorksheetDate(date: string | null): string {
+export function formatStageGridDate(date: string | null): string {
   if (!date) {
     return "";
   }
@@ -41,7 +53,7 @@ export function formatWorksheetDate(date: string | null): string {
   return parsed.isValid() ? parsed.format("DD/MM/YY") : date;
 }
 
-interface WorksheetPatrolSpan {
+interface StageGridPatrolSpan {
   patrolName: string;
   columnCount: number;
 }
@@ -53,20 +65,20 @@ interface PatrolBorderClasses {
 
 const NO_PATROL_BORDER: PatrolBorderClasses = { start: false, end: false };
 
-export interface WorksheetExportView {
-  pages: WorksheetPage[];
+export interface StageGridExportView {
+  pages: StageGridPage[];
   membersAsRows: boolean;
   breakByPatrol: boolean;
 }
 
 interface TransposedPageView {
-  page: TransposedWorksheetPage;
+  page: TransposedStageGridPage;
   columnWidthPx: number;
   memberNameColumnWidthPx: number;
 }
 
 interface ColumnsPageView {
-  page: WorksheetPage;
+  page: StageGridPage;
   statementWidthPx: number;
   memberColumnWidthPx: number;
 }
@@ -77,11 +89,12 @@ function usableScreenWidthPx(measuredWidthPx: number): number {
 }
 
 export default defineComponent({
-  name: "OASWorksheetsVue",
+  name: "OASStageGridVue",
   props: {
     items: { type: Array as PropType<OASProgressRow[]>, required: true },
     filters: { type: Object as PropType<OASProgressVueFilterState>, required: true },
     skillStream: { type: String, required: true },
+    stage: { type: Number as PropType<number | null>, default: null },
     availablePatrols: { type: Array as PropType<string[]>, required: true },
   },
   data() {
@@ -91,29 +104,33 @@ export default defineComponent({
     };
   },
   computed: {
-    pageSet(): WorksheetPageSet {
-      const selectedPatrols = this.filters.worksheetSelectedPatrols ?? [];
-      return buildWorksheetPages(this.items, {
+    pageSet(): StageGridPageSet {
+      const selectedPatrols = this.filters.stageGridSelectedPatrols ?? [];
+      return buildStageGridPages(this.items, {
         skillStream: this.skillStream,
-        visibleStages: this.filters.worksheetVisibleStages,
+        visibleStages: this.stage === null ? [] : [this.stage],
         selectedPatrols,
         memberFilter: "",
-        nameFormat: this.filters.worksheetNameFormat,
-        breakByPatrol: this.filters.worksheetBreakByPatrol,
-        hideCompleted: !this.filters.worksheetShowCompleted,
-        sortBy: "firstName",
+        nameFormat: this.filters.stageGridNameFormat,
+        breakByPatrol: this.filters.stageGridBreakByPatrol,
+        hideCompleted: !this.filters.stageGridShowCompleted,
+        sortBy: this.filters.stageGridSortBy === "lastName" ? "lastName" : "firstName",
       });
     },
     isMembersAsRows(): boolean {
-      return this.filters.worksheetLayout === "membersAsRows";
+      return this.filters.stageGridLayout === "membersAsRows";
     },
-    /** Every batch of a split page uses the first batch's widths, so split tables line up. */
+    /** Every batch of a split page uses the widest batch's widths, so split tables line up. */
     columnsLayoutPages(): ColumnsPageView[] {
       const usableWidthPx = usableScreenWidthPx(this.screenAvailableWidthPx);
       const maxColumns = maxFittingMemberColumns(usableWidthPx, GROUP_BAND_COLUMN_WIDTH_SCREEN_PX, STATEMENT_COLUMN_WRAP_WIDTH_SCREEN_PX);
       return this.pageSet.pages.flatMap((page) => {
-        const batches = splitPageIntoColumnBatches(page, maxColumns);
-        const batchSize = batches[0].members.length;
+        const runLengths = this.filters.stageGridBreakByPatrol ? patrolRunLengths(page.members) : [page.members.length];
+        const batches = splitPageIntoColumnBatches(page, maxColumns, runLengths);
+        const batchSize = Math.max.apply(
+          null,
+          batches.map((batch) => batch.members.length),
+        );
         const metrics = computeColumnsLayoutMetrics(usableWidthPx, GROUP_BAND_COLUMN_WIDTH_SCREEN_PX, batchSize, STATEMENT_COLUMN_RELAXED_MAX_WIDTH_PX);
         return batches.map((batch) => ({
           page: batch,
@@ -125,11 +142,11 @@ export default defineComponent({
     rowsLayoutPages(): TransposedPageView[] {
       const usableWidthPx = usableScreenWidthPx(this.screenAvailableWidthPx);
       return this.pageSet.pages.flatMap((page) => {
-        const transposed = transposeWorksheetPage(page);
+        const transposed = transposeStageGridPage(page);
         const nameColumnWidthPx = memberNameColumnWidthPx(
           transposed.rows.map((r) => r.displayName),
-          WORKSHEET_BODY_FONT_SIZE_SCREEN_PX,
-          WORKSHEET_FONT_FAMILY,
+          STAGE_GRID_BODY_FONT_SIZE_SCREEN_PX,
+          STAGE_GRID_FONT_FAMILY,
         );
         const maxColumns = maxFittingTransposedColumns(usableWidthPx, nameColumnWidthPx, TRANSPOSED_COLUMN_WIDTH_SCREEN_PX);
         const batches = splitTransposedPageIntoColumnBatches(transposed, maxColumns);
@@ -149,29 +166,30 @@ export default defineComponent({
     },
   },
   methods: {
-    worksheetCellClass,
-    formatWorksheetDate,
-    patrolSpansForPage(page: WorksheetPage): WorksheetPatrolSpan[] {
-      if (!this.filters.worksheetBreakByPatrol || !this.pageSet.patrolGroups) {
+    stageGridCellClass,
+    stageGridSquareClass,
+    stageGridSquareTitle,
+    patrolSpansForPage(page: StageGridPage): StageGridPatrolSpan[] {
+      if (!this.filters.stageGridBreakByPatrol || !this.pageSet.patrolGroups) {
         return [];
       }
       const memberIdsOnPage = new Set(page.members.map((m) => m.memberId));
       return this.pageSet.patrolGroups
         .map((group) => ({
           patrolName: group.patrolName,
-          columnCount: group.members.filter((m: WorksheetMember) => memberIdsOnPage.has(m.memberId)).length,
+          columnCount: group.members.filter((m: StageGridMember) => memberIdsOnPage.has(m.memberId)).length,
         }))
         .filter((span) => span.columnCount > 0);
     },
-    patrolBorderClassesForPage(page: WorksheetPage): PatrolBorderClasses[] {
+    patrolBorderClassesForPage(page: StageGridPage): PatrolBorderClasses[] {
       const spans = this.patrolSpansForPage(page);
       if (spans.length === 0) {
         return page.members.map(() => NO_PATROL_BORDER);
       }
       return spans.flatMap((span) => Array.from({ length: span.columnCount }, (_, i) => ({ start: i === 0, end: i === span.columnCount - 1 })));
     },
-    patrolDividerBeforeRow(transposed: TransposedWorksheetPage, rowIndex: number): string | null {
-      if (!this.filters.worksheetBreakByPatrol) {
+    patrolDividerBeforeRow(transposed: TransposedStageGridPage, rowIndex: number): string | null {
+      if (!this.filters.stageGridBreakByPatrol) {
         return null;
       }
       const row = transposed.rows[rowIndex];
@@ -181,7 +199,7 @@ export default defineComponent({
       }
       return null;
     },
-    groupBorderClassesForPage(page: TransposedWorksheetPage): PatrolBorderClasses[] {
+    groupBorderClassesForPage(page: TransposedStageGridPage): PatrolBorderClasses[] {
       const classes: PatrolBorderClasses[] = page.columns.map(() => NO_PATROL_BORDER);
       page.groupSpans.forEach((span) => {
         for (let i = 0; i < span.columnCount; i++) {
@@ -191,11 +209,11 @@ export default defineComponent({
       return classes;
     },
     getPrintTables(): HTMLTableElement[] {
-      return Array.from((this.$el as HTMLElement).querySelectorAll<HTMLTableElement>(".oas-worksheet-page table"));
+      return Array.from((this.$el as HTMLElement).querySelectorAll<HTMLTableElement>(".oas-stage-grid-page table"));
     },
     /** Unsplit pages: Excel has no page width. */
-    getExportView(): WorksheetExportView {
-      return { pages: this.pageSet.pages, membersAsRows: this.isMembersAsRows, breakByPatrol: this.filters.worksheetBreakByPatrol };
+    getExportView(): StageGridExportView {
+      return { pages: this.pageSet.pages, membersAsRows: this.isMembersAsRows, breakByPatrol: this.filters.stageGridBreakByPatrol };
     },
   },
   mounted() {
