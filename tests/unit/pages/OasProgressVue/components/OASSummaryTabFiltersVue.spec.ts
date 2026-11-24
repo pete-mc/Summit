@@ -6,11 +6,13 @@ import OASSummaryTabFiltersVue from "@/pages/OasProgressVue/components/OASSummar
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const options = OASSummaryTabFiltersVue as any;
 
-function showOptions(props: { showNotStartedSkills: boolean | null; availablePatrols: string[] }) {
-  return options.computed.showOptions.call(props) as Array<{ value?: string }>;
+type ShowProps = { expandStreams?: boolean | null; showNotStartedSkills: boolean | null; availablePatrols: string[] };
+
+function showOptions(props: ShowProps) {
+  return options.computed.showOptions.call({ expandStreams: null, ...props }) as Array<{ value?: string; header?: string }>;
 }
 
-function showValues(props: { showNotStartedSkills: boolean | null; availablePatrols: string[] }) {
+function showValues(props: ShowProps) {
   return showOptions(props)
     .map((i) => i.value)
     .filter(Boolean);
@@ -20,6 +22,12 @@ describe("OASSummaryTabFiltersVue Show menu", () => {
   it("offers Not Started only when the tab passes a value for it (Summary, not Peak Award)", () => {
     expect(showValues({ showNotStartedSkills: true, availablePatrols: ["Eagles"] })).toEqual(["showNotStartedSkills", "breakByPatrol"]);
     expect(showValues({ showNotStartedSkills: null, availablePatrols: ["Eagles"] })).toEqual(["breakByPatrol"]);
+  });
+
+  it("puts Expand Streams first under the Skills header when the tab passes a value for it", () => {
+    const items = showOptions({ expandStreams: true, showNotStartedSkills: true, availablePatrols: [] });
+
+    expect(items).toEqual([{ header: "Skills" }, { value: "expandStreams", text: "Expand Streams" }, { value: "showNotStartedSkills", text: "Not Started" }]);
   });
 
   it("has no options at all for Peak Award in a unit without patrols, so the menu is hidden", () => {

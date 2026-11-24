@@ -27,6 +27,7 @@ export function buildSummaryPrintMeta(filters: OASProgressVueFilterState, patrol
   const member = filters.summaryMemberFilter.trim();
   if (member) meta.push({ label: "Member", value: `contains "${member}"` });
   if (canFilterByPatrol) meta.push({ label: "Patrol", value: describePatrols(filters.summarySelectedPatrols, patrolOptions) });
+  if (filters.summaryExpandStreams === false) meta.push({ label: "Streams", value: "Collapsed" });
   if (filters.summaryShowNotStartedSkills === false) meta.push({ label: "Hidden", value: "Skills not started" });
   return meta;
 }

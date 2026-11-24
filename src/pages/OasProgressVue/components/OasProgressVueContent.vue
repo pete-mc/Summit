@@ -48,6 +48,7 @@
           :sort-options="summarySortOptions"
           :name-format.sync="filters.summaryNameFormat"
           :break-by-patrol.sync="filters.summaryBreakByPatrol"
+          :expand-streams.sync="filters.summaryExpandStreams"
           :show-not-started-skills.sync="filters.summaryShowNotStartedSkills"
           :available-patrols="availablePatrols"
           :patrol-filter-options="patrolFilterOptions"
@@ -61,7 +62,7 @@
           :columns="overallProgressView.columns"
           :rows="overallProgressView.rows"
           :break-by-patrol="filters.summaryBreakByPatrol"
-          :column-sort="filters.summaryColumnSort"
+          :column-sort="summaryColumnSort"
           @sort-column="onOverallProgressSortColumn"
         />
       </template>

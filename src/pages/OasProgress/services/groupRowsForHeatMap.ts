@@ -8,6 +8,7 @@ export interface HeatMapCell {
   answered: boolean;
   awarded: boolean;
   date: string | null;
+  section?: string | null;
 }
 
 export interface HeatMapStage {
@@ -65,6 +66,7 @@ function buildStages(rows: OASProgressRow[]): HeatMapStage[] {
         answered: r.answered,
         awarded: r.awarded,
         date: r.date,
+        section: r.section,
       }));
       const complete = cells.length > 0 && cells.every((c) => c.awarded);
       return { stage, cells, complete };

@@ -1,8 +1,9 @@
 import { defineComponent } from "vue";
 import type { PropType } from "vue";
-import type { OverallProgressColumn, OverallProgressColumnSort, OverallProgressRow } from "@/pages/OasProgress/services/buildOverallProgressRows";
+import type { OverallProgressCell, OverallProgressColumn, OverallProgressColumnSort, OverallProgressRow } from "@/pages/OasProgress/services/buildOverallProgressRows";
 import { groupRowsByPatrol, type PatrolGroupOf } from "@/pages/OasProgress/services/filterHeatMapSections";
 import { formatStream, skillTitle } from "./OASHeatMapVue";
+import { awardTooltip } from "./OASPeakAwardSummaryVue";
 
 export interface OverallProgressHeaderView {
   key: string;
@@ -14,6 +15,11 @@ export interface OverallProgressHeaderView {
 export function buildHeaderView(column: OverallProgressColumn, columnSort: OverallProgressColumnSort | null = null): OverallProgressHeaderView {
   const sortDirection = columnSort && columnSort.key === column.key ? (columnSort.descending ? "descending" : "ascending") : null;
   return { key: column.key, skillLabel: skillTitle(column.skill), streamLabel: column.stream ? formatStream(column.stream) : null, sortDirection };
+}
+
+export function cellTitle(cell: OverallProgressCell): string | null {
+  if (!cell.awards) return null;
+  return cell.awards.map((award) => awardTooltip(award, award.stage)).join("\n") || null;
 }
 
 export default defineComponent({
@@ -37,6 +43,7 @@ export default defineComponent({
     },
   },
   methods: {
+    cellTitle,
     onHeaderClick(key: string) {
       this.$emit("sort-column", key);
     },

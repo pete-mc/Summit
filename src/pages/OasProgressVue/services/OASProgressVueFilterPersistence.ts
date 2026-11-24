@@ -10,6 +10,8 @@ export interface OASProgressVueFilterState {
   summarySortBy: "firstName" | "lastName";
   /** Overrides summarySortBy until cleared; choosing a Sort by option clears it. */
   summaryColumnSort: { key: string; descending: boolean } | null;
+  /** Off shows one column per skill, holding its highest awarded stage. */
+  summaryExpandStreams: boolean;
   /** Off hides columns no listed member has started. */
   summaryShowNotStartedSkills: boolean;
   summaryBreakByPatrol: boolean;

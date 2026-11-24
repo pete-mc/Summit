@@ -8,7 +8,7 @@ export interface SortOption {
   text: string;
 }
 
-type ShowOption = "showNotStartedSkills" | "breakByPatrol";
+type ShowOption = "expandStreams" | "showNotStartedSkills" | "breakByPatrol";
 
 type ShowSelectItem = { value: ShowOption; text: string } | { header: string } | { divider: true };
 
@@ -23,6 +23,8 @@ export default defineComponent({
     sortOptions: { type: Array as PropType<SortOption[]>, required: true },
     nameFormat: { type: String as PropType<NameFormat>, required: true },
     breakByPatrol: { type: Boolean, required: true },
+    /** null leaves the option out. */
+    expandStreams: { type: Boolean as PropType<boolean | null>, default: null },
     /** null leaves the "Not Started" option out. */
     showNotStartedSkills: { type: Boolean as PropType<boolean | null>, default: null },
     availablePatrols: { type: Array as PropType<string[]>, required: true },
@@ -31,10 +33,10 @@ export default defineComponent({
   },
   computed: {
     showOptions(): ShowSelectItem[] {
-      const items: ShowSelectItem[] = [];
-      if (this.showNotStartedSkills !== null) {
-        items.push({ header: "Skills" }, { value: "showNotStartedSkills", text: "Not Started" });
-      }
+      const skillItems: ShowSelectItem[] = [];
+      if (this.expandStreams !== null) skillItems.push({ value: "expandStreams", text: "Expand Streams" });
+      if (this.showNotStartedSkills !== null) skillItems.push({ value: "showNotStartedSkills", text: "Not Started" });
+      const items: ShowSelectItem[] = skillItems.length > 0 ? [{ header: "Skills" } as ShowSelectItem].concat(skillItems) : [];
       if (this.availablePatrols.length > 0) {
         if (items.length > 0) items.push({ divider: true });
         items.push({ header: "Grouping" }, { value: "breakByPatrol", text: "Break by patrol" });

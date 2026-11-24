@@ -1,4 +1,13 @@
-import { buildOverallProgressColumns, buildOverallProgressRows, hideNotStartedColumns, nextColumnSort, sortOverallProgressRows } from "@/pages/OasProgress/services/buildOverallProgressRows";
+import {
+  buildCollapsedOverallProgressColumns,
+  buildCollapsedOverallProgressRows,
+  buildOverallProgressColumns,
+  buildOverallProgressRows,
+  collapsedColumnSort,
+  hideNotStartedColumns,
+  nextColumnSort,
+  sortOverallProgressRows,
+} from "@/pages/OasProgress/services/buildOverallProgressRows";
 import type { HeatMapStage, HeatMapSection, SectionMemberRow, SkillHeatMapData } from "@/pages/OasProgress/services/groupRowsForHeatMap";
 
 function makeCell(overrides: Partial<HeatMapStage["cells"][number]> = {}) {
@@ -164,5 +173,76 @@ describe("hideNotStartedColumns", () => {
 
   it("keeps every column when nobody is listed", () => {
     expect(hideNotStartedColumns(columns, []).columns).toEqual(columns);
+  });
+});
+
+describe("collapsed streams", () => {
+  const member = [{ memberId: "m1", displayName: "Alex", patrolName: null }];
+
+  function awardedStage(stage: number, date: string) {
+    return { stage, complete: true, cells: [makeCell({ awarded: true, answered: true, date, section: "scout" })] };
+  }
+
+  function bushcraft(trunk: SectionMemberRow, pioneering: SectionMemberRow, survival: SectionMemberRow) {
+    return makeSkill([
+      makeSection([trunk], { skill: "bushcraft", trunkStageCount: 3 }),
+      makeSection([pioneering], { skill: "bushcraft", stream: "pioneering", trunkStageCount: 3 }),
+      makeSection([survival], { skill: "bushcraft", stream: "survival", trunkStageCount: 3 }),
+    ]);
+  }
+
+  it("has one column per skill, keyed like its trunk column so a trunk sort carries over", () => {
+    const grouped = { bushcraft: bushcraft(makeMemberRow(), makeMemberRow(), makeMemberRow()), camping: makeSkill([makeSection([], { skill: "camping" })]) };
+
+    expect(buildCollapsedOverallProgressColumns(grouped)).toEqual([
+      { key: "bushcraft::", skill: "bushcraft", stream: null },
+      { key: "camping::", skill: "camping", stream: null },
+    ]);
+  });
+
+  it("shows the highest whole stage awarded across the trunk and every stream, without next-stage ticks", () => {
+    const grouped = {
+      bushcraft: bushcraft(
+        makeMemberRow({ highestStage: 3, stages: [awardedStage(3, "2025-02-02")] }),
+        makeMemberRow({ highestStage: 5, stages: [awardedStage(5, "2026-03-12"), { stage: 6, complete: false, cells: [makeCell({ answered: true }), makeCell({ inputId: "b" })] }] }),
+        makeMemberRow({ highestStage: 4, stages: [awardedStage(4, "2026-01-20")] }),
+      ),
+    };
+
+    const [row] = buildCollapsedOverallProgressRows(grouped, member);
+
+    expect(row.cells).toEqual([
+      {
+        stage: "5",
+        nextStageProgress: null,
+        awards: [
+          { stream: "bushcraft", branch: "bushcraft", stage: 3, section: "scout", date: "2025-02-02" },
+          { stream: "bushcraft", branch: "pioneering", stage: 5, section: "scout", date: "2026-03-12" },
+          { stream: "bushcraft", branch: "survival", stage: 4, section: "scout", date: "2026-01-20" },
+        ],
+      },
+    ]);
+  });
+
+  it("shows '-' when nothing in the skill is awarded, even if a stage is in progress", () => {
+    const inProgress = makeMemberRow({ stages: [{ stage: 1, complete: false, cells: [makeCell({ answered: true })] }] });
+    const grouped = { bushcraft: bushcraft(inProgress, makeMemberRow(), makeMemberRow()) };
+
+    expect(buildCollapsedOverallProgressRows(grouped, member)[0].cells).toEqual([{ stage: "-", nextStageProgress: null }]);
+  });
+
+  it("never merges separate skills", () => {
+    const grouped = {
+      bushcraft: bushcraft(makeMemberRow({ highestStage: 2, stages: [awardedStage(2, "2025-01-01")] }), makeMemberRow(), makeMemberRow()),
+      camping: makeSkill([makeSection([makeMemberRow({ highestStage: 4, stages: [awardedStage(4, "2025-01-01")] })], { skill: "camping" })]),
+    };
+
+    expect(buildCollapsedOverallProgressRows(grouped, member)[0].cells.map((c) => c.stage)).toEqual(["2", "4"]);
+  });
+
+  it("shows a stream sort as a sort on its skill", () => {
+    expect(collapsedColumnSort({ key: "bushcraft::pioneering", descending: false })).toEqual({ key: "bushcraft::", descending: false });
+    expect(collapsedColumnSort({ key: "camping::", descending: true })).toEqual({ key: "camping::", descending: true });
+    expect(collapsedColumnSort(null)).toBeNull();
   });
 });

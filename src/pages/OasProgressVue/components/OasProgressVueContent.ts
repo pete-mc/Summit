@@ -36,12 +36,16 @@ import OASPeakAwardSummaryVue from "./OASPeakAwardSummaryVue.vue";
 import OASOverallProgressVue from "./OASOverallProgressVue.vue";
 import { buildHeaderView } from "./OASOverallProgressVue";
 import {
+  buildCollapsedOverallProgressColumns,
+  buildCollapsedOverallProgressRows,
   buildOverallProgressColumns,
   buildOverallProgressRows,
+  collapsedColumnSort,
   hideNotStartedColumns,
   nextColumnSort,
   sortOverallProgressRows,
   type OverallProgressColumn,
+  type OverallProgressColumnSort,
   type OverallProgressRow,
 } from "@/pages/OasProgress/services/buildOverallProgressRows";
 import { getMemberDisplayName } from "@/pages/OasProgress/services/getMemberDisplayName";
@@ -81,6 +85,7 @@ const DEFAULT_FILTERS: OASProgressVueFilterState = {
   summarySelectedPatrols: null,
   summarySortBy: "firstName",
   summaryColumnSort: null,
+  summaryExpandStreams: true,
   summaryShowNotStartedSkills: true,
   summaryBreakByPatrol: false,
   peakAwardMemberFilter: "",
@@ -122,7 +127,7 @@ const DEFAULT_FILTERS: OASProgressVueFilterState = {
 const VALID_VIEW_MODES: OASProgressVueFilterState["viewMode"][] = ["summary", "peakAward", "heatmap", "nextSteps", "stageGrid"];
 
 /** Each tab's "Reset filters" resets only its own keys. viewMode is never reset. */
-const SUMMARY_FILTER_KEYS = ["summaryMemberFilter", "summaryNameFormat", "summarySelectedPatrols", "summarySortBy", "summaryColumnSort", "summaryShowNotStartedSkills", "summaryBreakByPatrol"] as const;
+const SUMMARY_FILTER_KEYS = ["summaryMemberFilter", "summaryNameFormat", "summarySelectedPatrols", "summarySortBy", "summaryColumnSort", "summaryExpandStreams", "summaryShowNotStartedSkills", "summaryBreakByPatrol"] as const;
 const PEAK_AWARD_FILTER_KEYS = ["peakAwardMemberFilter", "peakAwardNameFormat", "peakAwardSelectedPatrols", "peakAwardSortBy", "peakAwardBreakByPatrol"] as const;
 const HEATMAP_FILTER_KEYS = [
   "groupBy",
@@ -301,7 +306,10 @@ export default defineComponent({
       return buildUnitMemberList(this.members);
     },
     overallProgressColumns(): OverallProgressColumn[] {
-      return buildOverallProgressColumns(this.grouped);
+      return this.filters.summaryExpandStreams ? buildOverallProgressColumns(this.grouped) : buildCollapsedOverallProgressColumns(this.grouped);
+    },
+    summaryColumnSort(): OverallProgressColumnSort | null {
+      return this.filters.summaryExpandStreams ? this.filters.summaryColumnSort : collapsedColumnSort(this.filters.summaryColumnSort);
     },
     overallProgressRows(): OverallProgressRow[] {
       const filtered = filterMemberRows(this.unitMembers, this.filters.summaryMemberFilter, this.filters.summarySelectedPatrols ?? []);
@@ -310,7 +318,8 @@ export default defineComponent({
         displayName: getMemberDisplayName(row.firstName, row.lastName, row.memberId, this.filters.summaryNameFormat),
         patrolName: row.patrolName,
       }));
-      return sortOverallProgressRows(buildOverallProgressRows(this.grouped, members), this.overallProgressColumns, this.filters.summaryColumnSort);
+      const rows = this.filters.summaryExpandStreams ? buildOverallProgressRows(this.grouped, members) : buildCollapsedOverallProgressRows(this.grouped, members);
+      return sortOverallProgressRows(rows, this.overallProgressColumns, this.summaryColumnSort);
     },
     overallProgressView(): { columns: OverallProgressColumn[]; rows: OverallProgressRow[] } {
       const all = { columns: this.overallProgressColumns, rows: this.overallProgressRows };
@@ -376,7 +385,7 @@ export default defineComponent({
       this.filters = { ...this.filters, summaryColumnSort: null };
     },
     onOverallProgressSortColumn(key: string) {
-      this.filters = { ...this.filters, summaryColumnSort: nextColumnSort(this.filters.summaryColumnSort, key) };
+      this.filters = { ...this.filters, summaryColumnSort: nextColumnSort(this.summaryColumnSort, key) };
     },
     onViewModeTabChange(viewMode: OASProgressVueFilterState["viewMode"]) {
       this.filters = { ...this.filters, viewMode };

@@ -43,7 +43,7 @@
             </tr>
             <tr v-for="row in group.members" :key="row.memberId" :data-oas-member="row.memberId">
               <td class="oas-heatmap-member-name">{{ row.displayName }}</td>
-              <td v-for="(cell, index) in row.cells" :key="columns[index].key" class="oas-overall-progress-cell">
+              <td v-for="(cell, index) in row.cells" :key="columns[index].key" class="oas-overall-progress-cell" :title="cellTitle(cell)">
                 {{ cell.stage }}<span v-if="cell.nextStageProgress" class="oas-heatmap-stage-progress">.{{ cell.nextStageProgress }}</span>
               </td>
             </tr>
