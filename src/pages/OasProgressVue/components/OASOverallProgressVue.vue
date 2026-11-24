@@ -43,7 +43,16 @@
             </tr>
             <tr v-for="row in group.members" :key="row.memberId" :data-oas-member="row.memberId">
               <td class="oas-heatmap-member-name">{{ row.displayName }}</td>
-              <td v-for="(cell, index) in row.cells" :key="columns[index].key" class="oas-overall-progress-cell" :title="cellTitle(cell)">
+              <td
+                v-for="(cell, index) in row.cells"
+                :key="columns[index].key"
+                :class="['oas-overall-progress-cell', { 'oas-overall-progress-cell-link': cellJump(row, index) }]"
+                :title="cellTooltip(row, cell, index)"
+                :role="cellJump(row, index) ? 'link' : null"
+                :tabindex="cellJump(row, index) ? 0 : null"
+                @click="onCellClick(row, index)"
+                @keydown.enter="onCellClick(row, index)"
+              >
                 {{ cell.stage }}<span v-if="cell.nextStageProgress" class="oas-heatmap-stage-progress">.{{ cell.nextStageProgress }}</span>
               </td>
             </tr>
@@ -150,5 +159,15 @@
 .oas-overall-progress-cell {
   white-space: nowrap;
   color: var(--summit-color-text-primary);
+}
+
+.oas-overall-progress-cell-link {
+  cursor: pointer;
+}
+
+.oas-overall-progress-cell-link:hover,
+.oas-overall-progress-cell-link:focus-visible {
+  color: var(--color-scouts-medium-blue, #00348d);
+  text-decoration: underline;
 }
 </style>

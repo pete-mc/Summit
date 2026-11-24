@@ -52,6 +52,7 @@ import {
 import { getMemberDisplayName } from "@/pages/OasProgress/services/getMemberDisplayName";
 import { listSkillStreams, skillStreamKey, type SkillStream } from "@/pages/OasProgressVue/services/skillStreams";
 import { buildUnitMemberList, filterMemberRows, sortMembersByName, type UnitMemberListItem } from "@/pages/OasProgressVue/services/unitMemberList";
+import { buildSummaryCellJumps, listOutstandingSkillStreams, type SummaryCellJumps, type TabJump } from "@/pages/OasProgressVue/services/tabJumps";
 
 const logger = createLogger("OasProgressVueContent");
 
@@ -210,6 +211,7 @@ export default defineComponent({
   data() {
     return {
       filters: loadInitialFilters() as OASProgressVueFilterState,
+      jumpOrigin: null as TabJump["from"] | null,
       isReloading: false,
       isExcelExporting: false,
       summarySortOptions: SUMMARY_SORT_OPTIONS,
@@ -328,6 +330,9 @@ export default defineComponent({
       const all = { columns: this.overallProgressColumns, rows: this.overallProgressRows };
       return this.filters.summaryShowNotStartedSkills ? all : hideNotStartedColumns(all.columns, all.rows);
     },
+    summaryCellJumps(): SummaryCellJumps {
+      return buildSummaryCellJumps(this.overallProgressView.columns, this.overallProgressView.rows, listOutstandingSkillStreams(this.items));
+    },
     summaryPrintMeta(): MetaEntry[] {
       return buildSummaryPrintMeta(this.filters, this.patrolFilterOptions, this.canFilterByPatrol);
     },
@@ -390,8 +395,21 @@ export default defineComponent({
     onOverallProgressSortColumn(key: string) {
       this.filters = { ...this.filters, summaryColumnSort: nextColumnSort(this.summaryColumnSort, key) };
     },
+    /** Re-selecting the tab already shown keeps the back bar, in case v-tabs echoes a jump's new value as a change. */
     onViewModeTabChange(viewMode: OASProgressVueFilterState["viewMode"]) {
+      if (viewMode === this.filters.viewMode) return;
       this.filters = { ...this.filters, viewMode };
+      this.jumpOrigin = null;
+    },
+    onTabJump(jump: TabJump) {
+      this.filters = { ...this.filters, ...jump.filters, viewMode: jump.viewMode };
+      this.jumpOrigin = jump.from;
+    },
+    onJumpBack() {
+      if (this.jumpOrigin) this.onViewModeTabChange(this.jumpOrigin.viewMode);
+    },
+    onJumpBarClose() {
+      this.jumpOrigin = null;
     },
     onResetFilters() {
       const keysToReset = RESETNEXT_STEPS_FILTER_KEYS_BY_VIEW[this.filters.viewMode] ?? [];

@@ -1,4 +1,18 @@
-import { buildHeaderView, cellTitle } from "@/pages/OasProgressVue/components/OASOverallProgressVue";
+import { buildHeaderView, cellTitle, linkedCellTitle } from "@/pages/OasProgressVue/components/OASOverallProgressVue";
+import type { TabJump } from "@/pages/OasProgressVue/services/tabJumps";
+
+describe("linkedCellTitle", () => {
+  const jump: TabJump = { viewMode: "nextSteps", filters: {}, title: "Open Next Steps: Jane – Camping", from: { viewMode: "summary", tabName: "Summary", detail: "Jane – Camping" } };
+
+  it("adds the jump to the cell's own tooltip", () => {
+    const cell = { stage: "2", nextStageProgress: null, awards: [{ stream: "camping", branch: "camping", stage: 2, section: "scout", date: "2025-02-02" }] };
+    expect(linkedCellTitle(cell, jump)).toBe("Camping - Stage 2 - 02/02/2025 as a Scout\nOpen Next Steps: Jane – Camping");
+  });
+
+  it("has no tooltip when there is neither", () => {
+    expect(linkedCellTitle({ stage: "3", nextStageProgress: "02" }, null)).toBeNull();
+  });
+});
 
 describe("cellTitle", () => {
   it("has no tooltip on an expanded cell", () => {

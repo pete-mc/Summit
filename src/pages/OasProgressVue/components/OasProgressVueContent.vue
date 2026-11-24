@@ -39,6 +39,13 @@
         <v-tab tab-value="stageGrid">Stage Grid</v-tab>
       </v-tabs>
 
+      <div v-if="hasContent && jumpOrigin" class="oas-tab-jump-bar">
+        <v-btn text small color="primary" class="oas-tab-jump-back" @click="onJumpBack"><v-icon small left>mdi-arrow-left</v-icon>Back to {{ jumpOrigin.tabName }}</v-btn>
+        <span class="oas-tab-jump-detail">Opened from {{ jumpOrigin.tabName }}: {{ jumpOrigin.detail }}</span>
+        <v-spacer></v-spacer>
+        <v-btn icon x-small title="Close" @click="onJumpBarClose"><v-icon small>mdi-close</v-icon></v-btn>
+      </div>
+
       <SummitLoadingState :state="sharedLoadState" :done="streamsDone" :total="totalStreams" error-message="Could not load OAS progress data." :on-retry="onReloadAllClick" />
 
       <OASAboutTabsVue v-if="hasContent && filters.viewMode === 'about'" @select-tab="onViewModeTabChange" />
@@ -66,7 +73,9 @@
           :rows="overallProgressView.rows"
           :break-by-patrol="filters.summaryBreakByPatrol"
           :column-sort="summaryColumnSort"
+          :cell-jumps="summaryCellJumps"
           @sort-column="onOverallProgressSortColumn"
+          @jump="onTabJump"
         />
       </template>
 
@@ -225,6 +234,28 @@
 .oas-about-tab-icon {
   margin-right: 4px;
   color: inherit !important;
+}
+
+.oas-tab-jump-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+  margin-top: 4px;
+  border: 1px solid var(--color-light-charcoal, #e5e9ec);
+  border-radius: 4px;
+  background: var(--color-white, #fff);
+  font-size: var(--oas-vue-font-size-body);
+  font-family: var(--oas-vue-font-family);
+}
+
+.oas-tab-jump-back {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.oas-tab-jump-detail {
+  color: var(--color-neutral-charcoal, #748494);
 }
 
 .oas-peak-award-summary-no-section,

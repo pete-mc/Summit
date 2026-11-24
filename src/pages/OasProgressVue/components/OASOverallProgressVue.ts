@@ -2,6 +2,7 @@ import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import type { OverallProgressCell, OverallProgressColumn, OverallProgressColumnSort, OverallProgressRow } from "@/pages/OasProgress/services/buildOverallProgressRows";
 import { groupRowsByPatrol, type PatrolGroupOf } from "@/pages/OasProgress/services/filterHeatMapSections";
+import type { SummaryCellJumps, TabJump } from "@/pages/OasProgressVue/services/tabJumps";
 import { formatStream, skillTitle } from "./OASHeatMapVue";
 import { awardTooltip } from "./OASPeakAwardSummaryVue";
 
@@ -22,6 +23,11 @@ export function cellTitle(cell: OverallProgressCell): string | null {
   return cell.awards.map((award) => awardTooltip(award, award.stage)).join("\n") || null;
 }
 
+export function linkedCellTitle(cell: OverallProgressCell, jump: TabJump | null): string | null {
+  const lines = [cellTitle(cell), jump?.title].filter((line): line is string => !!line);
+  return lines.join("\n") || null;
+}
+
 export default defineComponent({
   name: "OASOverallProgressVue",
   props: {
@@ -29,6 +35,7 @@ export default defineComponent({
     rows: { type: Array as PropType<OverallProgressRow[]>, required: true },
     columnSort: { type: Object as PropType<OverallProgressColumnSort | null>, default: null },
     breakByPatrol: { type: Boolean, default: false },
+    cellJumps: { type: Object as PropType<SummaryCellJumps>, default: () => ({}) },
   },
   computed: {
     rowGroups(): PatrolGroupOf<OverallProgressRow>[] {
@@ -43,7 +50,16 @@ export default defineComponent({
     },
   },
   methods: {
-    cellTitle,
+    cellJump(row: OverallProgressRow, index: number): TabJump | null {
+      return this.cellJumps[row.memberId]?.[index] ?? null;
+    },
+    cellTooltip(row: OverallProgressRow, cell: OverallProgressCell, index: number): string | null {
+      return linkedCellTitle(cell, this.cellJump(row, index));
+    },
+    onCellClick(row: OverallProgressRow, index: number) {
+      const jump = this.cellJump(row, index);
+      if (jump) this.$emit("jump", jump);
+    },
     onHeaderClick(key: string) {
       this.$emit("sort-column", key);
     },

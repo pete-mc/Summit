@@ -538,6 +538,54 @@ describe("OasProgressVueContent Next Steps filters", () => {
   });
 });
 
+describe("OasProgressVueContent tab jumps", () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const methods = (OasProgressVueContent as any).methods;
+  const from = { viewMode: "summary" as const, tabName: "Summary", detail: "Jane – Camping" };
+  const jump = { viewMode: "nextSteps" as const, filters: { nextStepsMemberId: "m1", nextStepsSkillStream: "camping::camping", nextStepsStage: null }, title: "", from };
+
+  function makeContext(overrides: Partial<OASProgressVueFilterState> = {}) {
+    const context = { filters: makeStoredFilters({ viewMode: "summary", summaryMemberFilter: "Jane", nextStepsStage: 4, ...overrides }), jumpOrigin: null as unknown };
+    return Object.assign(context, { onViewModeTabChange: (viewMode: string) => methods.onViewModeTabChange.call(context, viewMode) });
+  }
+
+  it("switches tab, sets the jump's filters and leaves the rest alone", () => {
+    const context = makeContext();
+    methods.onTabJump.call(context, jump);
+
+    expect(context.filters).toMatchObject({ viewMode: "nextSteps", nextStepsMemberId: "m1", nextStepsSkillStream: "camping::camping", nextStepsStage: null, summaryMemberFilter: "Jane" });
+    expect(context.jumpOrigin).toEqual(from);
+  });
+
+  it("Back returns to the origin tab and closes the bar", () => {
+    const context = makeContext();
+    methods.onTabJump.call(context, jump);
+    methods.onJumpBack.call(context);
+
+    expect(context.filters.viewMode).toBe("summary");
+    expect(context.filters.summaryMemberFilter).toBe("Jane");
+    expect(context.jumpOrigin).toBeNull();
+  });
+
+  it("switching tab another way closes the bar, but v-tabs echoing the current tab does not", () => {
+    const context = makeContext();
+    methods.onTabJump.call(context, jump);
+
+    methods.onViewModeTabChange.call(context, "nextSteps");
+    expect(context.jumpOrigin).toEqual(from);
+
+    methods.onViewModeTabChange.call(context, "heatmap");
+    expect(context.jumpOrigin).toBeNull();
+  });
+
+  it("never saves the back bar with the filters", () => {
+    const context = makeContext();
+    methods.onTabJump.call(context, jump);
+
+    expect(context.filters).not.toHaveProperty("jumpOrigin");
+  });
+});
+
 describe("OasProgressVueContent resolvedStageGridStage", () => {
   const resolve = (OasProgressVueContent as unknown as { computed: { resolvedStageGridStage(this: unknown): number | null } }).computed.resolvedStageGridStage;
 
