@@ -8,9 +8,11 @@ const GENERATED = new Date(2026, 9, 21, 9, 30);
 function mountOverallTable(columns = 6): HTMLElement {
   const heads = Array.from(
     { length: columns },
-    (_, i) => `<th class="oas-overall-progress-column-header" title="Sort by this column"><div class="oas-overall-progress-rotated-text"><span>Skill ${i + 1}</span></div><i class="v-icon oas-overall-progress-sort-icon"></i></th>`,
+    (_, i) =>
+      `<th class="oas-overall-progress-column-header" title="Sort by this column"><div class="oas-overall-progress-rotated-text"><span>Skill ${i + 1}</span></div><i class="v-icon oas-overall-progress-sort-icon"></i><span class="oas-tab-jump-menu"><button>v</button></span></th>`,
   ).join("");
-  const row = (name: string) => `<tr><td class="oas-heatmap-member-name">${name}</td>${Array.from({ length: columns }, () => '<td class="oas-overall-progress-cell">3<span class="oas-heatmap-stage-progress">.04</span></td>').join("")}</tr>`;
+  const row = (name: string) =>
+    `<tr><td class="oas-heatmap-member-name">${name}<span class="oas-tab-jump-menu"><button>v</button></span></td>${Array.from({ length: columns }, () => '<td class="oas-overall-progress-cell">3<span class="oas-heatmap-stage-progress">.04</span></td>').join("")}</tr>`;
   const host = document.createElement("div");
   host.innerHTML = `<div class="v-data-table oas-heatmap-data-table oas-overall-progress-table"><div class="v-data-table__wrapper"><table><thead><tr><th class="oas-heatmap-member-header">Member</th>${heads}</tr></thead><tbody>${row("Alex Example")}${row("Blake Sample")}</tbody></table></div></div>`;
   document.body.appendChild(host);
@@ -81,10 +83,11 @@ describe("buildMultiPartDocument", () => {
     expect(html).toContain(".summit-print-profile-overall-progress");
   });
 
-  it("strips the Overall table's sort arrows and sort tooltips", () => {
+  it("strips the Overall table's sort arrows, sort tooltips and Open-in menus", () => {
     const overall = parse(buildMultiPartDocument(options())).querySelector("table.summit-print-profile-overall-progress") as HTMLTableElement;
 
     expect(overall.querySelector(".oas-overall-progress-sort-icon")).toBeNull();
+    expect(overall.querySelector(".oas-tab-jump-menu")).toBeNull();
     expect(overall.querySelector("th[title]")).toBeNull();
   });
 

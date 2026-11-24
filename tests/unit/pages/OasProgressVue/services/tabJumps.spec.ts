@@ -1,6 +1,7 @@
 import type { OASProgressRow } from "@/pages/OasProgress/services/buildOASProgressRows";
 import type { OverallProgressCell, OverallProgressColumn, OverallProgressRow } from "@/pages/OasProgress/services/buildOverallProgressRows";
-import { buildSummaryCellJumps, cellStream, listOutstandingSkillStreams, nextStepsCellJump } from "@/pages/OasProgressVue/services/tabJumps";
+import { OAS_SKILLS } from "@/pages/OasProgress/services/filterHeatMapSections";
+import { buildSummaryCellJumps, cellStream, listOutstandingSkillStreams, lowestStagesNeeded, nextStepsCellJump, summaryColumnJumps, summaryMemberJumps } from "@/pages/OasProgressVue/services/tabJumps";
 
 function progressRow(overrides: Partial<OASProgressRow>): OASProgressRow {
   return {
@@ -104,5 +105,76 @@ describe("buildSummaryCellJumps", () => {
 
     expect(jumps.m1[0]).toBeNull();
     expect(jumps.m1[1]?.filters.nextStepsSkillStream).toBe("camping::camping");
+  });
+});
+
+const people = { selectedPatrols: ["Eagles"], memberFilter: "Sm" };
+const showEverything = { visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9], showAwarded: true, showNotStarted: true, showAnswered: true, showEmptySkillRows: true, showEmptyTopStages: true };
+
+describe("lowestStagesNeeded", () => {
+  it("finds the lowest un-awarded stage among the given members only", () => {
+    const lowest = lowestStagesNeeded([progressRow({ stage: 1, awarded: true }), progressRow({ stage: 3 }), progressRow({ memberId: "m2", stage: 2 }), progressRow({ memberId: "m3", stage: 1 })], ["m1", "m2"]);
+
+    expect(lowest).toEqual({ "bushwalking::bushwalking": 2 });
+  });
+});
+
+describe("summaryColumnJumps", () => {
+  it("opens Heat Map on the skill, with Summary's people and nothing else hidden", () => {
+    const [heatMap] = summaryColumnJumps(trunk, people, {});
+
+    expect(heatMap.viewMode).toBe("heatmap");
+    expect(heatMap.filters).toEqual({ ...showEverything, groupBy: "skill", visibleStreams: ["bushwalking"], selectedPatrols: ["Eagles"], memberFilter: "Sm" });
+    expect(heatMap.from.detail).toBe("Bushwalking");
+  });
+
+  it("gives each tab its own copy of the patrol list", () => {
+    const [heatMap, stageGrid] = summaryColumnJumps(trunk, people, { "bushwalking::bushwalking": 2 });
+
+    expect(heatMap.filters.selectedPatrols).not.toBe(people.selectedPatrols);
+    expect(stageGrid.filters.stageGridSelectedPatrols).not.toBe(people.selectedPatrols);
+  });
+
+  it("opens Stage Grid on the lowest stage still needed, showing completed members", () => {
+    const jumps = summaryColumnJumps({ key: "aquatics::swimming", skill: "aquatics", stream: "swimming" }, people, { "aquatics::swimming": 3 });
+
+    expect(jumps[1]).toMatchObject({
+      viewMode: "stageGrid",
+      filters: { stageGridSkillStream: "aquatics::swimming", stageGridStage: 3, stageGridSelectedPatrols: ["Eagles"], stageGridShowCompleted: true },
+      title: "Open in Stage Grid (stage 3)",
+      from: { detail: "Aquatics - Swimming stage 3" },
+    });
+  });
+
+  it("uses the trunk for a merged skill column", () => {
+    const jumps = summaryColumnJumps(aquaticsMerged, people, { "aquatics::aquatics": 1, "aquatics::swimming": 1 });
+    expect(jumps[1].filters.stageGridSkillStream).toBe("aquatics::aquatics");
+  });
+
+  it("leaves Stage Grid out when every shown member has finished", () => {
+    expect(summaryColumnJumps(trunk, people, {}).map((j) => j.viewMode)).toEqual(["heatmap"]);
+  });
+});
+
+describe("summaryMemberJumps", () => {
+  const row = { ...jane, displayName: "Jane S" };
+
+  it("opens Heat Map grouped by member, matched on the full name", () => {
+    const heatMap = summaryMemberJumps(row, "Jane Smith", people, true)[1];
+
+    expect(heatMap.filters).toEqual({ ...showEverything, groupBy: "member", visibleStreams: OAS_SKILLS, selectedPatrols: ["Eagles"], memberFilter: "Jane Smith" });
+    expect(heatMap.from.detail).toBe("Jane S");
+  });
+
+  it("opens Peak Award on that member, only when the section is known", () => {
+    expect(summaryMemberJumps(row, "Jane Smith", people, true)[0]).toMatchObject({ viewMode: "peakAward", filters: { peakAwardMemberFilter: "Jane Smith", peakAwardSelectedPatrols: ["Eagles"] } });
+    expect(summaryMemberJumps(row, "Jane Smith", people, false)).toHaveLength(1);
+  });
+});
+
+describe("menu order", () => {
+  it("lists Open in options in the same order as the tabs", () => {
+    expect(summaryMemberJumps(jane, "Jane Smith", people, true).map((j) => j.viewMode)).toEqual(["peakAward", "heatmap"]);
+    expect(summaryColumnJumps(trunk, people, { "bushwalking::bushwalking": 1 }).map((j) => j.viewMode)).toEqual(["heatmap", "stageGrid"]);
   });
 });

@@ -5,6 +5,7 @@ import { groupRowsByPatrol, type PatrolGroupOf } from "@/pages/OasProgress/servi
 import type { SummaryCellJumps, TabJump } from "@/pages/OasProgressVue/services/tabJumps";
 import { formatStream, skillTitle } from "./OASHeatMapVue";
 import { awardTooltip } from "./OASPeakAwardSummaryVue";
+import OASTabJumpMenu from "./OASTabJumpMenu.vue";
 
 export interface OverallProgressHeaderView {
   key: string;
@@ -30,12 +31,17 @@ export function linkedCellTitle(cell: OverallProgressCell, jump: TabJump | null)
 
 export default defineComponent({
   name: "OASOverallProgressVue",
+  components: { OASTabJumpMenu },
   props: {
     columns: { type: Array as PropType<OverallProgressColumn[]>, required: true },
     rows: { type: Array as PropType<OverallProgressRow[]>, required: true },
     columnSort: { type: Object as PropType<OverallProgressColumnSort | null>, default: null },
     breakByPatrol: { type: Boolean, default: false },
     cellJumps: { type: Object as PropType<SummaryCellJumps>, default: () => ({}) },
+    /** Aligned with the columns. */
+    columnJumps: { type: Array as PropType<TabJump[][]>, default: () => [] },
+    /** Keyed by memberId. */
+    memberJumps: { type: Object as PropType<Record<string, TabJump[]>>, default: () => ({}) },
   },
   computed: {
     rowGroups(): PatrolGroupOf<OverallProgressRow>[] {
@@ -58,7 +64,10 @@ export default defineComponent({
     },
     onCellClick(row: OverallProgressRow, index: number) {
       const jump = this.cellJump(row, index);
-      if (jump) this.$emit("jump", jump);
+      if (jump) this.onJump(jump);
+    },
+    onJump(jump: TabJump) {
+      this.$emit("jump", jump);
     },
     onHeaderClick(key: string) {
       this.$emit("sort-column", key);

@@ -1,3 +1,6 @@
+// Gotcha: Jest can't parse .vue files, so stub the child.
+jest.mock("@/pages/OasProgressVue/components/OASTabJumpMenu.vue", () => ({ __esModule: true, default: { name: "OASTabJumpMenu", render: () => null } }), { virtual: true });
+
 import { buildHeaderView, cellTitle, linkedCellTitle } from "@/pages/OasProgressVue/components/OASOverallProgressVue";
 import type { TabJump } from "@/pages/OasProgressVue/services/tabJumps";
 

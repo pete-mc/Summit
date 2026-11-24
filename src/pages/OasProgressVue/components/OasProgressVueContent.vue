@@ -74,6 +74,8 @@
           :break-by-patrol="filters.summaryBreakByPatrol"
           :column-sort="summaryColumnSort"
           :cell-jumps="summaryCellJumps"
+          :column-jumps="summaryColumnMenus"
+          :member-jumps="summaryMemberMenus"
           @sort-column="onOverallProgressSortColumn"
           @jump="onTabJump"
         />

@@ -17,7 +17,7 @@
           <tr>
             <th class="oas-heatmap-member-header oas-overall-progress-member-header">Member</th>
             <th
-              v-for="header in headerViews"
+              v-for="(header, index) in headerViews"
               :key="header.key"
               :class="['oas-overall-progress-column-header', { 'oas-overall-progress-column-sorted': header.sortDirection }]"
               :data-oas-column="header.key"
@@ -30,6 +30,7 @@
                 <span v-if="header.streamLabel" class="oas-overall-progress-stream-label">{{ header.streamLabel }}</span>
               </div>
               <v-icon x-small class="oas-overall-progress-sort-icon">{{ header.sortDirection === "ascending" ? "mdi-arrow-up" : "mdi-arrow-down" }}</v-icon>
+              <OASTabJumpMenu :jumps="columnJumps[index] || []" @jump="onJump" />
             </th>
           </tr>
         </thead>
@@ -42,7 +43,9 @@
               <td :colspan="columns.length + 1">{{ group.patrolName }}</td>
             </tr>
             <tr v-for="row in group.members" :key="row.memberId" :data-oas-member="row.memberId">
-              <td class="oas-heatmap-member-name">{{ row.displayName }}</td>
+              <td class="oas-heatmap-member-name">
+                {{ row.displayName }}<OASTabJumpMenu :jumps="memberJumps[row.memberId] || []" @jump="onJump" />
+              </td>
               <td
                 v-for="(cell, index) in row.cells"
                 :key="columns[index].key"
@@ -159,6 +162,27 @@
 .oas-overall-progress-cell {
   white-space: nowrap;
   color: var(--summit-color-text-primary);
+}
+
+/* Space is always kept, so names and headers don't shift when the button appears. */
+.oas-tab-jump-menu {
+  display: inline-block;
+  visibility: hidden;
+}
+
+.oas-overall-progress-column-header .oas-tab-jump-menu {
+  display: block;
+}
+
+.oas-heatmap-member-name .oas-tab-jump-menu {
+  margin-left: 4px;
+}
+
+th:hover .oas-tab-jump-menu,
+tr:hover .oas-tab-jump-menu,
+.oas-tab-jump-menu:focus-within,
+.oas-tab-jump-menu:has([aria-expanded="true"]) {
+  visibility: visible;
 }
 
 .oas-overall-progress-cell-link {

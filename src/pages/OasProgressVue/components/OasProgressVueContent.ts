@@ -52,7 +52,7 @@ import {
 import { getMemberDisplayName } from "@/pages/OasProgress/services/getMemberDisplayName";
 import { listSkillStreams, skillStreamKey, type SkillStream } from "@/pages/OasProgressVue/services/skillStreams";
 import { buildUnitMemberList, filterMemberRows, sortMembersByName, type UnitMemberListItem } from "@/pages/OasProgressVue/services/unitMemberList";
-import { buildSummaryCellJumps, listOutstandingSkillStreams, type SummaryCellJumps, type TabJump } from "@/pages/OasProgressVue/services/tabJumps";
+import { buildSummaryCellJumps, listOutstandingSkillStreams, lowestStagesNeeded, summaryColumnJumps, summaryMemberJumps, TAB_ORDER, type SummaryCellJumps, type SummaryPeople, type TabJump } from "@/pages/OasProgressVue/services/tabJumps";
 
 const logger = createLogger("OasProgressVueContent");
 
@@ -126,7 +126,7 @@ const DEFAULT_FILTERS: OASProgressVueFilterState = {
 };
 
 // Catches a stored viewMode that is present but invalid; a missing one is covered by the defaults spread.
-const VALID_VIEW_MODES: OASProgressVueFilterState["viewMode"][] = ["about", "summary", "peakAward", "heatmap", "nextSteps", "stageGrid"];
+const VALID_VIEW_MODES = TAB_ORDER;
 
 /** Each tab's "Reset filters" resets only its own keys. viewMode is never reset. */
 const SUMMARY_FILTER_KEYS = ["summaryMemberFilter", "summaryNameFormat", "summarySelectedPatrols", "summarySortBy", "summaryColumnSort", "summaryExpandStreams", "summaryShowNotStartedSkills", "summaryBreakByPatrol"] as const;
@@ -332,6 +332,26 @@ export default defineComponent({
     },
     summaryCellJumps(): SummaryCellJumps {
       return buildSummaryCellJumps(this.overallProgressView.columns, this.overallProgressView.rows, listOutstandingSkillStreams(this.items));
+    },
+    summaryPeople(): SummaryPeople {
+      return { selectedPatrols: this.filters.summarySelectedPatrols, memberFilter: this.filters.summaryMemberFilter };
+    },
+    summaryColumnMenus(): TabJump[][] {
+      const { columns, rows } = this.overallProgressView;
+      const lowestStages = lowestStagesNeeded(
+        this.items,
+        rows.map((row) => row.memberId),
+      );
+      return columns.map((column) => summaryColumnJumps(column, this.summaryPeople, lowestStages));
+    },
+    summaryMemberMenus(): Record<string, TabJump[]> {
+      const fullNames: Record<string, string> = {};
+      this.unitMembers.forEach((member) => (fullNames[member.memberId] = member.memberName));
+      const menus: Record<string, TabJump[]> = {};
+      this.overallProgressView.rows.forEach((row) => {
+        menus[row.memberId] = summaryMemberJumps(row, fullNames[row.memberId] ?? row.displayName, this.summaryPeople, !!this.peakAwardRequirement);
+      });
+      return menus;
     },
     summaryPrintMeta(): MetaEntry[] {
       return buildSummaryPrintMeta(this.filters, this.patrolFilterOptions, this.canFilterByPatrol);

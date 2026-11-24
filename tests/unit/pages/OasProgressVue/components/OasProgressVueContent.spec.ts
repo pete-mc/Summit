@@ -9,6 +9,7 @@ jest.mock("@/pages/OasProgressVue/components/OASNextStepsFiltersVue.vue", () => 
 jest.mock("@/pages/OasProgressVue/components/OASStageGridFiltersVue.vue", () => ({ __esModule: true, default: { name: "OASStageGridFiltersVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/OasProgressVue/components/OASAboutTabsVue.vue", () => ({ __esModule: true, default: { name: "OASAboutTabsVue", render: () => null } }), { virtual: true });
 jest.mock("@/pages/OasProgressVue/components/OASStageGridVue.vue",() => ({ __esModule: true, default: { name: "OASStageGridVue", render: () => null } }), { virtual: true });
+jest.mock("@/pages/OasProgressVue/components/OASTabJumpMenu.vue", () => ({ __esModule: true, default: { name: "OASTabJumpMenu", render: () => null } }), { virtual: true });
 jest.mock("@/components/SummitLoadingState.vue", () => ({ __esModule: true, default: { name: "SummitLoadingState", render: () => null } }), { virtual: true });
 jest.mock("@/components/SummitPillButton.vue", () => ({ __esModule: true, default: { name: "SummitPillButton", render: () => null } }), { virtual: true });
 jest.mock("@/components/SummitPrintButton.vue", () => ({ __esModule: true, default: { name: "SummitPrintButton", render: () => null } }), { virtual: true });

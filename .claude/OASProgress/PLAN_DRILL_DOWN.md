@@ -1,6 +1,6 @@
 # OAS Progress: drill-down links between tabs
 
-Status: design agreed 2026-11-24. Stage 1 built and checked in Edge 2026-11-24; Stage 2 not started.
+Status: design agreed 2026-11-24. Stage 1 built and checked in Edge 2026-11-24; Stage 2 built and checked in Edge 2026-11-24. "Open in" menus list tabs in tab order.
 Starts with the Summary tab; other tabs later.
 
 ## Idea
