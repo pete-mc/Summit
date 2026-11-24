@@ -31,6 +31,7 @@
 
       <!-- Gotcha: v-tab's identity prop is `tab-value`, NOT `value`. `value` is silently dropped and every tab falls back to its index. -->
       <v-tabs v-if="hasContent" :value="filters.viewMode" grow height="40" color="primary" background-color="grey lighten-5" @change="onViewModeTabChange">
+        <v-tab tab-value="about" class="oas-about-tab"><v-icon small class="oas-about-tab-icon">mdi-information-outline</v-icon>About</v-tab>
         <v-tab tab-value="summary">Summary</v-tab>
         <v-tab tab-value="peakAward">Peak Award</v-tab>
         <v-tab tab-value="heatmap">Heatmap</v-tab>
@@ -39,6 +40,8 @@
       </v-tabs>
 
       <SummitLoadingState :state="sharedLoadState" :done="streamsDone" :total="totalStreams" error-message="Could not load OAS progress data." :on-retry="onReloadAllClick" />
+
+      <OASAboutTabsVue v-if="hasContent && filters.viewMode === 'about'" @select-tab="onViewModeTabChange" />
 
       <template v-if="hasContent && filters.viewMode === 'summary'">
         <OASSummaryTabFiltersVue
@@ -210,6 +213,18 @@
 
 .oas-vue-content ::v-deep .oas-heatmap-scroll::-webkit-scrollbar-corner {
   background: var(--color-light-charcoal, #e5e9ec);
+}
+
+/* Gotcha: the tabs use grow, which stretches every tab equally; this one keeps its content width. */
+.oas-vue-content ::v-deep .v-tab.oas-about-tab {
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: 0 12px;
+}
+
+.oas-about-tab-icon {
+  margin-right: 4px;
+  color: inherit !important;
 }
 
 .oas-peak-award-summary-no-section,

@@ -31,6 +31,7 @@ import type { OASProgressRow } from "@/pages/OasProgress/services/buildOASProgre
 import type { TerrainUnitMember } from "@/types/terrainTypes";
 import type { TerrainAchievementsSection } from "@/shared";
 import OASSummaryTabFiltersVue from "./OASSummaryTabFiltersVue.vue";
+import OASAboutTabsVue from "./OASAboutTabsVue.vue";
 import type { SortOption } from "./OASSummaryTabFiltersVue";
 import OASPeakAwardSummaryVue from "./OASPeakAwardSummaryVue.vue";
 import OASOverallProgressVue from "./OASOverallProgressVue.vue";
@@ -124,7 +125,7 @@ const DEFAULT_FILTERS: OASProgressVueFilterState = {
 };
 
 // Catches a stored viewMode that is present but invalid; a missing one is covered by the defaults spread.
-const VALID_VIEW_MODES: OASProgressVueFilterState["viewMode"][] = ["summary", "peakAward", "heatmap", "nextSteps", "stageGrid"];
+const VALID_VIEW_MODES: OASProgressVueFilterState["viewMode"][] = ["about", "summary", "peakAward", "heatmap", "nextSteps", "stageGrid"];
 
 /** Each tab's "Reset filters" resets only its own keys. viewMode is never reset. */
 const SUMMARY_FILTER_KEYS = ["summaryMemberFilter", "summaryNameFormat", "summarySelectedPatrols", "summarySortBy", "summaryColumnSort", "summaryExpandStreams", "summaryShowNotStartedSkills", "summaryBreakByPatrol"] as const;
@@ -148,6 +149,7 @@ const NEXT_STEPS_FILTER_KEYS = ["nextStepsMemberId", "nextStepsSkillStream", "ne
 const STAGE_GRID_FILTER_KEYS = ["stageGridSkillStream", "stageGridStage", "stageGridNameFormat", "stageGridSortBy", "stageGridSelectedPatrols", "stageGridBreakByPatrol", "stageGridShowCompleted", "stageGridLayout"] as const;
 
 const RESETNEXT_STEPS_FILTER_KEYS_BY_VIEW: Record<OASProgressVueFilterState["viewMode"], readonly (keyof OASProgressVueFilterState)[]> = {
+  about: [],
   summary: SUMMARY_FILTER_KEYS,
   peakAward: PEAK_AWARD_FILTER_KEYS,
   heatmap: HEATMAP_FILTER_KEYS,
@@ -182,6 +184,7 @@ export default defineComponent({
     OASHeatMapVue,
     OASOverallProgressVue,
     OASSummaryTabFiltersVue,
+    OASAboutTabsVue,
     OASPeakAwardSummaryVue,
     OASProgressFiltersVue,
     OASNextStepsVue,

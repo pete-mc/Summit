@@ -1,7 +1,7 @@
 import type { NameFormat } from "@/pages/OasProgress/services/getMemberDisplayName";
 
 export interface OASProgressVueFilterState {
-  viewMode: "summary" | "peakAward" | "heatmap" | "nextSteps" | "stageGrid";
+  viewMode: "about" | "summary" | "peakAward" | "heatmap" | "nextSteps" | "stageGrid";
   /** Each tab has its own filter keys, so narrowing one view never narrows another. */
   summaryMemberFilter: string;
   summaryNameFormat: NameFormat;
