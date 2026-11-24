@@ -259,3 +259,34 @@ export function lowestStagesByMember(items: OASProgressRow[]): Record<string, nu
 export function memberLowestStage(lowestByMember: Record<string, number>, memberId: string, skill: string, stream: string): number | undefined {
   return lowestByMember[memberSkillStreamKey(memberId, skillStreamKey(skill, stream))];
 }
+
+const STAGE_GRID: Origin = { viewMode: "stageGrid", tabName: "Stage Grid" };
+
+const memberStageKey = (memberId: string, skill: string, stream: string, stage: number) => `${memberSkillStreamKey(memberId, skillStreamKey(skill, stream))}|${stage}`;
+
+/** Every member, Skill - Stream and stage not yet awarded. */
+export function listOutstandingStages(items: OASProgressRow[]): Set<string> {
+  const keys = new Set<string>();
+  items.forEach((row) => {
+    if (!row.awarded) keys.add(memberStageKey(row.memberId, row.stream, row.branch, row.stage));
+  });
+  return keys;
+}
+
+/** Null when the member has been awarded this stage: Next Steps would have nothing to show. */
+export function stageGridNextStepsJump(row: HeatMapRowTarget, stage: number, outstandingStages: Set<string>): TabJump | null {
+  if (!outstandingStages.has(memberStageKey(row.memberId, row.skill, row.stream, stage))) return null;
+  return nextStepsTarget(row.memberId, row.displayName, row.skill, row.stream, stage, STAGE_GRID);
+}
+
+export function stageGridMemberJumps(memberName: string, nextSteps: TabJump | null, people: ShownPeople, canOpenPeakAward: boolean, displayName: string): TabJump[] {
+  const from = { ...STAGE_GRID, detail: displayName };
+  const jumps = [summaryMemberJump(memberName, people, from), heatMapMemberJump(memberName, people, from)];
+  if (canOpenPeakAward) jumps.push(peakAwardMemberJump(memberName, people, from));
+  if (nextSteps) jumps.push({ ...nextSteps, title: `Open in Next Steps (stage ${nextSteps.filters.nextStepsStage})` });
+  return inTabOrder(jumps);
+}
+
+export function stageGridPageJumps(skill: string, stream: string, stage: number, people: ShownPeople): TabJump[] {
+  return [heatMapSkillsJump([skill], people, { ...STAGE_GRID, detail: `${skillStreamLabel({ stream: skill, branch: stream })} stage ${stage}` })];
+}

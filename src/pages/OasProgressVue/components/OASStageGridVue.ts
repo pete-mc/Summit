@@ -18,6 +18,23 @@ import {
 } from "@/pages/OasProgressVue/services/stageGridPrintPageSize";
 import type { OASProgressRow } from "@/pages/OasProgress/services/buildOASProgressRows";
 import type { OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
+import { listOutstandingStages, stageGridMemberJumps, stageGridNextStepsJump, stageGridPageJumps, type ShownPeople, type TabJump } from "@/pages/OasProgressVue/services/tabJumps";
+import OASTabJumpMenu from "./OASTabJumpMenu.vue";
+
+interface StageGridPageRef {
+  skill: string;
+  stream: string;
+  stage: number;
+}
+
+interface MemberJumps {
+  nextSteps: TabJump | null;
+  menu: TabJump[];
+}
+
+const NO_MEMBER_JUMPS: MemberJumps = { nextSteps: null, menu: [] };
+
+const pageMemberKey = (page: StageGridPageRef, memberId: string) => `${page.skill}::${page.stream}::${page.stage}|${memberId}`;
 
 export function stageGridCellClass(cell: StageGridCell): string {
   if (cell.notApplicable) {
@@ -90,12 +107,14 @@ function usableScreenWidthPx(measuredWidthPx: number): number {
 
 export default defineComponent({
   name: "OASStageGridVue",
+  components: { OASTabJumpMenu },
   props: {
     items: { type: Array as PropType<OASProgressRow[]>, required: true },
     filters: { type: Object as PropType<OASProgressVueFilterState>, required: true },
     skillStream: { type: String, required: true },
     stage: { type: Number as PropType<number | null>, default: null },
     availablePatrols: { type: Array as PropType<string[]>, required: true },
+    canOpenPeakAward: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -116,6 +135,26 @@ export default defineComponent({
         hideCompleted: !this.filters.stageGridShowCompleted,
         sortBy: this.filters.stageGridSortBy === "lastName" ? "lastName" : "firstName",
       });
+    },
+    shownPeople(): ShownPeople {
+      return { selectedPatrols: this.filters.stageGridSelectedPatrols, memberFilter: "" };
+    },
+    /** Pages are keyed by Skill - Stream and stage, because a split page's batches get their own keys. */
+    memberJumpsByPage(): Record<string, MemberJumps> {
+      const fullNames: Record<string, string> = {};
+      this.items.forEach((row) => (fullNames[row.memberId] = row.memberName));
+      const outstandingStages = listOutstandingStages(this.items);
+      const jumps: Record<string, MemberJumps> = {};
+      this.pageSet.pages.forEach((page) => {
+        page.members.forEach((member) => {
+          const nextSteps = stageGridNextStepsJump({ memberId: member.memberId, displayName: member.displayName, skill: page.skill, stream: page.stream }, page.stage, outstandingStages);
+          jumps[pageMemberKey(page, member.memberId)] = {
+            nextSteps,
+            menu: stageGridMemberJumps(fullNames[member.memberId] ?? member.displayName, nextSteps, this.shownPeople, this.canOpenPeakAward, member.displayName),
+          };
+        });
+      });
+      return jumps;
     },
     isMembersAsRows(): boolean {
       return this.filters.stageGridLayout === "membersAsRows";
@@ -169,6 +208,25 @@ export default defineComponent({
     stageGridCellClass,
     stageGridSquareClass,
     stageGridSquareTitle,
+    memberJumps(page: StageGridPageRef, memberId: string): MemberJumps {
+      return this.memberJumpsByPage[pageMemberKey(page, memberId)] ?? NO_MEMBER_JUMPS;
+    },
+    cellJump(page: StageGridPageRef, memberId: string, cell: StageGridCell): TabJump | null {
+      return cell.notApplicable ? null : this.memberJumps(page, memberId).nextSteps;
+    },
+    squareTitle(cell: StageGridCell, jump: TabJump | null): string {
+      const title = stageGridSquareTitle(cell);
+      return jump ? `${title}\n${jump.title}` : title;
+    },
+    pageJumps(page: StageGridPageRef): TabJump[] {
+      return stageGridPageJumps(page.skill, page.stream, page.stage, this.shownPeople);
+    },
+    onLinkClick(jump: TabJump | null) {
+      if (jump) this.onJump(jump);
+    },
+    onJump(jump: TabJump) {
+      this.$emit("jump", jump);
+    },
     patrolSpansForPage(page: StageGridPage): StageGridPatrolSpan[] {
       if (!this.filters.stageGridBreakByPatrol || !this.pageSet.patrolGroups) {
         return [];

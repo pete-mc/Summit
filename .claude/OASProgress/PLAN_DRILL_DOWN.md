@@ -124,6 +124,14 @@ interface TabJump {
    - skillTitle/formatStream moved to `services/skillNames.ts` so services no longer import OASHeatMapVue
      (which now imports a .vue and would break Jest for them).
 
+5. Stage Grid tab (built and checked in Edge 2026-11-24). Same in both layouts:
+   - **A member's square** (whole cell): Next Steps for that member at this Skill - Stream and stage. Not a
+     link when n/a, or when the member has been awarded this stage. Square tooltip gets the extra line.
+   - **Member ▾** (column header / row label): Summary, Peak Award, Heat Map, Next Steps ("Open in Next
+     Steps (stage N)", left out when awarded). Full name looked up from the progress rows.
+   - **Page title ▾:** Heat Map on that skill. I-Statement text and Plan/Do/Review bands: no link.
+   - Stage Grid has no Member box, so only its patrols carry across. Menus stripped from the print.
+
 ## Tests
 
 - `tabJumps.spec.ts`: trunk/stream key conversion; merged-skill stream pick incl. tie → first; no link when

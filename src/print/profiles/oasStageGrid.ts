@@ -54,6 +54,7 @@ const oasStageGrid: PrintProfile = {
   transform(table) {
     stripInlineWidths(table);
     unmergeGroupBands(table);
+    Array.from(table.querySelectorAll(".oas-tab-jump-menu")).forEach((menu) => menu.remove());
   },
 
   css: `

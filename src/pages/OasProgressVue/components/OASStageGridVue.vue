@@ -15,7 +15,7 @@
             </th>
           </tr>
           <tr>
-            <th class="oas-stage-grid-group-header oas-stage-grid-page-title" colspan="2">{{ view.page.title }}</th>
+            <th class="oas-stage-grid-group-header oas-stage-grid-page-title" colspan="2">{{ view.page.title }}<OASTabJumpMenu :jumps="pageJumps(view.page)" @jump="onJump" /></th>
             <th
               v-for="(member, memberIndex) in view.page.members"
               :key="member.memberId"
@@ -26,6 +26,7 @@
               ]"
             >
               <span class="oas-stage-grid-rotated-text">{{ member.displayName }}</span>
+              <OASTabJumpMenu class="oas-stage-grid-member-menu" :jumps="memberJumps(view.page, member.memberId).menu" @jump="onJump" />
             </th>
           </tr>
         </thead>
@@ -45,10 +46,15 @@
                   stageGridCellClass(cell),
                   patrolBorderClassesForPage(view.page)[cellIndex].start ? 'oas-stage-grid-patrol-group-start' : '',
                   patrolBorderClassesForPage(view.page)[cellIndex].end ? 'oas-stage-grid-patrol-group-end' : '',
+                  { 'oas-stage-grid-cell-link': cellJump(view.page, view.page.members[cellIndex].memberId, cell) },
                 ]"
+                :role="cellJump(view.page, view.page.members[cellIndex].memberId, cell) ? 'link' : null"
+                :tabindex="cellJump(view.page, view.page.members[cellIndex].memberId, cell) ? 0 : null"
+                @click="onLinkClick(cellJump(view.page, view.page.members[cellIndex].memberId, cell))"
+                @keydown.enter="onLinkClick(cellJump(view.page, view.page.members[cellIndex].memberId, cell))"
               >
                 <span v-if="cell.notApplicable" class="oas-stage-grid-cell-na-label" title="Not part of the version of this stage this member started on">n/a</span>
-                <div v-else :class="['oas-heatmap-square', stageGridSquareClass(cell)]" :title="stageGridSquareTitle(cell)"></div>
+                <div v-else :class="['oas-heatmap-square', stageGridSquareClass(cell)]" :title="squareTitle(cell, cellJump(view.page, view.page.members[cellIndex].memberId, cell))"></div>
               </td>
             </tr>
           </template>
@@ -61,7 +67,9 @@
       <v-simple-table v-for="view in rowsLayoutPages" :key="view.page.key" dense class="oas-stage-grid-page oas-stage-grid-layout-rows" :data-oas-stage-grid-page="view.page.key">
         <thead>
           <tr class="oas-stage-grid-group-span-row">
-            <th class="oas-stage-grid-member-name-header" :style="{ width: view.memberNameColumnWidthPx + 'px', minWidth: view.memberNameColumnWidthPx + 'px' }">{{ view.page.title }}</th>
+            <th class="oas-stage-grid-member-name-header" :style="{ width: view.memberNameColumnWidthPx + 'px', minWidth: view.memberNameColumnWidthPx + 'px' }">
+              {{ view.page.title }}<OASTabJumpMenu :jumps="pageJumps(view.page)" @jump="onJump" />
+            </th>
             <th v-for="span in view.page.groupSpans" :key="span.title" :colspan="span.columnCount" class="oas-stage-grid-group-header oas-stage-grid-patrol-group-start oas-stage-grid-patrol-group-end">
               {{ span.title }}
             </th>
@@ -88,7 +96,9 @@
               <td :colspan="view.page.columns.length + 1">{{ patrolDividerBeforeRow(view.page, rowIndex) }}</td>
             </tr>
             <tr :key="row.memberId">
-              <td class="oas-stage-grid-member-name-cell" :style="{ width: view.memberNameColumnWidthPx + 'px', minWidth: view.memberNameColumnWidthPx + 'px' }">{{ row.displayName }}</td>
+              <td class="oas-stage-grid-member-name-cell" :style="{ width: view.memberNameColumnWidthPx + 'px', minWidth: view.memberNameColumnWidthPx + 'px' }">
+                {{ row.displayName }}<OASTabJumpMenu :jumps="memberJumps(view.page, row.memberId).menu" @jump="onJump" />
+              </td>
               <td
                 v-for="(cell, cellIndex) in row.cells"
                 :key="view.page.columns[cellIndex].inputId"
@@ -97,10 +107,15 @@
                   stageGridCellClass(cell),
                   groupBorderClassesForPage(view.page)[cellIndex].start ? 'oas-stage-grid-patrol-group-start' : '',
                   groupBorderClassesForPage(view.page)[cellIndex].end ? 'oas-stage-grid-patrol-group-end' : '',
+                  { 'oas-stage-grid-cell-link': cellJump(view.page, row.memberId, cell) },
                 ]"
+                :role="cellJump(view.page, row.memberId, cell) ? 'link' : null"
+                :tabindex="cellJump(view.page, row.memberId, cell) ? 0 : null"
+                @click="onLinkClick(cellJump(view.page, row.memberId, cell))"
+                @keydown.enter="onLinkClick(cellJump(view.page, row.memberId, cell))"
               >
                 <span v-if="cell.notApplicable" class="oas-stage-grid-cell-na-label" title="Not part of the version of this stage this member started on">n/a</span>
-                <div v-else :class="['oas-heatmap-square', stageGridSquareClass(cell)]" :title="stageGridSquareTitle(cell)"></div>
+                <div v-else :class="['oas-heatmap-square', stageGridSquareClass(cell)]" :title="squareTitle(cell, cellJump(view.page, row.memberId, cell))"></div>
               </td>
             </tr>
           </template>
@@ -113,6 +128,21 @@
 <script lang="ts" src="./OASStageGridVue.ts"></script>
 
 <style scoped>
+.oas-stage-grid-cell-link {
+  cursor: pointer;
+}
+
+.oas-stage-grid-cell-link:hover,
+.oas-stage-grid-cell-link:focus-visible {
+  outline: 2px solid var(--color-scouts-medium-blue, #00348d);
+  outline-offset: -2px;
+}
+
+th .oas-stage-grid-member-menu {
+  display: block;
+  margin-left: 0;
+}
+
 .oas-stage-grid-empty {
   padding: 12px 8px;
   font-family: var(--oas-vue-font-family);

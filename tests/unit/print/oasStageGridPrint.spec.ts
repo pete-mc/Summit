@@ -7,7 +7,7 @@ const VARS = { unit: "Example Venturer Unit", group: "1st Example Group", sectio
 const GENERATED = new Date(2026, 10, 3, 9, 0);
 
 const COLUMNS_TABLE = `
-<table><thead><tr><th class="oas-stage-grid-group-header oas-stage-grid-page-title" colspan="2">Stage 1 - Bushcraft</th><th class="oas-stage-grid-member-header" style="width: 70px; min-width: 70px">A</th></tr></thead>
+<table><thead><tr><th class="oas-stage-grid-group-header oas-stage-grid-page-title" colspan="2">Stage 1 - Bushcraft</th><th class="oas-stage-grid-member-header" style="width: 70px; min-width: 70px">A<span class="oas-tab-jump-menu"><button>v</button></span></th></tr></thead>
 <tbody><tr><td class="oas-stage-grid-group-band" rowspan="1">Plan</td><td class="oas-stage-grid-statement" style="width: 420px">I can plan.</td><td class="oas-stage-grid-cell" style="width: 70px; min-width: 70px"><span class="oas-stage-grid-tick-box"></span></td></tr></tbody></table>`;
 
 const ROWS_TABLE = `
@@ -42,6 +42,12 @@ describe("oas-stage-grid profile", () => {
     expect(printed.querySelectorAll("[style*=width]")).toHaveLength(0);
     expect(source.querySelectorAll("[style*=width]").length).toBeGreaterThan(0);
     expect(doc.head.textContent).toContain("table.summit-print-profile-oas-stage-grid { width: auto;");
+  });
+
+  it("strips the Open-in menus", () => {
+    const doc = new DOMParser().parseFromString(buildPrintDocument({ source: tableFrom(COLUMNS_TABLE), profile: "oas-stage-grid", vars: VARS, generated: GENERATED }), "text/html");
+    expect(doc.querySelector("table.summit-print-table th.oas-stage-grid-member-header")?.textContent).toBe("A");
+    expect(doc.querySelector("table.summit-print-table .oas-tab-jump-menu")).toBeNull();
   });
 
   it("prints the screen's status boxes in the screen's colours, with no dates or tick boxes", () => {

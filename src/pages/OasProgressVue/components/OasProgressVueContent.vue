@@ -169,7 +169,16 @@
           @reset="onResetFilters"
         />
 
-        <OASStageGridVue ref="stageGrid" :items="items" :filters="filters" :skill-stream="resolvedStageGridSkillStream" :stage="resolvedStageGridStage" :available-patrols="availablePatrols" />
+        <OASStageGridVue
+          ref="stageGrid"
+          :items="items"
+          :filters="filters"
+          :skill-stream="resolvedStageGridSkillStream"
+          :stage="resolvedStageGridStage"
+          :available-patrols="availablePatrols"
+          :can-open-peak-award="!!peakAwardRequirement"
+          @jump="onTabJump"
+        />
       </template>
     </div>
   </v-app>

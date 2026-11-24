@@ -1,3 +1,6 @@
+// Gotcha: Jest can't parse .vue files, so stub the child.
+jest.mock("@/pages/OasProgressVue/components/OASTabJumpMenu.vue", () => ({ __esModule: true, default: { name: "OASTabJumpMenu", render: () => null } }), { virtual: true });
+
 import OASStageGridVue, { stageGridCellClass, formatStageGridDate, stageGridSquareClass, stageGridSquareTitle } from "@/pages/OasProgressVue/components/OASStageGridVue";
 import type { StageGridCell, StageGridPage, TransposedStageGridPage } from "@/pages/OasProgressVue/services/buildStageGridPages";
 import {
@@ -575,5 +578,53 @@ describe("OASStageGridVue computed", () => {
 
       expect(methods.patrolDividerBeforeRow.call(context, transposed, 0)).toBe("Unassigned");
     });
+  });
+});
+
+describe("OASStageGridVue tab jumps", () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const computed = (OASStageGridVue as any).computed;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const methods = (OASStageGridVue as any).methods;
+  // Amy has stage 2 to do; Ben has been awarded it.
+  const rows = [makeRow({ stage: 2, answered: true, patrolName: "Eagles" }), makeRow({ stage: 2, memberId: "m2", memberName: "Ben Ranger", answered: true, awarded: true, patrolName: "Eagles" })];
+
+  function makeContext(canOpenPeakAward = true) {
+    const context: Record<string, unknown> = { items: rows, skillStream: SKILL_STREAM, stage: 2, filters: makeFilters({ stageGridSelectedPatrols: ["Eagles"] }), availablePatrols: [], canOpenPeakAward };
+    context.pageSet = computed.pageSet.call(context);
+    context.shownPeople = computed.shownPeople.call(context);
+    context.memberJumpsByPage = computed.memberJumpsByPage.call(context);
+    context.memberJumps = (page: unknown, memberId: string) => methods.memberJumps.call(context, page, memberId);
+    return context;
+  }
+  const page = { skill: "bushcraft", stream: "bushcraft", stage: 2 };
+
+  it("a member's squares open Next Steps at this stage, unless n/a or the stage is awarded", () => {
+    const context = makeContext();
+
+    expect(methods.cellJump.call(context, page, "m1", makeCell())?.filters).toEqual({ nextStepsMemberId: "m1", nextStepsSkillStream: "bushcraft::bushcraft", nextStepsStage: 2 });
+    expect(methods.cellJump.call(context, page, "m1", makeCell({ notApplicable: true }))).toBeNull();
+    expect(methods.cellJump.call(context, page, "m2", makeCell())).toBeNull();
+  });
+
+  it("a member's menu lists the tabs in order, matching on the full name, with Stage Grid's patrols", () => {
+    const amy = methods.memberJumps.call(makeContext(), page, "m1").menu;
+
+    expect(amy.map((j: { viewMode: string }) => j.viewMode)).toEqual(["summary", "peakAward", "heatmap", "nextSteps"]);
+    expect(amy[0].filters).toEqual({ summaryMemberFilter: "Amy Scout", summarySelectedPatrols: ["Eagles"] });
+    expect(amy[3].title).toBe("Open in Next Steps (stage 2)");
+    expect(methods.memberJumps.call(makeContext(false), page, "m2").menu.map((j: { viewMode: string }) => j.viewMode)).toEqual(["summary", "heatmap"]);
+  });
+
+  it("the page title opens Heat Map on that skill", () => {
+    const [heatMap] = methods.pageJumps.call(makeContext(), page);
+    expect(heatMap.filters).toMatchObject({ groupBy: "skill", visibleStreams: ["bushcraft"], selectedPatrols: ["Eagles"], memberFilter: "" });
+    expect(heatMap.from).toEqual({ viewMode: "stageGrid", tabName: "Stage Grid", detail: "Bushcraft stage 2" });
+  });
+
+  it("adds the jump to a linked square's tooltip", () => {
+    const jump = { title: "Open Next Steps: Amy – Bushcraft stage 2" };
+    expect(methods.squareTitle(makeCell({ answered: true }), jump)).toBe("Answered\nOpen Next Steps: Amy – Bushcraft stage 2");
+    expect(methods.squareTitle(makeCell(), null)).toBe("Not answered");
   });
 });
