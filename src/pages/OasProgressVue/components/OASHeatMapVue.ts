@@ -10,32 +10,26 @@ import { getMemberDisplayName } from "@/pages/OasProgress/services/getMemberDisp
 import type { NameFormat } from "@/pages/OasProgress/services/getMemberDisplayName";
 import type { OASProgressRow } from "@/pages/OasProgress/services/buildOASProgressRows";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
+import {
+  heatMapMemberJumps,
+  heatMapSkillStreamJumps,
+  heatMapStageCellJump,
+  heatMapStageColumnJump,
+  lowestStagesByMember,
+  lowestStagesNeeded,
+  memberLowestStage,
+  type HeatMapRowTarget,
+  type ShownPeople,
+  type TabJump,
+} from "@/pages/OasProgressVue/services/tabJumps";
+import { formatStream, skillTitle } from "@/pages/OasProgressVue/services/skillNames";
+import { skillStreamKey } from "@/pages/OasProgressVue/services/skillStreams";
+import OASTabJumpMenu from "./OASTabJumpMenu.vue";
 
-const SKILL_TITLES: Record<string, string> = {
-  bushcraft: "Bushcraft",
-  bushwalking: "Bushwalking",
-  camping: "Camping",
-  aquatics: "Aquatics",
-  boating: "Boating",
-  paddling: "Paddling",
-  alpine: "Alpine",
-  cycling: "Cycling",
-  vertical: "Vertical",
-};
+export { formatStream, skillTitle };
 
 /** Stage 1 always stays visible. The React page's floor is 4. */
 const MIN_VISIBLE_STAGE = 1;
-
-export function skillTitle(skill: string): string {
-  return SKILL_TITLES[skill] ?? skill;
-}
-
-export function formatStream(stream: string): string {
-  return stream
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
 
 function sectionTitle(section: HeatMapSection): string {
   const base = skillTitle(section.skill);
@@ -133,12 +127,28 @@ function buildMemberRowView(member: SectionMemberRow, allStages: number[], nameF
   };
 }
 
-interface PatrolGroupView {
-  patrolName: string;
-  members: MemberRowView[];
+/** menu is the row label's: the member's when grouped by skill, the Skill - Stream's when grouped by member. */
+interface LinkedRowView extends MemberRowView {
+  stageJump: TabJump | null;
+  cellJumps: Array<TabJump | null>;
+  menu: TabJump[];
 }
 
-interface MemberSkillRowView extends MemberRowView {
+function linkRow(view: MemberRowView, target: HeatMapRowTarget, stages: number[], outstanding: Set<string>, menu: TabJump[]): LinkedRowView {
+  return {
+    ...view,
+    stageJump: heatMapStageColumnJump(target, outstanding),
+    cellJumps: view.cells.map((cell, index) => heatMapStageCellJump(target, stages[index], cell.kind)),
+    menu,
+  };
+}
+
+interface PatrolGroupView {
+  patrolName: string;
+  members: LinkedRowView[];
+}
+
+interface MemberSkillRowView extends LinkedRowView {
   key: string;
   title: string;
   iconUrl: string | null;
@@ -148,6 +158,7 @@ interface MemberSectionViewModel {
   memberId: string;
   title: string;
   patrolName: string | null;
+  menu: TabJump[];
   skillRows: MemberSkillRowView[];
 }
 
@@ -167,11 +178,13 @@ interface SectionView {
   skill: string;
   iconUrl: string | null;
   title: string;
+  menu: TabJump[];
   patrolGroups: PatrolGroupView[];
 }
 
 export default defineComponent({
   name: "OASHeatMapVue",
+  components: { OASTabJumpMenu },
   props: {
     items: { type: Array as PropType<OASProgressRow[]>, required: true },
     trunkStageCounts: { type: Object as PropType<Record<string, number>>, required: true },
@@ -191,8 +204,18 @@ export default defineComponent({
     showAnswered: { type: Boolean, default: true },
     /** "none" (shared with the table view) is treated as "skill": a heat map is always grouped. */
     groupBy: { type: String as PropType<"skill" | "member" | "none">, default: "skill" },
+    canOpenPeakAward: { type: Boolean, default: false },
   },
   computed: {
+    shownPeople(): ShownPeople {
+      return { selectedPatrols: this.selectedPatrols, memberFilter: this.memberFilter };
+    },
+    lowestStageByMember(): Record<string, number> {
+      return lowestStagesByMember(this.items);
+    },
+    outstanding(): Set<string> {
+      return new Set(Object.keys(this.lowestStageByMember));
+    },
     isGroupedByMember(): boolean {
       return this.groupBy === "member";
     },
@@ -237,33 +260,47 @@ export default defineComponent({
       return this.showEmptyTopStages ? this.rangeStages : sliceStagesToVisible(this.allStagesTrimmed, this.visibleStages);
     },
     sections(): SectionView[] {
-      const result: SectionView[] = [];
+      const visible: Array<{ skill: string; section: HeatMapSection; members: SectionMemberRow[] }> = [];
       this.skills.forEach((skill) => {
-        const sections = this.visibleSectionsBySkill.get(skill) ?? [];
-        const iconUrl = getSkillIconUrl(skill);
-        sections.forEach((section: HeatMapSection) => {
-          const isStreamSection = section.stream !== null;
+        (this.visibleSectionsBySkill.get(skill) ?? []).forEach((section: HeatMapSection) => {
           const nameFiltered = section.members.filter((member: SectionMemberRow) => !this.memberFilter.trim() || member.memberName.toLowerCase().includes(this.memberFilter.trim().toLowerCase()));
           // Gotcha: an empty patrol selection shows nobody here, unlike filterMembersByPatrol's "empty = everyone".
           const patrolFiltered = this.selectedPatrols.length === 0 ? [] : filterMembersByPatrol(nameFiltered, this.selectedPatrols);
-          const filteredMembers = sortMembers(patrolFiltered, this.sortBy, isStreamSection, section.trunkStageCount);
-
-          const toRowView = (member: SectionMemberRow) => buildMemberRowView(member, this.allStages, this.nameFormat, this.showAwarded, this.showNotStarted, this.showAnswered, isStreamSection, section.trunkStageCount);
-
-          const patrolGroups: PatrolGroupView[] = this.breakByPatrol
-            ? groupMembersByPatrol(filteredMembers).map((group: PatrolGroup) => ({ patrolName: group.patrolName, members: group.members.map(toRowView) }))
-            : [{ patrolName: "", members: filteredMembers.map(toRowView) }];
-
-          result.push({
-            key: skill + "::" + (section.stream ?? ""),
-            skill,
-            iconUrl,
-            title: sectionTitle(section),
-            patrolGroups,
-          });
+          visible.push({ skill, section, members: sortMembers(patrolFiltered, this.sortBy, section.stream !== null, section.trunkStageCount) });
         });
       });
-      return result;
+
+      const shownMemberIds = visible.flatMap((v) => v.members.map((m) => m.memberId));
+      const lowestStages = lowestStagesNeeded(
+        this.items,
+        shownMemberIds.filter((id, index) => shownMemberIds.indexOf(id) === index),
+      );
+
+      return visible.map(({ skill, section, members }) => {
+        const isStreamSection = section.stream !== null;
+        const stream = section.stream ?? skill;
+        const toRowView = (member: SectionMemberRow) =>
+          linkRow(
+            buildMemberRowView(member, this.allStages, this.nameFormat, this.showAwarded, this.showNotStarted, this.showAnswered, isStreamSection, section.trunkStageCount),
+            { memberId: member.memberId, displayName: getMemberDisplayName(member.firstName, member.lastName, member.memberId, this.nameFormat), skill, stream },
+            this.allStages,
+            this.outstanding,
+            heatMapMemberJumps(member.memberName, getMemberDisplayName(member.firstName, member.lastName, member.memberId, this.nameFormat), this.shownPeople, this.canOpenPeakAward),
+          );
+
+        const patrolGroups: PatrolGroupView[] = this.breakByPatrol
+          ? groupMembersByPatrol(members).map((group: PatrolGroup) => ({ patrolName: group.patrolName, members: group.members.map(toRowView) }))
+          : [{ patrolName: "", members: members.map(toRowView) }];
+
+        return {
+          key: skill + "::" + (section.stream ?? ""),
+          skill,
+          iconUrl: getSkillIconUrl(skill),
+          title: sectionTitle(section),
+          menu: heatMapSkillStreamJumps(skill, stream, lowestStages[skillStreamKey(skill, stream)], this.shownPeople),
+          patrolGroups,
+        };
+      });
     },
 
     /** Built from visibleSectionsBySkill so both layouts share the same filters. Patrol filtering and sorting are re-applied here. */
@@ -282,17 +319,31 @@ export default defineComponent({
         return this.sortBy === "lastName" ? a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName) : a.firstName.localeCompare(b.firstName) || a.lastName.localeCompare(b.lastName);
       });
 
-      return sortedByName.map((section) => ({
-        memberId: section.memberId,
-        title: getMemberDisplayName(section.firstName, section.lastName, section.memberId, this.nameFormat),
-        patrolName: section.patrolName,
-        skillRows: section.skillRows.map((row) => ({
-          key: row.key,
-          title: row.stream ? `${skillTitle(row.skill)} — ${formatStream(row.stream)}` : skillTitle(row.skill),
-          iconUrl: getSkillIconUrl(row.skill),
-          ...buildMemberRowView(row.member, this.allStages, this.nameFormat, this.showAwarded, this.showNotStarted, this.showAnswered, row.isStreamSection, row.trunkStageCount),
-        })),
-      }));
+      return sortedByName.map((section) => {
+        const displayName = getMemberDisplayName(section.firstName, section.lastName, section.memberId, this.nameFormat);
+        return {
+          memberId: section.memberId,
+          title: displayName,
+          patrolName: section.patrolName,
+          menu: heatMapMemberJumps(section.memberName, displayName, this.shownPeople, this.canOpenPeakAward),
+          skillRows: section.skillRows.map((row) => {
+            const stream = row.stream ?? row.skill;
+            const nextStage = memberLowestStage(this.lowestStageByMember, section.memberId, row.skill, stream);
+            return {
+              key: row.key,
+              title: row.stream ? `${skillTitle(row.skill)} — ${formatStream(row.stream)}` : skillTitle(row.skill),
+              iconUrl: getSkillIconUrl(row.skill),
+              ...linkRow(
+                buildMemberRowView(row.member, this.allStages, this.nameFormat, this.showAwarded, this.showNotStarted, this.showAnswered, row.isStreamSection, row.trunkStageCount),
+                { memberId: section.memberId, displayName, skill: row.skill, stream },
+                this.allStages,
+                this.outstanding,
+                heatMapSkillStreamJumps(row.skill, stream, nextStage, this.shownPeople),
+              ),
+            };
+          }),
+        };
+      });
     },
 
     /** Only tells v-data-table the column count. The <thead> is hand-written because Vuetify headers can't do colspan. */
@@ -306,6 +357,16 @@ export default defineComponent({
     },
   },
   methods: {
+    withJumpTitle(title: string | undefined, jump: TabJump | null): string | undefined {
+      if (!jump) return title;
+      return title ? `${title}\n${jump.title}` : jump.title;
+    },
+    onLinkClick(jump: TabJump | null) {
+      if (jump) this.onJump(jump);
+    },
+    onJump(jump: TabJump) {
+      this.$emit("jump", jump);
+    },
     /** Gotcha: a $ref on v-data-table is the component, not the <table>, and fails silently. Ask the component instead. */
     getExportTable(): HTMLTableElement | undefined {
       return (this.$el as HTMLElement | undefined)?.querySelector("table") ?? undefined;

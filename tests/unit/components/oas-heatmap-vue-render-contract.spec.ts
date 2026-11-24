@@ -1,3 +1,6 @@
+// Gotcha: Jest can't parse .vue files, so stub the child.
+jest.mock("@/pages/OasProgressVue/components/OASTabJumpMenu.vue", () => ({ __esModule: true, default: { name: "OASTabJumpMenu", render: () => null } }), { virtual: true });
+
 import Vue from "vue";
 import OASHeatMapVueOptions from "@/pages/OasProgressVue/components/OASHeatMapVue";
 import { UNASSIGNED_PATROL } from "@/pages/OasProgress/services/filterHeatMapSections";
@@ -57,6 +60,7 @@ interface MountProps {
   showEmptyTopStages?: boolean;
   showEmptySkillRows?: boolean;
   groupBy?: "skill" | "member" | "none";
+  canOpenPeakAward?: boolean;
 }
 
 /** [] shows nobody, so default to [UNASSIGNED_PATROL] (makeMember's default) unless a test overrides it. */
@@ -507,5 +511,48 @@ describe("OASHeatMapVue render contract", () => {
       ]);
       expect(view.sections[0].groups[0].rows.map((r) => r.label)).toEqual(["Bushcraft"]);
     });
+  });
+});
+
+describe("OASHeatMapVue tab jumps", () => {
+  // Alex: Bushcraft stage 1 awarded, stage 2 started, stage 3 not started. Sam: stage 1 not started.
+  const items = [
+    makeRow({ stage: 1, inputId: "s1", answered: true, awarded: true }),
+    makeRow({ stage: 2, inputId: "s2a", answered: true }),
+    makeRow({ stage: 2, inputId: "s2b" }),
+    makeRow({ stage: 3, inputId: "s3" }),
+    makeRow({ memberId: "member-2", memberName: "Sam Ranger", stage: 1, inputId: "s1" }),
+  ];
+  const members = [makeMember({ id: "member-1", first_name: "Alex", last_name: "Scout" }), makeMember({ id: "member-2", first_name: "Sam", last_name: "Ranger" })];
+  const baseProps = { items, trunkStageCounts: { bushcraft: 3 }, members, visibleStreams: ["bushcraft"], visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9], sortBy: "firstName" as const };
+
+  type Jump = { viewMode: string; filters: Record<string, unknown> } | null;
+  type Row = { memberId: string; stageJump: Jump; cellJumps: Jump[]; menu: Array<NonNullable<Jump>> };
+
+  it("grouped by skill: stage cells open that exact stage, awarded ones are not links", () => {
+    const vm = mountLogic({ ...baseProps, canOpenPeakAward: true } as MountProps);
+    const alex = (vm.sections as Array<{ patrolGroups: Array<{ members: Row[] }> }>)[0].patrolGroups[0].members[0];
+
+    expect(alex.cellJumps.slice(0, 3).map((j) => j && j.filters.nextStepsStage)).toEqual([null, 2, 3]);
+    expect(alex.cellJumps[0]).toBeNull();
+    expect(alex.stageJump?.filters).toEqual({ nextStepsMemberId: "member-1", nextStepsSkillStream: "bushcraft::bushcraft", nextStepsStage: null });
+    expect(alex.menu.map((j) => j.viewMode)).toEqual(["summary", "peakAward"]);
+    expect(alex.menu[0].filters.summaryMemberFilter).toBe("Alex Scout");
+  });
+
+  it("grouped by skill: the section opens Stage Grid at the lowest stage any shown member needs", () => {
+    const vm = mountLogic(baseProps);
+    const [section] = vm.sections as Array<{ menu: Array<NonNullable<Jump>> }>;
+
+    expect(section.menu.map((j) => [j.viewMode, j.filters.stageGridStage])).toEqual([["stageGrid", 1]]);
+  });
+
+  it("grouped by member: the Skill - Stream opens Stage Grid at that member's next stage, the member opens Summary", () => {
+    const vm = mountLogic({ ...baseProps, groupBy: "member" });
+    const alex = (vm.memberSections as Array<{ memberId: string; menu: Array<NonNullable<Jump>>; skillRows: Row[] }>).find((s) => s.memberId === "member-1");
+
+    expect(alex?.skillRows[0].menu.map((j) => [j.viewMode, j.filters.stageGridStage])).toEqual([["stageGrid", 2]]);
+    expect(alex?.menu.map((j) => j.viewMode)).toEqual(["summary"]);
+    expect(alex?.skillRows[0].cellJumps[1]?.filters.nextStepsStage).toBe(2);
   });
 });

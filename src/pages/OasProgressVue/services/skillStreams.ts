@@ -1,6 +1,6 @@
 import type { OASProgressRow } from "@/pages/OasProgress/services/buildOASProgressRows";
 import { OAS_SKILLS } from "@/pages/OasProgress/services/filterHeatMapSections";
-import { formatStream, skillTitle } from "@/pages/OasProgressVue/components/OASHeatMapVue";
+import { formatStream, skillTitle } from "@/pages/OasProgressVue/services/skillNames";
 
 /** `skill` is Terrain's `row.stream` and `stream` is `row.branch`; they are equal on the trunk. */
 export interface SkillStream {

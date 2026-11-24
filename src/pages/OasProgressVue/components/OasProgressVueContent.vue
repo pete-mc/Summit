@@ -133,6 +133,8 @@
           :show-not-started="filters.showNotStarted"
           :show-answered="filters.showAnswered"
           :group-by="filters.groupBy"
+          :can-open-peak-award="!!peakAwardRequirement"
+          @jump="onTabJump"
         />
       </template>
 

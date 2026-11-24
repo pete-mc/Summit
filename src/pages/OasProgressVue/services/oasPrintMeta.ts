@@ -1,6 +1,6 @@
 import type { MetaEntry } from "@/print/summitPrint";
 import type { OASProgressVueFilterState } from "./OASProgressVueFilterPersistence";
-import { skillTitle } from "@/pages/OasProgressVue/components/OASHeatMapVue";
+import { skillTitle } from "@/pages/OasProgressVue/services/skillNames";
 import { OAS_SKILLS } from "@/pages/OasProgress/services/filterHeatMapSections";
 
 const MAX_STAGE = 9;

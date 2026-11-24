@@ -92,13 +92,37 @@ function nextStepsJump(memberId: string, displayName: string, skill: string, str
   const skillStream = skillStreamKey(skill, stream);
   if (!outstanding.has(memberSkillStreamKey(memberId, skillStream))) return null;
 
-  const detail = `${displayName} – ${skillStreamLabel({ stream: skill, branch: stream })}`;
+  return nextStepsTarget(memberId, displayName, skill, stream, null, origin);
+}
+
+/** A null stage lets Next Steps open the lowest stage still needed. */
+function nextStepsTarget(memberId: string, displayName: string, skill: string, stream: string, stage: number | null, origin: Origin): TabJump {
+  const stageText = stage === null ? "" : ` stage ${stage}`;
+  const detail = `${displayName} – ${skillStreamLabel({ stream: skill, branch: stream })}${stageText}`;
   return {
     viewMode: "nextSteps",
-    filters: { nextStepsMemberId: memberId, nextStepsSkillStream: skillStream, nextStepsStage: null },
+    filters: { nextStepsMemberId: memberId, nextStepsSkillStream: skillStreamKey(skill, stream), nextStepsStage: stage },
     title: `Open Next Steps: ${detail}`,
     from: { ...origin, detail },
   };
+}
+
+function stageGridJump(skill: string, stream: string, stage: number, people: ShownPeople, origin: Origin): TabJump {
+  const detail = skillStreamLabel({ stream: skill, branch: stream });
+  return {
+    viewMode: "stageGrid",
+    filters: { stageGridSkillStream: skillStreamKey(skill, stream), stageGridStage: stage, stageGridSelectedPatrols: copyPatrols(people.selectedPatrols), stageGridShowCompleted: true },
+    title: `Open in Stage Grid (stage ${stage})`,
+    from: { ...origin, detail: `${detail} stage ${stage}` },
+  };
+}
+
+function summaryMemberJump(memberName: string, people: ShownPeople, from: TabJump["from"]): TabJump {
+  return { viewMode: "summary", filters: { summaryMemberFilter: memberName, summarySelectedPatrols: copyPatrols(people.selectedPatrols) }, title: "Open in Summary", from };
+}
+
+function peakAwardMemberJump(memberName: string, people: ShownPeople, from: TabJump["from"]): TabJump {
+  return { viewMode: "peakAward", filters: { peakAwardMemberFilter: memberName, peakAwardSelectedPatrols: copyPatrols(people.selectedPatrols) }, title: "Open in Peak Award", from };
 }
 
 function heatMapSkillsJump(skills: string[], people: ShownPeople, from: TabJump["from"]): TabJump {
@@ -125,16 +149,8 @@ function skillColumnJumps(skill: string, stream: string, people: ShownPeople, lo
   const detail = skillStreamLabel({ stream: skill, branch: stream });
   const jumps = [heatMapSkillsJump([skill], people, { ...origin, detail })];
 
-  const skillStream = skillStreamKey(skill, stream);
-  const stage = lowestStages[skillStream];
-  if (stage !== undefined && stage <= maxStage) {
-    jumps.push({
-      viewMode: "stageGrid",
-      filters: { stageGridSkillStream: skillStream, stageGridStage: stage, stageGridSelectedPatrols: copyPatrols(people.selectedPatrols), stageGridShowCompleted: true },
-      title: `Open in Stage Grid (stage ${stage})`,
-      from: { ...origin, detail: `${detail} stage ${stage}` },
-    });
-  }
+  const stage = lowestStages[skillStreamKey(skill, stream)];
+  if (stage !== undefined && stage <= maxStage) jumps.push(stageGridJump(skill, stream, stage, people, origin));
   return inTabOrder(jumps);
 }
 
@@ -165,21 +181,13 @@ export function summaryColumnJumps(column: OverallProgressColumn, people: ShownP
 export function summaryMemberJumps(row: OverallProgressRow, memberName: string, people: ShownPeople, canOpenPeakAward: boolean): TabJump[] {
   const from = { ...SUMMARY, detail: row.displayName };
   const jumps = [heatMapMemberJump(memberName, people, from)];
-  if (canOpenPeakAward) {
-    jumps.push({ viewMode: "peakAward", filters: { peakAwardMemberFilter: memberName, peakAwardSelectedPatrols: copyPatrols(people.selectedPatrols) }, title: "Open in Peak Award", from });
-  }
+  if (canOpenPeakAward) jumps.push(peakAwardMemberJump(memberName, people, from));
   return inTabOrder(jumps);
 }
 
 export function peakAwardMemberJumps(row: PeakAwardMemberRow, displayName: string, people: ShownPeople): TabJump[] {
   const from = { ...PEAK_AWARD, detail: displayName };
-  const summary: TabJump = {
-    viewMode: "summary",
-    filters: { summaryMemberFilter: row.memberName, summarySelectedPatrols: copyPatrols(people.selectedPatrols) },
-    title: "Open in Summary",
-    from,
-  };
-  return inTabOrder([summary, heatMapMemberJump(row.memberName, people, from)]);
+  return inTabOrder([summaryMemberJump(row.memberName, people, from), heatMapMemberJump(row.memberName, people, from)]);
 }
 
 /** Only while the requirement is unmet. Uses the stream holding their highest award of that skill. */
@@ -202,4 +210,52 @@ export function peakAwardCoreSkillHeaderJumps(people: ShownPeople, lowestStages:
 
 export function peakAwardCoreSkillsGroupJumps(people: ShownPeople): TabJump[] {
   return [heatMapSkillsJump(CORE_SKILLS.slice(), people, { ...PEAK_AWARD, detail: "Core Skills" })];
+}
+
+const HEAT_MAP: Origin = { viewMode: "heatmap", tabName: "Heat Map" };
+
+/** One member's row in one Skill - Stream, in either Heat Map layout. stream is the skill on the trunk. */
+export interface HeatMapRowTarget {
+  memberId: string;
+  displayName: string;
+  skill: string;
+  stream: string;
+}
+
+/** The "Stage" number: like a Summary cell, opens the lowest stage still needed. */
+export function heatMapStageColumnJump(row: HeatMapRowTarget, outstanding: Set<string>): TabJump | null {
+  return nextStepsJump(row.memberId, row.displayName, row.skill, row.stream, outstanding, HEAT_MAP);
+}
+
+/** A stage cell opens that exact stage. Awarded or hidden stages are not links. */
+export function heatMapStageCellJump(row: HeatMapRowTarget, stage: number, cellKind: "empty" | "bar-complete" | "bar-unstarted" | "squares"): TabJump | null {
+  if (cellKind !== "squares" && cellKind !== "bar-unstarted") return null;
+  return nextStepsTarget(row.memberId, row.displayName, row.skill, row.stream, stage, HEAT_MAP);
+}
+
+export function heatMapMemberJumps(memberName: string, displayName: string, people: ShownPeople, canOpenPeakAward: boolean): TabJump[] {
+  const from = { ...HEAT_MAP, detail: displayName };
+  const jumps = [summaryMemberJump(memberName, people, from)];
+  if (canOpenPeakAward) jumps.push(peakAwardMemberJump(memberName, people, from));
+  return inTabOrder(jumps);
+}
+
+/** Grouped by skill, stage is the lowest any shown member needs; grouped by member, that member's own next stage. */
+export function heatMapSkillStreamJumps(skill: string, stream: string, stage: number | undefined, people: ShownPeople): TabJump[] {
+  return stage === undefined ? [] : [stageGridJump(skill, stream, stage, people, HEAT_MAP)];
+}
+
+/** Per member and Skill - Stream, the lowest stage not yet awarded. */
+export function lowestStagesByMember(items: OASProgressRow[]): Record<string, number> {
+  const lowest: Record<string, number> = {};
+  items.forEach((row) => {
+    if (row.awarded) return;
+    const key = memberSkillStreamKey(row.memberId, skillStreamKey(row.stream, row.branch));
+    if (lowest[key] === undefined || row.stage < lowest[key]) lowest[key] = row.stage;
+  });
+  return lowest;
+}
+
+export function memberLowestStage(lowestByMember: Record<string, number>, memberId: string, skill: string, stream: string): number | undefined {
+  return lowestByMember[memberSkillStreamKey(memberId, skillStreamKey(skill, stream))];
 }

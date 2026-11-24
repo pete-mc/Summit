@@ -3,7 +3,7 @@ import { filterMembersByPatrol, groupMembersByPatrol, sliceStagesToVisible } fro
 import type { PatrolGroupOf } from "@/pages/OasProgress/services/filterHeatMapSections";
 import { getMemberDisplayName } from "@/pages/OasProgress/services/getMemberDisplayName";
 import type { NameFormat } from "@/pages/OasProgress/services/getMemberDisplayName";
-import { skillTitle, formatStream } from "@/pages/OasProgressVue/components/OASHeatMapVue";
+import { formatStream, skillTitle } from "@/pages/OasProgressVue/services/skillNames";
 import { skillStreamKey } from "./skillStreams";
 
 export interface StageGridMember {

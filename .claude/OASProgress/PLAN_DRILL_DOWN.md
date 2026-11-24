@@ -113,6 +113,17 @@ interface TabJump {
    - **"Core Skills" group header ▾:** Open in Heat Map with all three core skills.
    - Progress, Progressions, Special: no links (they mix skills). Menus stripped from the print.
 
+4. Heat Map tab (built and checked in Edge 2026-11-24). Same in both layouts:
+   - **Stage 1–9 cell** (whole cell): Next Steps at **that exact stage**. Awarded (green bar) or hidden = no
+     link. The squares' and bars' tooltips get an extra "Open Next Steps: … stage N" line.
+   - **"Stage" number:** Next Steps at the lowest stage still needed (like a Summary cell).
+   - **Member ▾** (row label grouped by skill, section title grouped by member): Summary, Peak Award.
+   - **Skill - Stream ▾** (section title grouped by skill, row label grouped by member): Stage Grid. Grouped
+     by skill = lowest stage any shown member needs; grouped by member = **that member's next stage**.
+   - Stage column headers: no link. No Heat Map → Heat Map jumps (Back couldn't undo the filter change).
+   - skillTitle/formatStream moved to `services/skillNames.ts` so services no longer import OASHeatMapVue
+     (which now imports a .vue and would break Jest for them).
+
 ## Tests
 
 - `tabJumps.spec.ts`: trunk/stream key conversion; merged-skill stream pick incl. tie → first; no link when

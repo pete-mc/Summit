@@ -5,6 +5,12 @@ import { OAS_SKILLS } from "@/pages/OasProgress/services/filterHeatMapSections";
 import {
   buildPeakAwardCoreSkillJumps,
   buildSummaryCellJumps,
+  heatMapMemberJumps,
+  heatMapSkillStreamJumps,
+  heatMapStageCellJump,
+  heatMapStageColumnJump,
+  lowestStagesByMember,
+  memberLowestStage,
   highestAwardedStreams,
   peakAwardCoreSkillHeaderJumps,
   peakAwardCoreSkillsGroupJumps,
@@ -271,5 +277,44 @@ describe("Peak Award jumps", () => {
     expect(jumps[0].filters).toEqual({ summaryMemberFilter: "Jane Smith", summarySelectedPatrols: ["Eagles"] });
     expect(jumps[1].filters).toMatchObject({ groupBy: "member", memberFilter: "Jane Smith" });
     expect(jumps[0].from).toEqual({ viewMode: "peakAward", tabName: "Peak Award", detail: "Jane S" });
+  });
+});
+
+describe("Heat Map jumps", () => {
+  const target = { memberId: "m1", displayName: "Jane S", skill: "aquatics", stream: "swimming" };
+
+  it("a stage cell opens that exact stage, and only when it isn't awarded or hidden", () => {
+    expect(heatMapStageCellJump(target, 3, "squares")).toMatchObject({
+      viewMode: "nextSteps",
+      filters: { nextStepsMemberId: "m1", nextStepsSkillStream: "aquatics::swimming", nextStepsStage: 3 },
+      title: "Open Next Steps: Jane S – Aquatics - Swimming stage 3",
+      from: { viewMode: "heatmap", tabName: "Heat Map" },
+    });
+    expect(heatMapStageCellJump(target, 3, "bar-unstarted")?.filters.nextStepsStage).toBe(3);
+    expect(heatMapStageCellJump(target, 3, "bar-complete")).toBeNull();
+    expect(heatMapStageCellJump(target, 3, "empty")).toBeNull();
+  });
+
+  it("the Stage number opens the lowest stage still needed, while there is one", () => {
+    expect(heatMapStageColumnJump(target, new Set(["m1|aquatics::swimming"]))?.filters.nextStepsStage).toBeNull();
+    expect(heatMapStageColumnJump(target, new Set())).toBeNull();
+  });
+
+  it("a member opens Summary, then Peak Award when the section is known", () => {
+    expect(heatMapMemberJumps("Jane Smith", "Jane S", people, true).map((j) => j.viewMode)).toEqual(["summary", "peakAward"]);
+    expect(heatMapMemberJumps("Jane Smith", "Jane S", people, false).map((j) => j.viewMode)).toEqual(["summary"]);
+    expect(heatMapMemberJumps("Jane Smith", "Jane S", people, true)[1].filters).toEqual({ peakAwardMemberFilter: "Jane Smith", peakAwardSelectedPatrols: ["Eagles"] });
+  });
+
+  it("a Skill - Stream opens Stage Grid at the given stage, or nothing when no stage is needed", () => {
+    expect(heatMapSkillStreamJumps("aquatics", "swimming", 4, people)[0].filters).toMatchObject({ stageGridSkillStream: "aquatics::swimming", stageGridStage: 4 });
+    expect(heatMapSkillStreamJumps("aquatics", "swimming", undefined, people)).toEqual([]);
+  });
+
+  it("finds each member's own next stage", () => {
+    const lowest = lowestStagesByMember([progressRow({ stage: 1, awarded: true }), progressRow({ stage: 3 }), progressRow({ stage: 2 }), progressRow({ memberId: "m2", stage: 1 })]);
+    expect(memberLowestStage(lowest, "m1", "bushwalking", "bushwalking")).toBe(2);
+    expect(memberLowestStage(lowest, "m2", "bushwalking", "bushwalking")).toBe(1);
+    expect(memberLowestStage(lowest, "m1", "camping", "camping")).toBeUndefined();
   });
 });

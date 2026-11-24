@@ -3,7 +3,7 @@ import type { PropType } from "vue";
 import { OAS_SKILLS } from "@/pages/OasProgress/services/filterHeatMapSections";
 import type { OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
 import NameFormatSelect from "@/components/NameFormatSelect.vue";
-import { skillTitle } from "./OASHeatMapVue";
+import { skillTitle } from "@/pages/OasProgressVue/services/skillNames";
 
 type ShowOption = "showEmptySkillRows" | "showEmptyTopStages" | "showAwarded" | "showNotStarted" | "showAnswered" | "breakByPatrol";
 

@@ -30,7 +30,7 @@ function heatmapHtml(stages: number[]): string {
     <tbody data-oas-skill="bushwalking">
       <tr class="oas-heatmap-skill-title-row"><td class="oas-heatmap-skill-title" colspan="${span}"><img class="oas-heatmap-skill-icon" src="chrome-extension://abc/images/x.svg" alt="">Bushwalking</td></tr>
       <tr class="oas-heatmap-patrol-title-row"><td class="oas-heatmap-patrol-title" colspan="${span}">Possum</td></tr>
-      <tr data-oas-member="m1"><td class="oas-heatmap-member-name">Member A</td><td class="oas-heatmap-highest-stage">2<span class="oas-heatmap-stage-progress">.3</span></td>${cells}</tr>
+      <tr data-oas-member="m1"><td class="oas-heatmap-member-name">Member A<span class="oas-tab-jump-menu"><button>v</button></span></td><td class="oas-heatmap-highest-stage">2<span class="oas-heatmap-stage-progress">.3</span></td>${cells}</tr>
     </tbody>
   </table>
 </div></div></div>`;
@@ -105,6 +105,12 @@ describe("skill-heatmap profile", () => {
     const doc = parse(buildPrintDocument({ source: host, profile: "skill-heatmap", vars: VARS, generated: GENERATED }));
     expect(doc.querySelector("table.summit-print-table img.oas-heatmap-skill-icon")).not.toBeNull();
     expect(doc.querySelectorAll("table.summit-print-table [title]")).toHaveLength(0);
+  });
+
+  it("strips the Open-in menus", () => {
+    const doc = parse(buildPrintDocument({ source: mount([1, 2]), profile: "skill-heatmap", vars: VARS, generated: GENERATED }));
+    expect(doc.querySelector("table.summit-print-table .oas-heatmap-member-name")).not.toBeNull();
+    expect(doc.querySelector("table.summit-print-table .oas-tab-jump-menu")).toBeNull();
   });
 });
 

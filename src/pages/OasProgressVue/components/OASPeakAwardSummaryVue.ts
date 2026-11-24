@@ -6,7 +6,7 @@ import { getMemberDisplayName } from "@/pages/OasProgress/services/getMemberDisp
 import type { NameFormat } from "@/pages/OasProgress/services/getMemberDisplayName";
 import { groupRowsByPatrol, type PatrolGroupOf } from "@/pages/OasProgress/services/filterHeatMapSections";
 import type { CellJumps, TabJump } from "@/pages/OasProgressVue/services/tabJumps";
-import { formatStream, skillTitle } from "./OASHeatMapVue";
+import { formatStream, skillTitle } from "@/pages/OasProgressVue/services/skillNames";
 import OASTabJumpMenu from "./OASTabJumpMenu.vue";
 
 export { formatAwardDate, skillTitle };

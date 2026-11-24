@@ -3,7 +3,7 @@ import type { PropType } from "vue";
 import type { OverallProgressCell, OverallProgressColumn, OverallProgressColumnSort, OverallProgressRow } from "@/pages/OasProgress/services/buildOverallProgressRows";
 import { groupRowsByPatrol, type PatrolGroupOf } from "@/pages/OasProgress/services/filterHeatMapSections";
 import type { CellJumps, TabJump } from "@/pages/OasProgressVue/services/tabJumps";
-import { formatStream, skillTitle } from "./OASHeatMapVue";
+import { formatStream, skillTitle } from "@/pages/OasProgressVue/services/skillNames";
 import { awardTooltip } from "./OASPeakAwardSummaryVue";
 import OASTabJumpMenu from "./OASTabJumpMenu.vue";
 
