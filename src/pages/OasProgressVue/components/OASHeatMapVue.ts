@@ -198,7 +198,6 @@ export default defineComponent({
     nameFormat: { type: String as PropType<NameFormat>, default: "full" },
     selectedPatrols: { type: Array as PropType<string[]>, default: () => [] },
     breakByPatrol: { type: Boolean, default: false },
-    showEmptyTopStages: { type: Boolean, default: true },
     showApproved: { type: Boolean, default: true },
     showNotStarted: { type: Boolean, default: true },
     showAnswered: { type: Boolean, default: true },
@@ -250,14 +249,14 @@ export default defineComponent({
       return map;
     },
     allStagesTrimmed(): number[] {
-      if (this.showEmptyTopStages) {
+      if (this.showNotStarted) {
         return this.allStagesUntrimmed;
       }
       const allSections = this.skills.flatMap((s) => this.visibleSectionsBySkill.get(s) ?? []);
       return trimEmptyTrailingStages(this.allStagesUntrimmed, allSections);
     },
     allStages(): number[] {
-      return this.showEmptyTopStages ? this.rangeStages : sliceStagesToVisible(this.allStagesTrimmed, this.visibleStages);
+      return this.showNotStarted ? this.rangeStages : sliceStagesToVisible(this.allStagesTrimmed, this.visibleStages);
     },
     sections(): SectionView[] {
       const visible: Array<{ skill: string; section: HeatMapSection; members: SectionMemberRow[] }> = [];

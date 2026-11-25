@@ -25,7 +25,7 @@ export default defineComponent({
     breakByPatrol: { type: Boolean, required: true },
     /** null leaves the option out. */
     expandStreams: { type: Boolean as PropType<boolean | null>, default: null },
-    /** null leaves the "Not Started" option out. */
+    /** null leaves the "Skills not started" option out. */
     showNotStartedSkills: { type: Boolean as PropType<boolean | null>, default: null },
     availablePatrols: { type: Array as PropType<string[]>, required: true },
     patrolFilterOptions: { type: Array as PropType<string[]>, required: true },
@@ -35,7 +35,7 @@ export default defineComponent({
     showOptions(): ShowSelectItem[] {
       const skillItems: ShowSelectItem[] = [];
       if (this.expandStreams !== null) skillItems.push({ value: "expandStreams", text: "Expand Streams" });
-      if (this.showNotStartedSkills !== null) skillItems.push({ value: "showNotStartedSkills", text: "Not Started" });
+      if (this.showNotStartedSkills !== null) skillItems.push({ value: "showNotStartedSkills", text: "Skills not started" });
       const items: ShowSelectItem[] = skillItems.length > 0 ? [{ header: "Skills" } as ShowSelectItem].concat(skillItems) : [];
       if (this.availablePatrols.length > 0) {
         if (items.length > 0) items.push({ divider: true });

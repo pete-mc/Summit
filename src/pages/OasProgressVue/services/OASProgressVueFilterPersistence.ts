@@ -29,7 +29,6 @@ export interface OASProgressVueFilterState {
   breakByPatrol: boolean;
   /** showNotStarted only affects a whole stage with no progress, never single squares. */
   showEmptySkillRows: boolean;
-  showEmptyTopStages: boolean;
   showApproved: boolean;
   showNotStarted: boolean;
   showAnswered: boolean;
@@ -42,6 +41,7 @@ export interface OASProgressVueFilterState {
   nextStepsMemberId: string;
   nextStepsSkillStream: string;
   nextStepsStage: number | null;
+  nextStepsNameFormat: NameFormat;
 
   /** From skillStreamKey(). A value not in the loaded data falls back to the first Skill - Stream. */
   stageGridSkillStream: string;
@@ -54,6 +54,9 @@ export interface OASProgressVueFilterState {
   stageGridShowApproved: boolean;
   /** membersAsColumns (default) matches the Topo xlsx/PDF layout; membersAsRows scales to large units. */
   stageGridLayout: "membersAsColumns" | "membersAsRows";
+
+  /** When this page last caught up with Display Options' "Apply defaults to all pages". Never reset by a tab. */
+  filterDefaultsAppliedAt: number | null;
 }
 
 // Separate from the React page's key, so the two pages can be configured independently.
@@ -70,6 +73,7 @@ const RENAMED_KEY_PREFIXES: Array<[string, string]> = [
   ["worksheet", "stageGrid"],
 ];
 const RENAMED_KEYS: Record<string, string> = { showAwarded: "showApproved", stageGridShowCompleted: "stageGridShowApproved" };
+const DROPPED_KEYS = ["showEmptyTopStages"];
 const RENAMED_VIEW_MODES: Record<string, OASProgressVueFilterState["viewMode"]> = { table: "nextSteps", worksheets: "stageGrid" };
 
 function renamedKey(key: string): string {
@@ -80,11 +84,13 @@ function renamedKey(key: string): string {
 
 /**
  * Gotcha: older saved state names the Next Steps and Stage Grid tabs "table" and "worksheets", with table* and worksheet* keys,
- * and calls the Approved filters showAwarded / stageGridShowCompleted. A key already saved under its new name wins.
+ * and calls the Approved filters showAwarded / stageGridShowCompleted. showEmptyTopStages was folded into showNotStarted.
+ * A key already saved under its new name wins.
  */
 export function migrateRenamedFilters(stored: Record<string, unknown>): Record<string, unknown> {
   const migrated: Record<string, unknown> = {};
   Object.keys(stored).forEach((key) => {
+    if (DROPPED_KEYS.indexOf(key) !== -1) return;
     const newKey = renamedKey(key);
     if (newKey === key || !(newKey in stored)) migrated[newKey] = stored[key];
   });

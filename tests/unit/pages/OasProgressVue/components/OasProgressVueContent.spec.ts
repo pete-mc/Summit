@@ -21,7 +21,8 @@ jest.mock("@/components/gridExport", () => ({
 }));
 
 import OasProgressVueContent, { sanitiseViewMode } from "@/pages/OasProgressVue/components/OasProgressVueContent";
-import { saveOASProgressVueFilters, type OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
+import { loadOASProgressVueFilters, saveOASProgressVueFilters, type OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
+import { markFilterDefaultsApplied, saveFilterDefaults, SYSTEM_FILTER_DEFAULTS } from "@/shared/filterDefaults";
 
 function makeStoredFilters(overrides: Partial<OASProgressVueFilterState> = {}): OASProgressVueFilterState {
   return {
@@ -44,7 +45,6 @@ function makeStoredFilters(overrides: Partial<OASProgressVueFilterState> = {}): 
     selectedPatrols: [],
     breakByPatrol: false,
     showEmptySkillRows: true,
-    showEmptyTopStages: true,
     showApproved: true,
     showNotStarted: true,
     showAnswered: true,
@@ -54,6 +54,7 @@ function makeStoredFilters(overrides: Partial<OASProgressVueFilterState> = {}): 
     nextStepsMemberId: "",
     nextStepsSkillStream: "",
     nextStepsStage: null,
+    nextStepsNameFormat: "full",
     stageGridSkillStream: "bushcraft::bushcraft",
     stageGridStage: 1,
     stageGridNameFormat: "full",
@@ -62,6 +63,7 @@ function makeStoredFilters(overrides: Partial<OASProgressVueFilterState> = {}): 
     stageGridBreakByPatrol: false,
     stageGridShowApproved: true,
     stageGridLayout: "membersAsColumns",
+    filterDefaultsAppliedAt: null,
     ...overrides,
   };
 }
@@ -71,6 +73,68 @@ function loadFiltersViaComponentData(): OASProgressVueFilterState {
   const data = (OasProgressVueContent as any).data();
   return data.filters as OASProgressVueFilterState;
 }
+
+describe("OasProgressVueContent — Display Options filter defaults", () => {
+  beforeEach(() => window.localStorage.clear());
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const methods = (OasProgressVueContent as any).methods;
+  const leaderDefaults = { ...SYSTEM_FILTER_DEFAULTS, nameFormat: "codename" as const, sortBy: "lastName" as const, showApproved: false, showStagesNotStarted: false };
+
+  it("starts a tab never set up from the leader's defaults", () => {
+    saveFilterDefaults(leaderDefaults);
+
+    const filters = loadFiltersViaComponentData();
+
+    expect(filters.summaryNameFormat).toBe("codename");
+    expect(filters.sortBy).toBe("lastName");
+    expect(filters.stageGridShowApproved).toBe(false);
+    expect(filters.showNotStarted).toBe(false);
+    expect(filters.nextStepsNameFormat).toBe("codename");
+  });
+
+  it("keeps a tab's saved filters over the leader's defaults", () => {
+    saveFilterDefaults(leaderDefaults);
+    saveOASProgressVueFilters(makeStoredFilters({ nameFormat: "first" }));
+
+    expect(loadFiltersViaComponentData().nameFormat).toBe("first");
+  });
+
+  it("Reset filters uses the leader's defaults for common filters and the tab's own for the rest", () => {
+    saveFilterDefaults(leaderDefaults);
+    const context = { filters: makeStoredFilters({ viewMode: "heatmap", groupBy: "member", nameFormat: "first", showApproved: true }), patrolFilterOptions: [] };
+
+    methods.onResetFilters.call(context);
+
+    expect(context.filters.nameFormat).toBe("codename");
+    expect(context.filters.sortBy).toBe("lastName");
+    expect(context.filters.showApproved).toBe(false);
+    expect(context.filters.groupBy).toBe("skill");
+    expect(context.filters.stageGridNameFormat).toBe("full");
+  });
+
+  it("Apply defaults overwrites common filters on every tab once, keeping tab-specific ones", () => {
+    saveOASProgressVueFilters(makeStoredFilters({ nameFormat: "first", stageGridNameFormat: "first", groupBy: "member", visibleStages: [2] }));
+    saveFilterDefaults(leaderDefaults);
+    markFilterDefaultsApplied(1000);
+
+    const filters = loadFiltersViaComponentData();
+
+    expect(filters.nameFormat).toBe("codename");
+    expect(filters.stageGridNameFormat).toBe("codename");
+    expect(filters.groupBy).toBe("member");
+    expect(filters.visibleStages).toEqual([2]);
+    expect(loadOASProgressVueFilters()?.filterDefaultsAppliedAt).toBe(1000);
+  });
+
+  it("doesn't apply the same Apply twice, so later tab changes survive", () => {
+    saveFilterDefaults(leaderDefaults);
+    markFilterDefaultsApplied(1000);
+    saveOASProgressVueFilters(makeStoredFilters({ nameFormat: "first", filterDefaultsAppliedAt: 1000 }));
+
+    expect(loadFiltersViaComponentData().nameFormat).toBe("first");
+  });
+});
 
 describe("sanitiseViewMode", () => {
   it("passes through a recognised viewMode unchanged", () => {
@@ -507,9 +571,20 @@ describe("OasProgressVueContent Next Steps filters", () => {
       { memberId: "m1", firstName: "Zoe", lastName: "Adams", memberName: "Zoe Adams", patrolName: null },
       { memberId: "m2", firstName: "Amy", lastName: "Young", memberName: "Amy Young", patrolName: null },
     ];
-    expect(computed.nextStepsMemberOptions.call({ unitMembers })).toEqual([
+    expect(computed.nextStepsMemberOptions.call({ unitMembers, filters: { nextStepsNameFormat: "full" } })).toEqual([
       { text: "Amy Young", value: "m2" },
       { text: "Zoe Adams", value: "m1" },
+    ]);
+  });
+
+  it("labels Next Steps members in the tab's name format, still sorted by first name", () => {
+    const unitMembers = [
+      { memberId: "m1", firstName: "Zoe", lastName: "Adams", memberName: "Zoe Adams", patrolName: null },
+      { memberId: "m2", firstName: "Amy", lastName: "Young", memberName: "Amy Young", patrolName: null },
+    ];
+    expect(computed.nextStepsMemberOptions.call({ unitMembers, filters: { nextStepsNameFormat: "firstLastInitial" } })).toEqual([
+      { text: "A.Young", value: "m2" },
+      { text: "Z.Adams", value: "m1" },
     ]);
   });
 

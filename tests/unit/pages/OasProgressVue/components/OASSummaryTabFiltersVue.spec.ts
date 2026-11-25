@@ -27,7 +27,7 @@ describe("OASSummaryTabFiltersVue Show menu", () => {
   it("puts Expand Streams first under the Skills header when the tab passes a value for it", () => {
     const items = showOptions({ expandStreams: true, showNotStartedSkills: true, availablePatrols: [] });
 
-    expect(items).toEqual([{ header: "Skills" }, { value: "expandStreams", text: "Expand Streams" }, { value: "showNotStartedSkills", text: "Not Started" }]);
+    expect(items).toEqual([{ header: "Skills" }, { value: "expandStreams", text: "Expand Streams" }, { value: "showNotStartedSkills", text: "Skills not started" }]);
   });
 
   it("has no options at all for Peak Award in a unit without patrols, so the menu is hidden", () => {

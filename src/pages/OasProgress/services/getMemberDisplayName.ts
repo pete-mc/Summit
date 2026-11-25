@@ -1,14 +1,7 @@
+import type { NameFormat } from "@/shared/nameFormat";
 import { getCodename } from "./getCodename";
 
-export type NameFormat = "full" | "first" | "firstInitialLast" | "firstLastInitial" | "codename";
-
-export const NAME_FORMAT_OPTIONS: Array<{ value: NameFormat; text: string }> = [
-  { value: "full", text: "Full Name" },
-  { value: "first", text: "First Name" },
-  { value: "firstInitialLast", text: "FirstName.L" },
-  { value: "firstLastInitial", text: "F.LastName" },
-  { value: "codename", text: "Codename" },
-];
+export { NAME_FORMAT_OPTIONS, type NameFormat } from "@/shared/nameFormat";
 
 /** Gotcha: takes first/last separately. Re-splitting a combined name loses multi-word names ("Van Der Berg"). */
 export function getMemberDisplayName(firstName: string, lastName: string, memberId: string, nameFormat: NameFormat): string {

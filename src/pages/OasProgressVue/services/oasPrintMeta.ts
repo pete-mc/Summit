@@ -5,12 +5,10 @@ import { OAS_SKILLS } from "@/pages/OasProgress/services/filterHeatMapSections";
 
 const MAX_STAGE = 9;
 
-/** Not the dropdown's labels: on paper there are no subheaders to tell its two "Not started" items apart. */
 const HIDDEN_LABELS: Array<{ key: keyof OASProgressVueFilterState; text: string }> = [
   { key: "showEmptySkillRows", text: "Skills not started" },
-  { key: "showEmptyTopStages", text: "Empty top stages" },
+  { key: "showNotStarted", text: "Stages not started" },
   { key: "showApproved", text: "Approved I-Statements" },
-  { key: "showNotStarted", text: "Not started I-Statements" },
   { key: "showAnswered", text: "Answered I-Statements" },
 ];
 

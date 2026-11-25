@@ -14,8 +14,8 @@ const LAYOUT_OPTIONS: Array<{ value: OASProgressVueFilterState["stageGridLayout"
 ];
 
 const SORT_OPTIONS: Array<{ value: OASProgressVueFilterState["stageGridSortBy"]; text: string }> = [
-  { value: "firstName", text: "First name" },
-  { value: "lastName", text: "Last name" },
+  { value: "firstName", text: "First Name" },
+  { value: "lastName", text: "Last Name" },
 ];
 
 export default defineComponent({

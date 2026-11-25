@@ -19,6 +19,8 @@ import { buildPeakAwardSummaryRows, sortPeakAwardSummaryRows, type PeakAwardMemb
 import { PEAK_AWARD_REQUIREMENTS, type PeakAwardRequirement } from "@/pages/OasProgress/data/peakAwardRequirements";
 import { collectPatrolNames, hasUnassignedMembers, UNASSIGNED_PATROL, OAS_SKILLS } from "@/pages/OasProgress/services/filterHeatMapSections";
 import { loadOASProgressVueFilters, saveOASProgressVueFilters, type OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
+import { commonDefaultsForAllTabs, commonDefaultsForTab } from "@/pages/OasProgressVue/services/oasFilterDefaults";
+import { loadFilterDefaults, loadFilterDefaultsAppliedAt } from "@/shared/filterDefaults";
 import { exportExcelWorkbook, type ExcelWorkbookRequest } from "@/excel/summitExcel";
 import { buildPeakAwardSummarySheet } from "@/excel/sheets/peakAwardSummary";
 import { buildOverallProgressSheet } from "@/excel/sheets/overallProgress";
@@ -49,7 +51,7 @@ import {
   type OverallProgressColumnSort,
   type OverallProgressRow,
 } from "@/pages/OasProgress/services/buildOverallProgressRows";
-import { getMemberDisplayName } from "@/pages/OasProgress/services/getMemberDisplayName";
+import { getMemberDisplayName, type NameFormat } from "@/pages/OasProgress/services/getMemberDisplayName";
 import { listSkillStreams, skillStreamKey, type SkillStream } from "@/pages/OasProgressVue/services/skillStreams";
 import { buildUnitMemberList, filterMemberRows, sortMembersByName, type UnitMemberListItem } from "@/pages/OasProgressVue/services/unitMemberList";
 import {
@@ -117,7 +119,6 @@ const DEFAULT_FILTERS: OASProgressVueFilterState = {
   selectedPatrols: null,
   breakByPatrol: false,
   showEmptySkillRows: true,
-  showEmptyTopStages: true,
   showApproved: true,
   showNotStarted: true,
   showAnswered: true,
@@ -128,6 +129,7 @@ const DEFAULT_FILTERS: OASProgressVueFilterState = {
   nextStepsMemberId: "",
   nextStepsSkillStream: "",
   nextStepsStage: null,
+  nextStepsNameFormat: "full",
 
   // Stage Grid default narrow (Camping, stage 1) to limit processing; it's a print target.
   stageGridSkillStream: skillStreamKey("camping", "camping"),
@@ -138,6 +140,8 @@ const DEFAULT_FILTERS: OASProgressVueFilterState = {
   stageGridBreakByPatrol: false,
   stageGridShowApproved: true,
   stageGridLayout: "membersAsColumns",
+
+  filterDefaultsAppliedAt: null,
 };
 
 // Catches a stored viewMode that is present but invalid; a missing one is covered by the defaults spread.
@@ -146,22 +150,8 @@ const VALID_VIEW_MODES = TAB_ORDER;
 /** Each tab's "Reset filters" resets only its own keys. viewMode is never reset. */
 const SUMMARY_FILTER_KEYS = ["summaryMemberFilter", "summaryNameFormat", "summarySelectedPatrols", "summarySortBy", "summaryColumnSort", "summaryExpandStreams", "summaryShowNotStartedSkills", "summaryBreakByPatrol"] as const;
 const PEAK_AWARD_FILTER_KEYS = ["peakAwardMemberFilter", "peakAwardNameFormat", "peakAwardSelectedPatrols", "peakAwardSortBy", "peakAwardBreakByPatrol"] as const;
-const HEATMAP_FILTER_KEYS = [
-  "groupBy",
-  "memberFilter",
-  "nameFormat",
-  "selectedPatrols",
-  "breakByPatrol",
-  "showEmptySkillRows",
-  "showEmptyTopStages",
-  "showApproved",
-  "showNotStarted",
-  "showAnswered",
-  "visibleStreams",
-  "visibleStages",
-  "sortBy",
-] as const;
-const NEXT_STEPS_FILTER_KEYS = ["nextStepsMemberId", "nextStepsSkillStream", "nextStepsStage"] as const;
+const HEATMAP_FILTER_KEYS = ["groupBy", "memberFilter", "nameFormat", "selectedPatrols", "breakByPatrol", "showEmptySkillRows", "showApproved", "showNotStarted", "showAnswered", "visibleStreams", "visibleStages", "sortBy"] as const;
+const NEXT_STEPS_FILTER_KEYS = ["nextStepsMemberId", "nextStepsSkillStream", "nextStepsStage", "nextStepsNameFormat"] as const;
 const STAGE_GRID_FILTER_KEYS = ["stageGridSkillStream", "stageGridStage", "stageGridNameFormat", "stageGridSortBy", "stageGridSelectedPatrols", "stageGridBreakByPatrol", "stageGridShowApproved", "stageGridLayout"] as const;
 
 const RESETNEXT_STEPS_FILTER_KEYS_BY_VIEW: Record<OASProgressVueFilterState["viewMode"], readonly (keyof OASProgressVueFilterState)[]> = {
@@ -177,14 +167,18 @@ export function sanitiseViewMode(viewMode: unknown): OASProgressVueFilterState["
   return VALID_VIEW_MODES.includes(viewMode as OASProgressVueFilterState["viewMode"]) ? (viewMode as OASProgressVueFilterState["viewMode"]) : "summary";
 }
 
+/** Saved filters beat the leader's defaults, except after "Apply defaults to all pages" on Display Options, which overwrites them once. */
 function loadInitialFilters(): OASProgressVueFilterState {
-  const stored = loadOASProgressVueFilters();
-  if (!stored) {
-    return DEFAULT_FILTERS;
-  }
-  const merged = { ...DEFAULT_FILTERS, ...stored };
-  const summarySortBy = merged.summarySortBy === "lastName" ? "lastName" : "firstName";
-  return { ...merged, viewMode: sanitiseViewMode(merged.viewMode), summarySortBy };
+  const userDefaults = commonDefaultsForAllTabs(loadFilterDefaults());
+  const appliedAt = loadFilterDefaultsAppliedAt();
+  const stored = loadOASProgressVueFilters() ?? {};
+  const storedAppliedAt = typeof stored.filterDefaultsAppliedAt === "number" ? stored.filterDefaultsAppliedAt : null;
+  const needsCatchUp = appliedAt !== null && (storedAppliedAt === null || appliedAt > storedAppliedAt);
+  const merged: OASProgressVueFilterState = needsCatchUp ? { ...DEFAULT_FILTERS, ...stored, ...userDefaults, filterDefaultsAppliedAt: appliedAt } : { ...DEFAULT_FILTERS, ...userDefaults, ...stored };
+  const summarySortBy: OASProgressVueFilterState["summarySortBy"] = merged.summarySortBy === "lastName" ? "lastName" : "firstName";
+  const filters: OASProgressVueFilterState = { ...merged, viewMode: sanitiseViewMode(merged.viewMode), summarySortBy };
+  if (needsCatchUp) saveOASProgressVueFilters(filters);
+  return filters;
 }
 
 const SUMMARY_SORT_OPTIONS: SortOption[] = [
@@ -260,7 +254,8 @@ export default defineComponent({
       return this.patrolFilterOptions.length > 1;
     },
     nextStepsMemberOptions(): NextStepsFilterOption[] {
-      return sortMembersByName(this.unitMembers, "firstName").map((m) => ({ text: m.memberName, value: m.memberId }));
+      const nameFormat = this.filters.nextStepsNameFormat;
+      return sortMembersByName(this.unitMembers, "firstName").map((m) => ({ text: getMemberDisplayName(m.firstName, m.lastName, m.memberId, nameFormat), value: m.memberId }));
     },
     /** Falls back to the first member while nothing is picked, or when the picked member is no longer listed. */
     resolvedNextStepsMemberId(): string {
@@ -483,6 +478,7 @@ export default defineComponent({
       keysToReset.forEach((key) => {
         (resetValues as Record<string, unknown>)[key] = DEFAULT_FILTERS[key];
       });
+      Object.assign(resetValues, commonDefaultsForTab(this.filters.viewMode, loadFilterDefaults()));
 
       // Gotcha: resolve the patrol selection here. patrolFilterOptions won't change on reset, so its watcher won't fire and null would mean "show nothing".
       const resolvedPatrols = this.patrolFilterOptions.length > 0 ? this.patrolFilterOptions : null;
@@ -527,6 +523,9 @@ export default defineComponent({
     },
     onNextStepsStageUpdate(nextStepsStage: number) {
       this.filters = { ...this.filters, nextStepsStage };
+    },
+    onNextStepsNameFormatUpdate(nextStepsNameFormat: NameFormat) {
+      this.filters = { ...this.filters, nextStepsNameFormat };
     },
     async onNextStepsExcelExportClick() {
       await this.runExcelExport("Next Steps", this.nextStepsPrintMeta, [{ printProfile: "oas-next-steps", build: (header, logo) => buildNextStepsSheet({ rows: this.nextStepsRows, header, logo }) }]);

@@ -18,6 +18,8 @@
 
       <v-select :value="stage" :items="stageOptions" label="Stage" dense hide-details style="max-width: 100px" class="oas-vue-filter-select" @change="$emit('update:stage', $event)"></v-select>
 
+      <NameFormatSelect :value="nameFormat" @input="$emit('update:nameFormat', $event)" />
+
       <v-btn text color="primary" @click="$emit('reset')">Reset filters</v-btn>
     </div>
   </div>

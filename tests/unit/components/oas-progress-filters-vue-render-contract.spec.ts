@@ -60,8 +60,10 @@ describe("OASProgressFiltersVue wiring and gating rules", () => {
   });
 
   // Label only; the field is still showEmptySkillRows.
-  it("the showEmptySkillRows item is labelled 'Not Started'", () => {
-    expect(tsSource).toContain('{ value: "showEmptySkillRows", text: "Not Started" }');
+  it("labels the two not-started options so they can be told apart", () => {
+    expect(tsSource).toContain('{ value: "showEmptySkillRows", text: "Skills not started" }');
+    expect(tsSource).toContain('{ value: "showNotStarted", text: "Stages not started" }');
+    expect(tsSource).not.toContain("showEmptyTopStages");
     expect(tsSource).not.toContain("Empty skills rows");
     expect(tsSource).not.toContain('text: "Empty skills"');
   });

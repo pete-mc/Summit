@@ -57,7 +57,6 @@ interface MountProps {
   showApproved?: boolean;
   showNotStarted?: boolean;
   showAnswered?: boolean;
-  showEmptyTopStages?: boolean;
   showEmptySkillRows?: boolean;
   groupBy?: "skill" | "member" | "none";
   canOpenPeakAward?: boolean;
@@ -357,13 +356,13 @@ describe("OASHeatMapVue render contract", () => {
     });
   });
 
-  describe("showEmptyTopStages", () => {
-    function stagesFor(rows: OASProgressRow[], showEmptyTopStages: boolean): number[] {
-      const vm = mountLogic({ items: rows, trunkStageCounts: { bushcraft: 9 }, members: [makeMember()], visibleStreams: ["bushcraft"], visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9], sortBy: "firstName", showEmptyTopStages });
+  describe("showNotStarted trims stage columns", () => {
+    function stagesFor(rows: OASProgressRow[], showNotStarted: boolean): number[] {
+      const vm = mountLogic({ items: rows, trunkStageCounts: { bushcraft: 9 }, members: [makeMember()], visibleStreams: ["bushcraft"], visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9], sortBy: "firstName", showNotStarted });
       return vm.allStages as number[];
     }
 
-    it("trims empty top stages down to 1, keeping only stage 1 on screen", () => {
+    it("trims stages nobody has started down to 1, keeping only stage 1 on screen", () => {
       const rows = [makeRow({ stage: 1, inputId: "s1", answered: true }), ...[2, 3, 4, 5, 6, 7, 8, 9].map((stage) => makeRow({ stage, inputId: "s" + stage }))];
 
       expect(stagesFor(rows, false)).toEqual([1]);

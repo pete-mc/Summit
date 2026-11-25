@@ -52,7 +52,6 @@ function makeFilters(overrides: Partial<OASProgressVueFilterState> = {}): OASPro
     selectedPatrols: [],
     breakByPatrol: false,
     showEmptySkillRows: true,
-    showEmptyTopStages: true,
     showApproved: true,
     showNotStarted: true,
     showAnswered: true,

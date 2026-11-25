@@ -12,7 +12,6 @@ function makeFilters(overrides: Partial<OASProgressVueFilterState> = {}): OASPro
     selectedPatrols: [],
     breakByPatrol: false,
     showEmptySkillRows: true,
-    showEmptyTopStages: true,
     showApproved: true,
     showNotStarted: true,
     showAnswered: true,
@@ -105,6 +104,10 @@ describe("migrateRenamedFilters", () => {
   it("moves the old Awarded / Completed filters to their Approved names", () => {
     expect(migrateRenamedFilters({ showAwarded: false, stageGridShowCompleted: false })).toEqual({ showApproved: false, stageGridShowApproved: false });
     expect(migrateRenamedFilters({ worksheetShowCompleted: false })).toEqual({ stageGridShowApproved: false });
+  });
+
+  it("drops the old Empty top stages filter, now part of Stages not started", () => {
+    expect(migrateRenamedFilters({ showEmptyTopStages: false, showNotStarted: true })).toEqual({ showNotStarted: true });
   });
 
   it("applies when loading saved state", () => {

@@ -2,6 +2,8 @@ import * as fs from "fs";
 import * as path from "path";
 import OASNextStepsFiltersVue from "@/pages/OasProgressVue/components/OASNextStepsFiltersVue";
 
+jest.mock("@/components/NameFormatSelect.vue", () => ({ __esModule: true, default: { name: "NameFormatSelect", render: () => null } }), { virtual: true });
+
 const REPO_ROOT = path.resolve(__dirname, "../../../../..");
 
 describe("OASNextStepsFiltersVue", () => {
@@ -13,6 +15,11 @@ describe("OASNextStepsFiltersVue", () => {
     expect(source).not.toContain("multiple");
     expect(source).not.toContain("clearable");
     expect(source).toContain("$emit('reset')");
+  });
+
+  it("offers the shared Name format control, emitting update:nameFormat", () => {
+    const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASNextStepsFiltersVue.vue"), "utf8");
+    expect(source).toContain(`<NameFormatSelect :value="nameFormat" @input="$emit('update:nameFormat', $event)" />`);
   });
 
   it("never emits an empty member", () => {

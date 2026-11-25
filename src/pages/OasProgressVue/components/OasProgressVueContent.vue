@@ -128,7 +128,6 @@
           :name-format="filters.nameFormat"
           :selected-patrols="filters.selectedPatrols || []"
           :break-by-patrol="filters.breakByPatrol"
-          :show-empty-top-stages="filters.showEmptyTopStages"
           :show-approved="filters.showApproved"
           :show-not-started="filters.showNotStarted"
           :show-answered="filters.showAnswered"
@@ -146,9 +145,11 @@
           :skill-stream-options="nextStepsSkillStreamOptions"
           :stage="resolvedNextStepsStage"
           :stage-options="nextStepsStageOptions"
+          :name-format="filters.nextStepsNameFormat"
           @update:memberId="onNextStepsMemberUpdate"
           @update:skillStream="onNextStepsSkillStreamUpdate"
           @update:stage="onNextStepsStageUpdate"
+          @update:nameFormat="onNextStepsNameFormatUpdate"
           @reset="onResetFilters"
         />
         <p v-if="nextStepsRows.length === 0" class="oas-next-steps-nothing-outstanding">Every stage has been approved.</p>

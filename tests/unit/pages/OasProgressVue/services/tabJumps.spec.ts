@@ -129,7 +129,7 @@ describe("buildSummaryCellJumps", () => {
 });
 
 const people = { selectedPatrols: ["Eagles"], memberFilter: "Sm" };
-const showEverything = { visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9], showApproved: true, showNotStarted: true, showAnswered: true, showEmptySkillRows: true, showEmptyTopStages: true };
+const showEverything = { visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9], showApproved: true, showNotStarted: true, showAnswered: true, showEmptySkillRows: true };
 
 describe("lowestStagesNeeded", () => {
   it("finds the lowest unapproved stage among the given members only", () => {

@@ -61,7 +61,7 @@ describe("skill-heatmap profile", () => {
     expect(profile.defaults.orientation).toBe("landscape");
   });
 
-  it("sizes columns to the stages actually shown (Stages filter / empty top stages)", () => {
+  it("sizes columns to the stages actually shown (Stages filter / stages not started)", () => {
     for (const stages of [[1, 2, 3, 4, 5, 6, 7, 8, 9], [2, 5], [1]]) {
       const host = mount(stages);
       const doc = parse(buildPrintDocument({ source: host, profile: "skill-heatmap", vars: VARS, generated: GENERATED }));
@@ -122,7 +122,6 @@ describe("buildHeatmapPrintMeta", () => {
     visibleStreams: ALL_SKILLS,
     visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     showEmptySkillRows: true,
-    showEmptyTopStages: true,
     showApproved: true,
     showNotStarted: true,
     showAnswered: true,

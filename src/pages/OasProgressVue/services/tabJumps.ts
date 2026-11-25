@@ -47,7 +47,6 @@ const HEAT_MAP_SHOW_EVERYTHING: Partial<OASProgressVueFilterState> = {
   showNotStarted: true,
   showAnswered: true,
   showEmptySkillRows: true,
-  showEmptyTopStages: true,
 };
 
 const copyPatrols = (patrols: string[] | null) => (patrols ? patrols.slice() : null);
