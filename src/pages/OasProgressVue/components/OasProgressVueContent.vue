@@ -129,7 +129,7 @@
           :selected-patrols="filters.selectedPatrols || []"
           :break-by-patrol="filters.breakByPatrol"
           :show-empty-top-stages="filters.showEmptyTopStages"
-          :show-awarded="filters.showAwarded"
+          :show-approved="filters.showApproved"
           :show-not-started="filters.showNotStarted"
           :show-answered="filters.showAnswered"
           :group-by="filters.groupBy"
@@ -151,7 +151,7 @@
           @update:stage="onNextStepsStageUpdate"
           @reset="onResetFilters"
         />
-        <p v-if="nextStepsRows.length === 0" class="oas-next-steps-nothing-outstanding">Every stage has been awarded.</p>
+        <p v-if="nextStepsRows.length === 0" class="oas-next-steps-nothing-outstanding">Every stage has been approved.</p>
         <OASNextStepsVue v-else ref="nextSteps" :rows="nextStepsRows" />
       </template>
 

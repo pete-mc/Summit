@@ -35,7 +35,7 @@ function makeRow(overrides: Partial<OASProgressRow> = {}): OASProgressRow {
     lastName: "Scout",
     patrolName: null,
     answered: true,
-    awarded: true,
+    approved: true,
     date: null,
     section: "venturer",
     ...overrides,
@@ -43,7 +43,7 @@ function makeRow(overrides: Partial<OASProgressRow> = {}): OASProgressRow {
 }
 
 function awardedRow(memberId: string, stream: string, stage: number, idSuffix: string, section: string = "venturer"): OASProgressRow {
-  return makeRow({ memberId, stream, branch: stream, stage, inputId: `${stream}-${stage}-${idSuffix}`, awarded: true, answered: true, section });
+  return makeRow({ memberId, stream, branch: stream, stage, inputId: `${stream}-${stage}-${idSuffix}`, approved: true, answered: true, section });
 }
 
 describe("buildPeakAwardSummaryRows", () => {
@@ -58,7 +58,7 @@ describe("buildPeakAwardSummaryRows", () => {
     expect(zara?.special?.count).toBe(0);
   });
 
-  it("marks a core skill met once the required stage is awarded, with one box per required stage", () => {
+  it("marks a core skill met once the required stage is approved, with one box per required stage", () => {
     const members = [makeMember({ id: "m1" })];
     // Venturer requires stage 5 in each core skill.
     const rows = [1, 2, 3, 4, 5].map((stage) => awardedRow("m1", "bushcraft", stage, "x"));
@@ -67,14 +67,14 @@ describe("buildPeakAwardSummaryRows", () => {
     const bushcraft = result[0].coreSkills.find((c) => c.skill === "bushcraft");
 
     expect(bushcraft?.requiredStage).toBe(5);
-    expect(bushcraft?.highestAwardedStage).toBe(5);
+    expect(bushcraft?.highestApprovedStage).toBe(5);
     expect(bushcraft?.boxes.map((b) => b.met)).toEqual([true, true, true, true, true]);
     expect(bushcraft?.met).toBe(true);
   });
 
   it("carries the award's own stream/section/date on a met core skill box, for its tooltip", () => {
     const members = [makeMember({ id: "m1" })];
-    const rows = [makeRow({ memberId: "m1", stream: "bushcraft", branch: "bushcraft", stage: 1, awarded: true, answered: true, section: "venturer", date: "2026-01-05" })];
+    const rows = [makeRow({ memberId: "m1", stream: "bushcraft", branch: "bushcraft", stage: 1, approved: true, answered: true, section: "venturer", date: "2026-01-05" })];
 
     const result = buildPeakAwardSummaryRows(rows, members, PEAK_AWARD_REQUIREMENTS[TerrainAchievementsSection.Venturer], TerrainAchievementsSection.Venturer);
     const bushcraft = result[0].coreSkills.find((c) => c.skill === "bushcraft");
@@ -83,14 +83,14 @@ describe("buildPeakAwardSummaryRows", () => {
     expect(bushcraft?.boxes[1].award).toBeNull();
   });
 
-  it("leaves a core skill not-met below the required stage, with only the awarded boxes green", () => {
+  it("leaves a core skill not-met below the required stage, with only the approved boxes green", () => {
     const members = [makeMember({ id: "m1" })];
     const rows = [1, 2, 3].map((stage) => awardedRow("m1", "camping", stage, "x"));
 
     const result = buildPeakAwardSummaryRows(rows, members, PEAK_AWARD_REQUIREMENTS[TerrainAchievementsSection.Venturer], TerrainAchievementsSection.Venturer);
     const camping = result[0].coreSkills.find((c) => c.skill === "camping");
 
-    expect(camping?.highestAwardedStage).toBe(3);
+    expect(camping?.highestApprovedStage).toBe(3);
     expect(camping?.boxes.map((b) => b.met)).toEqual([true, true, true, false, false]);
     expect(camping?.met).toBe(false);
   });
@@ -106,7 +106,7 @@ describe("buildPeakAwardSummaryRows", () => {
     expect(bushcraft?.met).toBe(true);
   });
 
-  it("sums the highest awarded stage across all 9 streams for the Progressions total", () => {
+  it("sums the highest approved stage across all 9 streams for the Progressions total", () => {
     const members = [makeMember({ id: "m1" })];
     const rows = [...[1, 2].map((stage) => awardedRow("m1", "bushwalking", stage, "a")), ...[1, 2, 3].map((stage) => awardedRow("m1", "camping", stage, "b")), awardedRow("m1", "aquatics", 1, "c")];
 
@@ -120,7 +120,7 @@ describe("buildPeakAwardSummaryRows", () => {
 
   it("carries the award's own stream/date on a met progression box, for its tooltip", () => {
     const members = [makeMember({ id: "m1" })];
-    const rows = [makeRow({ memberId: "m1", stream: "aquatics", branch: "aquatics", stage: 1, awarded: true, answered: true, section: "venturer", date: "2026-02-10" })];
+    const rows = [makeRow({ memberId: "m1", stream: "aquatics", branch: "aquatics", stage: 1, approved: true, answered: true, section: "venturer", date: "2026-02-10" })];
 
     const result = buildPeakAwardSummaryRows(rows, members, PEAK_AWARD_REQUIREMENTS[TerrainAchievementsSection.Venturer], TerrainAchievementsSection.Venturer);
 
@@ -214,7 +214,7 @@ describe("buildPeakAwardSummaryRows", () => {
       const result = buildPeakAwardSummaryRows(rows, members, PEAK_AWARD_REQUIREMENTS[TerrainAchievementsSection.Venturer], TerrainAchievementsSection.Venturer);
 
       // Core skills (5 required each): bushcraft 5/5, bushwalking 3/5 (stages 1-3 met), camping 0/5 = 8 met of 15.
-      // Progressions: 8 awarded (5 bushcraft stages + 3 bushwalking stages) of 12 boxes, all 8 met.
+      // Progressions: 8 approved (5 bushcraft stages + 3 bushwalking stages) of 12 boxes, all 8 met.
       // Special: 2 qualifying (bushcraft stages 4,5 — bushwalking never reaches stage 4) of 4 boxes.
       expect(result[0].progressScore).toBe(8 + 8 + 2);
       expect(result[0].progressTotal).toBe(31);
@@ -256,9 +256,9 @@ describe("buildPeakAwardSummaryRows", () => {
 
   // Regression: Progressions counted earlier sections' stages ("32 of 12").
   describe("current-section scoping (Progressions/Special only count the member's CURRENT section)", () => {
-    it("does not count a stream's stages awarded entirely in an earlier section toward Progressions", () => {
+    it("does not count a stream's stages approved entirely in an earlier section toward Progressions", () => {
       const members = [makeMember({ id: "m1" })];
-      // All awarded while the member was still a Scout — now a Venturer, none of this should count.
+      // All approved while the member was still a Scout — now a Venturer, none of this should count.
       const rows = [1, 2, 3, 4, 5].map((stage) => awardedRow("m1", "bushwalking", stage, "x", "scout"));
 
       const result = buildPeakAwardSummaryRows(rows, members, PEAK_AWARD_REQUIREMENTS[TerrainAchievementsSection.Venturer], TerrainAchievementsSection.Venturer);
@@ -266,9 +266,9 @@ describe("buildPeakAwardSummaryRows", () => {
       expect(result[0].totalProgressions).toBe(0);
     });
 
-    it("counts only the stages awarded in the current section when a stream spans two sections", () => {
+    it("counts only the stages approved in the current section when a stream spans two sections", () => {
       const members = [makeMember({ id: "m1" })];
-      // Stages 1-3 awarded as a Scout, stage 4 awarded after moving up to Venturer: only stage 4 counts.
+      // Stages 1-3 approved as a Scout, stage 4 approved after moving up to Venturer: only stage 4 counts.
       const rows = [...[1, 2, 3].map((stage) => awardedRow("m1", "bushwalking", stage, "x", "scout")), awardedRow("m1", "bushwalking", 4, "y", "venturer")];
 
       const result = buildPeakAwardSummaryRows(rows, members, PEAK_AWARD_REQUIREMENTS[TerrainAchievementsSection.Venturer], TerrainAchievementsSection.Venturer);
@@ -296,9 +296,9 @@ describe("buildPeakAwardSummaryRows", () => {
       expect(result[0].special?.met).toBe(false);
     });
 
-    it("ignores an in-progress (not yet awarded) row even if its section matches — Progressions only counts awarded stages", () => {
+    it("ignores an in-progress (not yet approved) row even if its section matches — Progressions only counts approved stages", () => {
       const members = [makeMember({ id: "m1" })];
-      const rows = [makeRow({ memberId: "m1", stream: "camping", branch: "camping", stage: 1, awarded: false, answered: true, section: "venturer" })];
+      const rows = [makeRow({ memberId: "m1", stream: "camping", branch: "camping", stage: 1, approved: false, answered: true, section: "venturer" })];
 
       const result = buildPeakAwardSummaryRows(rows, members, PEAK_AWARD_REQUIREMENTS[TerrainAchievementsSection.Venturer], TerrainAchievementsSection.Venturer);
 

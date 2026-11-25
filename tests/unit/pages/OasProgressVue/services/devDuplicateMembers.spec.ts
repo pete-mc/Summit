@@ -17,7 +17,7 @@ function makeRow(overrides: Partial<OASProgressRow> = {}): OASProgressRow {
     lastName: "Scout",
     patrolName: null,
     answered: false,
-    awarded: false,
+    approved: false,
     date: "",
     ...overrides,
   } as OASProgressRow;
@@ -71,14 +71,14 @@ describe("duplicateRowsForDevPreview", () => {
   });
 
   it("keeps every other field identical on each duplicate", () => {
-    const items = [makeRow({ memberId: "m1", patrolName: "Wombats", inputId: "a1", answered: true, awarded: true, date: "2024-02-03" })];
+    const items = [makeRow({ memberId: "m1", patrolName: "Wombats", inputId: "a1", answered: true, approved: true, date: "2024-02-03" })];
 
     const duplicate = duplicateRowsForDevPreview(items, 1).find((r) => r.memberId === "m1-dev1")!;
 
     expect(duplicate.patrolName).toBe("Wombats");
     expect(duplicate.inputId).toBe("a1");
     expect(duplicate.answered).toBe(true);
-    expect(duplicate.awarded).toBe(true);
+    expect(duplicate.approved).toBe(true);
     expect(duplicate.date).toBe("2024-02-03");
   });
 

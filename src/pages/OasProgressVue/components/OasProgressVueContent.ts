@@ -55,7 +55,7 @@ import { buildUnitMemberList, filterMemberRows, sortMembersByName, type UnitMemb
 import {
   buildPeakAwardCoreSkillJumps,
   buildSummaryCellJumps,
-  highestAwardedStreams,
+  highestApprovedStreams,
   listOutstandingSkillStreams,
   lowestStagesNeeded,
   peakAwardCoreSkillHeaderJumps,
@@ -118,7 +118,7 @@ const DEFAULT_FILTERS: OASProgressVueFilterState = {
   breakByPatrol: false,
   showEmptySkillRows: true,
   showEmptyTopStages: true,
-  showAwarded: true,
+  showApproved: true,
   showNotStarted: true,
   showAnswered: true,
   visibleStreams: OAS_SKILLS,
@@ -136,7 +136,7 @@ const DEFAULT_FILTERS: OASProgressVueFilterState = {
   stageGridSortBy: "firstName",
   stageGridSelectedPatrols: null,
   stageGridBreakByPatrol: false,
-  stageGridShowCompleted: true,
+  stageGridShowApproved: true,
   stageGridLayout: "membersAsColumns",
 };
 
@@ -154,7 +154,7 @@ const HEATMAP_FILTER_KEYS = [
   "breakByPatrol",
   "showEmptySkillRows",
   "showEmptyTopStages",
-  "showAwarded",
+  "showApproved",
   "showNotStarted",
   "showAnswered",
   "visibleStreams",
@@ -162,7 +162,7 @@ const HEATMAP_FILTER_KEYS = [
   "sortBy",
 ] as const;
 const NEXT_STEPS_FILTER_KEYS = ["nextStepsMemberId", "nextStepsSkillStream", "nextStepsStage"] as const;
-const STAGE_GRID_FILTER_KEYS = ["stageGridSkillStream", "stageGridStage", "stageGridNameFormat", "stageGridSortBy", "stageGridSelectedPatrols", "stageGridBreakByPatrol", "stageGridShowCompleted", "stageGridLayout"] as const;
+const STAGE_GRID_FILTER_KEYS = ["stageGridSkillStream", "stageGridStage", "stageGridNameFormat", "stageGridSortBy", "stageGridSelectedPatrols", "stageGridBreakByPatrol", "stageGridShowApproved", "stageGridLayout"] as const;
 
 const RESETNEXT_STEPS_FILTER_KEYS_BY_VIEW: Record<OASProgressVueFilterState["viewMode"], readonly (keyof OASProgressVueFilterState)[]> = {
   about: [],
@@ -357,7 +357,7 @@ export default defineComponent({
     peakAwardCoreSkillJumps(): CellJumps {
       const nameFormat = this.filters.peakAwardNameFormat;
       const displayName = (row: PeakAwardMemberRow) => getMemberDisplayName(row.firstName, row.lastName, row.memberId, nameFormat);
-      return buildPeakAwardCoreSkillJumps(this.filteredPeakAwardSummaryRows, displayName, highestAwardedStreams(this.items), this.outstandingSkillStreams);
+      return buildPeakAwardCoreSkillJumps(this.filteredPeakAwardSummaryRows, displayName, highestApprovedStreams(this.items), this.outstandingSkillStreams);
     },
     peakAwardCoreSkillMenus(): TabJump[][] {
       if (!this.peakAwardRequirement) return [];
@@ -518,7 +518,7 @@ export default defineComponent({
     nextStepsPrintTarget(): HTMLTableElement | undefined {
       return (this.$refs.nextSteps as unknown as NextStepsVueInstance | undefined)?.getPrintTable();
     },
-    /** A new member or skill starts at its lowest un-awarded stage. */
+    /** A new member or skill starts at its lowest unapproved stage. */
     onNextStepsMemberUpdate(nextStepsMemberId: string) {
       this.filters = { ...this.filters, nextStepsMemberId, nextStepsStage: null };
     },

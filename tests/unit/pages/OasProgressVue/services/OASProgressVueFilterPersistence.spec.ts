@@ -1,4 +1,4 @@
-import { saveOASProgressVueFilters, loadOASProgressVueFilters, migrateRenamedTabs, type OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
+import { saveOASProgressVueFilters, loadOASProgressVueFilters, migrateRenamedFilters, type OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
 
 const STORAGE_KEY = "summit.oasProgressVue.filters";
 const REACT_PAGE_STORAGE_KEY = "summit.oasProgress.filters";
@@ -13,7 +13,7 @@ function makeFilters(overrides: Partial<OASProgressVueFilterState> = {}): OASPro
     breakByPatrol: false,
     showEmptySkillRows: true,
     showEmptyTopStages: true,
-    showAwarded: true,
+    showApproved: true,
     showNotStarted: true,
     showAnswered: true,
     visibleStreams: ["bushcraft", "bushwalking"],
@@ -24,7 +24,7 @@ function makeFilters(overrides: Partial<OASProgressVueFilterState> = {}): OASPro
     stageGridNameFormat: "full",
     stageGridSortBy: "firstName",
     stageGridBreakByPatrol: false,
-    stageGridShowCompleted: true,
+    stageGridShowApproved: true,
     stageGridLayout: "membersAsColumns",
     ...overrides,
   };
@@ -86,20 +86,25 @@ describe("OASProgressVueFilterPersistence", () => {
   });
 });
 
-describe("migrateRenamedTabs", () => {
+describe("migrateRenamedFilters", () => {
   it("moves the old table* / worksheet* keys and tab names to Next Steps / Stage Grid", () => {
-    expect(migrateRenamedTabs({ viewMode: "worksheets", worksheetStage: 3, tableMemberId: "m1", worksheetLayout: "membersAsRows", summarySortBy: "lastName" })).toEqual({
+    expect(migrateRenamedFilters({ viewMode: "worksheets", worksheetStage: 3, tableMemberId: "m1", worksheetLayout: "membersAsRows", summarySortBy: "lastName" })).toEqual({
       viewMode: "stageGrid",
       stageGridStage: 3,
       nextStepsMemberId: "m1",
       stageGridLayout: "membersAsRows",
       summarySortBy: "lastName",
     });
-    expect(migrateRenamedTabs({ viewMode: "table" }).viewMode).toBe("nextSteps");
+    expect(migrateRenamedFilters({ viewMode: "table" }).viewMode).toBe("nextSteps");
   });
 
   it("keeps a value already saved under the new name", () => {
-    expect(migrateRenamedTabs({ worksheetStage: 2, stageGridStage: 4 })).toEqual({ stageGridStage: 4 });
+    expect(migrateRenamedFilters({ worksheetStage: 2, stageGridStage: 4 })).toEqual({ stageGridStage: 4 });
+  });
+
+  it("moves the old Awarded / Completed filters to their Approved names", () => {
+    expect(migrateRenamedFilters({ showAwarded: false, stageGridShowCompleted: false })).toEqual({ showApproved: false, stageGridShowApproved: false });
+    expect(migrateRenamedFilters({ worksheetShowCompleted: false })).toEqual({ stageGridShowApproved: false });
   });
 
   it("applies when loading saved state", () => {

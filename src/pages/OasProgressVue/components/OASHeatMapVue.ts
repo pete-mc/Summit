@@ -43,7 +43,7 @@ function trimEmptyTrailingStages(allStages: number[], sections: HeatMapSection[]
   sections.forEach((section) => {
     section.members.forEach((member) => {
       member.stages.forEach((stage) => {
-        if (stage.cells.some((c) => c.answered || c.awarded)) {
+        if (stage.cells.some((c) => c.answered || c.approved)) {
           stageHasProgress.set(stage.stage, true);
         }
       });
@@ -63,10 +63,10 @@ function trimEmptyTrailingStages(allStages: number[], sections: HeatMapSection[]
 }
 
 /** "hidden" keeps the square's place but draws nothing. */
-export type SquareState = "awarded" | "answered" | "unanswered" | "hidden";
+export type SquareState = "approved" | "answered" | "unanswered" | "hidden";
 
 export interface StageCellView {
-  kind: "empty" | "bar-complete" | "bar-unstarted" | "squares";
+  kind: "empty" | "bar-approved" | "bar-unstarted" | "squares";
   title?: string;
   squares?: Array<{
     inputId: string;
@@ -77,23 +77,23 @@ export interface StageCellView {
   }>;
 }
 
-function buildStageCellView(stage: HeatMapStage | undefined, showAwarded: boolean, showNotStarted: boolean, showAnswered: boolean): StageCellView {
+function buildStageCellView(stage: HeatMapStage | undefined, showApproved: boolean, showNotStarted: boolean, showAnswered: boolean): StageCellView {
   if (!stage) {
     return { kind: "empty" };
   }
-  if (stage.complete) {
-    return showAwarded ? { kind: "bar-complete", title: `Stage ${stage.stage} — Awarded` } : { kind: "empty" };
+  if (stage.approved) {
+    return showApproved ? { kind: "bar-approved", title: `Stage ${stage.stage} — Approved` } : { kind: "empty" };
   }
-  const hasAnyProgress = stage.cells.some((c) => c.answered || c.awarded);
+  const hasAnyProgress = stage.cells.some((c) => c.answered || c.approved);
   if (!hasAnyProgress) {
-    // "Not started" = no answered/awarded statement in this stage, for this member and skill.
+    // "Not started" = no answered/approved statement in this stage, for this member and skill.
     return showNotStarted ? { kind: "bar-unstarted", title: `Stage ${stage.stage} — Not started` } : { kind: "empty" };
   }
 
   // Learning: hidden squares stay in place so rows stay aligned between members. showNotStarted never affects squares inside a started stage.
   const squares = stage.cells.map((cell, index) => {
-    const inProgressCell = cell.answered && !cell.awarded;
-    const state: SquareState = (!showAnswered && inProgressCell) || (!showAwarded && cell.awarded) ? "hidden" : cell.awarded ? "awarded" : cell.answered ? "answered" : "unanswered";
+    const inProgressCell = cell.answered && !cell.approved;
+    const state: SquareState = (!showAnswered && inProgressCell) || (!showApproved && cell.approved) ? "hidden" : cell.approved ? "approved" : cell.answered ? "answered" : "unanswered";
     const isNewGroup = index === 0 || stage.cells[index - 1].inputGroup !== cell.inputGroup;
     const groupClass = isNewGroup && index > 0 ? "oas-heatmap-square-group-start" : "";
     return {
@@ -115,15 +115,15 @@ export interface MemberRowView {
   cells: StageCellView[];
 }
 
-function buildMemberRowView(member: SectionMemberRow, allStages: number[], nameFormat: NameFormat, showAwarded: boolean, showNotStarted: boolean, showAnswered: boolean, isStreamSection: boolean, trunkStageCount: number): MemberRowView {
+function buildMemberRowView(member: SectionMemberRow, allStages: number[], nameFormat: NameFormat, showApproved: boolean, showNotStarted: boolean, showAnswered: boolean, isStreamSection: boolean, trunkStageCount: number): MemberRowView {
   const stagesByStage = new Map(member.stages.map((s) => [s.stage, s]));
-  const stageProgress = formatStageProgress(member.highestStage, member.stages, isStreamSection, trunkStageCount, member.trunkFullyAwarded);
+  const stageProgress = formatStageProgress(member.highestStage, member.stages, isStreamSection, trunkStageCount, member.trunkFullyApproved);
   return {
     memberId: member.memberId,
     displayName: getMemberDisplayName(member.firstName, member.lastName, member.memberId, nameFormat),
     stageDisplay: stageProgress.stage,
     nextStageProgress: stageProgress.nextStageProgress,
-    cells: allStages.map((stage) => buildStageCellView(stagesByStage.get(stage), showAwarded, showNotStarted, showAnswered)),
+    cells: allStages.map((stage) => buildStageCellView(stagesByStage.get(stage), showApproved, showNotStarted, showAnswered)),
   };
 }
 
@@ -199,7 +199,7 @@ export default defineComponent({
     selectedPatrols: { type: Array as PropType<string[]>, default: () => [] },
     breakByPatrol: { type: Boolean, default: false },
     showEmptyTopStages: { type: Boolean, default: true },
-    showAwarded: { type: Boolean, default: true },
+    showApproved: { type: Boolean, default: true },
     showNotStarted: { type: Boolean, default: true },
     showAnswered: { type: Boolean, default: true },
     /** "none" (shared with the table view) is treated as "skill": a heat map is always grouped. */
@@ -238,7 +238,7 @@ export default defineComponent({
     visibleSectionsBySkill(): Map<string, HeatMapSection[]> {
       const rangeStageSet = new Set(this.rangeStages);
       // Unlike the React page, trunk sections can be hidden too.
-      const isEmptyWithinRange = (section: HeatMapSection): boolean => section.members.every((m) => m.stages.every((s) => !rangeStageSet.has(s.stage) || s.cells.every((c) => !c.answered && !c.awarded)));
+      const isEmptyWithinRange = (section: HeatMapSection): boolean => section.members.every((m) => m.stages.every((s) => !rangeStageSet.has(s.stage) || s.cells.every((c) => !c.answered && !c.approved)));
 
       const map = new Map<string, HeatMapSection[]>();
       this.skills.forEach((skill) => {
@@ -281,7 +281,7 @@ export default defineComponent({
         const stream = section.stream ?? skill;
         const toRowView = (member: SectionMemberRow) =>
           linkRow(
-            buildMemberRowView(member, this.allStages, this.nameFormat, this.showAwarded, this.showNotStarted, this.showAnswered, isStreamSection, section.trunkStageCount),
+            buildMemberRowView(member, this.allStages, this.nameFormat, this.showApproved, this.showNotStarted, this.showAnswered, isStreamSection, section.trunkStageCount),
             { memberId: member.memberId, displayName: getMemberDisplayName(member.firstName, member.lastName, member.memberId, this.nameFormat), skill, stream },
             this.allStages,
             this.outstanding,
@@ -334,7 +334,7 @@ export default defineComponent({
               title: row.stream ? `${skillTitle(row.skill)} — ${formatStream(row.stream)}` : skillTitle(row.skill),
               iconUrl: getSkillIconUrl(row.skill),
               ...linkRow(
-                buildMemberRowView(row.member, this.allStages, this.nameFormat, this.showAwarded, this.showNotStarted, this.showAnswered, row.isStreamSection, row.trunkStageCount),
+                buildMemberRowView(row.member, this.allStages, this.nameFormat, this.showApproved, this.showNotStarted, this.showAnswered, row.isStreamSection, row.trunkStageCount),
                 { memberId: section.memberId, displayName, skill: row.skill, stream },
                 this.allStages,
                 this.outstanding,

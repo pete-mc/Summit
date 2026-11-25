@@ -180,7 +180,7 @@ th .oas-stage-grid-member-menu {
   width: max-content;
 }
 
-/* Gotcha: Vuetify's row hover would grey only the cells without their own background, leaving sticky and awarded cells white. */
+/* Gotcha: Vuetify's row hover would grey only the cells without their own background, leaving sticky and approved cells white. */
 .oas-stage-grid-page ::v-deep > .v-data-table__wrapper > table > tbody > tr:hover {
   background: transparent !important;
 }

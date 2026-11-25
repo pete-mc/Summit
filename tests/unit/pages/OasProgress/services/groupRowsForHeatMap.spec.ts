@@ -15,7 +15,7 @@ function makeRow(overrides: Partial<OASProgressRow> = {}): OASProgressRow {
     memberName: "Alex Scout",
     patrolName: null,
     answered: false,
-    awarded: false,
+    approved: false,
     date: null,
     ...overrides,
   };
@@ -95,9 +95,9 @@ describe("groupRowsForHeatMap", () => {
 
   it("computes highestStage per member SCOPED TO EACH SECTION, not shared across the whole skill", () => {
     const rows = [
-      makeRow({ stage: 1, inputId: "a", answered: true, awarded: true, branch: "bushcraft" }),
-      makeRow({ stage: 4, branch: "pioneering", inputId: "b", answered: true, awarded: true }),
-      makeRow({ stage: 4, branch: "survival-skills", inputId: "c", answered: false, awarded: false }),
+      makeRow({ stage: 1, inputId: "a", answered: true, approved: true, branch: "bushcraft" }),
+      makeRow({ stage: 4, branch: "pioneering", inputId: "b", answered: true, approved: true }),
+      makeRow({ stage: 4, branch: "survival-skills", inputId: "c", answered: false, approved: false }),
     ];
     const members = [makeMember()];
 
@@ -111,19 +111,19 @@ describe("groupRowsForHeatMap", () => {
     expect(survival?.members[0].highestStage).toBeNull();
   });
 
-  it("marks a stage complete only when every cell in it is awarded", () => {
-    const rows = [makeRow({ stage: 1, inputId: "a", awarded: true }), makeRow({ stage: 1, inputId: "b", awarded: true }), makeRow({ stage: 2, inputId: "c", awarded: true }), makeRow({ stage: 2, inputId: "d", awarded: false })];
+  it("marks a stage approved only when every cell in it is approved", () => {
+    const rows = [makeRow({ stage: 1, inputId: "a", approved: true }), makeRow({ stage: 1, inputId: "b", approved: true }), makeRow({ stage: 2, inputId: "c", approved: true }), makeRow({ stage: 2, inputId: "d", approved: false })];
     const members = [makeMember()];
 
     const result = groupRowsForHeatMap(rows, { bushcraft: 2 }, members);
     const base = result.bushcraft.sections[0];
 
-    expect(base.members[0].stages.find((s) => s.stage === 1)?.complete).toBe(true);
-    expect(base.members[0].stages.find((s) => s.stage === 2)?.complete).toBe(false);
+    expect(base.members[0].stages.find((s) => s.stage === 1)?.approved).toBe(true);
+    expect(base.members[0].stages.find((s) => s.stage === 2)?.approved).toBe(false);
   });
 
   it("returns highestStage null when no cells have any progress", () => {
-    const rows = [makeRow({ stage: 1, answered: false, awarded: false })];
+    const rows = [makeRow({ stage: 1, answered: false, approved: false })];
     const members = [makeMember()];
 
     const result = groupRowsForHeatMap(rows, { bushcraft: 1 }, members);
@@ -131,10 +131,10 @@ describe("groupRowsForHeatMap", () => {
     expect(result.bushcraft.sections[0].members[0].highestStage).toBeNull();
   });
 
-  it("does not let an unawarded stage in one forked stream suppress an awarded same-numbered stage in a sibling stream's own section", () => {
-    // Both streams have a "stage 4" — Pioneering's is fully awarded, Survival Skills' is not.
+  it("does not let an unawarded stage in one forked stream suppress an approved same-numbered stage in a sibling stream's own section", () => {
+    // Both streams have a "stage 4" — Pioneering's is fully approved, Survival Skills' is not.
     // Each stream's own section must reflect only its own rows.
-    const rows = [makeRow({ stage: 4, branch: "pioneering", inputId: "b", answered: true, awarded: true }), makeRow({ stage: 4, branch: "survival-skills", inputId: "c", answered: false, awarded: false })];
+    const rows = [makeRow({ stage: 4, branch: "pioneering", inputId: "b", answered: true, approved: true }), makeRow({ stage: 4, branch: "survival-skills", inputId: "c", answered: false, approved: false })];
     const members = [makeMember()];
 
     const result = groupRowsForHeatMap(rows, { bushcraft: 1 }, members);
@@ -143,13 +143,13 @@ describe("groupRowsForHeatMap", () => {
     expect(result.bushcraft.sections.find((s) => s.stream === "survival-skills")?.members[0].highestStage).toBeNull();
   });
 
-  it("does NOT count a merely in-progress (answered but not awarded) stage toward highestStage, matching OAS Summary's awarded-only semantics", () => {
-    const rows = [makeRow({ stage: 1, inputId: "a", answered: true, awarded: true }), makeRow({ stage: 2, inputId: "b", answered: true, awarded: false }), makeRow({ stage: 2, inputId: "c", answered: true, awarded: false })];
+  it("does NOT count a merely in-progress (answered but not approved) stage toward highestStage, matching OAS Summary's approved-only semantics", () => {
+    const rows = [makeRow({ stage: 1, inputId: "a", answered: true, approved: true }), makeRow({ stage: 2, inputId: "b", answered: true, approved: false }), makeRow({ stage: 2, inputId: "c", answered: true, approved: false })];
     const members = [makeMember()];
 
     const result = groupRowsForHeatMap(rows, { bushcraft: 2 }, members);
 
-    // Stage 2 is in progress (answered) but not fully awarded, so it must not count.
+    // Stage 2 is in progress (answered) but not fully approved, so it must not count.
     expect(result.bushcraft.sections[0].members[0].highestStage).toBe(1);
   });
 
@@ -177,9 +177,9 @@ describe("groupRowsForHeatMap", () => {
 
   it("marks a forked stream section empty (isEmpty=true) when zero members have any progress in it", () => {
     const rows = [
-      makeRow({ stage: 4, branch: "pioneering", inputId: "p1", answered: true, awarded: true }),
-      makeRow({ stage: 4, branch: "survival-skills", inputId: "s1", answered: false, awarded: false }),
-      makeRow({ stage: 4, branch: "survival-skills", inputId: "s2", answered: false, awarded: false, memberId: "m2", memberName: "Sam" }),
+      makeRow({ stage: 4, branch: "pioneering", inputId: "p1", answered: true, approved: true }),
+      makeRow({ stage: 4, branch: "survival-skills", inputId: "s1", answered: false, approved: false }),
+      makeRow({ stage: 4, branch: "survival-skills", inputId: "s2", answered: false, approved: false, memberId: "m2", memberName: "Sam" }),
     ];
     const members = [makeMember(), makeMember({ id: "m2", first_name: "Sam" })];
 
@@ -190,7 +190,7 @@ describe("groupRowsForHeatMap", () => {
   });
 
   it("never marks the base section as empty", () => {
-    const rows = [makeRow({ stage: 1, answered: false, awarded: false })];
+    const rows = [makeRow({ stage: 1, answered: false, approved: false })];
     const members = [makeMember()];
 
     const result = groupRowsForHeatMap(rows, { bushcraft: 1 }, members);
@@ -209,36 +209,36 @@ describe("groupRowsForHeatMap", () => {
     });
   });
 
-  it("marks trunkFullyAwarded true only once every trunk stage is fully awarded for that member", () => {
+  it("marks trunkFullyApproved true only once every trunk stage is fully approved for that member", () => {
     const rows = [
-      makeRow({ memberId: "m1", stage: 1, inputId: "a", awarded: true }),
-      makeRow({ memberId: "m1", stage: 2, inputId: "b", awarded: true }),
-      makeRow({ memberId: "m1", stage: 3, inputId: "c", awarded: true }),
-      makeRow({ memberId: "m2", stage: 1, inputId: "a", awarded: true }),
-      makeRow({ memberId: "m2", stage: 2, inputId: "b", awarded: false }),
+      makeRow({ memberId: "m1", stage: 1, inputId: "a", approved: true }),
+      makeRow({ memberId: "m1", stage: 2, inputId: "b", approved: true }),
+      makeRow({ memberId: "m1", stage: 3, inputId: "c", approved: true }),
+      makeRow({ memberId: "m2", stage: 1, inputId: "a", approved: true }),
+      makeRow({ memberId: "m2", stage: 2, inputId: "b", approved: false }),
     ];
     const members = [makeMember({ id: "m1", first_name: "Alex" }), makeMember({ id: "m2", first_name: "Zara" })];
 
     const result = groupRowsForHeatMap(rows, { bushcraft: 3 }, members);
 
     const base = result.bushcraft.sections.find((s) => s.stream === null);
-    expect(base?.members.find((m) => m.memberId === "m1")?.trunkFullyAwarded).toBe(true);
-    expect(base?.members.find((m) => m.memberId === "m2")?.trunkFullyAwarded).toBe(false);
+    expect(base?.members.find((m) => m.memberId === "m1")?.trunkFullyApproved).toBe(true);
+    expect(base?.members.find((m) => m.memberId === "m2")?.trunkFullyApproved).toBe(false);
   });
 
-  it("gates trunkFullyAwarded per member on a stream section too, using the same trunk rows regardless of section", () => {
+  it("gates trunkFullyApproved per member on a stream section too, using the same trunk rows regardless of section", () => {
     const rows = [
-      makeRow({ memberId: "m1", stage: 1, inputId: "a", awarded: true }),
-      makeRow({ memberId: "m1", stage: 2, inputId: "b", awarded: true }),
-      makeRow({ memberId: "m1", stage: 3, inputId: "c", awarded: true }),
-      makeRow({ memberId: "m1", stage: 4, branch: "pioneering", inputId: "p1", awarded: true }),
+      makeRow({ memberId: "m1", stage: 1, inputId: "a", approved: true }),
+      makeRow({ memberId: "m1", stage: 2, inputId: "b", approved: true }),
+      makeRow({ memberId: "m1", stage: 3, inputId: "c", approved: true }),
+      makeRow({ memberId: "m1", stage: 4, branch: "pioneering", inputId: "p1", approved: true }),
     ];
     const members = [makeMember({ id: "m1", first_name: "Alex" })];
 
     const result = groupRowsForHeatMap(rows, { bushcraft: 3 }, members);
 
     const pioneering = result.bushcraft.sections.find((s) => s.stream === "pioneering");
-    expect(pioneering?.members[0].trunkFullyAwarded).toBe(true);
+    expect(pioneering?.members[0].trunkFullyApproved).toBe(true);
     expect(pioneering?.members[0].highestStage).toBe(4);
   });
 });

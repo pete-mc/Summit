@@ -23,7 +23,7 @@ export function stageGridSheetName(page: StageGridPage): string {
 }
 
 function statusFill(cell: StageGridCell): string {
-  if (cell.awarded) return EXCEL_COLOURS.allMet;
+  if (cell.approved) return EXCEL_COLOURS.allMet;
   return cell.answered ? EXCEL_COLOURS.met : EXCEL_COLOURS.notMet;
 }
 

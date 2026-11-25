@@ -22,7 +22,7 @@ function makeRow(overrides: Partial<OASProgressRow> = {}): OASProgressRow {
     memberName: "Alex Scout",
     patrolName: null,
     answered: false,
-    awarded: false,
+    approved: false,
     date: null,
     ...overrides,
   };
@@ -54,7 +54,7 @@ interface MountProps {
   nameFormat?: "full" | "first" | "firstInitialLast" | "firstLastInitial" | "codename";
   selectedPatrols?: string[];
   breakByPatrol?: boolean;
-  showAwarded?: boolean;
+  showApproved?: boolean;
   showNotStarted?: boolean;
   showAnswered?: boolean;
   showEmptyTopStages?: boolean;
@@ -72,7 +72,7 @@ function mountLogic(props: MountProps) {
 
 describe("OASHeatMapVue render contract", () => {
   it("groups rows into sections and renders member display data, matching groupRowsForHeatMap's own output shape", () => {
-    const rows = [makeRow({ awarded: true, answered: true, date: "2020-01-01" }), makeRow({ memberId: "member-2", memberName: "Sam Ranger", inputId: "def456", awarded: false, answered: false, date: null })];
+    const rows = [makeRow({ approved: true, answered: true, date: "2020-01-01" }), makeRow({ memberId: "member-2", memberName: "Sam Ranger", inputId: "def456", approved: false, answered: false, date: null })];
     const members = [makeMember({ id: "member-1", first_name: "Alex", last_name: "Scout" }), makeMember({ id: "member-2", first_name: "Sam", last_name: "Ranger" })];
 
     const vm = mountLogic({
@@ -107,8 +107,8 @@ describe("OASHeatMapVue render contract", () => {
     expect(sections.map((s) => s.skill)).toEqual(["bushcraft"]);
   });
 
-  it("produces the correct cell visual state for awarded, answered-only, and untouched i-statements", () => {
-    const rows = [makeRow({ inputId: "awarded-input", answered: true, awarded: true }), makeRow({ inputId: "answered-input", answered: true, awarded: false }), makeRow({ inputId: "unanswered-input", answered: false, awarded: false })];
+  it("produces the correct cell visual state for approved, answered-only, and untouched i-statements", () => {
+    const rows = [makeRow({ inputId: "approved-input", answered: true, approved: true }), makeRow({ inputId: "answered-input", answered: true, approved: false }), makeRow({ inputId: "unanswered-input", answered: false, approved: false })];
     const members = [makeMember()];
 
     const vm = mountLogic({
@@ -124,13 +124,13 @@ describe("OASHeatMapVue render contract", () => {
     const cell = sections[0].patrolGroups[0].members[0].cells[0];
     expect(cell.kind).toBe("squares");
     const stateClasses = (cell.squares ?? []).map((s) => s.stateClass);
-    expect(stateClasses).toContain("oas-heatmap-square-awarded");
+    expect(stateClasses).toContain("oas-heatmap-square-approved");
     expect(stateClasses).toContain("oas-heatmap-square-answered");
     expect(stateClasses).toContain("oas-heatmap-square-unanswered");
   });
 
-  it("renders a solid complete bar when every i-statement in a stage is awarded", () => {
-    const rows = [makeRow({ inputId: "a", answered: true, awarded: true }), makeRow({ inputId: "b", answered: true, awarded: true })];
+  it("renders a solid approved bar when every i-statement in a stage is approved", () => {
+    const rows = [makeRow({ inputId: "a", answered: true, approved: true }), makeRow({ inputId: "b", answered: true, approved: true })];
     const members = [makeMember()];
 
     const vm = mountLogic({
@@ -143,7 +143,7 @@ describe("OASHeatMapVue render contract", () => {
     });
 
     const sections = vm.sections as Array<{ patrolGroups: Array<{ members: Array<{ cells: Array<{ kind: string }> }> }> }>;
-    expect(sections[0].patrolGroups[0].members[0].cells[0].kind).toBe("bar-complete");
+    expect(sections[0].patrolGroups[0].members[0].cells[0].kind).toBe("bar-approved");
   });
 
   it("slices columns to the requested visibleStages", () => {
@@ -235,8 +235,8 @@ describe("OASHeatMapVue render contract", () => {
     expect(sections[0].patrolGroups.map((g) => g.patrolName)).toEqual(["Eagles", "Wolves"]);
   });
 
-  it("hides a fully-complete stage bar when showAwarded is off", () => {
-    const rows = [makeRow({ inputId: "a", answered: true, awarded: true }), makeRow({ inputId: "b", answered: true, awarded: true })];
+  it("hides a fully-approved stage bar when showApproved is off", () => {
+    const rows = [makeRow({ inputId: "a", answered: true, approved: true }), makeRow({ inputId: "b", answered: true, approved: true })];
     const members = [makeMember()];
 
     const vm = mountLogic({
@@ -246,15 +246,15 @@ describe("OASHeatMapVue render contract", () => {
       visibleStreams: ["bushcraft"],
       visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
       sortBy: "firstName",
-      showAwarded: false,
+      showApproved: false,
     });
 
     const sections = vm.sections as Array<{ patrolGroups: Array<{ members: Array<{ cells: Array<{ kind: string }> }> }> }>;
     expect(sections[0].patrolGroups[0].members[0].cells[0].kind).toBe("empty");
   });
 
-  it("hides a not-started stage bar when showNotStarted is off, per the user's definition of 'not started' (zero answered/awarded I-Statements in that stage)", () => {
-    const rows = [makeRow({ inputId: "a", answered: false, awarded: false })];
+  it("hides a not-started stage bar when showNotStarted is off, per the user's definition of 'not started' (zero answered/approved I-Statements in that stage)", () => {
+    const rows = [makeRow({ inputId: "a", answered: false, approved: false })];
     const members = [makeMember()];
 
     const vm = mountLogic({
@@ -273,7 +273,7 @@ describe("OASHeatMapVue render contract", () => {
 
   // Regression: showNotStarted must not hide squares inside a stage that has some progress.
   it("never hides individual unanswered squares inside an in-progress stage, even when showNotStarted is off", () => {
-    const rows = [makeRow({ inputId: "answered", answered: true, awarded: false }), makeRow({ inputId: "unanswered", answered: false, awarded: false })];
+    const rows = [makeRow({ inputId: "answered", answered: true, approved: false }), makeRow({ inputId: "unanswered", answered: false, approved: false })];
     const members = [makeMember()];
 
     const vm = mountLogic({
@@ -303,26 +303,26 @@ describe("OASHeatMapVue render contract", () => {
 
     const baseProps = { trunkStageCounts: { bushcraft: 3 }, members: [makeMember()], visibleStreams: ["bushcraft"], visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9] as [number, number], sortBy: "firstName" as const };
 
-    it("hides answered-but-unawarded squares in place, leaving awarded and untouched ones visible", () => {
-      const rows = [makeRow({ inputId: "awarded", answered: true, awarded: true }), makeRow({ inputId: "answered", answered: true, awarded: false }), makeRow({ inputId: "untouched", answered: false, awarded: false })];
+    it("hides answered-but-unawarded squares in place, leaving approved and untouched ones visible", () => {
+      const rows = [makeRow({ inputId: "approved", answered: true, approved: true }), makeRow({ inputId: "answered", answered: true, approved: false }), makeRow({ inputId: "untouched", answered: false, approved: false })];
 
       const cell = firstCell({ ...baseProps, items: rows, showAnswered: false });
 
       expect(cell.kind).toBe("squares");
-      expect((cell.squares ?? []).map((s) => s.inputId)).toEqual(["awarded", "answered", "untouched"]);
-      expect((cell.squares ?? []).map((s) => s.stateClass)).toEqual(["oas-heatmap-square-awarded", "oas-heatmap-square-hidden", "oas-heatmap-square-unanswered"]);
+      expect((cell.squares ?? []).map((s) => s.inputId)).toEqual(["approved", "answered", "untouched"]);
+      expect((cell.squares ?? []).map((s) => s.stateClass)).toEqual(["oas-heatmap-square-approved", "oas-heatmap-square-hidden", "oas-heatmap-square-unanswered"]);
     });
 
     it("leaves every square visible when on", () => {
-      const rows = [makeRow({ inputId: "awarded", answered: true, awarded: true }), makeRow({ inputId: "answered", answered: true, awarded: false }), makeRow({ inputId: "untouched", answered: false, awarded: false })];
+      const rows = [makeRow({ inputId: "approved", answered: true, approved: true }), makeRow({ inputId: "answered", answered: true, approved: false }), makeRow({ inputId: "untouched", answered: false, approved: false })];
 
       const cell = firstCell({ ...baseProps, items: rows, showAnswered: true });
 
-      expect((cell.squares ?? []).map((s) => s.stateClass)).toEqual(["oas-heatmap-square-awarded", "oas-heatmap-square-answered", "oas-heatmap-square-unanswered"]);
+      expect((cell.squares ?? []).map((s) => s.stateClass)).toEqual(["oas-heatmap-square-approved", "oas-heatmap-square-answered", "oas-heatmap-square-unanswered"]);
     });
 
     it("keeps a stage's full square count even when every one of them is hidden", () => {
-      const rows = [makeRow({ inputId: "a", answered: true, awarded: false }), makeRow({ inputId: "b", answered: true, awarded: false })];
+      const rows = [makeRow({ inputId: "a", answered: true, approved: false }), makeRow({ inputId: "b", answered: true, approved: false })];
 
       const cell = firstCell({ ...baseProps, items: rows, showAnswered: false });
 
@@ -330,14 +330,14 @@ describe("OASHeatMapVue render contract", () => {
       expect((cell.squares ?? []).map((s) => s.stateClass)).toEqual(["oas-heatmap-square-hidden", "oas-heatmap-square-hidden"]);
     });
 
-    it("leaves the complete bar alone — hiding answered squares must not touch the bars", () => {
-      const rows = [makeRow({ inputId: "a", answered: true, awarded: true }), makeRow({ inputId: "b", answered: true, awarded: true })];
+    it("leaves the approved bar alone — hiding answered squares must not touch the bars", () => {
+      const rows = [makeRow({ inputId: "a", answered: true, approved: true }), makeRow({ inputId: "b", answered: true, approved: true })];
 
-      expect(firstCell({ ...baseProps, items: rows, showAnswered: false }).kind).toBe("bar-complete");
+      expect(firstCell({ ...baseProps, items: rows, showAnswered: false }).kind).toBe("bar-approved");
     });
 
     it("leaves the not-started bar alone", () => {
-      const rows = [makeRow({ inputId: "a", answered: false, awarded: false })];
+      const rows = [makeRow({ inputId: "a", answered: false, approved: false })];
 
       expect(firstCell({ ...baseProps, items: rows, showAnswered: false }).kind).toBe("bar-unstarted");
     });
@@ -345,9 +345,9 @@ describe("OASHeatMapVue render contract", () => {
     it("leaves group-start borders exactly where they are when squares are hidden", () => {
       // Hiding is visual only: the group start must not move.
       const rows = [
-        makeRow({ inputId: "plan-a", inputGroup: "Plan", answered: true, awarded: false }),
-        makeRow({ inputId: "plan-b", inputGroup: "Plan", answered: false, awarded: false }),
-        makeRow({ inputId: "do-a", inputGroup: "Do", answered: false, awarded: false }),
+        makeRow({ inputId: "plan-a", inputGroup: "Plan", answered: true, approved: false }),
+        makeRow({ inputId: "plan-b", inputGroup: "Plan", answered: false, approved: false }),
+        makeRow({ inputId: "do-a", inputGroup: "Do", answered: false, approved: false }),
       ];
 
       const groupClassesWith = (showAnswered: boolean) => (firstCell({ ...baseProps, items: rows, showAnswered }).squares ?? []).map((s) => s.groupClass);
@@ -477,7 +477,7 @@ describe("OASHeatMapVue render contract", () => {
     };
     const exportView = (vm: Record<string, unknown>) => (vm.getExportView as () => ExportView)();
 
-    const rows = [makeRow({ memberId: "m1", inputId: "a", answered: true, awarded: true }), makeRow({ memberId: "m1", inputId: "b", answered: true }), makeRow({ memberId: "m1", inputId: "c" }), makeRow({ memberId: "m2", inputId: "a" })];
+    const rows = [makeRow({ memberId: "m1", inputId: "a", answered: true, approved: true }), makeRow({ memberId: "m1", inputId: "b", answered: true }), makeRow({ memberId: "m1", inputId: "c" }), makeRow({ memberId: "m2", inputId: "a" })];
     const members = [makeMember({ id: "m1", first_name: "Alex", last_name: "Scout", patrol: { id: "p1", name: "Eagles" } }), makeMember({ id: "m2", first_name: "Sam", last_name: "Ranger", patrol: { id: "p2", name: "Wolves" } })];
     const base = { items: rows, members, trunkStageCounts: { bushcraft: 3 }, visibleStreams: ["bushcraft"], visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9], sortBy: "firstName" as const, selectedPatrols: ["Eagles", "Wolves"] };
 
@@ -489,7 +489,7 @@ describe("OASHeatMapVue render contract", () => {
       const group = view.sections[0].groups[0];
       expect(group.patrolName).toBe("");
       expect(group.rows.map((r) => r.label)).toEqual(["Alex Scout", "Sam Ranger"]);
-      expect((group.rows[0].view.cells[0].squares ?? []).map((s) => s.state)).toEqual(["awarded", "answered", "unanswered"]);
+      expect((group.rows[0].view.cells[0].squares ?? []).map((s) => s.state)).toEqual(["approved", "answered", "unanswered"]);
     });
 
     it("by skill with Break by patrol: one group per patrol", () => {
@@ -499,7 +499,7 @@ describe("OASHeatMapVue render contract", () => {
 
     it("marks squares hidden by a Show filter as 'hidden'", () => {
       const view = exportView(mountLogic({ ...base, showAnswered: false }));
-      expect((view.sections[0].groups[0].rows[0].view.cells[0].squares ?? []).map((s) => s.state)).toEqual(["awarded", "hidden", "unanswered"]);
+      expect((view.sections[0].groups[0].rows[0].view.cells[0].squares ?? []).map((s) => s.state)).toEqual(["approved", "hidden", "unanswered"]);
     });
 
     it("by member: Skill column, a section per member carrying their patrol", () => {
@@ -515,9 +515,9 @@ describe("OASHeatMapVue render contract", () => {
 });
 
 describe("OASHeatMapVue tab jumps", () => {
-  // Alex: Bushcraft stage 1 awarded, stage 2 started, stage 3 not started. Sam: stage 1 not started.
+  // Alex: Bushcraft stage 1 approved, stage 2 started, stage 3 not started. Sam: stage 1 not started.
   const items = [
-    makeRow({ stage: 1, inputId: "s1", answered: true, awarded: true }),
+    makeRow({ stage: 1, inputId: "s1", answered: true, approved: true }),
     makeRow({ stage: 2, inputId: "s2a", answered: true }),
     makeRow({ stage: 2, inputId: "s2b" }),
     makeRow({ stage: 3, inputId: "s3" }),
@@ -529,7 +529,7 @@ describe("OASHeatMapVue tab jumps", () => {
   type Jump = { viewMode: string; filters: Record<string, unknown> } | null;
   type Row = { memberId: string; stageJump: Jump; cellJumps: Jump[]; menu: Array<NonNullable<Jump>> };
 
-  it("grouped by skill: stage cells open that exact stage, awarded ones are not links", () => {
+  it("grouped by skill: stage cells open that exact stage, approved ones are not links", () => {
     const vm = mountLogic({ ...baseProps, canOpenPeakAward: true } as MountProps);
     const alex = (vm.sections as Array<{ patrolGroups: Array<{ members: Row[] }> }>)[0].patrolGroups[0].members[0];
 

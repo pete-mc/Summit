@@ -43,7 +43,7 @@ export function inTabOrder(jumps: TabJump[]): TabJump[] {
 /** Gotcha: a jump resets these so leftover Heat Map settings can't hide what was clicked. */
 const HEAT_MAP_SHOW_EVERYTHING: Partial<OASProgressVueFilterState> = {
   visibleStages: Array.from({ length: MAX_STAGE }, (_, i) => i + 1),
-  showAwarded: true,
+  showApproved: true,
   showNotStarted: true,
   showAnswered: true,
   showEmptySkillRows: true,
@@ -54,11 +54,11 @@ const copyPatrols = (patrols: string[] | null) => (patrols ? patrols.slice() : n
 const memberSkillStreamKey = (memberId: string, skillStream: string) => `${memberId}|${skillStream}`;
 const memberSkillKey = (memberId: string, skill: string) => `${memberId}|${skill}`;
 
-/** Every member and Skill - Stream with a stage not yet awarded: what Next Steps can show. */
+/** Every member and Skill - Stream with a stage not yet approved: what Next Steps can show. */
 export function listOutstandingSkillStreams(items: OASProgressRow[]): Set<string> {
   const keys = new Set<string>();
   items.forEach((row) => {
-    if (!row.awarded) keys.add(memberSkillStreamKey(row.memberId, skillStreamKey(row.stream, row.branch)));
+    if (!row.approved) keys.add(memberSkillStreamKey(row.memberId, skillStreamKey(row.stream, row.branch)));
   });
   return keys;
 }
@@ -66,7 +66,7 @@ export function listOutstandingSkillStreams(items: OASProgressRow[]): Set<string
 export function lowestStagesNeeded(items: OASProgressRow[], memberIds: string[]): Record<string, number> {
   const lowest: Record<string, number> = {};
   items.forEach((row) => {
-    if (row.awarded || memberIds.indexOf(row.memberId) === -1) return;
+    if (row.approved || memberIds.indexOf(row.memberId) === -1) return;
     const key = skillStreamKey(row.stream, row.branch);
     if (lowest[key] === undefined || row.stage < lowest[key]) lowest[key] = row.stage;
   });
@@ -74,10 +74,10 @@ export function lowestStagesNeeded(items: OASProgressRow[], memberIds: string[])
 }
 
 /** Per member and skill, the stream holding their highest award; the trunk wins a tie. */
-export function highestAwardedStreams(items: OASProgressRow[]): Record<string, string> {
+export function highestApprovedStreams(items: OASProgressRow[]): Record<string, string> {
   const best: Record<string, { stream: string; stage: number }> = {};
   items.forEach((row) => {
-    if (!row.awarded) return;
+    if (!row.approved) return;
     const key = memberSkillKey(row.memberId, row.stream);
     const current = best[key];
     const isTrunk = row.branch === row.stream;
@@ -111,7 +111,7 @@ function stageGridJump(skill: string, stream: string, stage: number, people: Sho
   const detail = skillStreamLabel({ stream: skill, branch: stream });
   return {
     viewMode: "stageGrid",
-    filters: { stageGridSkillStream: skillStreamKey(skill, stream), stageGridStage: stage, stageGridSelectedPatrols: copyPatrols(people.selectedPatrols), stageGridShowCompleted: true },
+    filters: { stageGridSkillStream: skillStreamKey(skill, stream), stageGridStage: stage, stageGridSelectedPatrols: copyPatrols(people.selectedPatrols), stageGridShowApproved: true },
     title: `Open in Stage Grid (stage ${stage})`,
     from: { ...origin, detail: `${detail} stage ${stage}` },
   };
@@ -227,8 +227,8 @@ export function heatMapStageColumnJump(row: HeatMapRowTarget, outstanding: Set<s
   return nextStepsJump(row.memberId, row.displayName, row.skill, row.stream, outstanding, HEAT_MAP);
 }
 
-/** A stage cell opens that exact stage. Awarded or hidden stages are not links. */
-export function heatMapStageCellJump(row: HeatMapRowTarget, stage: number, cellKind: "empty" | "bar-complete" | "bar-unstarted" | "squares"): TabJump | null {
+/** A stage cell opens that exact stage. Approved or hidden stages are not links. */
+export function heatMapStageCellJump(row: HeatMapRowTarget, stage: number, cellKind: "empty" | "bar-approved" | "bar-unstarted" | "squares"): TabJump | null {
   if (cellKind !== "squares" && cellKind !== "bar-unstarted") return null;
   return nextStepsTarget(row.memberId, row.displayName, row.skill, row.stream, stage, HEAT_MAP);
 }
@@ -245,11 +245,11 @@ export function heatMapSkillStreamJumps(skill: string, stream: string, stage: nu
   return stage === undefined ? [] : [stageGridJump(skill, stream, stage, people, HEAT_MAP)];
 }
 
-/** Per member and Skill - Stream, the lowest stage not yet awarded. */
+/** Per member and Skill - Stream, the lowest stage not yet approved. */
 export function lowestStagesByMember(items: OASProgressRow[]): Record<string, number> {
   const lowest: Record<string, number> = {};
   items.forEach((row) => {
-    if (row.awarded) return;
+    if (row.approved) return;
     const key = memberSkillStreamKey(row.memberId, skillStreamKey(row.stream, row.branch));
     if (lowest[key] === undefined || row.stage < lowest[key]) lowest[key] = row.stage;
   });
@@ -264,16 +264,16 @@ const STAGE_GRID: Origin = { viewMode: "stageGrid", tabName: "Stage Grid" };
 
 const memberStageKey = (memberId: string, skill: string, stream: string, stage: number) => `${memberSkillStreamKey(memberId, skillStreamKey(skill, stream))}|${stage}`;
 
-/** Every member, Skill - Stream and stage not yet awarded. */
+/** Every member, Skill - Stream and stage not yet approved. */
 export function listOutstandingStages(items: OASProgressRow[]): Set<string> {
   const keys = new Set<string>();
   items.forEach((row) => {
-    if (!row.awarded) keys.add(memberStageKey(row.memberId, row.stream, row.branch, row.stage));
+    if (!row.approved) keys.add(memberStageKey(row.memberId, row.stream, row.branch, row.stage));
   });
   return keys;
 }
 
-/** Null when the member has been awarded this stage: Next Steps would have nothing to show. */
+/** Null when the member's stage is already approved: Next Steps would have nothing to show. */
 export function stageGridNextStepsJump(row: HeatMapRowTarget, stage: number, outstandingStages: Set<string>): TabJump | null {
   if (!outstandingStages.has(memberStageKey(row.memberId, row.skill, row.stream, stage))) return null;
   return nextStepsTarget(row.memberId, row.displayName, row.skill, row.stream, stage, STAGE_GRID);

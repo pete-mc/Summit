@@ -37,7 +37,8 @@ export interface OASProgressRow {
   lastName: string;
   patrolName: string | null;
   answered: boolean;
-  awarded: boolean;
+  /** Criteria officially met: Terrain status "approved" or "awarded". Says nothing about whether the badge was presented. */
+  approved: boolean;
   date: string | null;
   /** Null for a blank cell. Lets the Peak Award summary count only the current section. */
   section: string | null;
@@ -90,7 +91,7 @@ export function buildBlankMatrix(unitId: string, stream: string, branch: string,
         lastName: member.last_name,
         patrolName: member.patrol?.name ?? null,
         answered: false,
-        awarded: false,
+        approved: false,
         date: null,
         section: null,
       });
@@ -182,7 +183,9 @@ export function applyAchievementsToMatrix(matrix: OASProgressRow[], achievements
 
     const status: string = achievement.status;
     const isInProgress = status === "draft_review" || status === "pending_review" || status === "draft_approval" || status === "in_progress";
-    const isAwarded = status === "awarded" || status === "approved";
+    // Learning: since ~Sept 2026 Terrain marks met criteria "approved" and only sets "awarded" when a leader records the
+    // ceremony. Older and leader-recorded badges went straight to "awarded", so only both together mean "criteria met".
+    const isApproved = status === "awarded" || status === "approved";
 
     if (isInProgress) {
       applyAnswersToMemberRows(memberRows, achievement, null);
@@ -192,7 +195,7 @@ export function applyAchievementsToMatrix(matrix: OASProgressRow[], achievements
       return;
     }
 
-    if (!isAwarded) {
+    if (!isApproved) {
       return;
     }
 
@@ -200,19 +203,19 @@ export function applyAchievementsToMatrix(matrix: OASProgressRow[], achievements
     if (importedDate) {
       memberRows.forEach((row) => {
         row.answered = true;
-        row.awarded = true;
+        row.approved = true;
         row.date = importedDate;
         row.section = achievement.section;
       });
       return;
     }
 
-    // Gotcha: an awarded achievement is authoritative for the whole stage. Template edits can leave old `answers`
-    // keys that no longer match, which would render an awarded stage as partly complete.
+    // Gotcha: an approved achievement is authoritative for the whole stage. Template edits can leave old `answers`
+    // keys that no longer match, which would render an approved stage as partly complete.
     applyAnswersToMemberRows(memberRows, achievement, achievement.status_updated);
     memberRows.forEach((row) => {
       row.answered = true;
-      row.awarded = true;
+      row.approved = true;
       if (!row.date) {
         row.date = achievement.status_updated;
       }

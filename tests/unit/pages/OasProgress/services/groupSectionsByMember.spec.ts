@@ -16,7 +16,7 @@ function makeRow(overrides: Partial<OASProgressRow> = {}): OASProgressRow {
     memberName: "Alex Scout",
     patrolName: null,
     answered: false,
-    awarded: false,
+    approved: false,
     date: null,
     ...overrides,
   };
@@ -87,12 +87,12 @@ describe("groupSectionsByMember", () => {
   });
 
   it("carries the member's own cell data through unchanged", () => {
-    const rows = [makeRow({ answered: true, awarded: true })];
+    const rows = [makeRow({ answered: true, approved: true })];
 
     const sections = invert(rows, [makeMember()], ["bushcraft"]);
     const cells = sections[0].skillRows.flatMap((row) => row.member.stages.flatMap((stage) => stage.cells));
 
-    expect(cells.some((cell) => cell.answered && cell.awarded)).toBe(true);
+    expect(cells.some((cell) => cell.answered && cell.approved)).toBe(true);
   });
 
   it("keeps the member's patrol available on the section", () => {
@@ -136,7 +136,7 @@ describe("groupSectionsByMember", () => {
 
 describe("memberHasNoProgress", () => {
   it("is true for a member who has started nothing", () => {
-    const sections = invert([makeRow({ answered: false, awarded: false })], [makeMember()], ["bushcraft"]);
+    const sections = invert([makeRow({ answered: false, approved: false })], [makeMember()], ["bushcraft"]);
 
     expect(memberHasNoProgress(sections[0])).toBe(true);
   });
@@ -147,8 +147,8 @@ describe("memberHasNoProgress", () => {
     expect(memberHasNoProgress(sections[0])).toBe(false);
   });
 
-  it("is false once any cell is awarded", () => {
-    const sections = invert([makeRow({ awarded: true })], [makeMember()], ["bushcraft"]);
+  it("is false once any cell is approved", () => {
+    const sections = invert([makeRow({ approved: true })], [makeMember()], ["bushcraft"]);
 
     expect(memberHasNoProgress(sections[0])).toBe(false);
   });

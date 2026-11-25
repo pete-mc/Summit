@@ -17,7 +17,7 @@ function makeFilters(overrides: Partial<OASProgressVueFilterState> = {}): OASPro
     breakByPatrol: false,
     showEmptySkillRows: true,
     showEmptyTopStages: true,
-    showAwarded: true,
+    showApproved: true,
     showNotStarted: true,
     showAnswered: true,
     visibleStreams: [],
@@ -28,7 +28,7 @@ function makeFilters(overrides: Partial<OASProgressVueFilterState> = {}): OASPro
     stageGridNameFormat: "full",
     stageGridSortBy: "firstName",
     stageGridBreakByPatrol: false,
-    stageGridShowCompleted: true,
+    stageGridShowApproved: true,
     stageGridLayout: "membersAsColumns",
     ...overrides,
   };

@@ -10,7 +10,7 @@ export interface OASProgressVueFilterState {
   summarySortBy: "firstName" | "lastName";
   /** Overrides summarySortBy until cleared; choosing a Sort by option clears it. */
   summaryColumnSort: { key: string; descending: boolean } | null;
-  /** Off shows one column per skill, holding its highest awarded stage. */
+  /** Off shows one column per skill, holding its highest approved stage. */
   summaryExpandStreams: boolean;
   /** Off hides columns no listed member has started. */
   summaryShowNotStartedSkills: boolean;
@@ -30,7 +30,7 @@ export interface OASProgressVueFilterState {
   /** showNotStarted only affects a whole stage with no progress, never single squares. */
   showEmptySkillRows: boolean;
   showEmptyTopStages: boolean;
-  showAwarded: boolean;
+  showApproved: boolean;
   showNotStarted: boolean;
   showAnswered: boolean;
   visibleStreams: string[];
@@ -38,7 +38,7 @@ export interface OASProgressVueFilterState {
   visibleStages: number[];
   sortBy: "lastName" | "firstName" | "stageProgress";
 
-  /** Each falls back when not offered: first member, first Skill - Stream, lowest un-awarded stage (also when null). */
+  /** Each falls back when not offered: first member, first Skill - Stream, lowest unapproved stage (also when null). */
   nextStepsMemberId: string;
   nextStepsSkillStream: string;
   nextStepsStage: number | null;
@@ -51,7 +51,7 @@ export interface OASProgressVueFilterState {
   stageGridSortBy: "firstName" | "lastName";
   stageGridSelectedPatrols: string[] | null;
   stageGridBreakByPatrol: boolean;
-  stageGridShowCompleted: boolean;
+  stageGridShowApproved: boolean;
   /** membersAsColumns (default) matches the Topo xlsx/PDF layout; membersAsRows scales to large units. */
   stageGridLayout: "membersAsColumns" | "membersAsRows";
 }
@@ -69,15 +69,20 @@ const RENAMED_KEY_PREFIXES: Array<[string, string]> = [
   ["table", "nextSteps"],
   ["worksheet", "stageGrid"],
 ];
+const RENAMED_KEYS: Record<string, string> = { showAwarded: "showApproved", stageGridShowCompleted: "stageGridShowApproved" };
 const RENAMED_VIEW_MODES: Record<string, OASProgressVueFilterState["viewMode"]> = { table: "nextSteps", worksheets: "stageGrid" };
 
 function renamedKey(key: string): string {
   const match = RENAMED_KEY_PREFIXES.find(([oldPrefix]) => key.indexOf(oldPrefix) === 0 && /[A-Z]/.test(key.charAt(oldPrefix.length)));
-  return match ? match[1] + key.slice(match[0].length) : key;
+  const prefixed = match ? match[1] + key.slice(match[0].length) : key;
+  return RENAMED_KEYS[prefixed] ?? prefixed;
 }
 
-/** Gotcha: older saved state names the Next Steps and Stage Grid tabs "table" and "worksheets", with table* and worksheet* keys. A key already saved under its new name wins. */
-export function migrateRenamedTabs(stored: Record<string, unknown>): Record<string, unknown> {
+/**
+ * Gotcha: older saved state names the Next Steps and Stage Grid tabs "table" and "worksheets", with table* and worksheet* keys,
+ * and calls the Approved filters showAwarded / stageGridShowCompleted. A key already saved under its new name wins.
+ */
+export function migrateRenamedFilters(stored: Record<string, unknown>): Record<string, unknown> {
   const migrated: Record<string, unknown> = {};
   Object.keys(stored).forEach((key) => {
     const newKey = renamedKey(key);
@@ -100,7 +105,7 @@ export const loadOASProgressVueFilters = (): Partial<OASProgressVueFilterState> 
       return null;
     }
 
-    return migrateRenamedTabs(parsed) as Partial<OASProgressVueFilterState>;
+    return migrateRenamedFilters(parsed) as Partial<OASProgressVueFilterState>;
   } catch {
     return null;
   }

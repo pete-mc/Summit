@@ -4,7 +4,7 @@ import type { OASProgressVueFilterState } from "@/pages/OasProgressVue/services/
 import NameFormatSelect from "@/components/NameFormatSelect.vue";
 import type { SkillStream } from "@/pages/OasProgressVue/services/skillStreams";
 
-type ShowOption = "stageGridBreakByPatrol" | "stageGridShowCompleted";
+type ShowOption = "stageGridBreakByPatrol" | "stageGridShowApproved";
 
 type ShowSelectItem = { value: ShowOption; text: string } | { header: string } | { divider: true };
 
@@ -42,7 +42,7 @@ export default defineComponent({
       return this.skillStreams.map((s) => ({ value: s.key, text: s.label }));
     },
     showOptions(): ShowSelectItem[] {
-      const items: ShowSelectItem[] = [{ header: "Members" }, { value: "stageGridShowCompleted", text: "Awarded" }];
+      const items: ShowSelectItem[] = [{ header: "Members" }, { value: "stageGridShowApproved", text: "Approved" }];
       if (this.availablePatrols.length > 0) {
         items.push({ divider: true }, { header: "Grouping" }, { value: "stageGridBreakByPatrol", text: "Break by patrol" });
       }

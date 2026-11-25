@@ -76,7 +76,7 @@ over hard-coded values.
 
 --summit-color-status-unanswered: #edebe9;  /* heat-map: not started */
 --summit-color-status-answered: #ecb206;    /* heat-map: in progress (yellow) */
---summit-color-status-awarded: var(--summit-color-bg-primary); /* heat-map: complete (Summit green #004c00) */
+--summit-color-status-approved: var(--summit-color-bg-primary); /* heat-map: approved (Summit green #004c00) */
 ```
 
 Brand green (`#004c00`, hover `#006600`) is Summit's identity color — used for primary
@@ -114,7 +114,7 @@ These apply to the still-active React pages (`Home`, `MilestoneReport`, `OasRepo
   `index.css`, namespaced with a feature prefix (see `oas-*` classes for the OAS
   Progress heat-map) rather than a per-feature stylesheet.
 - Naming convention for new classes: `<feature>-<element>[-<modifier>]`, e.g.
-  `oas-heatmap-square-awarded`, `calendar-legend-swatch`. Keep this when adding
+  `oas-heatmap-square-approved`, `calendar-legend-swatch`. Keep this when adding
   classes for a new feature area.
 
 ## The `--oas-vue-*` type scale (Vuetify pages)

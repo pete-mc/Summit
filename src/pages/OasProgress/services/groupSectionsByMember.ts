@@ -58,5 +58,5 @@ export function groupSectionsByMember(sectionsBySkill: Record<string, SkillHeatM
 }
 
 export function memberHasNoProgress(section: MemberSectionView): boolean {
-  return section.skillRows.every((row) => row.member.stages.every((stage) => stage.cells.every((cell) => !cell.answered && !cell.awarded)));
+  return section.skillRows.every((row) => row.member.stages.every((stage) => stage.cells.every((cell) => !cell.answered && !cell.approved)));
 }

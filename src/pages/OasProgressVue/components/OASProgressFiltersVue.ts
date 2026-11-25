@@ -5,7 +5,7 @@ import type { OASProgressVueFilterState } from "@/pages/OasProgressVue/services/
 import NameFormatSelect from "@/components/NameFormatSelect.vue";
 import { skillTitle } from "@/pages/OasProgressVue/services/skillNames";
 
-type ShowOption = "showEmptySkillRows" | "showEmptyTopStages" | "showAwarded" | "showNotStarted" | "showAnswered" | "breakByPatrol";
+type ShowOption = "showEmptySkillRows" | "showEmptyTopStages" | "showApproved" | "showNotStarted" | "showAnswered" | "breakByPatrol";
 
 type ShowSelectItem = { value: ShowOption; text: string } | { header: string } | { divider: true };
 
@@ -13,7 +13,7 @@ const SHOW_OPTIONS: Array<{ value: ShowOption; text: string }> = [
   // Label only: the field is still showEmptySkillRows.
   { value: "showEmptySkillRows", text: "Not Started" },
   { value: "showEmptyTopStages", text: "Empty top stages" },
-  { value: "showAwarded", text: "Awarded" },
+  { value: "showApproved", text: "Approved" },
   { value: "showNotStarted", text: "Not started" },
   { value: "showAnswered", text: "Answered" },
   { value: "breakByPatrol", text: "Break by patrol" },
@@ -55,7 +55,7 @@ export default defineComponent({
     },
     showOptions(): ShowSelectItem[] {
       const bySkill = SHOW_OPTIONS.filter((o) => o.value === "showEmptySkillRows" || o.value === "showEmptyTopStages");
-      const byIStatement = SHOW_OPTIONS.filter((o) => o.value === "showAwarded" || o.value === "showNotStarted" || o.value === "showAnswered");
+      const byIStatement = SHOW_OPTIONS.filter((o) => o.value === "showApproved" || o.value === "showNotStarted" || o.value === "showAnswered");
       const items: ShowSelectItem[] = [{ header: "Skills" }, ...bySkill, { divider: true }, { header: "I Statements" }, ...byIStatement];
       if (this.availablePatrols.length > 0 && this.filters.groupBy !== "member") {
         items.push({ divider: true }, { header: "Grouping" }, { value: "breakByPatrol", text: "Break by patrol" });

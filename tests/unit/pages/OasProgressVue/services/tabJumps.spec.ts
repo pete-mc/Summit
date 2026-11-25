@@ -11,7 +11,7 @@ import {
   heatMapStageColumnJump,
   lowestStagesByMember,
   memberLowestStage,
-  highestAwardedStreams,
+  highestApprovedStreams,
   peakAwardCoreSkillHeaderJumps,
   peakAwardCoreSkillsGroupJumps,
   peakAwardMemberJumps,
@@ -38,7 +38,7 @@ function progressRow(overrides: Partial<OASProgressRow>): OASProgressRow {
     lastName: "Smith",
     patrolName: null,
     answered: false,
-    awarded: false,
+    approved: false,
     date: null,
     section: null,
     ...overrides,
@@ -53,11 +53,11 @@ const jane: OverallProgressRow = { memberId: "m1", displayName: "Jane Smith", pa
 const notStarted: OverallProgressCell = { stage: "-", nextStageProgress: null };
 
 describe("listOutstandingSkillStreams", () => {
-  it("lists each member's Skill - Streams that still have an un-awarded row", () => {
+  it("lists each member's Skill - Streams that still have an unapproved row", () => {
     const keys = listOutstandingSkillStreams([
-      progressRow({ stage: 1, awarded: true }),
+      progressRow({ stage: 1, approved: true }),
       progressRow({ stage: 2 }),
-      progressRow({ stream: "aquatics", branch: "swimming", awarded: true }),
+      progressRow({ stream: "aquatics", branch: "swimming", approved: true }),
       progressRow({ memberId: "m2", stream: "camping", branch: "camping" }),
     ]);
 
@@ -89,7 +89,7 @@ describe("cellStream", () => {
 });
 
 describe("nextStepsCellJump", () => {
-  it("opens Next Steps for that member and Skill - Stream at its lowest un-awarded stage", () => {
+  it("opens Next Steps for that member and Skill - Stream at its lowest unapproved stage", () => {
     const jump = nextStepsCellJump(jane, trunk, { stage: "3", nextStageProgress: null }, new Set(["m1|bushwalking::bushwalking"]));
 
     expect(jump).toEqual({
@@ -111,7 +111,7 @@ describe("nextStepsCellJump", () => {
     expect(nextStepsCellJump(jane, trunk, notStarted, new Set(["m1|bushwalking::bushwalking"]))).not.toBeNull();
   });
 
-  it("is not a link when every stage is awarded", () => {
+  it("is not a link when every stage is approved", () => {
     expect(nextStepsCellJump(jane, trunk, { stage: "9", nextStageProgress: null }, new Set(["m2|bushwalking::bushwalking"]))).toBeNull();
   });
 });
@@ -129,11 +129,11 @@ describe("buildSummaryCellJumps", () => {
 });
 
 const people = { selectedPatrols: ["Eagles"], memberFilter: "Sm" };
-const showEverything = { visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9], showAwarded: true, showNotStarted: true, showAnswered: true, showEmptySkillRows: true, showEmptyTopStages: true };
+const showEverything = { visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9], showApproved: true, showNotStarted: true, showAnswered: true, showEmptySkillRows: true, showEmptyTopStages: true };
 
 describe("lowestStagesNeeded", () => {
-  it("finds the lowest un-awarded stage among the given members only", () => {
-    const lowest = lowestStagesNeeded([progressRow({ stage: 1, awarded: true }), progressRow({ stage: 3 }), progressRow({ memberId: "m2", stage: 2 }), progressRow({ memberId: "m3", stage: 1 })], ["m1", "m2"]);
+  it("finds the lowest unapproved stage among the given members only", () => {
+    const lowest = lowestStagesNeeded([progressRow({ stage: 1, approved: true }), progressRow({ stage: 3 }), progressRow({ memberId: "m2", stage: 2 }), progressRow({ memberId: "m3", stage: 1 })], ["m1", "m2"]);
 
     expect(lowest).toEqual({ "bushwalking::bushwalking": 2 });
   });
@@ -160,7 +160,7 @@ describe("summaryColumnJumps", () => {
 
     expect(jumps[1]).toMatchObject({
       viewMode: "stageGrid",
-      filters: { stageGridSkillStream: "aquatics::swimming", stageGridStage: 3, stageGridSelectedPatrols: ["Eagles"], stageGridShowCompleted: true },
+      filters: { stageGridSkillStream: "aquatics::swimming", stageGridStage: 3, stageGridSelectedPatrols: ["Eagles"], stageGridShowApproved: true },
       title: "Open in Stage Grid (stage 3)",
       from: { detail: "Aquatics - Swimming stage 3" },
     });
@@ -200,7 +200,7 @@ describe("menu order", () => {
 });
 
 describe("Peak Award jumps", () => {
-  const coreSkill = (skill: "bushcraft" | "bushwalking" | "camping", met: boolean) => ({ skill, requiredStage: 5, highestAwardedStage: met ? 5 : 2, boxes: [], met });
+  const coreSkill = (skill: "bushcraft" | "bushwalking" | "camping", met: boolean) => ({ skill, requiredStage: 5, highestApprovedStage: met ? 5 : 2, boxes: [], met });
   const peakRow = (overrides: Partial<PeakAwardMemberRow> = {}): PeakAwardMemberRow => ({
     memberId: "m1",
     memberName: "Jane Smith",
@@ -219,14 +219,14 @@ describe("Peak Award jumps", () => {
   });
   const displayName = () => "Jane S";
 
-  describe("highestAwardedStreams", () => {
+  describe("highestApprovedStreams", () => {
     it("picks the stream holding the highest award, the trunk on a tie", () => {
-      const streams = highestAwardedStreams([
-        progressRow({ stream: "bushcraft", branch: "bushcraft", stage: 3, awarded: true }),
-        progressRow({ stream: "bushcraft", branch: "pioneering", stage: 4, awarded: true }),
-        progressRow({ stream: "camping", branch: "camping", stage: 2, awarded: true }),
-        progressRow({ stream: "aquatics", branch: "swimming", stage: 2, awarded: true }),
-        progressRow({ stream: "aquatics", branch: "aquatics", stage: 2, awarded: true }),
+      const streams = highestApprovedStreams([
+        progressRow({ stream: "bushcraft", branch: "bushcraft", stage: 3, approved: true }),
+        progressRow({ stream: "bushcraft", branch: "pioneering", stage: 4, approved: true }),
+        progressRow({ stream: "camping", branch: "camping", stage: 2, approved: true }),
+        progressRow({ stream: "aquatics", branch: "swimming", stage: 2, approved: true }),
+        progressRow({ stream: "aquatics", branch: "aquatics", stage: 2, approved: true }),
         progressRow({ stream: "vertical", branch: "vertical", stage: 6 }),
       ]);
 
@@ -283,7 +283,7 @@ describe("Peak Award jumps", () => {
 describe("Heat Map jumps", () => {
   const target = { memberId: "m1", displayName: "Jane S", skill: "aquatics", stream: "swimming" };
 
-  it("a stage cell opens that exact stage, and only when it isn't awarded or hidden", () => {
+  it("a stage cell opens that exact stage, and only when it isn't approved or hidden", () => {
     expect(heatMapStageCellJump(target, 3, "squares")).toMatchObject({
       viewMode: "nextSteps",
       filters: { nextStepsMemberId: "m1", nextStepsSkillStream: "aquatics::swimming", nextStepsStage: 3 },
@@ -291,7 +291,7 @@ describe("Heat Map jumps", () => {
       from: { viewMode: "heatmap", tabName: "Heat Map" },
     });
     expect(heatMapStageCellJump(target, 3, "bar-unstarted")?.filters.nextStepsStage).toBe(3);
-    expect(heatMapStageCellJump(target, 3, "bar-complete")).toBeNull();
+    expect(heatMapStageCellJump(target, 3, "bar-approved")).toBeNull();
     expect(heatMapStageCellJump(target, 3, "empty")).toBeNull();
   });
 
@@ -312,7 +312,7 @@ describe("Heat Map jumps", () => {
   });
 
   it("finds each member's own next stage", () => {
-    const lowest = lowestStagesByMember([progressRow({ stage: 1, awarded: true }), progressRow({ stage: 3 }), progressRow({ stage: 2 }), progressRow({ memberId: "m2", stage: 1 })]);
+    const lowest = lowestStagesByMember([progressRow({ stage: 1, approved: true }), progressRow({ stage: 3 }), progressRow({ stage: 2 }), progressRow({ memberId: "m2", stage: 1 })]);
     expect(memberLowestStage(lowest, "m1", "bushwalking", "bushwalking")).toBe(2);
     expect(memberLowestStage(lowest, "m2", "bushwalking", "bushwalking")).toBe(1);
     expect(memberLowestStage(lowest, "m1", "camping", "camping")).toBeUndefined();

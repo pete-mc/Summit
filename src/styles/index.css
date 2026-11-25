@@ -24,7 +24,7 @@
 
   --summit-color-status-unanswered: #edebe9;
   --summit-color-status-answered: #ecb206;
-  --summit-color-status-awarded: var(--summit-color-bg-primary);
+  --summit-color-status-approved: var(--summit-color-bg-primary);
 }
 
 .editor-container {
@@ -557,8 +557,8 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   border-radius: 4px;
 }
 
-.oas-heatmap-stage-bar-complete {
-  background: var(--summit-color-status-awarded);
+.oas-heatmap-stage-bar-approved {
+  background: var(--summit-color-status-approved);
 }
 
 .oas-heatmap-stage-bar-unstarted {
@@ -605,8 +605,8 @@ div.NavMenu__menu-group:has(* a[href*="/summit/"]):hover * div.NavMenu__subitem-
   border-color: transparent;
 }
 
-.oas-heatmap-square-awarded {
-  background: var(--summit-color-status-awarded);
+.oas-heatmap-square-approved {
+  background: var(--summit-color-status-approved);
   border-color: transparent;
 }
 

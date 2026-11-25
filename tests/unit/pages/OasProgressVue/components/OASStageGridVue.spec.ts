@@ -34,7 +34,7 @@ function makeRow(overrides: Partial<OASProgressRow> = {}): OASProgressRow {
     lastName: rest.join(" "),
     patrolName: null,
     answered: false,
-    awarded: false,
+    approved: false,
     date: null,
     ...overrides,
   };
@@ -53,7 +53,7 @@ function makeFilters(overrides: Partial<OASProgressVueFilterState> = {}): OASPro
     breakByPatrol: false,
     showEmptySkillRows: true,
     showEmptyTopStages: true,
-    showAwarded: true,
+    showApproved: true,
     showNotStarted: true,
     showAnswered: true,
     visibleStreams: [],
@@ -65,28 +65,28 @@ function makeFilters(overrides: Partial<OASProgressVueFilterState> = {}): OASPro
     stageGridSortBy: "firstName",
     stageGridSelectedPatrols: [UNASSIGNED_PATROL],
     stageGridBreakByPatrol: false,
-    stageGridShowCompleted: true,
+    stageGridShowApproved: true,
     stageGridLayout: "membersAsColumns",
     ...overrides,
   };
 }
 
 function makeCell(overrides: Partial<StageGridCell> = {}): StageGridCell {
-  return { date: null, answered: false, awarded: false, ...overrides };
+  return { date: null, answered: false, approved: false, ...overrides };
 }
 
 describe("stageGridCellClass", () => {
-  it("returns the empty class when neither answered nor awarded", () => {
+  it("returns the empty class when neither answered nor approved", () => {
     expect(stageGridCellClass(makeCell())).toBe("oas-stage-grid-cell-empty");
   });
 
-  it("returns the answered class when answered but not awarded", () => {
+  it("returns the answered class when answered but not approved", () => {
     expect(stageGridCellClass(makeCell({ answered: true }))).toBe("oas-stage-grid-cell-answered");
   });
 
-  it("returns the awarded class when awarded, even if answered is also true", () => {
-    expect(stageGridCellClass(makeCell({ answered: true, awarded: true }))).toBe("oas-stage-grid-cell-awarded");
-    expect(stageGridCellClass(makeCell({ answered: false, awarded: true }))).toBe("oas-stage-grid-cell-awarded");
+  it("returns the approved class when approved, even if answered is also true", () => {
+    expect(stageGridCellClass(makeCell({ answered: true, approved: true }))).toBe("oas-stage-grid-cell-approved");
+    expect(stageGridCellClass(makeCell({ answered: false, approved: true }))).toBe("oas-stage-grid-cell-approved");
   });
 
   it("returns the not-applicable class for a statement outside the member's template version", () => {
@@ -95,8 +95,8 @@ describe("stageGridCellClass", () => {
 });
 
 describe("Stage Grid boxes", () => {
-  it("are green when awarded, yellow when answered, grey otherwise", () => {
-    expect(stageGridSquareClass(makeCell({ answered: true, awarded: true }))).toBe("oas-heatmap-square-awarded");
+  it("are green when approved, yellow when answered, grey otherwise", () => {
+    expect(stageGridSquareClass(makeCell({ answered: true, approved: true }))).toBe("oas-heatmap-square-approved");
     expect(stageGridSquareClass(makeCell({ answered: true }))).toBe("oas-heatmap-square-answered");
     expect(stageGridSquareClass(makeCell())).toBe("oas-heatmap-square-unanswered");
   });
@@ -586,8 +586,8 @@ describe("OASStageGridVue tab jumps", () => {
   const computed = (OASStageGridVue as any).computed;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const methods = (OASStageGridVue as any).methods;
-  // Amy has stage 2 to do; Ben has been awarded it.
-  const rows = [makeRow({ stage: 2, answered: true, patrolName: "Eagles" }), makeRow({ stage: 2, memberId: "m2", memberName: "Ben Ranger", answered: true, awarded: true, patrolName: "Eagles" })];
+  // Amy has stage 2 to do; Ben's is approved.
+  const rows = [makeRow({ stage: 2, answered: true, patrolName: "Eagles" }), makeRow({ stage: 2, memberId: "m2", memberName: "Ben Ranger", answered: true, approved: true, patrolName: "Eagles" })];
 
   function makeContext(canOpenPeakAward = true) {
     const context: Record<string, unknown> = { items: rows, skillStream: SKILL_STREAM, stage: 2, filters: makeFilters({ stageGridSelectedPatrols: ["Eagles"] }), availablePatrols: [], canOpenPeakAward };
@@ -599,7 +599,7 @@ describe("OASStageGridVue tab jumps", () => {
   }
   const page = { skill: "bushcraft", stream: "bushcraft", stage: 2 };
 
-  it("a member's squares open Next Steps at this stage, unless n/a or the stage is awarded", () => {
+  it("a member's squares open Next Steps at this stage, unless n/a or the stage is approved", () => {
     const context = makeContext();
 
     expect(methods.cellJump.call(context, page, "m1", makeCell())?.filters).toEqual({ nextStepsMemberId: "m1", nextStepsSkillStream: "bushcraft::bushcraft", nextStepsStage: 2 });

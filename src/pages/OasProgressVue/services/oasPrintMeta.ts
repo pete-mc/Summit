@@ -9,7 +9,7 @@ const MAX_STAGE = 9;
 const HIDDEN_LABELS: Array<{ key: keyof OASProgressVueFilterState; text: string }> = [
   { key: "showEmptySkillRows", text: "Skills not started" },
   { key: "showEmptyTopStages", text: "Empty top stages" },
-  { key: "showAwarded", text: "Awarded I-Statements" },
+  { key: "showApproved", text: "Approved I-Statements" },
   { key: "showNotStarted", text: "Not started I-Statements" },
   { key: "showAnswered", text: "Answered I-Statements" },
 ];
@@ -71,6 +71,6 @@ export function buildStageGridPrintMeta(filters: OASProgressVueFilterState, skil
   const meta: MetaEntry[] = skillStreamLabel ? [{ label: "Skill", value: skillStreamLabel }] : [];
   if (stage !== null) meta.push({ label: "Stage", value: String(stage) });
   if (canFilterByPatrol) meta.push({ label: "Patrol", value: describePatrols(filters.stageGridSelectedPatrols, patrolOptions) });
-  if (!filters.stageGridShowCompleted) meta.push({ label: "Hidden", value: "Members awarded the stage" });
+  if (!filters.stageGridShowApproved) meta.push({ label: "Hidden", value: "Members approved for the stage" });
   return meta;
 }

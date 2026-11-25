@@ -14,7 +14,7 @@ function heatmapHtml(stages: number[]): string {
   const cells = stages
     .map((_, i) =>
       i === 0
-        ? '<td class="oas-heatmap-stage-cell"><div class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete" title="Done"></div></td>'
+        ? '<td class="oas-heatmap-stage-cell"><div class="oas-heatmap-stage-bar oas-heatmap-stage-bar-approved" title="Done"></div></td>'
         : `<td class="oas-heatmap-stage-cell"><div class="oas-heatmap-squares">
              <div class="oas-heatmap-square oas-heatmap-square-answered"></div>
              <div class="oas-heatmap-square oas-heatmap-square-hidden"></div>
@@ -123,7 +123,7 @@ describe("buildHeatmapPrintMeta", () => {
     visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     showEmptySkillRows: true,
     showEmptyTopStages: true,
-    showAwarded: true,
+    showApproved: true,
     showNotStarted: true,
     showAnswered: true,
     groupBy: "member",

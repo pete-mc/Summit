@@ -20,7 +20,7 @@ function makeRow(overrides: Partial<OASProgressRow> = {}): OASProgressRow {
     memberName: "Alex Scout",
     patrolName: null,
     answered: true,
-    awarded: false,
+    approved: false,
     date: "2020-11-18",
     ...overrides,
   };
@@ -68,7 +68,7 @@ describe("OasProgressVueContent render contract", () => {
       ':member-filter="filters.memberFilter"',
       ':name-format="filters.nameFormat"',
       ':break-by-patrol="filters.breakByPatrol"',
-      ':show-awarded="filters.showAwarded"',
+      ':show-approved="filters.showApproved"',
       ':show-not-started="filters.showNotStarted"',
     ].forEach((binding) => {
       expect(source).toContain(binding);
@@ -294,7 +294,7 @@ describe("OasProgressVueContent render contract", () => {
 
   it("the Stage Grid filter keys are separate from the heat map's own, not shared", () => {
     const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/services/OASProgressVueFilterPersistence.ts"), "utf8");
-    ["stageGridSkillStream", "stageGridStage", "stageGridNameFormat", "stageGridBreakByPatrol", "stageGridShowCompleted"].forEach((key) => {
+    ["stageGridSkillStream", "stageGridStage", "stageGridNameFormat", "stageGridBreakByPatrol", "stageGridShowApproved"].forEach((key) => {
       expect(source).toContain(key);
     });
 

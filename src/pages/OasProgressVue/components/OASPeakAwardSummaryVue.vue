@@ -52,7 +52,7 @@
                 @click="onCoreSkillClick(row.memberId, index)"
                 @keydown.enter="onCoreSkillClick(row.memberId, index)"
               >
-                <div v-if="coreSkill.kind === 'bar'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete oas-peak-award-summary-bar" :style="{ width: barWidthPx(coreSkill.boxCount) }" :title="coreSkill.barTitle"></div>
+                <div v-if="coreSkill.kind === 'bar'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-approved oas-peak-award-summary-bar" :style="{ width: barWidthPx(coreSkill.boxCount) }" :title="coreSkill.barTitle"></div>
                 <div v-else class="oas-heatmap-squares">
                   <div v-for="(box, index) in coreSkill.boxes" :key="index" :class="['oas-heatmap-square', box.met ? 'oas-heatmap-square-answered' : 'oas-heatmap-square-unanswered']" :title="box.title"></div>
                 </div>
@@ -61,7 +61,7 @@
                 <div class="oas-peak-award-summary-row">
                   <div
                     v-if="row.progressions.kind === 'bar'"
-                    class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete oas-peak-award-summary-bar"
+                    class="oas-heatmap-stage-bar oas-heatmap-stage-bar-approved oas-peak-award-summary-bar"
                     :style="{ width: barWidthPx(row.progressions.boxCount) }"
                     :title="row.progressions.barTitle"
                   ></div>
@@ -73,7 +73,7 @@
               </td>
               <td v-if="hasSpecial && row.special" class="oas-heatmap-stage-cell">
                 <div class="oas-peak-award-summary-row">
-                  <div v-if="row.special.kind === 'bar'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete oas-peak-award-summary-bar" :style="{ width: barWidthPx(row.special.boxCount) }" :title="row.special.barTitle"></div>
+                  <div v-if="row.special.kind === 'bar'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-approved oas-peak-award-summary-bar" :style="{ width: barWidthPx(row.special.boxCount) }" :title="row.special.barTitle"></div>
                   <div v-else class="oas-heatmap-squares">
                     <div v-for="(box, index) in row.special.boxes" :key="index" :class="['oas-heatmap-square', box.met ? 'oas-heatmap-square-answered' : 'oas-heatmap-square-unanswered']" :title="box.title"></div>
                   </div>

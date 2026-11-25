@@ -30,14 +30,14 @@ export function stageWidths(view: HeatMapExportView): number[] {
 }
 
 const SQUARE_FILL: Record<string, string> = {
-  awarded: EXCEL_COLOURS.allMet,
+  approved: EXCEL_COLOURS.allMet,
   answered: EXCEL_COLOURS.met,
   unanswered: EXCEL_COLOURS.notMet,
 };
 
 export function stageCells(cell: StageCellView | undefined, width: number): Cell[] {
   if (!cell || cell.kind === "empty") return nulls(width);
-  if (cell.kind === "bar-complete") {
+  if (cell.kind === "bar-approved") {
     // White outline so the bar is inset like the squares; otherwise their borders nibble its edges.
     return outlinedBar(width, EXCEL_COLOURS.allMet, EXCEL_COLOURS.squareBorder);
   }

@@ -17,7 +17,7 @@ function memberRow(id: string, first: string, last: string, core: [number, numbe
   const coreSkills = (["bushcraft", "bushwalking", "camping"] as const).map((skill, i) => ({
     skill,
     requiredStage: requirement.coreSkillStage,
-    highestAwardedStage: core[i],
+    highestApprovedStage: core[i],
     boxes: boxes(requirement.coreSkillStage, core[i]),
     met: core[i] >= requirement.coreSkillStage,
   }));

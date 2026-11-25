@@ -3,9 +3,9 @@ import { skillStreamKey, skillStreamLabel } from "./skillStreams";
 
 export type NextStepsRow = OASProgressRow & { skillStream: string };
 
-/** Awarded rows are dropped first, so no option list or table ever offers an awarded stage. */
+/** Approved rows are dropped first, so no option list or table ever offers an approved stage. */
 export function listOutstandingRows(items: OASProgressRow[], memberId: string): OASProgressRow[] {
-  return items.filter((row) => row.memberId === memberId && !row.awarded);
+  return items.filter((row) => row.memberId === memberId && !row.approved);
 }
 
 const inSkillStream = (key: string) => (row: OASProgressRow) => skillStreamKey(row.stream, row.branch) === key;

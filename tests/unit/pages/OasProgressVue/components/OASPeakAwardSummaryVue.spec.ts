@@ -139,9 +139,9 @@ function makeMemberRow(overrides: Partial<PeakAwardMemberRow> = {}): PeakAwardMe
     lastName: "Scout",
     patrolName: null,
     coreSkills: [
-      { skill: "bushcraft", requiredStage: 5, highestAwardedStage: 0, boxes: Array.from({ length: 5 }, () => makeBox({ met: false, award: null })), met: false },
-      { skill: "bushwalking", requiredStage: 5, highestAwardedStage: 0, boxes: Array.from({ length: 5 }, () => makeBox({ met: false, award: null })), met: false },
-      { skill: "camping", requiredStage: 5, highestAwardedStage: 0, boxes: Array.from({ length: 5 }, () => makeBox({ met: false, award: null })), met: false },
+      { skill: "bushcraft", requiredStage: 5, highestApprovedStage: 0, boxes: Array.from({ length: 5 }, () => makeBox({ met: false, award: null })), met: false },
+      { skill: "bushwalking", requiredStage: 5, highestApprovedStage: 0, boxes: Array.from({ length: 5 }, () => makeBox({ met: false, award: null })), met: false },
+      { skill: "camping", requiredStage: 5, highestApprovedStage: 0, boxes: Array.from({ length: 5 }, () => makeBox({ met: false, award: null })), met: false },
     ],
     totalProgressions: 0,
     requiredProgressions: 12,
@@ -184,7 +184,7 @@ describe("buildRowView", () => {
 
   it("collapses a Core Skills cell to a bar once every one of its boxes is met", () => {
     const metBoxes = Array.from({ length: 5 }, (_, i) => makeBox({ met: true, award: makeAward({ stage: i + 1 }) }));
-    const row = makeMemberRow({ coreSkills: [{ skill: "bushcraft", requiredStage: 5, highestAwardedStage: 5, boxes: metBoxes, met: true }, ...makeMemberRow().coreSkills.slice(1)] });
+    const row = makeMemberRow({ coreSkills: [{ skill: "bushcraft", requiredStage: 5, highestApprovedStage: 5, boxes: metBoxes, met: true }, ...makeMemberRow().coreSkills.slice(1)] });
 
     const view = buildRowView(row, "full");
 

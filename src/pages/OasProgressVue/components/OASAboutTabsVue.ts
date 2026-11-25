@@ -27,7 +27,7 @@ export const ABOUT_TAB_LINES: AboutTabLine[] = [
     viewMode: "heatmap",
     name: "Heatmap",
     question: "What's been done, in detail?",
-    detail: "Shows every I-statement for every member, coloured as awarded, answered or not started. Narrow it down by skill, stage and patrol.",
+    detail: "Shows every I-statement for every member, coloured as approved, answered or not started. Narrow it down by skill, stage and patrol.",
   },
   {
     viewMode: "nextSteps",

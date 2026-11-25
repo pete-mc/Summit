@@ -79,7 +79,7 @@ describe("unmergeGroupBands", () => {
 });
 
 describe("buildStageGridPrintMeta", () => {
-  const filters = (overrides: Partial<OASProgressVueFilterState> = {}) => ({ stageGridSelectedPatrols: ["Possum", "Wombat"], stageGridShowCompleted: true, ...overrides }) as OASProgressVueFilterState;
+  const filters = (overrides: Partial<OASProgressVueFilterState> = {}) => ({ stageGridSelectedPatrols: ["Possum", "Wombat"], stageGridShowApproved: true, ...overrides }) as OASProgressVueFilterState;
 
   it("lists only the Skill and Stage when nothing else narrows the sheets", () => {
     expect(buildStageGridPrintMeta(filters(), "Bushcraft - Pioneering", 2, ["Possum", "Wombat"], false)).toEqual([
@@ -89,11 +89,11 @@ describe("buildStageGridPrintMeta", () => {
   });
 
   it("adds patrols and hidden members when they narrow the sheets", () => {
-    expect(buildStageGridPrintMeta(filters({ stageGridSelectedPatrols: ["Possum"], stageGridShowCompleted: false }), "Camping", 3, ["Possum", "Wombat"], true)).toEqual([
+    expect(buildStageGridPrintMeta(filters({ stageGridSelectedPatrols: ["Possum"], stageGridShowApproved: false }), "Camping", 3, ["Possum", "Wombat"], true)).toEqual([
       { label: "Skill", value: "Camping" },
       { label: "Stage", value: "3" },
       { label: "Patrol", value: "Possum" },
-      { label: "Hidden", value: "Members awarded the stage" },
+      { label: "Hidden", value: "Members approved for the stage" },
     ]);
   });
 });

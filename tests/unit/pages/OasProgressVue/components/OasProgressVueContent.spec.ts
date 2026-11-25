@@ -45,7 +45,7 @@ function makeStoredFilters(overrides: Partial<OASProgressVueFilterState> = {}): 
     breakByPatrol: false,
     showEmptySkillRows: true,
     showEmptyTopStages: true,
-    showAwarded: true,
+    showApproved: true,
     showNotStarted: true,
     showAnswered: true,
     visibleStreams: ["bushcraft"],
@@ -60,7 +60,7 @@ function makeStoredFilters(overrides: Partial<OASProgressVueFilterState> = {}): 
     stageGridSortBy: "firstName",
     stageGridSelectedPatrols: [],
     stageGridBreakByPatrol: false,
-    stageGridShowCompleted: true,
+    stageGridShowApproved: true,
     stageGridLayout: "membersAsColumns",
     ...overrides,
   };
@@ -203,7 +203,7 @@ describe("OasProgressVueContent view mode", () => {
           summaryShowNotStartedSkills: false,
           summaryBreakByPatrol: true,
           memberFilter: "someone else",
-          stageGridShowCompleted: false,
+          stageGridShowApproved: false,
         }),
         patrolFilterOptions: [],
       };
@@ -215,7 +215,7 @@ describe("OasProgressVueContent view mode", () => {
       expect(context.filters.summaryShowNotStartedSkills).toBe(true);
       expect(context.filters.summaryBreakByPatrol).toBe(false);
       expect(context.filters.memberFilter).toBe("someone else");
-      expect(context.filters.stageGridShowCompleted).toBe(false);
+      expect(context.filters.stageGridShowApproved).toBe(false);
     });
 
     it("resets Peak Award's own keys while leaving Summary untouched", () => {
@@ -254,7 +254,7 @@ describe("OasProgressVueContent view mode", () => {
           viewMode: "stageGrid",
           stageGridSkillStream: "bushcraft::pioneering",
           stageGridStage: 4,
-          stageGridShowCompleted: false,
+          stageGridShowApproved: false,
           stageGridSortBy: "lastName",
           stageGridLayout: "membersAsRows",
           memberFilter: "someone",
@@ -267,7 +267,7 @@ describe("OasProgressVueContent view mode", () => {
 
       expect(context.filters.stageGridSkillStream).toBe("camping::camping");
       expect(context.filters.stageGridStage).toBe(1);
-      expect(context.filters.stageGridShowCompleted).toBe(true);
+      expect(context.filters.stageGridShowApproved).toBe(true);
       expect(context.filters.stageGridSortBy).toBe("firstName");
       expect(context.filters.stageGridLayout).toBe("membersAsColumns");
       expect(context.filters.memberFilter).toBe("someone");

@@ -91,15 +91,15 @@ export function buildOverallProgressRows(grouped: Record<string, SkillHeatMapDat
     cells: sections.map((section, index) => {
       const member = membersBySection[index].get(memberId);
       if (!member) return NO_PROGRESS;
-      return formatStageProgress(member.highestStage, member.stages, section.stream !== null, section.trunkStageCount, member.trunkFullyAwarded);
+      return formatStageProgress(member.highestStage, member.stages, section.stream !== null, section.trunkStageCount, member.trunkFullyApproved);
     }),
   }));
 }
 
 function highestAward(section: HeatMapSection, member: SectionMemberRow): StageAward | null {
   if (member.highestStage === null) return null;
-  const awarded = member.stages.find((stage) => stage.stage === member.highestStage);
-  const cell = awarded?.cells[0];
+  const approved = member.stages.find((stage) => stage.stage === member.highestStage);
+  const cell = approved?.cells[0];
   return { stream: section.skill, branch: section.stream ?? section.skill, stage: member.highestStage, section: cell?.section ?? null, date: cell?.date ?? null };
 }
 
@@ -115,7 +115,7 @@ function collapsedCell(skillSections: HeatMapSection[], memberId: string): Overa
   return { stage: String(highest), nextStageProgress: null, awards };
 }
 
-/** One cell per skill: the highest whole stage awarded in its trunk or any of its streams. */
+/** One cell per skill: the highest whole stage approved in its trunk or any of its streams. */
 export function buildCollapsedOverallProgressRows(grouped: Record<string, SkillHeatMapData>, members: Array<{ memberId: string; displayName: string; patrolName: string | null }>): OverallProgressRow[] {
   const skills = orderSkills(Object.keys(grouped));
   return members.map(({ memberId, displayName, patrolName }) => ({

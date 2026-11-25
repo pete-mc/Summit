@@ -28,16 +28,16 @@ function page(): StageGridPage {
             inputId: "p1",
             iStatement: "I can plan a walk.",
             cells: [
-              { date: "2026-03-04", answered: true, awarded: true },
-              { date: null, answered: false, awarded: false },
+              { date: "2026-03-04", answered: true, approved: true },
+              { date: null, answered: false, approved: false },
             ],
           },
           {
             inputId: "p2",
             iStatement: "I can pack a bag.",
             cells: [
-              { date: null, answered: false, awarded: false, notApplicable: true },
-              { date: "2026-05-06T00:00:00Z", answered: true, awarded: false },
+              { date: null, answered: false, approved: false, notApplicable: true },
+              { date: "2026-05-06T00:00:00Z", answered: true, approved: false },
             ],
           },
         ],
@@ -49,15 +49,15 @@ function page(): StageGridPage {
 describe("stageGridCell", () => {
   const fill = (cell: Parameters<typeof stageGridCell>[0]) => (stageGridCell(cell) as Record<string, unknown>).backgroundColor;
 
-  it("fills a box like the screen: green awarded, yellow answered, grey not answered, with no date", () => {
-    expect(fill({ date: "2026-03-04", answered: true, awarded: true })).toBe(EXCEL_COLOURS.allMet);
-    expect(fill({ date: "2026-03-04", answered: true, awarded: false })).toBe(EXCEL_COLOURS.met);
-    expect(fill({ date: null, answered: false, awarded: false })).toBe(EXCEL_COLOURS.notMet);
-    expect(value(stageGridCell({ date: "2026-03-04", answered: true, awarded: true }))).toBe("");
+  it("fills a box like the screen: green approved, yellow answered, grey not answered, with no date", () => {
+    expect(fill({ date: "2026-03-04", answered: true, approved: true })).toBe(EXCEL_COLOURS.allMet);
+    expect(fill({ date: "2026-03-04", answered: true, approved: false })).toBe(EXCEL_COLOURS.met);
+    expect(fill({ date: null, answered: false, approved: false })).toBe(EXCEL_COLOURS.notMet);
+    expect(value(stageGridCell({ date: "2026-03-04", answered: true, approved: true }))).toBe("");
   });
 
   it("keeps n/a as grey text", () => {
-    const na = stageGridCell({ date: null, answered: false, awarded: false, notApplicable: true }) as Record<string, unknown>;
+    const na = stageGridCell({ date: null, answered: false, approved: false, notApplicable: true }) as Record<string, unknown>;
     expect(na.value).toBe("n/a");
     expect(na.backgroundColor).toBe(EXCEL_COLOURS.mutedRow);
   });
@@ -109,7 +109,7 @@ describe("buildStageGridSheet", () => {
 });
 
 describe("buildNextStepsSheet", () => {
-  const row = (inputId: string, inputGroup: string, answered: boolean, date: string | null) => ({ inputId, inputGroup, iStatement: `Statement ${inputId}`, answered, awarded: false, date }) as unknown as NextStepsRow;
+  const row = (inputId: string, inputGroup: string, answered: boolean, date: string | null) => ({ inputId, inputGroup, iStatement: `Statement ${inputId}`, answered, approved: false, date }) as unknown as NextStepsRow;
 
   it("matches the screen: Group merged over its rows, an Answered box, the I-Statement and a real date", () => {
     const sheet = buildNextStepsSheet({ rows: [row("a", "Plan", true, "2026-07-08"), row("b", "Plan", false, null), row("c", "Do", false, null)], header: HEADER, logo: null });

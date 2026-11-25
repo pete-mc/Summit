@@ -40,8 +40,8 @@ export function stageGridCellClass(cell: StageGridCell): string {
   if (cell.notApplicable) {
     return "oas-stage-grid-cell-na";
   }
-  if (cell.awarded) {
-    return "oas-stage-grid-cell-awarded";
+  if (cell.approved) {
+    return "oas-stage-grid-cell-approved";
   }
   if (cell.answered) {
     return "oas-stage-grid-cell-answered";
@@ -50,14 +50,14 @@ export function stageGridCellClass(cell: StageGridCell): string {
 }
 
 export function stageGridSquareClass(cell: StageGridCell): string {
-  if (cell.awarded) {
-    return "oas-heatmap-square-awarded";
+  if (cell.approved) {
+    return "oas-heatmap-square-approved";
   }
   return cell.answered ? "oas-heatmap-square-answered" : "oas-heatmap-square-unanswered";
 }
 
 export function stageGridSquareTitle(cell: StageGridCell): string {
-  const status = cell.awarded ? "Awarded" : cell.answered ? "Answered" : "Not answered";
+  const status = cell.approved ? "Approved" : cell.answered ? "Answered" : "Not answered";
   return cell.date ? `${status} ${formatStageGridDate(cell.date)}` : status;
 }
 
@@ -132,7 +132,7 @@ export default defineComponent({
         memberFilter: "",
         nameFormat: this.filters.stageGridNameFormat,
         breakByPatrol: this.filters.stageGridBreakByPatrol,
-        hideCompleted: !this.filters.stageGridShowCompleted,
+        hideApproved: !this.filters.stageGridShowApproved,
         sortBy: this.filters.stageGridSortBy === "lastName" ? "lastName" : "firstName",
       });
     },

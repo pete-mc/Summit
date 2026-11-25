@@ -30,7 +30,7 @@ function makeRow(overrides: Partial<OASProgressRow> = {}): OASProgressRow {
     lastName: rest.join(" "),
     patrolName: null,
     answered: false,
-    awarded: false,
+    approved: false,
     date: null,
     ...overrides,
   };
@@ -44,7 +44,7 @@ const DEFAULT_OPTIONS: BuildStageGridPagesOptions = {
   memberFilter: "",
   nameFormat: "full",
   breakByPatrol: false,
-  hideCompleted: false,
+  hideApproved: false,
   sortBy: "firstName",
 };
 
@@ -75,7 +75,7 @@ describe("buildStageGridPages", () => {
     const page = result.pages[0];
     expect(page.members.map((m) => m.memberId)).toEqual(["m1", "m2"]);
     const row = page.groups[0].rows[0];
-    expect(row.cells[1]).toEqual({ date: null, answered: false, awarded: false });
+    expect(row.cells[1]).toEqual({ date: null, answered: false, approved: false });
   });
 
   it("uses identical members, in identical order, across every page in the set", () => {
@@ -163,34 +163,34 @@ describe("buildStageGridPages", () => {
     expect(byPatrol.patrolGroups?.flatMap((g) => g.members.map((m) => m.memberId))).toEqual(byPatrol.members.map((m) => m.memberId));
   });
 
-  it("flags awarded cells distinctly from merely-answered cells", () => {
-    const rows = [makeRow({ memberId: "m1", inputId: "a1", answered: true, awarded: true, date: "2024-02-03" }), makeRow({ memberId: "m2", inputId: "a1", answered: true, awarded: false, date: "2024-02-03" })];
+  it("flags approved cells distinctly from merely-answered cells", () => {
+    const rows = [makeRow({ memberId: "m1", inputId: "a1", answered: true, approved: true, date: "2024-02-03" }), makeRow({ memberId: "m2", inputId: "a1", answered: true, approved: false, date: "2024-02-03" })];
 
     const result = buildStageGridPages(rows, options());
 
     const cells = result.pages[0].groups[0].rows[0].cells;
-    expect(cells[0]).toEqual({ date: "2024-02-03", answered: true, awarded: true });
-    expect(cells[1]).toEqual({ date: "2024-02-03", answered: true, awarded: false });
+    expect(cells[0]).toEqual({ date: "2024-02-03", answered: true, approved: true });
+    expect(cells[1]).toEqual({ date: "2024-02-03", answered: true, approved: false });
   });
 
-  describe("hideCompleted", () => {
+  describe("hideApproved", () => {
     it("leaves every page's members equal to the full set when off (default)", () => {
-      const rows = [makeRow({ memberId: "m1", inputId: "a1", awarded: true }), makeRow({ memberId: "m2", inputId: "a1" })];
+      const rows = [makeRow({ memberId: "m1", inputId: "a1", approved: true }), makeRow({ memberId: "m2", inputId: "a1" })];
 
       const result = buildStageGridPages(rows, options());
 
       expect(result.pages[0].members).toBe(result.members);
     });
 
-    it("drops only the fully-awarded member's column on a page, not the others", () => {
+    it("drops only the fully-approved member's column on a page, not the others", () => {
       const rows = [
-        makeRow({ stage: 1, memberId: "m1", inputId: "a1", awarded: true, answered: true }),
+        makeRow({ stage: 1, memberId: "m1", inputId: "a1", approved: true, answered: true }),
         makeRow({ stage: 1, memberId: "m2", inputId: "a1" }),
         makeRow({ stage: 2, memberId: "m1", inputId: "b1" }),
         makeRow({ stage: 2, memberId: "m2", inputId: "b1" }),
       ];
 
-      const result = buildStageGridPages(rows, options({ hideCompleted: true, visibleStages: [1, 2] }));
+      const result = buildStageGridPages(rows, options({ hideApproved: true, visibleStages: [1, 2] }));
 
       const stage1 = result.pages.find((p) => p.stage === 1)!;
       const stage2 = result.pages.find((p) => p.stage === 2)!;
@@ -201,59 +201,59 @@ describe("buildStageGridPages", () => {
     it("keeps cells index-aligned after narrowing out the middle member", () => {
       const rows = [
         makeRow({ memberId: "m1", memberName: "Amy", inputId: "a1" }),
-        makeRow({ memberId: "m2", memberName: "Jess", inputId: "a1", awarded: true, answered: true }),
+        makeRow({ memberId: "m2", memberName: "Jess", inputId: "a1", approved: true, answered: true }),
         makeRow({ memberId: "m3", memberName: "Nora", inputId: "a1", answered: true, date: "2024-02-03" }),
       ];
 
-      const result = buildStageGridPages(rows, options({ hideCompleted: true }));
+      const result = buildStageGridPages(rows, options({ hideApproved: true }));
 
       const page = result.pages[0];
       expect(page.members.map((m) => m.memberId)).toEqual(["m1", "m3"]);
       expect(page.groups[0].rows[0].cells).toEqual([
-        { date: null, answered: false, awarded: false },
-        { date: "2024-02-03", answered: true, awarded: false },
+        { date: null, answered: false, approved: false },
+        { date: "2024-02-03", answered: true, approved: false },
       ]);
     });
 
-    it("does not hide a member who is answered but not yet awarded (pending review)", () => {
-      const rows = [makeRow({ memberId: "m1", inputId: "a1", answered: true, awarded: false, date: "2024-02-03" })];
+    it("does not hide a member who is answered but not yet approved (pending review)", () => {
+      const rows = [makeRow({ memberId: "m1", inputId: "a1", answered: true, approved: false, date: "2024-02-03" })];
 
-      const result = buildStageGridPages(rows, options({ hideCompleted: true }));
+      const result = buildStageGridPages(rows, options({ hideApproved: true }));
 
       expect(result.pages[0].members.map((m) => m.memberId)).toEqual(["m1"]);
     });
 
-    it("drops a page entirely when every member on it is fully awarded", () => {
-      const rows = [makeRow({ memberId: "m1", inputId: "a1", awarded: true, answered: true }), makeRow({ memberId: "m2", inputId: "a1", awarded: true, answered: true })];
+    it("drops a page entirely when every member on it is fully approved", () => {
+      const rows = [makeRow({ memberId: "m1", inputId: "a1", approved: true, answered: true }), makeRow({ memberId: "m2", inputId: "a1", approved: true, answered: true })];
 
-      const result = buildStageGridPages(rows, options({ hideCompleted: true }));
+      const result = buildStageGridPages(rows, options({ hideApproved: true }));
 
       expect(result.pages).toHaveLength(0);
     });
 
     it("leaves the page-set-level members list unchanged — only per-page members narrow", () => {
-      const rows = [makeRow({ memberId: "m1", inputId: "a1", awarded: true, answered: true }), makeRow({ memberId: "m2", inputId: "a1" })];
+      const rows = [makeRow({ memberId: "m1", inputId: "a1", approved: true, answered: true }), makeRow({ memberId: "m2", inputId: "a1" })];
 
-      const result = buildStageGridPages(rows, options({ hideCompleted: true }));
+      const result = buildStageGridPages(rows, options({ hideApproved: true }));
 
       expect(result.members.map((m) => m.memberId)).toEqual(["m1", "m2"]);
     });
   });
 
-  it("stamps every cell awarded across a fully awarded stage, and carries that through to the Stage Grid", () => {
-    const rows = [makeRow({ memberId: "m1", inputId: "a1", awarded: true, answered: true, date: "2024-02-03" }), makeRow({ memberId: "m1", inputId: "a2", awarded: true, answered: true, date: "2024-02-03" })];
+  it("stamps every cell approved across a fully approved stage, and carries that through to the Stage Grid", () => {
+    const rows = [makeRow({ memberId: "m1", inputId: "a1", approved: true, answered: true, date: "2024-02-03" }), makeRow({ memberId: "m1", inputId: "a2", approved: true, answered: true, date: "2024-02-03" })];
 
     const result = buildStageGridPages(rows, options());
 
     const rowsOut = result.pages[0].groups[0].rows;
-    expect(rowsOut.every((r) => r.cells[0].awarded && r.cells[0].answered)).toBe(true);
+    expect(rowsOut.every((r) => r.cells[0].approved && r.cells[0].answered)).toBe(true);
   });
 
   describe("mixed template versions", () => {
     const mixedRows = (m2Awarded = false) => [
       makeRow({ memberId: "m1", memberName: "Amy", inputId: "activities" }),
       makeRow({ memberId: "m1", memberName: "Amy", inputId: "navigation" }),
-      makeRow({ memberId: "m2", memberName: "Jess", inputId: "activities", awarded: m2Awarded, answered: m2Awarded }),
+      makeRow({ memberId: "m2", memberName: "Jess", inputId: "activities", approved: m2Awarded, answered: m2Awarded }),
     ];
 
     it("shows the old-only statement, not-applicable for members on the other version", () => {
@@ -261,11 +261,11 @@ describe("buildStageGridPages", () => {
 
       const navigation = result.pages[0].groups[0].rows.find((r) => r.inputId === "navigation")!;
       expect(navigation.cells[0].notApplicable).toBeUndefined();
-      expect(navigation.cells[1]).toEqual({ date: null, answered: false, awarded: false, notApplicable: true });
+      expect(navigation.cells[1]).toEqual({ date: null, answered: false, approved: false, notApplicable: true });
     });
 
-    it("still hides an awarded member under Hide completed when a not-applicable cell is on the page", () => {
-      const result = buildStageGridPages(mixedRows(true), options({ hideCompleted: true }));
+    it("still hides an approved member under Hide completed when a not-applicable cell is on the page", () => {
+      const result = buildStageGridPages(mixedRows(true), options({ hideApproved: true }));
 
       expect(result.pages[0].members.map((m) => m.memberId)).toEqual(["m1"]);
     });

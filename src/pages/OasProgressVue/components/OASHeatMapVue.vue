@@ -60,7 +60,7 @@
               @click="onLinkClick(row.cellJumps[cellIndex])"
               @keydown.enter="onLinkClick(row.cellJumps[cellIndex])"
             >
-              <div v-if="cell.kind === 'bar-complete'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete" :title="cell.title"></div>
+              <div v-if="cell.kind === 'bar-approved'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-approved" :title="cell.title"></div>
               <div v-else-if="cell.kind === 'bar-unstarted'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-unstarted" :title="withJumpTitle(cell.title, row.cellJumps[cellIndex])"></div>
               <div v-else-if="cell.kind === 'squares'" class="oas-heatmap-squares">
                 <div v-for="square in cell.squares" :key="square.inputId" :class="['oas-heatmap-square', square.stateClass, square.groupClass]" :title="withJumpTitle(square.title, row.cellJumps[cellIndex])"></div>
@@ -106,7 +106,7 @@
                 @click="onLinkClick(member.cellJumps[cellIndex])"
                 @keydown.enter="onLinkClick(member.cellJumps[cellIndex])"
               >
-                <div v-if="cell.kind === 'bar-complete'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete" :title="cell.title"></div>
+                <div v-if="cell.kind === 'bar-approved'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-approved" :title="cell.title"></div>
                 <div v-else-if="cell.kind === 'bar-unstarted'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-unstarted" :title="withJumpTitle(cell.title, member.cellJumps[cellIndex])"></div>
                 <div v-else-if="cell.kind === 'squares'" class="oas-heatmap-squares">
                   <div v-for="square in cell.squares" :key="square.inputId" :class="['oas-heatmap-square', square.stateClass, square.groupClass]" :title="withJumpTitle(square.title, member.cellJumps[cellIndex])"></div>

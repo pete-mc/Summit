@@ -17,7 +17,7 @@ function makeRow(overrides: Partial<OASProgressRow> = {}): OASProgressRow {
     lastName: "Scout",
     patrolName: null,
     answered: false,
-    awarded: false,
+    approved: false,
     date: null,
     section: null,
     ...overrides,
@@ -28,8 +28,8 @@ const CAMPING = skillStreamKey("camping", "camping");
 const LIGHTWEIGHT = skillStreamKey("camping", "lightweight-camping");
 
 describe("listOutstandingRows", () => {
-  it("keeps only the member's rows that are not awarded", () => {
-    const rows = [makeRow({ inputId: "a" }), makeRow({ inputId: "b", awarded: true }), makeRow({ inputId: "c", memberId: "m2" })];
+  it("keeps only the member's rows that are not approved", () => {
+    const rows = [makeRow({ inputId: "a" }), makeRow({ inputId: "b", approved: true }), makeRow({ inputId: "c", memberId: "m2" })];
     expect(listOutstandingRows(rows, "m1").map((r) => r.inputId)).toEqual(["a"]);
   });
 });

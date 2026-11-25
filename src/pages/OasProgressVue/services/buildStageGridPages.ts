@@ -19,7 +19,7 @@ export interface StageGridCell {
   /** `YYYY-MM-DD`, a raw Terrain string that didn't parse, or null. */
   date: string | null;
   answered: boolean;
-  awarded: boolean;
+  approved: boolean;
   /** Not in the template version this member started on, so no tick box is shown. */
   notApplicable?: true;
 }
@@ -65,8 +65,8 @@ export interface BuildStageGridPagesOptions {
   memberFilter: string;
   nameFormat: NameFormat;
   breakByPatrol: boolean;
-  /** Keyed on `awarded`, not `answered`. */
-  hideCompleted: boolean;
+  /** Keyed on `approved`, not `answered`. */
+  hideApproved: boolean;
   sortBy: "firstName" | "lastName";
 }
 
@@ -137,11 +137,11 @@ function isMemberCompleteOnPage(page: StageGridPage, memberIndex: number): boole
     return false;
   }
   const applicableCells = allRows.map((row) => row.cells[memberIndex]).filter((cell) => !cell?.notApplicable);
-  return applicableCells.length > 0 && applicableCells.every((cell) => cell?.awarded === true);
+  return applicableCells.length > 0 && applicableCells.every((cell) => cell?.approved === true);
 }
 
 /** Gotcha: members and cells must be narrowed together so the indexes stay aligned. */
-function applyHideCompletedToPage(page: StageGridPage, allMembers: StageGridMember[]): StageGridPage | null {
+function applyHideApprovedToPage(page: StageGridPage, allMembers: StageGridMember[]): StageGridPage | null {
   const keepIndices: number[] = [];
   allMembers.forEach((_, index) => {
     if (!isMemberCompleteOnPage(page, index)) {
@@ -200,7 +200,7 @@ export function buildStageGridPages(rows: OASProgressRow[], options: BuildStageG
 
     let stageGridRow = group.get(row.inputId);
     if (!stageGridRow) {
-      stageGridRow = { inputId: row.inputId, iStatement: row.iStatement, cells: members.map(() => ({ date: null, answered: false, awarded: false })) };
+      stageGridRow = { inputId: row.inputId, iStatement: row.iStatement, cells: members.map(() => ({ date: null, answered: false, approved: false })) };
       group.set(row.inputId, stageGridRow);
     }
 
@@ -208,7 +208,7 @@ export function buildStageGridPages(rows: OASProgressRow[], options: BuildStageG
     if (memberIndex === undefined) {
       return;
     }
-    stageGridRow.cells[memberIndex] = { date: row.date, answered: row.answered, awarded: row.awarded };
+    stageGridRow.cells[memberIndex] = { date: row.date, answered: row.answered, approved: row.approved };
     page.memberIndicesWithRows.add(memberIndex);
     page.filledCells.add(`${row.inputId}#${memberIndex}`);
   });
@@ -219,7 +219,7 @@ export function buildStageGridPages(rows: OASProgressRow[], options: BuildStageG
       group.forEach((stageGridRow) => {
         page.memberIndicesWithRows.forEach((memberIndex) => {
           if (!page.filledCells.has(`${stageGridRow.inputId}#${memberIndex}`)) {
-            stageGridRow.cells[memberIndex] = { date: null, answered: false, awarded: false, notApplicable: true };
+            stageGridRow.cells[memberIndex] = { date: null, answered: false, approved: false, notApplicable: true };
           }
         });
       });
@@ -236,7 +236,7 @@ export function buildStageGridPages(rows: OASProgressRow[], options: BuildStageG
     groups: acc.groupOrder.map((title) => ({ title, rows: Array.from(acc.groups.get(title)!.values()) })),
   }));
 
-  const narrowedPages = options.hideCompleted ? builtPages.map((page) => applyHideCompletedToPage(page, members)).filter((page): page is StageGridPage => page !== null) : builtPages;
+  const narrowedPages = options.hideApproved ? builtPages.map((page) => applyHideApprovedToPage(page, members)).filter((page): page is StageGridPage => page !== null) : builtPages;
 
   narrowedPages.sort((a, b) => a.stage - b.stage);
 

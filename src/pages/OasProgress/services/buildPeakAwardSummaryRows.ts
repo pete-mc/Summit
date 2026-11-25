@@ -25,7 +25,7 @@ export interface PeakAwardBox {
 export interface PeakAwardCoreSkill {
   skill: CoreSkill;
   requiredStage: number;
-  highestAwardedStage: number;
+  highestApprovedStage: number;
   /** boxes[i] = stage i+1. */
   boxes: PeakAwardBox[];
   met: boolean;
@@ -57,7 +57,7 @@ export interface PeakAwardMemberRow {
 }
 
 /** Whole history, all sections. Keyed by member + stream + BRANCH + stage (see StageAward.branch). */
-function awardedStagesByMember(rows: OASProgressRow[]): Map<string, StageAward[]> {
+function approvedStagesByMember(rows: OASProgressRow[]): Map<string, StageAward[]> {
   const byMemberThenKey = new Map<string, Map<string, OASProgressRow[]>>();
 
   rows.forEach((row) => {
@@ -73,7 +73,7 @@ function awardedStagesByMember(rows: OASProgressRow[]): Map<string, StageAward[]
   byMemberThenKey.forEach((byKey, memberId) => {
     const awards: StageAward[] = [];
     byKey.forEach((cells, key) => {
-      if (cells.length === 0 || !cells.every((c) => c.awarded)) {
+      if (cells.length === 0 || !cells.every((c) => c.approved)) {
         return;
       }
       const [stream, branch, stageStr] = key.split("::");
@@ -88,12 +88,12 @@ function awardedStagesByMember(rows: OASProgressRow[]): Map<string, StageAward[]
 
 function buildCoreSkill(skill: CoreSkill, requiredStage: number, streamAwards: StageAward[]): PeakAwardCoreSkill {
   const awardsByStage = new Map(streamAwards.map((a) => [a.stage, a]));
-  const highestAwardedStage = streamAwards.reduce((max, a) => Math.max(max, a.stage), 0);
+  const highestApprovedStage = streamAwards.reduce((max, a) => Math.max(max, a.stage), 0);
   const boxes: PeakAwardBox[] = Array.from({ length: requiredStage }, (_, i) => {
     const award = awardsByStage.get(i + 1) ?? null;
     return { met: award !== null, award };
   });
-  return { skill, requiredStage, highestAwardedStage, boxes, met: highestAwardedStage >= requiredStage };
+  return { skill, requiredStage, highestApprovedStage, boxes, met: highestApprovedStage >= requiredStage };
 }
 
 export type PeakAwardSortBy = "firstName" | "lastName" | "progress";
@@ -113,7 +113,7 @@ export function sortPeakAwardSummaryRows(rowsToSort: PeakAwardMemberRow[], sortB
 
 /** Learning: Progressions/Special only count the current section; Core Skills is a lifetime check. */
 export function buildPeakAwardSummaryRows(rows: OASProgressRow[], members: TerrainUnitMember[], requirement: PeakAwardRequirement, currentSection: TerrainAchievementsSection): PeakAwardMemberRow[] {
-  const awardsByMember = awardedStagesByMember(rows);
+  const awardsByMember = approvedStagesByMember(rows);
 
   return members.map((member) => {
     const allAwards = awardsByMember.get(member.id) ?? [];
