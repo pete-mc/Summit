@@ -3,7 +3,7 @@
 One list of open items across features. Details live in each feature's plan; keep this list short and
 remove items once they're done.
 
-Last updated 2026-11-11.
+Last updated 2026-11-25.
 
 ## Open PRs
 
@@ -29,6 +29,17 @@ Last updated 2026-11-11.
   of Next Steps, open-in-new-browser-tab. See [OASProgress/PLAN_DRILL_DOWN.md](OASProgress/PLAN_DRILL_DOWN.md).
 - **Term-theme finder spike:** planning only. See [OASThemes/PLAN_SPIKE_THEME_FINDER.md](OASThemes/PLAN_SPIKE_THEME_FINDER.md).
 - Print follow-ups: see [Print/PLAN.md](Print/PLAN.md).
+
+## Global filter defaults
+
+- Built 2026-11-25 (Tools > Display Options, used by OAS Progress). Not yet pushed or PR'd.
+  See [GlobalFilterDefaults/PLAN.md](GlobalFilterDefaults/PLAN.md).
+- Display Options Filter defaults section works but its styling needs a tidy-up (user doing this).
+- Later: a single-patrol default (Patrol is locked to All Patrols for now).
+- When Present Awards or I Statements ship: add their own mapping file if they gain any common filters
+  (Present Awards' "Presented" stays tab-specific).
+- Not fixed: OAS Report, Peak Award and Milestone Report pages count only Terrain's `awarded`, so
+  new-flow `approved` badges don't show there as done.
 
 ## Summit Calendar
 
