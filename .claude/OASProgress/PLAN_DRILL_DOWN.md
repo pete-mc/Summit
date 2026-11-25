@@ -1,7 +1,8 @@
 # OAS Progress: drill-down links between tabs
 
-Status: design agreed 2026-11-24. Stage 1 built and checked in Edge 2026-11-24; Stage 2 built and checked in Edge 2026-11-24. "Open in" menus list tabs in tab order.
-Starts with the Summary tab; other tabs later.
+Status: done. Design agreed 2026-11-24; stages 1–5 (Summary, Peak Award, Heat Map, Stage Grid) built and checked
+in Edge 2026-11-24, committed `947cc70`…`ad58caa`. About tab explains it (`da9bf96`, 2026-11-25). "Open in" menus
+list tabs in tab order. Next Steps is a destination only and has no outgoing links.
 
 ## Idea
 
@@ -83,19 +84,21 @@ One small description per jump, produced by the source table and applied by the 
 
 ```ts
 interface TabJump {
-  viewMode: OASProgressVueFilterState["viewMode"];
+  viewMode: ViewMode;
   filters: Partial<OASProgressVueFilterState>;
-  originLabel: string; // "Summary: Bushwalking"
+  title: string;                         // menu item / tooltip text
+  from: Origin & { detail: string };     // back bar: source tab and what was clicked
 }
 ```
 
-- `services/tabJumps.ts`: pure functions `cellJump`, `columnJumps`, `memberJumps` (return `TabJump | null` /
-  `TabJump[]`) plus the "which stream / is there a next stage" helpers. Unit-tested without Vue.
-- `OASOverallProgressVue` emits `jump` with a `TabJump`; it does not know about other tabs' filters.
-- `OasProgressVueContent.applyTabJump(jump)`: `filters = { ...filters, ...jump.filters, viewMode: jump.viewMode }`,
-  sets the back-bar state (`jumpOrigin`, not persisted).
-- Later: Heat Map / Peak Award / Next Steps can emit `TabJump`s too, and a `TabJump` can be serialised into the
-  URL for "open in new browser tab".
+- `services/tabJumps.ts`: all the rules, as pure functions per tab (`buildSummaryCellJumps`, `summaryColumnJumps`,
+  `peakAwardMemberJumps`, `heatMapStageCellJump`, `stageGridMemberJumps`, …) plus the "which stream / lowest stage
+  needed" helpers. `TAB_ORDER` keeps menus in tab order. Unit-tested without Vue.
+- `OASTabJumpMenu.vue`: the shared ▾ menu (hidden until hover/focus; `@click.stop` so header sorts don't fire).
+- Each table emits `jump` with a `TabJump`; it does not know about other tabs' filters.
+- `OasProgressVueContent.onTabJump(jump)` merges the filters, switches tab and sets `jumpOrigin` (the back bar,
+  not persisted). `onJumpBack` / `onJumpBarClose` handle the bar.
+- Later, if wanted: links out of Next Steps; a `TabJump` serialised into the URL for "open in new browser tab".
 
 ## Stages
 

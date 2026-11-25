@@ -24,7 +24,9 @@ Last updated 2026-11-11.
 - **Next Steps tab** (was Table / I-Statements): print/PDF modelled on Terrain's stage sheets (Guidance,
   Comments, Verifier columns) is next. See [OASProgress/PLAN_TABLE_REQUIREMENTS.md](OASProgress/PLAN_TABLE_REQUIREMENTS.md).
 - **Drill-down links between tabs** (was "Heatmap ↔ Stage Grid linking", listed under "Still to do" in the PR).
-  Summary, Peak Award, Heat Map and Stage Grid done (cells → Next Steps; "Open in" menus; back bar). Next Steps (a destination) has no links yet. See [OASProgress/PLAN_DRILL_DOWN.md](OASProgress/PLAN_DRILL_DOWN.md).
+  Done 2026-11-24 for Summary, Peak Award, Heat Map and Stage Grid (cells → Next Steps; "Open in" menus; back bar),
+  explained on the About tab. Not yet pushed or PR'd (planned branch `pr/oas-drill-down`). Optional later: links out
+  of Next Steps, open-in-new-browser-tab. See [OASProgress/PLAN_DRILL_DOWN.md](OASProgress/PLAN_DRILL_DOWN.md).
 - **Term-theme finder spike:** planning only. See [OASThemes/PLAN_SPIKE_THEME_FINDER.md](OASThemes/PLAN_SPIKE_THEME_FINDER.md).
 - Print follow-ups: see [Print/PLAN.md](Print/PLAN.md).
 

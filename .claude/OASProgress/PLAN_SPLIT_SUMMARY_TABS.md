@@ -74,5 +74,5 @@ with `.sync` so each tab passes its own keys:
 
 ## Follow-ups (not this change)
 
-- Right-click / ⋮ row actions (e.g. jump from Summary to that member's Peak Award row).
+- ~~Right-click / ⋮ row actions~~: done as drill-down links, see [PLAN_DRILL_DOWN.md](PLAN_DRILL_DOWN.md).
 - Share the page-level member list with Heatmap, Table and Worksheets.
