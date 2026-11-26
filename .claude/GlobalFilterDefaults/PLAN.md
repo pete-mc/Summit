@@ -119,34 +119,48 @@ This matches what you specified in A: tab-specific defaults stay hard-coded on t
 - Next Steps spec: member options follow the name format.
 - Update the existing specs that reference `showEmptyTopStages` or the old labels.
 
-## Stage 2 — Display Options page
+## Stage 2 — Display Options page (as built, 2026-11-26)
 
-The page is currently a plain-HTML Vue page with one deprecated checkbox (help button). Leave that checkbox alone.
+The whole page is now Vue + Vuetify. The old intro text and the deprecated help-button checkbox were removed.
 
-- Add a **Filter defaults** section, built in Vuetify with the second-Vue-instance pattern from `OasProgressVue.ts`: the outer `.vue` file holds a `ref` div, and a new `DisplayOptionsFilterDefaultsVue` component is mounted into it from Summit's Vuetify `vue`. Rebuilding the whole page in Vuetify isn't needed.
-- **Controls:**
-  - Name format (select)
-  - Sort by (select: First Name, Last Name)
-  - Break by patrol, Show approved, Show skills not started, Show stages not started (switches)
-  - a short read-only line: "Patrol filters always start at All Patrols."
-- Each change saves immediately. There's no Save button, which matches how the tab filters behave.
-- A one-line "Used on" hint under each control, taken from the table above, so the leader knows which tabs it affects.
+- **Page shell:** `DisplayOptions.vue` holds only the "Display Options" title and a `ref` div. `DisplayOptions.ts` mounts
+  `components/DisplayOptionsTabsVue` into it as a second Vue instance from Summit's Vuetify `vue`, the same pattern as
+  `OasProgressVue.ts`.
+- **Tabs:** `DisplayOptionsTabsVue` uses `v-tabs` styled like OAS Progress. There's one tab, **Filters**, for now. Later
+  display options get their own tabs. A left-hand section menu only pays off at about five or more sections.
+- **Filters tab (`components/FilterDefaultsVue`):**
+  - Intro: "Report tabs start with these default filter settings, and go back to them when 'Reset Filters' is
+    pressed. The Patrol selection defaults to All Patrols."
+  - **Name** (the shared `NameFormatSelect`) and **Sort by** (First Name / Last Name), stacked, using the same compact
+    controls and heading style as the OAS filter panels.
+  - A **Show** subheading, styled like the tab names on the OAS About tab, then one row per setting: label on the left,
+    `v-switch` slider on the right. Labels match the report filters exactly: Break by patrol, Approved, Skills not
+    started, Stages not started.
+  - There are no "used on" hints.
+  - Each change saves immediately.
 - **Buttons:**
-  - **Reset to system defaults:** puts the defaults back to system values. It doesn't change any page's current filters; that only happens on Reset filters, first visit, or Apply.
-  - **Apply defaults to all pages:** opens a confirm dialog, "This replaces the name format, sort, patrol and show settings on every report tab with these defaults. Other filters are kept.", then calls `markFilterDefaultsApplied()` and shows a short success note.
-- Update the page intro text: settings are saved in this browser only.
-- Follow [DESIGN.md](../DESIGN.md) tokens and spacing. Use existing Summit shared components (`SummitPillButton`) for the buttons.
+  - **Reset to system defaults:** puts the defaults back to system values only. Tabs pick them up on Reset filters, on
+    first visit, or after Apply.
+  - **Apply defaults to all pages:** opens a confirm dialog, then calls `markFilterDefaultsApplied()` and shows a toast.
+- **Help button setting removed:** it hid Terrain's help button on every page load, so the store code
+  (`helpButton`, `toggleHelpButton`, the `SummitState` localStorage save, the freshworks hiding in `initialize`) went
+  too. Otherwise anyone who had turned it off would be stuck without the help button.
 
 ### Stage 2 tests
 
-- A component spec for `DisplayOptionsFilterDefaultsVue`:
-  - shows the stored defaults;
-  - a change saves;
-  - Reset restores system values;
-  - Apply asks first;
-  - Cancel does nothing;
-  - Confirm sets the stamp.
-- A render-contract test like the OAS ones: the section mounts into the ref div.
+`tests/unit/pages/DisplayOptions/FilterDefaultsVue.spec.ts`:
+
+- stored defaults show;
+- a change saves;
+- Reset restores system values without stamping an Apply;
+- Apply only happens from the dialog;
+- confirming stamps the time;
+- every common default except Patrol is offered;
+- Show labels match the report filters;
+- switches, not chips;
+- the compact controls are used;
+- the page mounts the tabs with Filters first;
+- the help-button setting is gone from the page and the store.
 
 ## Verify (both stages)
 
@@ -162,7 +176,7 @@ The page is currently a plain-HTML Vue page with one deprecated checkbox (help b
 
 ## After
 
-- Add an entry to `.claude/OUTSTANDING.md` for each deferred item:
+- Added to `.claude/OUTSTANDING.md` (done 2026-11-25):
   - a single-patrol default;
   - adding mappings when the Present Awards and I Statements pages ship (Present Awards has none of the common filters today).
 - Offering this upstream: neither stage depends on the unfinished pages, so it can go in a later `pr/<feature>` branch built the usual way.

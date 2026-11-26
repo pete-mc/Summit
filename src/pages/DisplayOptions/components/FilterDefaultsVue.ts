@@ -1,32 +1,31 @@
 import { defineComponent } from "vue";
+import NameFormatSelect from "@/components/NameFormatSelect.vue";
 import SummitPillButton from "@/components/SummitPillButton.vue";
 import { showTerrainToast } from "@/helpers";
-import { NAME_FORMAT_OPTIONS } from "@/shared/nameFormat";
 import { loadFilterDefaults, markFilterDefaultsApplied, resetFilterDefaults, saveFilterDefaults, type CommonFilterDefaults } from "@/shared/filterDefaults";
 
-type SwitchKey = "breakByPatrol" | "showApproved" | "showSkillsNotStarted" | "showStagesNotStarted";
+type ShowKey = "breakByPatrol" | "showApproved" | "showSkillsNotStarted" | "showStagesNotStarted";
 
 export const SORT_OPTIONS: Array<{ value: CommonFilterDefaults["sortBy"]; text: string }> = [
   { value: "firstName", text: "First Name" },
   { value: "lastName", text: "Last Name" },
 ];
 
-export const SWITCHES: Array<{ key: SwitchKey; label: string; usedOn: string }> = [
-  { key: "breakByPatrol", label: "Break by patrol", usedOn: "OAS Progress: Summary, Peak Award, Heat Map, Stage Grid" },
-  { key: "showApproved", label: "Show approved", usedOn: "OAS Progress: Heat Map, Stage Grid" },
-  { key: "showSkillsNotStarted", label: "Show skills not started", usedOn: "OAS Progress: Summary, Heat Map" },
-  { key: "showStagesNotStarted", label: "Show stages not started", usedOn: "OAS Progress: Heat Map" },
+export const SHOW_OPTIONS: Array<{ key: ShowKey; label: string }> = [
+  { key: "breakByPatrol", label: "Break by patrol" },
+  { key: "showApproved", label: "Approved" },
+  { key: "showSkillsNotStarted", label: "Skills not started" },
+  { key: "showStagesNotStarted", label: "Stages not started" },
 ];
 
 export default defineComponent({
   name: "FilterDefaultsVue",
-  components: { SummitPillButton },
+  components: { NameFormatSelect, SummitPillButton },
   data() {
     return {
       defaults: loadFilterDefaults(),
-      nameFormatOptions: NAME_FORMAT_OPTIONS,
       sortOptions: SORT_OPTIONS,
-      switches: SWITCHES,
+      showOptions: SHOW_OPTIONS,
       confirmApplyOpen: false,
     };
   },

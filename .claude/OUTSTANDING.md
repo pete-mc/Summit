@@ -32,9 +32,9 @@ Last updated 2026-11-25.
 
 ## Global filter defaults
 
-- Built 2026-11-25 (Tools > Display Options, used by OAS Progress). Not yet pushed or PR'd.
+- Built 2026-11-25/26 (Tools > Display Options, now Vue + Vuetify with a Filters tab; used by OAS Progress).
+  Not yet pushed or PR'd.
   See [GlobalFilterDefaults/PLAN.md](GlobalFilterDefaults/PLAN.md).
-- Display Options Filter defaults section works but its styling needs a tidy-up (user doing this).
 - Later: a single-patrol default (Patrol is locked to All Patrols for now).
 - When Present Awards or I Statements ship: add their own mapping file if they gain any common filters
   (Present Awards' "Presented" stays tab-specific).

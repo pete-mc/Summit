@@ -97,15 +97,16 @@ The "Global default (proposed)" column above is superseded; the decisions under 
   | Sort by | First Name | Summary, Peak Award, Heat Map, Stage Grid |
   | Patrol | All Patrols | Summary, Peak Award, Heat Map, Stage Grid |
   | Break by patrol | Off | Summary, Peak Award, Heat Map, Stage Grid |
-  | Show awarded | On | Heat Map, Stage Grid (on hold, see open item) |
+  | Show approved | On | Heat Map, Stage Grid |
   | Show skills not started | On | Summary, Heat Map |
   | Show stages not started | On | Heat Map |
 
 - **Tab-specific, hard-coded on the tab:** Heat Map Skills / Stages / Answered / Group by, Stage Grid Layout, Summary Expand streams, Present Awards Presented / Group by member, Next Steps and Stage Grid single picks. Member search is left out. I Statements is ignored.
 
-### Still open
+### Resolved 2026-11-25 (was on hold)
 
-- Show awarded vs. Present Awards "Presented" (#5): on hold.
+- **#5:** "Show awarded" is now **Show approved** (criteria met in Terrain). Present Awards' "Presented" is a different
+  question (badge physically handed over), so it stays tab-specific and doesn't share the default.
 
 ### Also resolved
 

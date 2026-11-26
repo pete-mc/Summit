@@ -24,7 +24,8 @@ removed). Present Awards' React original went the same way on 2026-10-12: its pa
 
 React (18.2) is **not** gone — it's still live and routed for pages that haven't been
 rebuilt: `Home`, `MilestoneReport`, `OasReport`, `PeakAward`, `Topo`,
-`SummitCalendar`, `DisplayOptions` (see `src/pages/` and `SummitRouter.ts`). Keep
+`SummitCalendar` (see `src/pages/` and `SummitRouter.ts`). `DisplayOptions` was rebuilt in Vue + Vuetify on
+2026-11-26 (tabbed; Filters tab). Keep
 maintaining these in React; don't rewrite a page to Vue just because this file says
 Vue is now the default — that's a decision worth its own plan (as OAS Progress's
 was), not an incidental side effect of an unrelated change.
@@ -99,7 +100,7 @@ transparent background leaves an empty outline behind.
 ## Component conventions (React pages)
 
 These apply to the still-active React pages (`Home`, `MilestoneReport`, `OasReport`,
-`PeakAward`, `Topo`, `SummitCalendar`, `DisplayOptions`). For new/Vue work see the next section.
+`PeakAward`, `Topo`, `SummitCalendar`). For new/Vue work see the next section.
 
 - Functional components, typed props via `interface` + `React.FC<Props>`. See
   [`SimpleDropdown.tsx`](../src/components/SimpleDropdown.tsx) for the canonical

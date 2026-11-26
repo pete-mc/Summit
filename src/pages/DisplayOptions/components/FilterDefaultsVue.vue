@@ -1,42 +1,27 @@
 <template>
   <div class="summit-filter-defaults">
-    <h3>Filter defaults</h3>
-    <p>Report tabs start with these filters, and go back to them when you click <strong>Reset filters</strong>. Patrol filters always start at All Patrols.</p>
+    <p class="summit-filter-defaults__intro">Report tabs start with these default filter settings, and go back to them when 'Reset Filters' is pressed. The Patrol selection defaults to All Patrols.</p>
 
-    <div class="summit-filter-defaults__fields">
-      <v-select
-        :value="defaults.nameFormat"
-        :items="nameFormatOptions"
-        item-text="text"
-        item-value="value"
-        label="Name format"
-        hint="OAS Progress: every tab"
-        persistent-hint
-        dense
-        @change="update({ nameFormat: $event })"
-      ></v-select>
+    <div class="summit-filter-defaults__controls">
+      <NameFormatSelect :value="defaults.nameFormat" @input="update({ nameFormat: $event })" />
       <v-select
         :value="defaults.sortBy"
         :items="sortOptions"
         item-text="text"
         item-value="value"
         label="Sort by"
-        hint="OAS Progress: Summary, Peak Award, Heat Map, Stage Grid"
-        persistent-hint
         dense
+        hide-details
+        style="max-width: 160px"
+        class="oas-vue-filter-select"
         @change="update({ sortBy: $event })"
       ></v-select>
-      <v-switch
-        v-for="item in switches"
-        :key="item.key"
-        :input-value="defaults[item.key]"
-        :label="item.label"
-        :hint="item.usedOn"
-        persistent-hint
-        dense
-        inset
-        @change="update({ [item.key]: !!$event })"
-      ></v-switch>
+    </div>
+
+    <div class="summit-filter-defaults__heading">Show</div>
+    <div v-for="option in showOptions" :key="option.key" class="summit-filter-defaults__switch-row">
+      <label :for="'summit-filter-default-' + option.key">{{ option.label }}</label>
+      <v-switch :id="'summit-filter-default-' + option.key" :input-value="defaults[option.key]" inset dense hide-details class="ma-0 pa-0" @change="update({ [option.key]: !!$event })"></v-switch>
     </div>
 
     <div class="summit-filter-defaults__actions">
@@ -62,20 +47,62 @@
 
 <style scoped>
 .summit-filter-defaults {
-  max-width: 560px;
-  margin-top: calc(var(--summit-space-lg) * 1.5);
+  padding: var(--summit-space-lg) 0;
+  font-family: var(--oas-vue-font-family);
+  font-size: var(--oas-vue-font-size-body);
 }
 
-.summit-filter-defaults__fields {
+.summit-filter-defaults__intro {
+  margin-bottom: var(--summit-space-lg);
+}
+
+.summit-filter-defaults__controls {
   display: flex;
   flex-direction: column;
-  gap: var(--summit-space-md);
+  gap: var(--summit-space-lg);
+}
+
+/* Kept in sync by hand with the OAS Progress filter panels: scoped styles can't be shared. */
+.summit-filter-defaults ::v-deep .oas-vue-filter-select .v-label {
+  color: var(--color-scouts-medium-blue, #00348d) !important;
+  font-size: var(--oas-vue-font-size-heading) !important;
+  font-family: var(--oas-vue-font-family) !important;
+  font-weight: normal !important;
+  letter-spacing: -0.01em !important;
+}
+
+.summit-filter-defaults ::v-deep .v-select__selection {
+  font-size: var(--oas-vue-font-size-body) !important;
+  font-family: var(--oas-vue-font-family) !important;
+}
+
+/* Matches the tab names on the OAS Progress About tab (OASAboutTabsVue.vue). */
+.summit-filter-defaults__heading {
+  margin: calc(var(--summit-space-lg) * 1.5) 0 var(--summit-space-sm);
+  font-family: var(--oas-vue-font-family);
+  font-size: var(--oas-vue-font-size-body);
+  font-weight: var(--summit-font-weight-semibold, 600);
+  color: var(--color-scouts-medium-blue, #00348d);
+}
+
+.summit-filter-defaults__switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 280px;
+  min-height: 36px;
+}
+
+.summit-filter-defaults__switch-row label {
+  font-family: var(--oas-vue-font-family);
+  font-size: var(--oas-vue-font-size-body);
+  cursor: pointer;
 }
 
 .summit-filter-defaults__actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--summit-space-md);
-  margin-top: calc(var(--summit-space-lg) * 1.5);
+  margin-top: var(--summit-space-lg);
 }
 </style>
