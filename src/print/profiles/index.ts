@@ -1,9 +1,9 @@
 import type { PrintProfile } from "../summitPrint";
 import peakAwardSummary from "./peakAwardSummary";
 import skillHeatmap from "./skillHeatmap";
-import oasTable from "./oasTable";
+import oasNextSteps from "./oasNextSteps";
 import overallProgress from "./overallProgress";
-import oasWorksheets from "./oasWorksheets";
+import oasStageGrid from "./oasStageGrid";
 
 /** Gotcha: not registered by import side effect. package.json "sideEffects" lets webpack drop such imports, silently emptying the registry. */
-export const SUMMIT_PRINT_PROFILES: PrintProfile[] = [peakAwardSummary, overallProgress, skillHeatmap, oasTable, oasWorksheets];
+export const SUMMIT_PRINT_PROFILES: PrintProfile[] = [peakAwardSummary, overallProgress, skillHeatmap, oasNextSteps, oasStageGrid];

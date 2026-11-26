@@ -2,7 +2,7 @@ import { loadPrintSettings, savePrintSettings } from "@/print/printSettings";
 import { existsSync } from "fs";
 import { resolve } from "path";
 import { getSectionLabel, getSectionLogoFile, getSectionLogoUrl, SECTION_KEYS } from "@/print/sectionLogo";
-import { buildSummaryPrintMeta, describePatrols } from "@/pages/OasProgressVue/services/oasPrintMeta";
+import { buildPeakAwardPrintMeta, buildSummaryPrintMeta, describePatrols } from "@/pages/OasProgressVue/services/oasPrintMeta";
 import type { OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
 
 describe("printSettings", () => {
@@ -59,7 +59,7 @@ describe("sectionLogo", () => {
 });
 
 describe("Summary print meta", () => {
-  const base = { summaryMemberFilter: "", summarySelectedPatrols: null, summarySortBy: "progress" } as unknown as OASProgressVueFilterState;
+  const base = { summaryMemberFilter: "", summarySelectedPatrols: null, summarySortBy: "lastName" } as unknown as OASProgressVueFilterState;
 
   it("describes patrol selections", () => {
     expect(describePatrols(null, ["Kookaburra", "Possum"])).toBe("All");
@@ -82,5 +82,22 @@ describe("Summary print meta", () => {
 
   it("notes hidden not-started skills, using the Heatmap's wording", () => {
     expect(buildSummaryPrintMeta({ ...base, summaryShowNotStartedSkills: false }, ["Kookaburra"], false)).toEqual([{ label: "Hidden", value: "Skills not started" }]);
+  });
+
+  it("notes collapsed streams, since a skill column then hides which stream its number came from", () => {
+    expect(buildSummaryPrintMeta({ ...base, summaryExpandStreams: false }, ["Kookaburra"], false)).toEqual([{ label: "Streams", value: "Collapsed" }]);
+    expect(buildSummaryPrintMeta({ ...base, summaryExpandStreams: true }, ["Kookaburra"], false)).toEqual([]);
+  });
+});
+
+describe("Peak Award print meta", () => {
+  const base = { peakAwardMemberFilter: "", peakAwardSelectedPatrols: ["Possum"], summaryMemberFilter: "ignored", summaryShowNotStartedSkills: false } as unknown as OASProgressVueFilterState;
+
+  it("lists Peak Award's own member and patrol filters, never Summary's", () => {
+    expect(buildPeakAwardPrintMeta({ ...base, peakAwardMemberFilter: " sam " }, ["Kookaburra", "Possum"], true)).toEqual([
+      { label: "Member", value: 'contains "sam"' },
+      { label: "Patrol", value: "Possum" },
+    ]);
+    expect(buildPeakAwardPrintMeta(base, ["Kookaburra"], false)).toEqual([]);
   });
 });

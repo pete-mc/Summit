@@ -17,7 +17,7 @@
           <tr>
             <th class="oas-heatmap-member-header oas-overall-progress-member-header">Member</th>
             <th
-              v-for="header in headerViews"
+              v-for="(header, index) in headerViews"
               :key="header.key"
               :class="['oas-overall-progress-column-header', { 'oas-overall-progress-column-sorted': header.sortDirection }]"
               :data-oas-column="header.key"
@@ -30,6 +30,7 @@
                 <span v-if="header.streamLabel" class="oas-overall-progress-stream-label">{{ header.streamLabel }}</span>
               </div>
               <v-icon x-small class="oas-overall-progress-sort-icon">{{ header.sortDirection === "ascending" ? "mdi-arrow-up" : "mdi-arrow-down" }}</v-icon>
+              <OASTabJumpMenu :jumps="columnJumps[index] || []" @jump="onJump" />
             </th>
           </tr>
         </thead>
@@ -42,8 +43,19 @@
               <td :colspan="columns.length + 1">{{ group.patrolName }}</td>
             </tr>
             <tr v-for="row in group.members" :key="row.memberId" :data-oas-member="row.memberId">
-              <td class="oas-heatmap-member-name">{{ row.displayName }}</td>
-              <td v-for="(cell, index) in row.cells" :key="columns[index].key" class="oas-overall-progress-cell">
+              <td class="oas-heatmap-member-name">
+                {{ row.displayName }}<OASTabJumpMenu :jumps="memberJumps[row.memberId] || []" @jump="onJump" />
+              </td>
+              <td
+                v-for="(cell, index) in row.cells"
+                :key="columns[index].key"
+                :class="['oas-overall-progress-cell', { 'oas-overall-progress-cell-link': cellJump(row, index) }]"
+                :title="cellTooltip(row, cell, index)"
+                :role="cellJump(row, index) ? 'link' : null"
+                :tabindex="cellJump(row, index) ? 0 : null"
+                @click="onCellClick(row, index)"
+                @keydown.enter="onCellClick(row, index)"
+              >
                 {{ cell.stage }}<span v-if="cell.nextStageProgress" class="oas-heatmap-stage-progress">.{{ cell.nextStageProgress }}</span>
               </td>
             </tr>
@@ -57,7 +69,11 @@
 <script lang="ts" src="./OASOverallProgressVue.ts"></script>
 
 <style scoped>
+/* Gotcha: grow the white block to the table, or a table wider than the window spills past it. Vuetify caps .v-data-table at max-width: 100%, so lift that too. */
 .oas-heatmap-data-table {
+  width: max-content;
+  min-width: 100%;
+  max-width: none;
   font-size: var(--oas-vue-font-size-body);
   font-family: var(--oas-vue-font-family);
 }
@@ -68,10 +84,12 @@
   border: 1px solid var(--color-light-charcoal, #e5e9ec);
 }
 
+/* Gotcha: Vuetify's wrapper scrolls sideways itself, which puts the horizontal scrollbar below the last row, out of view inside .oas-heatmap-scroll. */
 .oas-heatmap-data-table ::v-deep > .v-data-table__wrapper {
   background: var(--color-white, #fff);
   border: 1px solid var(--color-light-charcoal, #e5e9ec);
   border-radius: 4px;
+  overflow: visible !important;
 }
 
 /* Every column is as wide as a two-line rotated header, so trunk and stream columns match. */
@@ -144,5 +162,20 @@
 .oas-overall-progress-cell {
   white-space: nowrap;
   color: var(--summit-color-text-primary);
+}
+
+.oas-overall-progress-column-header .oas-tab-jump-menu {
+  display: block;
+  margin-left: 0;
+}
+
+.oas-overall-progress-cell-link {
+  cursor: pointer;
+}
+
+.oas-overall-progress-cell-link:hover,
+.oas-overall-progress-cell-link:focus-visible {
+  color: var(--color-scouts-medium-blue, #00348d);
+  text-decoration: underline;
 }
 </style>

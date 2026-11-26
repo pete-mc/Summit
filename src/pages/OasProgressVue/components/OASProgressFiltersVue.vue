@@ -1,16 +1,7 @@
 <template>
   <div class="oas-vue-filter-panel">
     <div class="oas-heatmap-controls">
-      <v-text-field
-        :value="filters.memberFilter"
-        label="Member"
-        prepend-inner-icon="mdi-magnify"
-        dense
-        hide-details
-        clearable
-        style="max-width: 220px"
-        @input="patch({ memberFilter: $event || '' })"
-      ></v-text-field>
+      <v-text-field :value="filters.memberFilter" label="Member" prepend-inner-icon="mdi-magnify" dense hide-details clearable style="max-width: 220px" @input="patch({ memberFilter: $event || '' })"></v-text-field>
 
       <v-select
         v-if="canFilterByPatrol"
@@ -47,47 +38,15 @@
         </template>
       </v-select>
 
-      <v-select
-        :value="filters.visibleStages"
-        :items="stageOptions"
-        label="Stages"
-        multiple
-        dense
-        hide-details
-        style="max-width: 140px"
-        class="oas-vue-filter-select"
-        @change="patch({ visibleStages: $event })"
-      >
+      <v-select :value="filters.visibleStages" :items="stageOptions" label="Stages" multiple dense hide-details style="max-width: 140px" class="oas-vue-filter-select" @change="patch({ visibleStages: $event })">
         <template #selection="{ index }">
           <span v-if="index === 0" class="oas-vue-select-summary">{{ filters.visibleStages.length }} selected</span>
         </template>
       </v-select>
 
-      <v-select
-        :value="filters.sortBy"
-        :items="sortOptions"
-        item-text="text"
-        item-value="value"
-        label="Sort by"
-        dense
-        hide-details
-        style="max-width: 180px"
-        class="oas-vue-filter-select"
-        @change="patch({ sortBy: $event })"
-      ></v-select>
+      <v-select :value="filters.sortBy" :items="sortOptions" item-text="text" item-value="value" label="Sort by" dense hide-details style="max-width: 180px" class="oas-vue-filter-select" @change="patch({ sortBy: $event })"></v-select>
 
-      <v-select
-        :value="filters.groupBy"
-        :items="groupByOptions"
-        item-text="text"
-        item-value="value"
-        label="Group by"
-        dense
-        hide-details
-        style="max-width: 140px"
-        class="oas-vue-filter-select"
-        @change="onGroupByChange"
-      ></v-select>
+      <v-select :value="filters.groupBy" :items="groupByOptions" item-text="text" item-value="value" label="Group by" dense hide-details style="max-width: 140px" class="oas-vue-filter-select" @change="onGroupByChange"></v-select>
 
       <NameFormatSelect :value="filters.nameFormat" @input="patch({ nameFormat: $event })" />
 
@@ -115,8 +74,7 @@
   </div>
 </template>
 
-<script lang="ts" src="./OASProgressFiltersVue.ts">
-</script>
+<script lang="ts" src="./OASProgressFiltersVue.ts"></script>
 
 <style scoped>
 /* Gotcha: the #selection slot replaces .v-select__selection, so the ::v-deep sizing below never reaches it. */
@@ -135,7 +93,7 @@
   letter-spacing: -0.01em !important;
 }
 
-/* Gotcha: global Vuetify/Terrain rules force these to 20px (see OASProgressTableVue.vue). */
+/* Gotcha: global Vuetify/Terrain rules force these to 20px. */
 .oas-heatmap-controls ::v-deep .v-text-field input,
 .oas-heatmap-controls ::v-deep .v-select__selection {
   font-size: var(--oas-vue-font-size-body) !important;

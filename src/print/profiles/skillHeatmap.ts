@@ -36,6 +36,7 @@ const skillHeatmap: PrintProfile = {
 
   transform(table) {
     stripInlineSizes(table, ".oas-heatmap-stage-bar, .oas-heatmap-square");
+    Array.from(table.querySelectorAll(".oas-tab-jump-menu")).forEach((menu) => menu.remove());
     // Gotcha: the screen's ::before group dash (index.css) doesn't reach the print document, so add a line break.
     Array.from(table.querySelectorAll(".oas-heatmap-square-group-start")).forEach((sq) => {
       if (sq.previousElementSibling) {

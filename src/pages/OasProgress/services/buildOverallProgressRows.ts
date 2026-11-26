@@ -1,6 +1,7 @@
 import type { HeatMapSection, SectionMemberRow, SkillHeatMapData } from "./groupRowsForHeatMap";
 import { formatStageProgress, orderSkills } from "./filterHeatMapSections";
 import type { StageProgressDisplay } from "./filterHeatMapSections";
+import type { StageAward } from "./buildPeakAwardSummaryRows";
 
 export interface OverallProgressColumn {
   key: string;
@@ -9,12 +10,17 @@ export interface OverallProgressColumn {
   stream: string | null;
 }
 
+/** awards: only on a collapsed skill cell, the highest award of each trunk/stream that has one. */
+export interface OverallProgressCell extends StageProgressDisplay {
+  awards?: StageAward[];
+}
+
 export interface OverallProgressRow {
   memberId: string;
   displayName: string;
   patrolName: string | null;
   /** Aligned with the columns. */
-  cells: StageProgressDisplay[];
+  cells: OverallProgressCell[];
 }
 
 const NO_PROGRESS: StageProgressDisplay = { stage: "-", nextStageProgress: null };
@@ -32,6 +38,10 @@ export function buildOverallProgressColumns(grouped: Record<string, SkillHeatMap
   return orderedSections(grouped).map((section) => ({ key: columnKey(section), skill: section.skill, stream: section.stream }));
 }
 
+export function buildCollapsedOverallProgressColumns(grouped: Record<string, SkillHeatMapData>): OverallProgressColumn[] {
+  return orderSkills(Object.keys(grouped)).map((skill) => ({ key: skill + "::", skill, stream: null }));
+}
+
 export interface OverallProgressColumnSort {
   key: string;
   descending: boolean;
@@ -40,6 +50,12 @@ export interface OverallProgressColumnSort {
 export function nextColumnSort(current: OverallProgressColumnSort | null, key: string): OverallProgressColumnSort | null {
   if (!current || current.key !== key) return { key, descending: true };
   return current.descending ? { key, descending: false } : null;
+}
+
+/** A stream sort becomes a sort on its skill. Gotcha: derived, never saved, so expanding again restores the stream sort. */
+export function collapsedColumnSort(sort: OverallProgressColumnSort | null): OverallProgressColumnSort | null {
+  if (!sort) return null;
+  return { key: sort.key.split("::")[0] + "::", descending: sort.descending };
 }
 
 function stageSortValue(cell: StageProgressDisplay): number | null {
@@ -75,8 +91,38 @@ export function buildOverallProgressRows(grouped: Record<string, SkillHeatMapDat
     cells: sections.map((section, index) => {
       const member = membersBySection[index].get(memberId);
       if (!member) return NO_PROGRESS;
-      return formatStageProgress(member.highestStage, member.stages, section.stream !== null, section.trunkStageCount, member.trunkFullyAwarded);
+      return formatStageProgress(member.highestStage, member.stages, section.stream !== null, section.trunkStageCount, member.trunkFullyApproved);
     }),
+  }));
+}
+
+function highestAward(section: HeatMapSection, member: SectionMemberRow): StageAward | null {
+  if (member.highestStage === null) return null;
+  const approved = member.stages.find((stage) => stage.stage === member.highestStage);
+  const cell = approved?.cells[0];
+  return { stream: section.skill, branch: section.stream ?? section.skill, stage: member.highestStage, section: cell?.section ?? null, date: cell?.date ?? null };
+}
+
+function collapsedCell(skillSections: HeatMapSection[], memberId: string): OverallProgressCell {
+  const awards = skillSections
+    .map((section) => {
+      const member = section.members.find((m) => m.memberId === memberId);
+      return member ? highestAward(section, member) : null;
+    })
+    .filter((award): award is StageAward => award !== null);
+  if (awards.length === 0) return NO_PROGRESS;
+  const highest = awards.reduce((max, award) => Math.max(max, award.stage), 0);
+  return { stage: String(highest), nextStageProgress: null, awards };
+}
+
+/** One cell per skill: the highest whole stage approved in its trunk or any of its streams. */
+export function buildCollapsedOverallProgressRows(grouped: Record<string, SkillHeatMapData>, members: Array<{ memberId: string; displayName: string; patrolName: string | null }>): OverallProgressRow[] {
+  const skills = orderSkills(Object.keys(grouped));
+  return members.map(({ memberId, displayName, patrolName }) => ({
+    memberId,
+    displayName,
+    patrolName,
+    cells: skills.map((skill) => collapsedCell(grouped[skill].sections, memberId)),
   }));
 }
 

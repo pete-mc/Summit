@@ -14,7 +14,7 @@ function heatmapHtml(stages: number[]): string {
   const cells = stages
     .map((_, i) =>
       i === 0
-        ? '<td class="oas-heatmap-stage-cell"><div class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete" title="Done"></div></td>'
+        ? '<td class="oas-heatmap-stage-cell"><div class="oas-heatmap-stage-bar oas-heatmap-stage-bar-approved" title="Done"></div></td>'
         : `<td class="oas-heatmap-stage-cell"><div class="oas-heatmap-squares">
              <div class="oas-heatmap-square oas-heatmap-square-answered"></div>
              <div class="oas-heatmap-square oas-heatmap-square-hidden"></div>
@@ -30,7 +30,7 @@ function heatmapHtml(stages: number[]): string {
     <tbody data-oas-skill="bushwalking">
       <tr class="oas-heatmap-skill-title-row"><td class="oas-heatmap-skill-title" colspan="${span}"><img class="oas-heatmap-skill-icon" src="chrome-extension://abc/images/x.svg" alt="">Bushwalking</td></tr>
       <tr class="oas-heatmap-patrol-title-row"><td class="oas-heatmap-patrol-title" colspan="${span}">Possum</td></tr>
-      <tr data-oas-member="m1"><td class="oas-heatmap-member-name">Member A</td><td class="oas-heatmap-highest-stage">2<span class="oas-heatmap-stage-progress">.3</span></td>${cells}</tr>
+      <tr data-oas-member="m1"><td class="oas-heatmap-member-name">Member A<span class="oas-tab-jump-menu"><button>v</button></span></td><td class="oas-heatmap-highest-stage">2<span class="oas-heatmap-stage-progress">.3</span></td>${cells}</tr>
     </tbody>
   </table>
 </div></div></div>`;
@@ -61,7 +61,7 @@ describe("skill-heatmap profile", () => {
     expect(profile.defaults.orientation).toBe("landscape");
   });
 
-  it("sizes columns to the stages actually shown (Stages filter / empty top stages)", () => {
+  it("sizes columns to the stages actually shown (Stages filter / stages not started)", () => {
     for (const stages of [[1, 2, 3, 4, 5, 6, 7, 8, 9], [2, 5], [1]]) {
       const host = mount(stages);
       const doc = parse(buildPrintDocument({ source: host, profile: "skill-heatmap", vars: VARS, generated: GENERATED }));
@@ -106,6 +106,12 @@ describe("skill-heatmap profile", () => {
     expect(doc.querySelector("table.summit-print-table img.oas-heatmap-skill-icon")).not.toBeNull();
     expect(doc.querySelectorAll("table.summit-print-table [title]")).toHaveLength(0);
   });
+
+  it("strips the Open-in menus", () => {
+    const doc = parse(buildPrintDocument({ source: mount([1, 2]), profile: "skill-heatmap", vars: VARS, generated: GENERATED }));
+    expect(doc.querySelector("table.summit-print-table .oas-heatmap-member-name")).not.toBeNull();
+    expect(doc.querySelector("table.summit-print-table .oas-tab-jump-menu")).toBeNull();
+  });
 });
 
 describe("buildHeatmapPrintMeta", () => {
@@ -116,8 +122,7 @@ describe("buildHeatmapPrintMeta", () => {
     visibleStreams: ALL_SKILLS,
     visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     showEmptySkillRows: true,
-    showEmptyTopStages: true,
-    showAwarded: true,
+    showApproved: true,
     showNotStarted: true,
     showAnswered: true,
     groupBy: "member",

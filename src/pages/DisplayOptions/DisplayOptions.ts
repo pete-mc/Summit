@@ -1,58 +1,37 @@
+import Vue, { defineComponent } from "vue";
 import { TerrainRootState } from "@/types/terrainState";
-import { defineComponent } from "vue";
-import { createLogger } from "@/helpers";
+import DisplayOptionsTabsVue from "./components/DisplayOptionsTabsVue.vue";
 
-const logger = createLogger("DisplayOptions");
+interface MountedInstance {
+  $mount(el: HTMLElement): void;
+  $destroy(): void;
+}
 
 export default defineComponent({
   data() {
     return {
-      // Local data property to store the message
-      helpbutton: this.$store.state.Summit.helpButton,
+      contentInstance: undefined as MountedInstance | undefined,
     };
   },
-  methods: {
-    updateHelpButton() {
-      this.$store.dispatch("Summit/toggleHelpButton", this.helpbutton);
-      logger.debug("Help button updated to " + this.helpbutton);
-    },
-  },
-
-  computed: {
-    // Computed property to get the message from Vuex
-    computedMessage() {
-      return this.$store.getters["Summit/getHelpButton"];
-    },
-  },
-  watch: {
-    // Watch for changes in Vuex state
-    "$store.state.Summit.helpButton": function (newVal) {
-      this.helpbutton = newVal;
-    },
-  },
   mounted() {
-    // Initialize local message from Vuex store
-    this.helpbutton = this.$store.state.Summit.helpButton;
+    this.mountContent();
     (window.$nuxt.$store.state as TerrainRootState).global.breadcrumbs = [
-      {
-        text: "Summit",
-        disabled: false,
-        to: "/summit/home",
-        exact: true,
-      },
-      {
-        text: "Tools",
-        disabled: true,
-        to: "/summit/tools",
-        exact: true,
-      },
-      {
-        text: "Display Options",
-        disabled: true,
-        to: "/summit/tools/DisplayOptions",
-        exact: true,
-      },
+      { text: "Summit", disabled: false, to: "/summit/home", exact: true },
+      { text: "Tools", disabled: true, to: "/summit/tools", exact: true },
+      { text: "Display Options", disabled: true, to: "/summit/tools/DisplayOptions", exact: true },
     ];
   },
-  // Include other methods as needed...
+  beforeDestroy() {
+    this.contentInstance?.$destroy();
+    this.contentInstance = undefined;
+  },
+  methods: {
+    /** Gotcha: Vuetify components only resolve on Summit's own Vue (src/vuetifySetup.ts), so the content is a second Vue instance. */
+    mountContent() {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ContentApp: any = Vue.extend(DisplayOptionsTabsVue);
+      this.contentInstance = new ContentApp({ vuetify: window.summitVuetify }) as MountedInstance;
+      this.contentInstance.$mount(this.$refs.vuetifyRoot as HTMLElement);
+    },
+  },
 });

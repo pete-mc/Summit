@@ -111,7 +111,7 @@ function nextStageProgress(highestStage: number, stages: SectionMemberRow["stage
     return null;
   }
 
-  const ticked = nextStage.cells.filter((c) => c.answered || c.awarded).length;
+  const ticked = nextStage.cells.filter((c) => c.answered || c.approved).length;
   if (ticked === 0) {
     return null;
   }
@@ -128,15 +128,15 @@ function nextStageTickProgress(highestStage: number, stages: SectionMemberRow["s
 }
 
 function hasStreamProgress(stages: SectionMemberRow["stages"]): boolean {
-  return stages.some((stage) => stage.cells.some((c) => c.answered || c.awarded));
+  return stages.some((stage) => stage.cells.some((c) => c.answered || c.approved));
 }
 
 /**
- * "Stage X.xx". Learning: a stream section shows "-" until the trunk is fully awarded AND the member has
+ * "Stage X.xx". Learning: a stream section shows "-" until the trunk is fully approved AND the member has
  * started that stream, then uses the trunk stage count as a FLOOR. The whole number only rises once a
  * stream stage is fully AWARDED. Without the "started" check, every stream repeats the trunk stage.
  */
-export function formatStageProgress(highestStage: number | null, stages: SectionMemberRow["stages"], isStreamSection: boolean, trunkStageCount: number, trunkFullyAwarded: boolean): StageProgressDisplay {
+export function formatStageProgress(highestStage: number | null, stages: SectionMemberRow["stages"], isStreamSection: boolean, trunkStageCount: number, trunkFullyApproved: boolean): StageProgressDisplay {
   if (!isStreamSection) {
     if (highestStage === null) {
       return { stage: "-", nextStageProgress: null };
@@ -144,7 +144,7 @@ export function formatStageProgress(highestStage: number | null, stages: Section
     return { stage: String(highestStage), nextStageProgress: nextStageTickProgress(highestStage, stages) };
   }
 
-  if (!trunkFullyAwarded || !hasStreamProgress(stages)) {
+  if (!trunkFullyApproved || !hasStreamProgress(stages)) {
     return { stage: "-", nextStageProgress: null };
   }
 
@@ -159,7 +159,7 @@ function effectiveHighestStage(member: SectionMemberRow, isStreamSection: boolea
   if (!isStreamSection) {
     return member.highestStage;
   }
-  if (!member.trunkFullyAwarded || !hasStreamProgress(member.stages)) {
+  if (!member.trunkFullyApproved || !hasStreamProgress(member.stages)) {
     return null;
   }
   return member.highestStage === null ? trunkStageCount : Math.max(trunkStageCount, member.highestStage);

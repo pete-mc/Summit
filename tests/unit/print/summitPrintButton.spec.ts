@@ -156,21 +156,21 @@ describe("SummitPrintButton with click-time targets", () => {
       { zoom: 1, overflow: false, bands: 2 },
     ]);
     const tables = [document.createElement("table"), document.createElement("table")];
-    const ctx = context({ profile: "oas-worksheets", target: undefined, targets: () => tables });
+    const ctx = context({ profile: "oas-stage-grid", target: undefined, targets: () => tables });
 
     await ctx.go();
 
     const parts = (printTables as jest.Mock).mock.calls[0][0].parts;
     expect(parts).toEqual([
-      { source: tables[0], profile: "oas-worksheets" },
-      { source: tables[1], profile: "oas-worksheets" },
+      { source: tables[0], profile: "oas-stage-grid" },
+      { source: tables[1], profile: "oas-stage-grid" },
     ]);
     // Several sheets splitting the same way give one warning, not one per sheet.
     expect(showTerrainToast).toHaveBeenCalledWith(SPLIT_FALLBACK_MESSAGE(2), "info");
   });
 
   it("says there is nothing to print when no tables are rendered", async () => {
-    const ctx = context({ profile: "oas-worksheets", target: undefined, targets: () => [] });
+    const ctx = context({ profile: "oas-stage-grid", target: undefined, targets: () => [] });
 
     await ctx.go();
 

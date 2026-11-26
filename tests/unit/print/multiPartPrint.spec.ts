@@ -8,9 +8,11 @@ const GENERATED = new Date(2026, 9, 21, 9, 30);
 function mountOverallTable(columns = 6): HTMLElement {
   const heads = Array.from(
     { length: columns },
-    (_, i) => `<th class="oas-overall-progress-column-header" title="Sort by this column"><div class="oas-overall-progress-rotated-text"><span>Skill ${i + 1}</span></div><i class="v-icon oas-overall-progress-sort-icon"></i></th>`,
+    (_, i) =>
+      `<th class="oas-overall-progress-column-header" title="Sort by this column"><div class="oas-overall-progress-rotated-text"><span>Skill ${i + 1}</span></div><i class="v-icon oas-overall-progress-sort-icon"></i><span class="oas-tab-jump-menu"><button>v</button></span></th>`,
   ).join("");
-  const row = (name: string) => `<tr><td class="oas-heatmap-member-name">${name}</td>${Array.from({ length: columns }, () => '<td class="oas-overall-progress-cell">3<span class="oas-heatmap-stage-progress">.04</span></td>').join("")}</tr>`;
+  const row = (name: string) =>
+    `<tr><td class="oas-heatmap-member-name">${name}<span class="oas-tab-jump-menu"><button>v</button></span></td>${Array.from({ length: columns }, () => '<td class="oas-overall-progress-cell">3<span class="oas-heatmap-stage-progress">.04</span></td>').join("")}</tr>`;
   const host = document.createElement("div");
   host.innerHTML = `<div class="v-data-table oas-heatmap-data-table oas-overall-progress-table"><div class="v-data-table__wrapper"><table><thead><tr><th class="oas-heatmap-member-header">Member</th>${heads}</tr></thead><tbody>${row("Alex Example")}${row("Blake Sample")}</tbody></table></div></div>`;
   document.body.appendChild(host);
@@ -48,7 +50,7 @@ describe("buildMultiPartDocument", () => {
     const sections = Array.from(doc.querySelectorAll<HTMLElement>("section.summit-print-part"));
 
     expect(sections.map((s) => s.dataset.summitPrintPart)).toEqual(["1", "2"]);
-    expect(sections.map((s) => s.querySelector("h1")?.textContent)).toEqual(["OAS Progress - Summary - Towards Peak Award", "OAS Progress - Summary - Overall"]);
+    expect(sections.map((s) => s.querySelector("h1")?.textContent)).toEqual(["OAS Progress - Peak Award", "OAS Progress - Summary"]);
     expect(sections.map((s) => s.querySelector(".summit-print-subtitle")?.textContent)).toEqual(["1st Example Group · Example Venturer Unit", "1st Example Group · Example Venturer Unit"]);
     expect(sections[0].querySelector("table.summit-print-profile-peak-award-summary")).not.toBeNull();
     expect(sections[1].querySelector("table.summit-print-profile-overall-progress")).not.toBeNull();
@@ -62,8 +64,8 @@ describe("buildMultiPartDocument", () => {
     expect(sections.map((s) => s.getAttribute("style"))).toEqual(["page: summit-part-1", "page: summit-part-2"]);
     expect(html).toMatch(/@page \{\s*size: 297mm 210mm;/);
     expect(html.match(/[^-]size: \d+mm/g)).toHaveLength(1);
-    expect(html).toMatch(/@page summit-part-1 \{[^}]*@bottom-left \{\s*content: "OAS Progress - Summary - Towards Peak Award · Example Venturer Unit"/);
-    expect(html).toMatch(/@page summit-part-2 \{[^}]*@bottom-left \{\s*content: "OAS Progress - Summary - Overall · Example Venturer Unit"/);
+    expect(html).toMatch(/@page summit-part-1 \{[^}]*@bottom-left \{\s*content: "OAS Progress - Peak Award · Example Venturer Unit"/);
+    expect(html).toMatch(/@page summit-part-2 \{[^}]*@bottom-left \{\s*content: "OAS Progress - Summary · Example Venturer Unit"/);
     expect(html).toContain('content: "Page " counter(page) " of " counter(pages)');
   });
 
@@ -81,11 +83,19 @@ describe("buildMultiPartDocument", () => {
     expect(html).toContain(".summit-print-profile-overall-progress");
   });
 
-  it("strips the Overall table's sort arrows and sort tooltips", () => {
+  it("strips the Overall table's sort arrows, sort tooltips and Open-in menus", () => {
     const overall = parse(buildMultiPartDocument(options())).querySelector("table.summit-print-profile-overall-progress") as HTMLTableElement;
 
     expect(overall.querySelector(".oas-overall-progress-sort-icon")).toBeNull();
+    expect(overall.querySelector(".oas-tab-jump-menu")).toBeNull();
     expect(overall.querySelector("th[title]")).toBeNull();
+  });
+
+  it("strips the Peak Award table's Open-in menus", () => {
+    const peakAward = parse(buildMultiPartDocument(options())).querySelector("table.summit-print-profile-peak-award-summary") as HTMLTableElement;
+
+    expect(peakAward.querySelector(".oas-heatmap-member-name")).not.toBeNull();
+    expect(peakAward.querySelector(".oas-tab-jump-menu")).toBeNull();
   });
 
   it("prints a single ticked table as one part", () => {
@@ -103,7 +113,7 @@ describe("buildMultiPartDocument", () => {
     const tables = Array.from(parse(html).querySelectorAll("table.summit-print-table"));
 
     expect(html).not.toContain("@bottom-");
-    expect(tables.map((t) => t.querySelector("tfoot.summit-print-tfoot")?.textContent)).toEqual([expect.stringContaining("Towards Peak Award"), expect.stringContaining("Summary - Overall")]);
+    expect(tables.map((t) => t.querySelector("tfoot.summit-print-tfoot")?.textContent)).toEqual([expect.stringContaining("OAS Progress - Peak Award"), expect.stringContaining("OAS Progress - Summary")]);
   });
 });
 
@@ -147,8 +157,8 @@ describe("layoutParts (widths stubbed — jsdom has no layout engine)", () => {
     const { doc } = layOut();
     const firstBand = doc.querySelector('[data-summit-print-part="2"] .summit-print-band');
 
-    expect(firstBand?.querySelector(".summit-print-header h1")?.textContent).toBe("OAS Progress - Summary - Overall");
-    expect(doc.querySelector('[data-summit-print-part="1"] .summit-print-header h1')?.textContent).toBe("OAS Progress - Summary - Towards Peak Award");
+    expect(firstBand?.querySelector(".summit-print-header h1")?.textContent).toBe("OAS Progress - Summary");
+    expect(doc.querySelector('[data-summit-print-part="1"] .summit-print-header h1')?.textContent).toBe("OAS Progress - Peak Award");
   });
 
   it("gives the band pages the part's own left/right footers as well as the part number", () => {
@@ -157,7 +167,7 @@ describe("layoutParts (widths stubbed — jsdom has no layout engine)", () => {
       .map((s) => s.textContent)
       .join("\n");
 
-    expect(bandCss).toMatch(/@page summit-part-2-band-1 \{[^]*?@bottom-left \{\s*content: "OAS Progress - Summary - Overall · Example Venturer Unit"/);
+    expect(bandCss).toMatch(/@page summit-part-2-band-1 \{[^]*?@bottom-left \{\s*content: "OAS Progress - Summary · Example Venturer Unit"/);
     expect(bandCss).toMatch(/@page summit-part-2-band-1 \{[^]*?counter\(page\)/);
   });
 });

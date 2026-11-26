@@ -6,14 +6,15 @@ export interface HeatMapCell {
   iStatement: string;
   inputGroup: string;
   answered: boolean;
-  awarded: boolean;
+  approved: boolean;
   date: string | null;
+  section?: string | null;
 }
 
 export interface HeatMapStage {
   stage: number;
   cells: HeatMapCell[];
-  complete: boolean;
+  approved: boolean;
 }
 
 export interface SectionMemberRow {
@@ -26,7 +27,7 @@ export interface SectionMemberRow {
   highestStage: number | null;
   stages: HeatMapStage[];
   /** Gates a stream section's displayed progress. */
-  trunkFullyAwarded: boolean;
+  trunkFullyApproved: boolean;
 }
 
 export interface HeatMapSection {
@@ -63,18 +64,19 @@ function buildStages(rows: OASProgressRow[]): HeatMapStage[] {
         iStatement: r.iStatement,
         inputGroup: r.inputGroup,
         answered: r.answered,
-        awarded: r.awarded,
+        approved: r.approved,
         date: r.date,
+        section: r.section,
       }));
-      const complete = cells.length > 0 && cells.every((c) => c.awarded);
-      return { stage, cells, complete };
+      const approved = cells.length > 0 && cells.every((c) => c.approved);
+      return { stage, cells, approved };
     });
 }
 
 /** An in-progress stage doesn't count (matches OAS Summary). */
 function highestStageOf(stages: HeatMapStage[]): number | null {
   return stages.reduce<number | null>((highest, stage) => {
-    if (!stage.complete) {
+    if (!stage.approved) {
       return highest;
     }
     return highest === null || stage.stage > highest ? stage.stage : highest;
@@ -112,9 +114,9 @@ export function groupRowsForHeatMap(rows: OASProgressRow[], trunkStageCounts: Re
         trunkRowsByMember.set(row.memberId, [row]);
       }
     });
-    const trunkFullyAwardedByMember = new Map<string, boolean>();
+    const trunkFullyApprovedByMember = new Map<string, boolean>();
     trunkRowsByMember.forEach((memberRows, memberId) => {
-      trunkFullyAwardedByMember.set(memberId, highestStageOf(buildStages(memberRows)) === trunkStageCount);
+      trunkFullyApprovedByMember.set(memberId, highestStageOf(buildStages(memberRows)) === trunkStageCount);
     });
 
     const streamNames = Array.from(new Set(forkedRows.map((r) => r.branch))).sort((a, b) => a.localeCompare(b));
@@ -141,11 +143,11 @@ export function groupRowsForHeatMap(rows: OASProgressRow[], trunkStageCounts: Re
           patrolName: member.patrol?.name ?? null,
           highestStage: highestStageOf(stages),
           stages,
-          trunkFullyAwarded: trunkFullyAwardedByMember.get(member.id) ?? false,
+          trunkFullyApproved: trunkFullyApprovedByMember.get(member.id) ?? false,
         };
       });
 
-      const isEmpty = stream !== null && sectionMembers.every((m) => m.stages.every((s) => s.cells.every((c) => !c.answered && !c.awarded)));
+      const isEmpty = stream !== null && sectionMembers.every((m) => m.stages.every((s) => s.cells.every((c) => !c.answered && !c.approved)));
 
       return { skill, stream, isEmpty, members: sectionMembers, trunkStageCount };
     }

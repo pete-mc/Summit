@@ -96,7 +96,7 @@ describe("buildBlankMatrix", () => {
     const matrix = buildBlankMatrix("unit-1", "bushwalking", "core", 3, iStatements, members);
 
     expect(matrix).toHaveLength(4);
-    expect(matrix.every((row) => row.answered === false && row.awarded === false && row.date === null)).toBe(true);
+    expect(matrix.every((row) => row.answered === false && row.approved === false && row.date === null)).toBe(true);
     expect(matrix.find((row) => row.memberId === "m2" && row.inputId === "abc123")?.patrolName).toBe("Kookaburras");
     expect(matrix.find((row) => row.memberId === "m1" && row.inputId === "abc123")?.patrolName).toBeNull();
   });
@@ -143,7 +143,7 @@ describe("applyAchievementsToMatrix", () => {
     return buildBlankMatrix("unit-1", "bushwalking", "core", 3, iStatements, members);
   }
 
-  it("in-progress (draft_review): fills matching cells from answers, answered=true, awarded=false", () => {
+  it("in-progress (draft_review): fills matching cells from answers, answered=true, approved=false", () => {
     const matrix = blankMatrixFor([makeMember()]);
     const achievement = makeAchievement({
       status: "draft_review" as TerrainAchievements["status"],
@@ -155,7 +155,7 @@ describe("applyAchievementsToMatrix", () => {
     const filled = result.find((r) => r.inputId === "abc123");
     const untouched = result.find((r) => r.inputId === "def456");
     expect(filled?.answered).toBe(true);
-    expect(filled?.awarded).toBe(false);
+    expect(filled?.approved).toBe(false);
     expect(filled?.date).toBe("2020-11-18");
     expect(untouched?.answered).toBe(false);
   });
@@ -178,7 +178,7 @@ describe("applyAchievementsToMatrix", () => {
     expect(result.find((r) => r.inputId === "logbook_up_to_date")?.answered).toBe(true);
   });
 
-  it("awarded with imported.date_awarded: stamps every cell, answered=awarded=true", () => {
+  it("approved with imported.date_awarded: stamps every cell, answered=approved=true", () => {
     const matrix = blankMatrixFor([makeMember()]);
     const achievement = makeAchievement({
       status: "awarded" as TerrainAchievements["status"],
@@ -187,10 +187,10 @@ describe("applyAchievementsToMatrix", () => {
 
     const result = applyAchievementsToMatrix(matrix, [achievement]);
 
-    expect(result.every((r) => r.answered && r.awarded && r.date === "2019-05-01")).toBe(true);
+    expect(result.every((r) => r.answered && r.approved && r.date === "2019-05-01")).toBe(true);
   });
 
-  it("stamps every cell with the achievement's own section, for an awarded record", () => {
+  it("stamps every cell with the achievement's own section, for an approved record", () => {
     const matrix = blankMatrixFor([makeMember()]);
     const achievement = makeAchievement({ status: "awarded" as TerrainAchievements["status"], section: "venturer" as TerrainAchievements["section"] });
 
@@ -199,7 +199,7 @@ describe("applyAchievementsToMatrix", () => {
     expect(result.every((r) => r.section === "venturer")).toBe(true);
   });
 
-  it("stamps section for an in-progress record too, not just awarded", () => {
+  it("stamps section for an in-progress record too, not just approved", () => {
     const matrix = blankMatrixFor([makeMember()]);
     const achievement = makeAchievement({ status: "draft_review" as TerrainAchievements["status"], section: "scout" as TerrainAchievements["section"], answers: { abc123_verifiedDate: "18/11/2020" } });
 
@@ -217,7 +217,7 @@ describe("applyAchievementsToMatrix", () => {
     expect(result.filter((r) => r.memberId === "m2").every((r) => r.section === null)).toBe(true);
   });
 
-  it("awarded with empty/missing answers and no imported: stamps every cell with status_updated", () => {
+  it("approved with empty/missing answers and no imported: stamps every cell with status_updated", () => {
     const matrix = blankMatrixFor([makeMember()]);
     const achievement = makeAchievement({
       status: "awarded" as TerrainAchievements["status"],
@@ -227,10 +227,10 @@ describe("applyAchievementsToMatrix", () => {
 
     const result = applyAchievementsToMatrix(matrix, [achievement]);
 
-    expect(result.every((r) => r.answered && r.awarded && r.date === "2021-06-15T00:00:00.000Z")).toBe(true);
+    expect(result.every((r) => r.answered && r.approved && r.date === "2021-06-15T00:00:00.000Z")).toBe(true);
   });
 
-  it("awarded with populated answers: uses the per-key answer date where matched, but still stamps every cell answered=awarded=true", () => {
+  it("approved with populated answers: uses the per-key answer date where matched, but still stamps every cell answered=approved=true", () => {
     const matrix = blankMatrixFor([makeMember()]);
     const achievement = makeAchievement({
       status: "awarded" as TerrainAchievements["status"],
@@ -243,15 +243,15 @@ describe("applyAchievementsToMatrix", () => {
     const matchedRow = result.find((r) => r.inputId === "abc123");
     const unmatchedRow = result.find((r) => r.inputId === "def456");
     expect(matchedRow?.answered).toBe(true);
-    expect(matchedRow?.awarded).toBe(true);
+    expect(matchedRow?.approved).toBe(true);
     expect(matchedRow?.date).toBe("2020-11-18");
     expect(unmatchedRow?.answered).toBe(true);
-    expect(unmatchedRow?.awarded).toBe(true);
+    expect(unmatchedRow?.approved).toBe(true);
   });
 
-  it("awarded status takes precedence over per-cell answers matching: a stale/renamed i-statement inputId with no matching answers key is still stamped awarded, not left blank", () => {
+  it("approved status takes precedence over per-cell answers matching: a stale/renamed i-statement inputId with no matching answers key is still stamped approved, not left blank", () => {
     // Reproduces a real-world case: the template's i-statements changed after a member was
-    // awarded, so `answers` is keyed by inputIds that no longer exist in the current template.
+    // approved, so `answers` is keyed by inputIds that no longer exist in the current template.
     // The achievement's own `awarded` status must still win for every current row.
     const matrix = blankMatrixFor([makeMember()]);
     const achievement = makeAchievement({
@@ -262,7 +262,7 @@ describe("applyAchievementsToMatrix", () => {
 
     const result = applyAchievementsToMatrix(matrix, [achievement]);
 
-    expect(result.every((r) => r.answered === true && r.awarded === true)).toBe(true);
+    expect(result.every((r) => r.answered === true && r.approved === true)).toBe(true);
     const unmatchedRow = result.find((r) => r.inputId === "def456");
     expect(unmatchedRow?.date).toBe("2021-06-15T00:00:00.000Z");
   });
@@ -272,7 +272,7 @@ describe("applyAchievementsToMatrix", () => {
 
     const result = applyAchievementsToMatrix(matrix, []);
 
-    expect(result.every((r) => !r.answered && !r.awarded && r.date === null)).toBe(true);
+    expect(result.every((r) => !r.answered && !r.approved && r.date === null)).toBe(true);
   });
 
   it("does not mutate the input matrix", () => {

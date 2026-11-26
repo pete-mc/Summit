@@ -4,7 +4,7 @@ import type { StageProgressDisplay } from "@/pages/OasProgress/services/filterHe
 import { groupRowsByPatrol } from "@/pages/OasProgress/services/filterHeatMapSections";
 import { buildHeaderBlock, EXCEL_COLOURS, excelTitleRow, HEADER_BLOCK_ROWS, type ExcelHeader, type ExcelSheet } from "../summitExcel";
 
-const SHEET_NAME = "Overall";
+const SHEET_NAME = "Summary";
 
 /** Excel "characters". A stage column fits two lines of rotated header text. */
 const STAGE_COLUMN_WIDTH = 5.5;

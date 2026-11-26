@@ -83,7 +83,7 @@ describe("layoutTable band labels", () => {
     expect(splitTwoWays("Columns {first} – {last}").querySelectorAll(".summit-print-band-label")).toHaveLength(2);
   });
 
-  // The OAS Worksheets I-statement label repeated a whole sentence above every band.
+  // The OAS Stage Grid I-statement label repeated a whole sentence above every band.
   it("prints no label when the band label is empty", () => {
     const doc = splitTwoWays("");
     expect(doc.querySelectorAll(".summit-print-band")).toHaveLength(2);

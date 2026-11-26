@@ -20,7 +20,7 @@ const peakAwardSummary: PrintProfile = {
 
   // No "Section" line: the logo and unit name already say it.
   header: {
-    title: "OAS Progress - Summary - Towards Peak Award",
+    title: "OAS Progress - Peak Award",
   },
 
   columnWidths: peakAwardSummaryWidths,
@@ -33,6 +33,7 @@ const peakAwardSummary: PrintProfile = {
 
   transform(table) {
     stripInlineSizes(table, ".oas-heatmap-stage-bar, .oas-heatmap-square");
+    Array.from(table.querySelectorAll(".oas-tab-jump-menu")).forEach((menu) => menu.remove());
   },
 
   css: `

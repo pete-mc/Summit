@@ -7,6 +7,7 @@ import { TerrainState, clearCache, createLogger } from "@/helpers";
 import { TerrainRootState } from "@/types/terrainState";
 import type { TerrainUnitMember } from "@/types/terrainTypes";
 import type { TerrainAchievementsSection } from "@/shared";
+import { duplicateRowsForDevPreview, duplicateUnitMembersForDevPreview, readDevDuplicateCount } from "./services/devDuplicateMembers";
 
 const logger = createLogger("OasProgressVue");
 const CONCURRENCY = 6;
@@ -147,9 +148,9 @@ export default defineComponent({
       this.contentInstance = new ContentApp({
         vuetify: window.summitVuetify,
         propsData: {
-          items: this.items,
+          items: duplicateRowsForDevPreview(this.items, readDevDuplicateCount()),
           trunkStageCounts: this.trunkStageCounts,
-          members: this.members,
+          members: duplicateUnitMembersForDevPreview(this.members, readDevDuplicateCount()),
           section: this.section,
           loadingStreams: this.loadingStreams,
           loadError: this.loadError,
@@ -162,9 +163,10 @@ export default defineComponent({
     },
     renderContent(items: OASProgressRow[]) {
       if (!this.contentInstance) return;
-      this.contentInstance.items = items;
+      const duplicateCount = readDevDuplicateCount();
+      this.contentInstance.items = duplicateRowsForDevPreview(items, duplicateCount);
       this.contentInstance.trunkStageCounts = this.trunkStageCounts;
-      this.contentInstance.members = this.members;
+      this.contentInstance.members = duplicateUnitMembersForDevPreview(this.members, duplicateCount);
       this.contentInstance.section = this.section;
       this.contentInstance.loadingStreams = this.loadingStreams;
       this.contentInstance.loadError = this.loadError;

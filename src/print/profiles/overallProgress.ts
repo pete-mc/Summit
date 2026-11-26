@@ -22,11 +22,11 @@ const overallProgress: PrintProfile = {
 
   // No "Section" line: the logo and unit name already say it.
   header: {
-    title: "OAS Progress - Summary - Overall",
+    title: "OAS Progress - Summary",
   },
 
   transform(table) {
-    Array.from(table.querySelectorAll(".oas-overall-progress-sort-icon")).forEach((icon) => icon.remove());
+    Array.from(table.querySelectorAll(".oas-overall-progress-sort-icon, .oas-tab-jump-menu")).forEach((control) => control.remove());
     Array.from(table.querySelectorAll("th[title]")).forEach((th) => th.removeAttribute("title"));
   },
 

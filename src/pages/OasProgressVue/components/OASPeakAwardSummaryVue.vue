@@ -17,12 +17,14 @@
           <tr>
             <th class="oas-heatmap-member-header oas-peak-award-summary-th-bottom oas-peak-award-summary-th-rowspan" rowspan="2">Member</th>
             <th class="oas-heatmap-stage-group-header oas-peak-award-summary-th-bottom oas-peak-award-summary-th-rowspan" rowspan="2" colspan="2">Progress</th>
-            <th class="oas-peak-award-summary-core-skills-header oas-peak-award-summary-th-top" colspan="3">Core Skills</th>
+            <th class="oas-peak-award-summary-core-skills-header oas-peak-award-summary-th-top" colspan="3">Core Skills<OASTabJumpMenu :jumps="coreSkillsGroupJumps" @jump="onJump" /></th>
             <th class="oas-heatmap-stage-group-header oas-peak-award-summary-th-bottom oas-peak-award-summary-th-rowspan" rowspan="2">Progressions</th>
             <th v-if="hasSpecial" class="oas-heatmap-stage-group-header oas-peak-award-summary-th-top">Special</th>
           </tr>
           <tr>
-            <th v-for="skill in ['Bushcraft', 'Bushwalking', 'Camping']" :key="skill" class="oas-heatmap-stage-group-header oas-peak-award-summary-th-bottom">{{ skill }}</th>
+            <th v-for="(skill, index) in ['Bushcraft', 'Bushwalking', 'Camping']" :key="skill" class="oas-heatmap-stage-group-header oas-peak-award-summary-th-bottom">
+              {{ skill }}<OASTabJumpMenu :jumps="coreSkillHeaderJumps[index] || []" @jump="onJump" />
+            </th>
             <th v-if="hasSpecial" class="oas-heatmap-stage-group-header oas-peak-award-summary-th-bottom">{{ specialConditionText }}</th>
           </tr>
         </thead>
@@ -35,11 +37,22 @@
               <td :colspan="dataTableHeaders.length">{{ group.patrolName }}</td>
             </tr>
             <tr v-for="row in group.members" :key="row.memberId" :data-oas-member="row.memberId">
-              <td class="oas-heatmap-member-name">{{ row.displayName }}</td>
+              <td class="oas-heatmap-member-name">
+                {{ row.displayName }}<OASTabJumpMenu :jumps="memberJumps[row.memberId] || []" @jump="onJump" />
+              </td>
               <td class="oas-heatmap-highest-stage">{{ row.progressText }}</td>
               <td class="oas-heatmap-highest-stage">{{ row.progressPercentText }}</td>
-              <td v-for="coreSkill in row.coreSkills" :key="coreSkill.title" class="oas-heatmap-stage-cell">
-                <div v-if="coreSkill.kind === 'bar'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete oas-peak-award-summary-bar" :style="{ width: barWidthPx(coreSkill.boxCount) }" :title="coreSkill.barTitle"></div>
+              <td
+                v-for="(coreSkill, index) in row.coreSkills"
+                :key="coreSkill.title"
+                :class="['oas-heatmap-stage-cell', { 'oas-peak-award-core-skill-link': coreSkillJump(row.memberId, index) }]"
+                :title="coreSkillJump(row.memberId, index) ? coreSkillJump(row.memberId, index).title : null"
+                :role="coreSkillJump(row.memberId, index) ? 'link' : null"
+                :tabindex="coreSkillJump(row.memberId, index) ? 0 : null"
+                @click="onCoreSkillClick(row.memberId, index)"
+                @keydown.enter="onCoreSkillClick(row.memberId, index)"
+              >
+                <div v-if="coreSkill.kind === 'bar'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-approved oas-peak-award-summary-bar" :style="{ width: barWidthPx(coreSkill.boxCount) }" :title="coreSkill.barTitle"></div>
                 <div v-else class="oas-heatmap-squares">
                   <div v-for="(box, index) in coreSkill.boxes" :key="index" :class="['oas-heatmap-square', box.met ? 'oas-heatmap-square-answered' : 'oas-heatmap-square-unanswered']" :title="box.title"></div>
                 </div>
@@ -48,7 +61,7 @@
                 <div class="oas-peak-award-summary-row">
                   <div
                     v-if="row.progressions.kind === 'bar'"
-                    class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete oas-peak-award-summary-bar"
+                    class="oas-heatmap-stage-bar oas-heatmap-stage-bar-approved oas-peak-award-summary-bar"
                     :style="{ width: barWidthPx(row.progressions.boxCount) }"
                     :title="row.progressions.barTitle"
                   ></div>
@@ -60,7 +73,7 @@
               </td>
               <td v-if="hasSpecial && row.special" class="oas-heatmap-stage-cell">
                 <div class="oas-peak-award-summary-row">
-                  <div v-if="row.special.kind === 'bar'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-complete oas-peak-award-summary-bar" :style="{ width: barWidthPx(row.special.boxCount) }" :title="row.special.barTitle"></div>
+                  <div v-if="row.special.kind === 'bar'" class="oas-heatmap-stage-bar oas-heatmap-stage-bar-approved oas-peak-award-summary-bar" :style="{ width: barWidthPx(row.special.boxCount) }" :title="row.special.barTitle"></div>
                   <div v-else class="oas-heatmap-squares">
                     <div v-for="(box, index) in row.special.boxes" :key="index" :class="['oas-heatmap-square', box.met ? 'oas-heatmap-square-answered' : 'oas-heatmap-square-unanswered']" :title="box.title"></div>
                   </div>
@@ -78,7 +91,11 @@
 <script lang="ts" src="./OASPeakAwardSummaryVue.ts"></script>
 
 <style scoped>
+/* Gotcha: grow the white block to the table, or a table wider than the window spills past it. Vuetify caps .v-data-table at max-width: 100%, so lift that too. */
 .oas-heatmap-data-table {
+  width: max-content;
+  min-width: 100%;
+  max-width: none;
   font-size: var(--oas-vue-font-size-body);
   font-family: var(--oas-vue-font-family);
 }
@@ -90,10 +107,12 @@
   border: 1px solid var(--color-light-charcoal, #e5e9ec);
 }
 
+/* Gotcha: Vuetify's wrapper scrolls sideways itself, which puts the horizontal scrollbar below the last row, out of view inside .oas-heatmap-scroll. */
 .oas-heatmap-data-table ::v-deep > .v-data-table__wrapper {
   background: var(--color-white, #fff);
   border: 1px solid var(--color-light-charcoal, #e5e9ec);
   border-radius: 4px;
+  overflow: visible !important;
 }
 
 /* Keeps the trailing "X of Y" text on the same line as the boxes. */
@@ -129,6 +148,16 @@
   text-align: center;
   border-left: 1px solid var(--summit-color-border-subtle);
   border-right: 1px solid var(--summit-color-border-subtle);
+}
+
+.oas-peak-award-core-skill-link {
+  cursor: pointer;
+}
+
+.oas-peak-award-core-skill-link:hover,
+.oas-peak-award-core-skill-link:focus-visible {
+  outline: 2px solid var(--color-scouts-medium-blue, #00348d);
+  outline-offset: -2px;
 }
 
 /* Sized to exactly the boxes it replaces (barWidthPx), not the heat map's 40px min-width, so columns line up. */

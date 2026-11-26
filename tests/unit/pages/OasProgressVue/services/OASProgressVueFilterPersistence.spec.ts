@@ -1,4 +1,4 @@
-import { saveOASProgressVueFilters, loadOASProgressVueFilters, type OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
+import { saveOASProgressVueFilters, loadOASProgressVueFilters, migrateRenamedFilters, type OASProgressVueFilterState } from "@/pages/OasProgressVue/services/OASProgressVueFilterPersistence";
 
 const STORAGE_KEY = "summit.oasProgressVue.filters";
 const REACT_PAGE_STORAGE_KEY = "summit.oasProgress.filters";
@@ -12,19 +12,19 @@ function makeFilters(overrides: Partial<OASProgressVueFilterState> = {}): OASPro
     selectedPatrols: [],
     breakByPatrol: false,
     showEmptySkillRows: true,
-    showEmptyTopStages: true,
-    showAwarded: true,
+    showApproved: true,
     showNotStarted: true,
     showAnswered: true,
     visibleStreams: ["bushcraft", "bushwalking"],
     visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     sortBy: "firstName",
-    worksheetSkillStream: "bushcraft::pioneering",
-    worksheetVisibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-    worksheetNameFormat: "full",
-    worksheetBreakByPatrol: false,
-    worksheetShowCompleted: true,
-    worksheetLayout: "membersAsColumns",
+    stageGridSkillStream: "bushcraft::pioneering",
+    stageGridVisibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    stageGridNameFormat: "full",
+    stageGridSortBy: "firstName",
+    stageGridBreakByPatrol: false,
+    stageGridShowApproved: true,
+    stageGridLayout: "membersAsColumns",
     ...overrides,
   };
 }
@@ -82,5 +82,36 @@ describe("OASProgressVueFilterPersistence", () => {
     expect(loadOASProgressVueFilters()).toBeNull();
 
     spy.mockRestore();
+  });
+});
+
+describe("migrateRenamedFilters", () => {
+  it("moves the old table* / worksheet* keys and tab names to Next Steps / Stage Grid", () => {
+    expect(migrateRenamedFilters({ viewMode: "worksheets", worksheetStage: 3, tableMemberId: "m1", worksheetLayout: "membersAsRows", summarySortBy: "lastName" })).toEqual({
+      viewMode: "stageGrid",
+      stageGridStage: 3,
+      nextStepsMemberId: "m1",
+      stageGridLayout: "membersAsRows",
+      summarySortBy: "lastName",
+    });
+    expect(migrateRenamedFilters({ viewMode: "table" }).viewMode).toBe("nextSteps");
+  });
+
+  it("keeps a value already saved under the new name", () => {
+    expect(migrateRenamedFilters({ worksheetStage: 2, stageGridStage: 4 })).toEqual({ stageGridStage: 4 });
+  });
+
+  it("moves the old Awarded / Completed filters to their Approved names", () => {
+    expect(migrateRenamedFilters({ showAwarded: false, stageGridShowCompleted: false })).toEqual({ showApproved: false, stageGridShowApproved: false });
+    expect(migrateRenamedFilters({ worksheetShowCompleted: false })).toEqual({ stageGridShowApproved: false });
+  });
+
+  it("drops the old Empty top stages filter, now part of Stages not started", () => {
+    expect(migrateRenamedFilters({ showEmptyTopStages: false, showNotStarted: true })).toEqual({ showNotStarted: true });
+  });
+
+  it("applies when loading saved state", () => {
+    window.localStorage.setItem("summit.oasProgressVue.filters", JSON.stringify({ viewMode: "table", tableStage: 2 }));
+    expect(loadOASProgressVueFilters()).toEqual({ viewMode: "nextSteps", nextStepsStage: 2 });
   });
 });

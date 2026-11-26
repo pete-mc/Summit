@@ -9,7 +9,6 @@ const logger = createLogger("summitModule");
 
 interface State {
   message: string;
-  helpButton: boolean;
   achievements: TerrainAchievements[];
   achievementsTimestamp: null | number;
   presentedAwards: { guid: string; date: Date }[] | { guid: string; date: null }[];
@@ -19,32 +18,15 @@ interface State {
 const SummitModule: Module<State, TerrainRootState> = {
   namespaced: true,
   state: {
-    ...{
-      message: "Welcome To Summit!",
-      helpButton: true,
-      achievements: [],
-      achievementsTimestamp: null,
-      presentedAwards: [],
-    },
-    ...JSON.parse(localStorage.getItem("SummitState") ?? "{}"),
+    message: "Welcome To Summit!",
+    achievements: [],
+    achievementsTimestamp: null,
+    presentedAwards: [],
+    presentedAwardsTimestamp: null,
   },
   mutations: {
     updateMessage(state: { message: string }, newMessage: string) {
       state.message = newMessage;
-    },
-    toggleHelpButton(state: { helpButton: boolean }) {
-      state.helpButton = !state.helpButton;
-      const freshworksContainer = document.getElementById("freshworks-container");
-      if (freshworksContainer != null) {
-        freshworksContainer.style.display = state.helpButton ? "block" : "none";
-      }
-    },
-    saveStateToLocalStorage(state: State) {
-      const data = {
-        helpButton: state.helpButton,
-      };
-      localStorage.setItem("SummitState", JSON.stringify(data));
-      logger.debug("SummitState saved");
     },
     updateAchievements(state: { achievements: TerrainAchievements[]; achievementsTimestamp: number | null }, payload: { achievements: TerrainAchievements[]; timestamp: number }) {
       state.achievements = payload.achievements;
@@ -59,15 +41,8 @@ const SummitModule: Module<State, TerrainRootState> = {
     },
   },
   actions: {
-    saveState({ commit }: ActionContext<State, TerrainRootState>): void {
-      commit("saveStateToLocalStorage");
-    },
     setMessage({ commit }: ActionContext<State, TerrainRootState>, message: string): void {
       commit("updateMessage", message);
-    },
-    toggleHelpButton({ commit }: ActionContext<State, TerrainRootState>): void {
-      commit("toggleHelpButton");
-      commit("saveStateToLocalStorage");
     },
     async getAchievements({ commit }: ActionContext<State, TerrainRootState>): Promise<void> {
       const achievements = await fetchUnitAchievements();
@@ -92,10 +67,6 @@ const SummitModule: Module<State, TerrainRootState> = {
     },
     initialize(context: ActionContext<State, TerrainRootState>): void {
       context.dispatch("getPresentedAwards");
-      const freshworksContainer = document.getElementById("freshworks-container");
-      if (freshworksContainer != null) {
-        freshworksContainer.style.display = context.getters.getHelpButton ? "block" : "none";
-      }
       this.watch(
         () => context.rootState.user.profileIndex, //profile changed
         () => {
@@ -110,9 +81,6 @@ const SummitModule: Module<State, TerrainRootState> = {
   getters: {
     getMessage(state: { message: string }) {
       return state.message;
-    },
-    getHelpButton(state: { helpButton: boolean }) {
-      return state.helpButton;
     },
     getAchievements(state, _getters, _rootState, rootGetters) {
       const FIVE_MINS = 5 * 60 * 1000;

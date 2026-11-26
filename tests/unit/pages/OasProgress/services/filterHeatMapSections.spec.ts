@@ -12,11 +12,11 @@ import {
 import type { HeatMapStage, HeatMapSection, SectionMemberRow } from "@/pages/OasProgress/services/groupRowsForHeatMap";
 
 function makeStage(overrides: Partial<HeatMapStage> = {}): HeatMapStage {
-  return { stage: 1, cells: [], complete: false, ...overrides };
+  return { stage: 1, cells: [], approved: false, ...overrides };
 }
 
 function makeCell(overrides: Partial<HeatMapStage["cells"][number]> = {}) {
-  return { inputId: "a", iStatement: "I can do a thing", inputGroup: "Plan", answered: false, awarded: false, date: null, ...overrides };
+  return { inputId: "a", iStatement: "I can do a thing", inputGroup: "Plan", answered: false, approved: false, date: null, ...overrides };
 }
 
 function makeMemberRow(overrides: Partial<SectionMemberRow> = {}): SectionMemberRow {
@@ -28,7 +28,7 @@ function makeMemberRow(overrides: Partial<SectionMemberRow> = {}): SectionMember
     patrolName: null,
     highestStage: null,
     stages: [],
-    trunkFullyAwarded: false,
+    trunkFullyApproved: false,
     ...overrides,
   };
 }
@@ -184,33 +184,33 @@ describe("formatStageProgress", () => {
     });
 
     it("shows the plain stage number with no .xx when there is no next stage in this section's stages", () => {
-      const stages = [makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] })];
+      const stages = [makeStage({ stage: 5, approved: true, cells: [makeCell({ approved: true })] })];
       expect(formatStageProgress(5, stages, false, 0, false)).toEqual({ stage: "5", nextStageProgress: null });
     });
 
     it("shows the plain stage number with no .xx when the next stage has zero progress", () => {
-      const stages = [makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] }), makeStage({ stage: 6, cells: [makeCell({ inputId: "b" }), makeCell({ inputId: "c" })] })];
+      const stages = [makeStage({ stage: 5, approved: true, cells: [makeCell({ approved: true })] }), makeStage({ stage: 6, cells: [makeCell({ inputId: "b" }), makeCell({ inputId: "c" })] })];
       expect(formatStageProgress(5, stages, false, 0, false)).toEqual({ stage: "5", nextStageProgress: null });
     });
 
-    it("counts answered-or-awarded cells in the next stage above highestStage, zero-padded to 2 digits", () => {
+    it("counts answered-or-approved cells in the next stage above highestStage, zero-padded to 2 digits", () => {
       const stages = [
-        makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] }),
-        makeStage({ stage: 6, cells: [makeCell({ inputId: "b", answered: true }), makeCell({ inputId: "c", awarded: true }), makeCell({ inputId: "d" })] }),
+        makeStage({ stage: 5, approved: true, cells: [makeCell({ approved: true })] }),
+        makeStage({ stage: 6, cells: [makeCell({ inputId: "b", answered: true }), makeCell({ inputId: "c", approved: true }), makeCell({ inputId: "d" })] }),
       ];
       expect(formatStageProgress(5, stages, false, 0, false)).toEqual({ stage: "5", nextStageProgress: "02" });
     });
 
     it("pads a double-digit count the same way (still zero-padded to at least 2 digits)", () => {
       const cells = Array.from({ length: 12 }, (_, i) => makeCell({ inputId: `c${i}`, answered: true }));
-      const stages = [makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] }), makeStage({ stage: 6, cells })];
+      const stages = [makeStage({ stage: 5, approved: true, cells: [makeCell({ approved: true })] }), makeStage({ stage: 6, cells })];
       expect(formatStageProgress(5, stages, false, 0, false)).toEqual({ stage: "5", nextStageProgress: "12" });
     });
   });
 
   describe("stream sections", () => {
-    it("shows a dash when the base skill's trunk has not been fully awarded yet, even if the stream itself has progress", () => {
-      const stages = [makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] })];
+    it("shows a dash when the base skill's trunk has not been fully approved yet, even if the stream itself has progress", () => {
+      const stages = [makeStage({ stage: 5, approved: true, cells: [makeCell({ approved: true })] })];
       expect(formatStageProgress(5, stages, true, 3, false)).toEqual({ stage: "-", nextStageProgress: null });
     });
 
@@ -220,28 +220,28 @@ describe("formatStageProgress", () => {
       expect(formatStageProgress(null, [makeStage({ stage: 4, cells: [makeCell()] })], true, 3, true)).toEqual({ stage: "-", nextStageProgress: null });
     });
 
-    it("example: trunk (3) done, next stage (4) has 2 answered-but-not-awarded cells -> 3.02, not 4.xx", () => {
+    it("example: trunk (3) done, next stage (4) has 2 answered-but-not-approved cells -> 3.02, not 4.xx", () => {
       // highestStage is still null (stage 4 isn't AWARDED yet), so the whole number stays at the
       // trunk floor (3) and .xx counts progress in the stage right above the floor (stage 4).
-      const stages = [makeStage({ stage: 4, complete: false, cells: [makeCell({ inputId: "a", answered: true }), makeCell({ inputId: "b", answered: true }), makeCell({ inputId: "c" })] })];
+      const stages = [makeStage({ stage: 4, approved: false, cells: [makeCell({ inputId: "a", answered: true }), makeCell({ inputId: "b", answered: true }), makeCell({ inputId: "c" })] })];
       expect(formatStageProgress(null, stages, true, 3, true)).toEqual({ stage: "3", nextStageProgress: "02" });
     });
 
-    it("example: trunk (3) done, stream stages 5 AND 6 both fully awarded -> whole number is 6, not 3", () => {
-      const stages = [makeStage({ stage: 5, complete: true, cells: [makeCell({ inputId: "a", awarded: true })] }), makeStage({ stage: 6, complete: true, cells: [makeCell({ inputId: "b", awarded: true })] })];
+    it("example: trunk (3) done, stream stages 5 AND 6 both fully approved -> whole number is 6, not 3", () => {
+      const stages = [makeStage({ stage: 5, approved: true, cells: [makeCell({ inputId: "a", approved: true })] }), makeStage({ stage: 6, approved: true, cells: [makeCell({ inputId: "b", approved: true })] })];
       expect(formatStageProgress(6, stages, true, 3, true)).toEqual({ stage: "6", nextStageProgress: null });
     });
 
-    it("once the stream's own highest awarded stage exceeds the trunk, .xx counts progress in the stage above THAT stage, not above the trunk", () => {
+    it("once the stream's own highest approved stage exceeds the trunk, .xx counts progress in the stage above THAT stage, not above the trunk", () => {
       const stages = [
-        makeStage({ stage: 5, complete: true, cells: [makeCell({ inputId: "a", awarded: true })] }),
-        makeStage({ stage: 6, cells: [makeCell({ inputId: "b", answered: true }), makeCell({ inputId: "c", awarded: true }), makeCell({ inputId: "d" })] }),
+        makeStage({ stage: 5, approved: true, cells: [makeCell({ inputId: "a", approved: true })] }),
+        makeStage({ stage: 6, cells: [makeCell({ inputId: "b", answered: true }), makeCell({ inputId: "c", approved: true }), makeCell({ inputId: "d" })] }),
       ];
       expect(formatStageProgress(5, stages, true, 3, true)).toEqual({ stage: "5", nextStageProgress: "02" });
     });
 
     it("never shows a whole number below the trunk stage count, even if the stream's own highestStage is somehow lower", () => {
-      const stages = [makeStage({ stage: 2, complete: true, cells: [makeCell({ awarded: true })] })];
+      const stages = [makeStage({ stage: 2, approved: true, cells: [makeCell({ approved: true })] })];
       expect(formatStageProgress(2, stages, true, 3, true)).toEqual({ stage: "3", nextStageProgress: null });
     });
   });
@@ -299,12 +299,12 @@ describe("sortMembers", () => {
     const fewTicked = makeMemberRow({
       memberId: "m1",
       highestStage: 5,
-      stages: [makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] }), makeStage({ stage: 6, cells: [makeCell({ inputId: "b", answered: true }), makeCell({ inputId: "c" })] })],
+      stages: [makeStage({ stage: 5, approved: true, cells: [makeCell({ approved: true })] }), makeStage({ stage: 6, cells: [makeCell({ inputId: "b", answered: true }), makeCell({ inputId: "c" })] })],
     });
     const manyTicked = makeMemberRow({
       memberId: "m2",
       highestStage: 5,
-      stages: [makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] }), makeStage({ stage: 6, cells: [makeCell({ inputId: "b", answered: true }), makeCell({ inputId: "c", awarded: true })] })],
+      stages: [makeStage({ stage: 5, approved: true, cells: [makeCell({ approved: true })] }), makeStage({ stage: 6, cells: [makeCell({ inputId: "b", answered: true }), makeCell({ inputId: "c", approved: true })] })],
     });
 
     const result = sortMembers([fewTicked, manyTicked], "stageProgress");
@@ -317,7 +317,7 @@ describe("sortMembers", () => {
       memberId: "m1",
       highestStage: 5,
       stages: [
-        makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] }),
+        makeStage({ stage: 5, approved: true, cells: [makeCell({ approved: true })] }),
         makeStage({ stage: 6, cells: Array.from({ length: 6 }, (_, i) => makeCell({ inputId: `c${i}`, answered: i < 5 })) }), // 5/6 ticked
       ],
     });
@@ -325,7 +325,7 @@ describe("sortMembers", () => {
       memberId: "m2",
       highestStage: 5,
       stages: [
-        makeStage({ stage: 5, complete: true, cells: [makeCell({ awarded: true })] }),
+        makeStage({ stage: 5, approved: true, cells: [makeCell({ approved: true })] }),
         makeStage({ stage: 6, cells: Array.from({ length: 20 }, (_, i) => makeCell({ inputId: `d${i}`, answered: i < 6 })) }), // 6/20 ticked
       ],
     });
@@ -344,9 +344,9 @@ describe("sortMembers", () => {
     expect(result.map((m) => m.memberId)).toEqual(["m2", "m1"]);
   });
 
-  it("sorts by stageProgress in a stream section: a member with real stream progress but an un-awarded trunk sorts as if they had none", () => {
-    const gated = makeMemberRow({ memberId: "m1", highestStage: 5, trunkFullyAwarded: false });
-    const unlocked = makeMemberRow({ memberId: "m2", highestStage: 1, trunkFullyAwarded: true, stages: [makeStage({ stage: 4, cells: [makeCell({ answered: true })] })] });
+  it("sorts by stageProgress in a stream section: a member with real stream progress but an unapproved trunk sorts as if they had none", () => {
+    const gated = makeMemberRow({ memberId: "m1", highestStage: 5, trunkFullyApproved: false });
+    const unlocked = makeMemberRow({ memberId: "m2", highestStage: 1, trunkFullyApproved: true, stages: [makeStage({ stage: 4, cells: [makeCell({ answered: true })] })] });
 
     const result = sortMembers([gated, unlocked], "stageProgress", true, 3);
 
@@ -354,8 +354,8 @@ describe("sortMembers", () => {
   });
 
   it("sorts by stageProgress in a stream section: a member who hasn't started the stream sorts as if they had none", () => {
-    const unstarted = makeMemberRow({ memberId: "m1", trunkFullyAwarded: true, stages: [makeStage({ stage: 4, cells: [makeCell()] })] });
-    const started = makeMemberRow({ memberId: "m2", trunkFullyAwarded: true, stages: [makeStage({ stage: 4, cells: [makeCell({ answered: true })] })] });
+    const unstarted = makeMemberRow({ memberId: "m1", trunkFullyApproved: true, stages: [makeStage({ stage: 4, cells: [makeCell()] })] });
+    const started = makeMemberRow({ memberId: "m2", trunkFullyApproved: true, stages: [makeStage({ stage: 4, cells: [makeCell({ answered: true })] })] });
 
     const result = sortMembers([unstarted, started], "stageProgress", true, 3);
 

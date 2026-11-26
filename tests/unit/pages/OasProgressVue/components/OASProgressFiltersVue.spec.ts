@@ -16,19 +16,19 @@ function makeFilters(overrides: Partial<OASProgressVueFilterState> = {}): OASPro
     selectedPatrols: [],
     breakByPatrol: false,
     showEmptySkillRows: true,
-    showEmptyTopStages: true,
-    showAwarded: true,
+    showApproved: true,
     showNotStarted: true,
     showAnswered: true,
     visibleStreams: [],
     visibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     sortBy: "firstName",
-    worksheetSkillStream: "camping::camping",
-    worksheetVisibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-    worksheetNameFormat: "full",
-    worksheetBreakByPatrol: false,
-    worksheetShowCompleted: true,
-    worksheetLayout: "membersAsColumns",
+    stageGridSkillStream: "camping::camping",
+    stageGridVisibleStages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    stageGridNameFormat: "full",
+    stageGridSortBy: "firstName",
+    stageGridBreakByPatrol: false,
+    stageGridShowApproved: true,
+    stageGridLayout: "membersAsColumns",
     ...overrides,
   };
 }
@@ -95,5 +95,32 @@ describe("OASProgressFiltersVue — Sort By options", () => {
     options.methods.onGroupByChange.call(context, "member");
 
     expect(emitted).toEqual([["update:filters", expect.objectContaining({ groupBy: "member", sortBy: "lastName" })]]);
+  });
+});
+
+// Regression: changing any Show option while Break by patrol was hidden (grouped by member) switched it off.
+describe("OASProgressFiltersVue — Show changes", () => {
+  function changeShow(filters: OASProgressVueFilterState, availablePatrols: string[], selected: string[]) {
+    const emitted: OASProgressVueFilterState[] = [];
+    const context = { filters, availablePatrols, $emit: (_event: string, value: OASProgressVueFilterState) => emitted.push(value) };
+    const showOptions = options.computed.showOptions.call(context);
+    options.methods.onShowChange.call({ ...context, showOptions, patch: (partial: Partial<OASProgressVueFilterState>) => options.methods.patch.call(context, partial) }, selected);
+    return emitted[0];
+  }
+
+  it("keeps Break by patrol when it isn't in the menu because the Heat Map is grouped by member", () => {
+    const result = changeShow(makeFilters({ groupBy: "member", breakByPatrol: true }), ["Eagles"], ["showEmptySkillRows", "showNotStarted", "showAnswered"]);
+    expect(result.breakByPatrol).toBe(true);
+    expect(result.showApproved).toBe(false);
+  });
+
+  it("keeps Break by patrol when the unit has no patrols", () => {
+    const result = changeShow(makeFilters({ breakByPatrol: true }), [], ["showApproved"]);
+    expect(result.breakByPatrol).toBe(true);
+  });
+
+  it("still turns Break by patrol off when it is in the menu and unticked", () => {
+    const result = changeShow(makeFilters({ breakByPatrol: true }), ["Eagles"], ["showApproved"]);
+    expect(result.breakByPatrol).toBe(false);
   });
 });

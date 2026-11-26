@@ -1,7 +1,7 @@
 <template>
   <div>
     <h2>OAS Progress</h2>
-    A heat-map view of each member's progress through the Outdoor Adventure Skill streams, down to individual i-statement detail.<br>
+    See where every member is up to in their Outdoor Adventure Skills, what they need to do next, and how close they are to their Peak Award.<br>
     <div ref="vuetifyRoot"></div>
   </div>
 </template>

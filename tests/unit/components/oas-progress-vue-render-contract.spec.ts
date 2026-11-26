@@ -20,7 +20,7 @@ function makeRow(overrides: Partial<OASProgressRow> = {}): OASProgressRow {
     memberName: "Alex Scout",
     patrolName: null,
     answered: true,
-    awarded: false,
+    approved: false,
     date: "2020-11-18",
     ...overrides,
   };
@@ -68,7 +68,7 @@ describe("OasProgressVueContent render contract", () => {
       ':member-filter="filters.memberFilter"',
       ':name-format="filters.nameFormat"',
       ':break-by-patrol="filters.breakByPatrol"',
-      ':show-awarded="filters.showAwarded"',
+      ':show-approved="filters.showApproved"',
       ':show-not-started="filters.showNotStarted"',
     ].forEach((binding) => {
       expect(source).toContain(binding);
@@ -139,33 +139,31 @@ describe("OasProgressVueContent render contract", () => {
     expect(tsSource).toContain("heatMap.getExportView()");
   });
 
-  it("Summary tab prints both tables through summit-print's SummitPrintButton, asking each table component for its table via getExportTable()", () => {
+  it("Summary and Peak Award tabs each print their one table through SummitPrintButton, asking the table component via getExportTable()", () => {
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.ts"), "utf8");
     expect(tsSource).toContain("?.getExportTable()");
-    expect(tsSource).toContain("summaryPrintTarget()");
-    expect(tsSource).not.toContain("$refs.summaryTable");
+    expect(tsSource).not.toContain("summaryPrintParts");
 
-    const summarySource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASPeakAwardSummaryVue.ts"), "utf8");
-    expect(summarySource).toContain("getExportTable()");
+    const peakAwardSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASPeakAwardSummaryVue.ts"), "utf8");
+    expect(peakAwardSource).toContain("getExportTable()");
 
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.vue"), "utf8");
-    expect(templateSource).toContain('ref="summary"');
-    expect(templateSource).toMatch(/<template v-if="filters\.viewMode === 'summary'">[\s\S]*?<SummitPrintButton[\s\S]*?:parts="summaryPrintParts"[\s\S]*?<\/template>/);
-    expect(tsSource).toContain('profile: "peak-award-summary", target: () => this.summaryPrintTarget()');
-    expect(tsSource).toContain('profile: "overall-progress", target: () => this.overallProgressPrintTarget()');
-    expect(templateSource).not.toContain("onSummaryPdfExportClick");
-    expect(tsSource).not.toContain("onSummaryPdfExportClick");
+    expect(templateSource).toContain('ref="peakAward"');
+    expect(templateSource).toContain('ref="overallProgress"');
+    expect(templateSource).toMatch(/<template v-if="filters\.viewMode === 'summary'">[\s\S]*?<SummitPrintButton profile="overall-progress" :target="overallProgressPrintTarget"[\s\S]*?<\/template>/);
+    expect(templateSource).toMatch(/<template v-else-if="filters\.viewMode === 'peakAward'">[\s\S]*?<SummitPrintButton v-if="peakAwardRequirement" profile="peak-award-summary" :target="peakAwardPrintTarget"[\s\S]*?<\/template>/);
+    expect(templateSource).not.toContain(":parts=");
   });
 
-  it("Summary tab has its own formatted Excel Export of both tables, beside Print / PDF", () => {
+  it("Summary and Peak Award tabs each export only their own table to Excel", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.vue"), "utf8");
-    expect(templateSource).toMatch(/<template v-if="filters\.viewMode === 'summary'">[\s\S]*?@click="onSummaryExcelExportClick">Excel Export<\/SummitPillButton>[\s\S]*?<SummitPrintButton[\s\S]*?:parts="summaryPrintParts"/);
+    expect(templateSource).toMatch(/<template v-if="filters\.viewMode === 'summary'">[\s\S]*?@click="onSummaryExcelExportClick">Excel Export<\/SummitPillButton>/);
+    expect(templateSource).toMatch(/<template v-else-if="filters\.viewMode === 'peakAward'">[\s\S]*?@click="onPeakAwardExcelExportClick">Excel Export<\/SummitPillButton>/);
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.ts"), "utf8");
+    expect(tsSource).toContain('this.runExcelExport("Summary", this.summaryPrintMeta, [sheet])');
+    expect(tsSource).toContain('this.runExcelExport("Peak Award", this.peakAwardPrintMeta, [sheet])');
     expect(tsSource).toContain("rows: this.filteredPeakAwardSummaryRows");
-    expect(tsSource).toContain('printProfile: "peak-award-summary"');
-    expect(tsSource).toContain('printProfile: "overall-progress"');
-    expect(tsSource).toContain('this.runExcelExport("Summary", this.summaryPrintMeta, sheets)');
     expect(tsSource).toContain('exportExcelWorkbook({ sheets, meta, fileNameParts: ["OAS Progress", viewName] })');
   });
 
@@ -178,13 +176,13 @@ describe("OasProgressVueContent render contract", () => {
     expect(templateSource).toContain(':loading="isReloading"');
   });
 
-  it("OASWorksheets Stage 2: a Terrain-style v-tabs strip switches viewMode, and shows OASProgressTableVue when viewMode is 'table'", () => {
+  it("a Terrain-style v-tabs strip switches viewMode, and shows OASNextStepsVue when viewMode is 'nextSteps'", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.vue"), "utf8");
-    expect(templateSource).toContain("<OASProgressTableVue");
+    expect(templateSource).toContain("<OASNextStepsVue");
     expect(templateSource).toContain("<v-tabs");
     // Regression: `value` on v-tab is silently dropped, so every tab fell back to its index.
     expect(templateSource).toContain('<v-tab tab-value="heatmap">');
-    expect(templateSource).toContain('<v-tab tab-value="table">');
+    expect(templateSource).toContain('<v-tab tab-value="nextSteps">');
     expect(templateSource).not.toMatch(/<v-tab value="/);
     expect(templateSource).toContain("onViewModeTabChange");
     expect(templateSource).not.toContain("<v-btn-toggle");
@@ -194,11 +192,11 @@ describe("OasProgressVueContent render contract", () => {
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.ts"), "utf8");
     expect(tsSource).toContain("onViewModeTabChange");
-    expect(tsSource).toContain("OASProgressTableVue");
+    expect(tsSource).toContain("OASNextStepsVue");
     expect(tsSource).not.toContain("onToggleViewModeClick");
   });
 
-  it("OASWorksheets Stage 2: v-tabs is bound by explicit string value/@change, not v-model's default numeric index", () => {
+  it("v-tabs is bound by explicit string value/@change, not v-model's default numeric index", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.vue"), "utf8");
     expect(templateSource).toContain(':value="filters.viewMode"');
     expect(templateSource).toContain('@change="onViewModeTabChange"');
@@ -206,7 +204,7 @@ describe("OasProgressVueContent render contract", () => {
     expect(templateSource).not.toMatch(/<v-tabs[^>]*v-model/);
   });
 
-  it("OASWorksheets Stage 2: matches Terrain's own Programming-page tab strip (grow, 40px, primary/grey lighten-5)", () => {
+  it("matches Terrain's own Programming-page tab strip (grow, 40px, primary/grey lighten-5)", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.vue"), "utf8");
     const tabsTag = templateSource.slice(templateSource.indexOf("<v-tabs"), templateSource.indexOf(">", templateSource.indexOf("<v-tabs")) + 1);
     expect(tabsTag).toContain("grow");
@@ -222,27 +220,27 @@ describe("OasProgressVueContent render contract", () => {
     expect(resetMethodSource).not.toContain("viewMode:");
   });
 
-  it("the Table view gets Excel Export plus summit-print's Print / PDF (the jsPDF export is gone)", () => {
+  it("the Next Steps view gets Excel Export plus summit-print's Print / PDF (the jsPDF export is gone)", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.vue"), "utf8");
-    expect(templateSource).toContain("onTableExcelExportClick");
+    expect(templateSource).toContain("onNextStepsExcelExportClick");
     expect(templateSource).toContain("Excel Export");
-    expect(templateSource).toMatch(/<SummitPrintButton profile="oas-table" :target="tablePrintTarget" :prepare="prepareTablePrint"/);
-    expect(templateSource).not.toContain("onTablePdfExportClick");
+    expect(templateSource).toMatch(/<SummitPrintButton profile="oas-next-steps" :target="nextStepsPrintTarget"/);
+    expect(templateSource).not.toContain("onNextStepsPdfExportClick");
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.ts"), "utf8");
-    expect(tsSource).toContain("buildOasTableSheet");
+    expect(tsSource).toContain("buildNextStepsSheet");
     expect(tsSource).not.toContain("exportGridToExcel");
     expect(tsSource).not.toContain("exportGridToPdf");
-    expect(tsSource).toContain("onTableExcelExportClick");
+    expect(tsSource).toContain("onNextStepsExcelExportClick");
   });
 
   it("header row buttons keep a consistent left-to-right order — [Excel Export,] PDF Export, Refresh — so each button's position doesn't shift when Excel Export appears/disappears between views", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.vue"), "utf8");
     const headerRow = templateSource.slice(templateSource.indexOf('<div class="oas-progress-view-row">'), templateSource.indexOf("</div>", templateSource.indexOf('<div class="oas-progress-view-row">')));
 
-    const excelIndex = headerRow.indexOf("onTableExcelExportClick");
+    const excelIndex = headerRow.indexOf("onNextStepsExcelExportClick");
     const heatmapPdfIndex = headerRow.indexOf('profile="skill-heatmap"');
-    const tablePdfIndex = headerRow.indexOf('profile="oas-table"');
+    const tablePdfIndex = headerRow.indexOf('profile="oas-next-steps"');
     const refreshIndex = headerRow.indexOf("onReloadAllClick");
 
     expect(refreshIndex).toBeGreaterThan(-1);
@@ -254,7 +252,7 @@ describe("OasProgressVueContent render contract", () => {
     expect(tablePdfIndex).toBeLessThan(refreshIndex);
   });
 
-  it("OASWorksheets Stage 2: the view-mode tab strip is its own row, below the export/refresh row, not inside it", () => {
+  it("the view-mode tab strip is its own row, below the export/refresh row, not inside it", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.vue"), "utf8");
     const viewRowStart = templateSource.indexOf('<div class="oas-progress-view-row">');
     const viewRowEnd = templateSource.indexOf("</div>", viewRowStart);
@@ -266,16 +264,13 @@ describe("OasProgressVueContent render contract", () => {
     expect(templateSource).not.toContain("oas-vue-toggle-active");
   });
 
-  it("Table view PDF/Excel export uses only the currently column-filtered rows, not every row", () => {
+  it("the Next Steps tab has its own filter bar, and Excel exports only the rows shown", () => {
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.ts"), "utf8");
-    expect(tsSource).toContain("filterOASProgressRows");
-    expect(tsSource).toContain("tableFilteredItems");
-    expect(tsSource).toContain("rows: this.tableFilteredItems");
-    expect(tsSource).toContain("tableColumnFilters");
+    expect(tsSource).toContain("rows: this.nextStepsRows");
 
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.vue"), "utf8");
-    expect(templateSource).toContain(':column-filters.sync="tableColumnFilters"');
-    expect(templateSource).not.toContain(":search.sync=");
+    expect(templateSource).toContain("<OASNextStepsFiltersVue");
+    expect(templateSource).toContain('<OASNextStepsVue v-else ref="nextSteps" :rows="nextStepsRows" />');
   });
 
   it("OasProgressVue.ts sets breadcrumbs reading 'OAS Progress' at its own route (the page took over the short route/label once the legacy React page was archived)", () => {
@@ -284,84 +279,81 @@ describe("OasProgressVueContent render contract", () => {
     expect(source).toContain("/summit/reports/oasprogress");
   });
 
-  it("OASWorksheets Stage 3: a third 'Worksheets' tab (not 'OAS Worksheets' — the page is already titled OAS Progress) renders OASWorksheetsVue and OASWorksheetFiltersVue", () => {
+  it("a third 'Stage Grid' tab (not 'OAS Stage Grid' — the page is already titled OAS Progress) renders OASStageGridVue and OASStageGridFiltersVue", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.vue"), "utf8");
-    expect(templateSource).toContain('<v-tab tab-value="worksheets">Worksheets</v-tab>');
-    expect(templateSource).not.toContain("OAS Worksheets</v-tab>");
-    expect(templateSource).toContain("<OASWorksheetsVue");
-    expect(templateSource).toContain("<OASWorksheetFiltersVue");
-    expect(templateSource).toContain("filters.viewMode === 'worksheets'");
+    expect(templateSource).toContain('<v-tab tab-value="stageGrid">Stage Grid</v-tab>');
+    expect(templateSource).not.toContain("OAS Stage Grid</v-tab>");
+    expect(templateSource).toContain("<OASStageGridVue");
+    expect(templateSource).toContain("<OASStageGridFiltersVue");
+    expect(templateSource).toContain("filters.viewMode === 'stageGrid'");
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.ts"), "utf8");
-    expect(tsSource).toContain("OASWorksheetsVue");
-    expect(tsSource).toContain("OASWorksheetFiltersVue");
+    expect(tsSource).toContain("OASStageGridVue");
+    expect(tsSource).toContain("OASStageGridFiltersVue");
   });
 
-  it("OASWorksheets Stage 3: the worksheet filter keys are separate from the heat map's own, not shared", () => {
+  it("the Stage Grid filter keys are separate from the heat map's own, not shared", () => {
     const source = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/services/OASProgressVueFilterPersistence.ts"), "utf8");
-    ["worksheetSkillStream", "worksheetVisibleStages", "worksheetNameFormat", "worksheetBreakByPatrol", "worksheetShowCompleted"].forEach((key) => {
+    ["stageGridSkillStream", "stageGridStage", "stageGridNameFormat", "stageGridBreakByPatrol", "stageGridShowApproved"].forEach((key) => {
       expect(source).toContain(key);
     });
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.ts"), "utf8");
-    expect(tsSource).toContain("worksheetSkillStream");
+    expect(tsSource).toContain("stageGridSkillStream");
   });
 
-  it("OASWorksheets Stage 3/4: the Table view's Excel/PDF export buttons are gated on viewMode === 'table' specifically, not a bare v-else that would also catch 'worksheets'", () => {
+  it("the Next Steps view's Excel/PDF export buttons are gated on viewMode === 'nextSteps' specifically, not a bare v-else that would also catch 'stageGrid'", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.vue"), "utf8");
     const headerRow = templateSource.slice(templateSource.indexOf('<div class="oas-progress-view-row">'), templateSource.indexOf("</div>", templateSource.indexOf('<div class="oas-progress-view-row">')));
-    expect(headerRow).toContain("filters.viewMode === 'table'");
+    expect(headerRow).toContain("filters.viewMode === 'nextSteps'");
   });
 
-  it("the Worksheets tab prints every worksheet table through summit-print and exports one Excel tab per sheet", () => {
+  it("the Stage Grid tab prints every Stage Grid table through summit-print and exports one Excel tab per sheet", () => {
     const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.vue"), "utf8");
-    expect(templateSource).toContain('<SummitPrintButton profile="oas-worksheets" :targets="worksheetPrintTargets"');
-    expect(templateSource).toContain("onWorksheetsExcelExportClick");
-    expect(templateSource).toContain('ref="worksheets"');
+    expect(templateSource).toContain('<SummitPrintButton profile="oas-stage-grid" :targets="stageGridPrintTargets"');
+    expect(templateSource).toContain("onStageGridExcelExportClick");
+    expect(templateSource).toContain('ref="stageGrid"');
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.ts"), "utf8");
     expect(tsSource).toContain("getPrintTables()");
-    expect(tsSource).toContain("buildWorksheetSheet");
-    expect(fs.existsSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/services/printWorksheets.ts"))).toBe(false);
+    expect(tsSource).toContain("buildStageGridSheet");
+    expect(fs.existsSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/services/printStageGrid.ts"))).toBe(false);
   });
 
-  it("OASWorksheets Stage 5: worksheetLayout persists (replacing the dropped worksheetOrientation), defaulting to membersAsRows", () => {
+  it("stageGridLayout persists, defaulting to membersAsColumns", () => {
     const persistenceSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/services/OASProgressVueFilterPersistence.ts"), "utf8");
-    expect(persistenceSource).toContain("worksheetLayout");
-    // Checks it isn't declared as an interface member (it may still appear in prose).
-    expect(persistenceSource).not.toMatch(/^\s*worksheetOrientation:/m);
+    expect(persistenceSource).toContain("stageGridLayout");
 
     const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OasProgressVueContent.ts"), "utf8");
-    expect(tsSource).toContain('worksheetLayout: "membersAsRows"');
+    expect(tsSource).toContain('stageGridLayout: "membersAsColumns"');
   });
 
-  it("OASWorksheets Stage 5: the Layout selector exists in the worksheet filter bar", () => {
-    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASWorksheetFiltersVue.vue"), "utf8");
-    expect(templateSource).toContain("worksheetLayout");
-    expect(templateSource).not.toContain("worksheetOrientation");
+  it("the Layout selector exists in the Stage Grid filter bar", () => {
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASStageGridFiltersVue.vue"), "utf8");
+    expect(templateSource).toContain("stageGridLayout");
 
-    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASWorksheetFiltersVue.ts"), "utf8");
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASStageGridFiltersVue.ts"), "utf8");
     expect(tsSource).toContain("membersAsColumns");
     expect(tsSource).toContain("membersAsRows");
   });
 
-  it("OASWorksheets Stage 5: Layout A splits over-wide pages into extra sheets rather than warning about clipping", () => {
-    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASWorksheetsVue.ts"), "utf8");
+  it("Layout A splits over-wide pages into extra sheets rather than warning about clipping", () => {
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASStageGridVue.ts"), "utf8");
     expect(tsSource).toContain("splitPageIntoColumnBatches");
     expect(tsSource).not.toContain("pageExceedsColumnLimit");
 
-    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASWorksheetsVue.vue"), "utf8");
-    expect(templateSource).not.toContain("oas-worksheet-overflow-warning");
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASStageGridVue.vue"), "utf8");
+    expect(templateSource).not.toContain("oas-stage-grid-overflow-warning");
   });
 
-  it("OASWorksheets Layout B (transpose) renders I-Statement columns via transposeWorksheetPage, with rotated, WRAPPED (not font-shrunk) headers that split into extra sheets once too many to fit", () => {
-    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASWorksheetsVue.ts"), "utf8");
-    expect(tsSource).toContain("transposeWorksheetPage");
+  it("Layout B (transpose) renders I-Statement columns via transposeStageGridPage, with rotated, WRAPPED (not font-shrunk) headers that split into extra sheets once too many to fit", () => {
+    const tsSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASStageGridVue.ts"), "utf8");
+    expect(tsSource).toContain("transposeStageGridPage");
     expect(tsSource).toContain("splitTransposedPageIntoColumnBatches");
     expect(tsSource).not.toContain("fitRotatedHeaderFont(");
 
-    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASWorksheetsVue.vue"), "utf8");
-    expect(templateSource).toContain("oas-worksheet-rotated-text");
+    const templateSource = fs.readFileSync(path.resolve(REPO_ROOT, "src/pages/OasProgressVue/components/OASStageGridVue.vue"), "utf8");
+    expect(templateSource).toContain("oas-stage-grid-rotated-text");
     expect(templateSource).toContain("groupSpans");
   });
 });

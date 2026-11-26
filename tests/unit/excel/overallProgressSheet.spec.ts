@@ -5,7 +5,7 @@ import { HEADER_BLOCK_ROWS, workbookToBlob } from "@/excel/summitExcel";
 import { PEAK_AWARD_REQUIREMENTS } from "@/pages/OasProgress/data/peakAwardRequirements";
 import { TerrainAchievementsSection } from "@/shared";
 
-const HEADER = { title: "OAS Progress - Summary - Overall", subtitle: "Sample Group · Sample Unit", metaLine: "Generated: 21/10/2026" };
+const HEADER = { title: "OAS Progress - Summary", subtitle: "Sample Group · Sample Unit", metaLine: "Generated: 21/10/2026" };
 
 function input(overrides: Partial<OverallProgressSheetInput> = {}): OverallProgressSheetInput {
   return {
@@ -80,10 +80,10 @@ describe("buildOverallProgressSheet", () => {
     body.forEach((r) => r.slice(1).forEach((c) => expect(c).toMatchObject({ type: String })));
   });
 
-  it("names the tab 'Overall', freezes the header and Member column, and gives every stage column one width", () => {
+  it("names the tab 'Summary', freezes the header and Member column, and gives every stage column one width", () => {
     const { options } = buildOverallProgressSheet(input());
 
-    expect(options.sheet).toBe("Overall");
+    expect(options.sheet).toBe("Summary");
     expect(options.stickyRowsCount).toBe(HEADER_BLOCK_ROWS + 1);
     expect(options.stickyColumnsCount).toBe(1);
     const stageWidths = (options.columns ?? []).slice(1).map((c) => c.width);
@@ -100,7 +100,7 @@ describe("buildOverallProgressSheet", () => {
   });
 });
 
-describe("workbookToBlob with both Summary sheets", () => {
+describe("workbookToBlob with two sheets", () => {
   it("writes one file with a tab per sheet, in the given order", async () => {
     const peakAward = buildPeakAwardSummarySheet({
       rows: [],
@@ -108,15 +108,15 @@ describe("workbookToBlob with both Summary sheets", () => {
       nameFormat: "full",
       specialConditionText: "",
       breakByPatrol: false,
-      header: { ...HEADER, title: "OAS Progress - Summary - Towards Peak Award" },
+      header: { ...HEADER, title: "OAS Progress - Peak Award" },
       logo: null,
     });
 
     const files = await unzip(await workbookToBlob([peakAward, buildOverallProgressSheet(input())]));
     const workbook = strFromU8(files["xl/workbook.xml"]);
 
-    expect(workbook.indexOf('name="Towards Peak Award"')).toBeGreaterThan(-1);
-    expect(workbook.indexOf('name="Overall"')).toBeGreaterThan(workbook.indexOf('name="Towards Peak Award"'));
+    expect(workbook.indexOf('name="Peak Award"')).toBeGreaterThan(-1);
+    expect(workbook.indexOf('name="Summary"')).toBeGreaterThan(workbook.indexOf('name="Peak Award"'));
     expect(files["xl/worksheets/sheet2.xml"]).toBeDefined();
   });
 });

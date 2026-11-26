@@ -13,7 +13,7 @@ import type { HeatMapExportView, MemberRowView, SquareState, StageCellView } fro
 function squares(...states: SquareState[]): StageCellView {
   return { kind: "squares", squares: states.map((state, i) => ({ inputId: `i${i}`, state, stateClass: `oas-heatmap-square-${state}`, groupClass: "", title: "" })) };
 }
-const BAR_DONE: StageCellView = { kind: "bar-complete" };
+const BAR_DONE: StageCellView = { kind: "bar-approved" };
 const BAR_TODO: StageCellView = { kind: "bar-unstarted" };
 const EMPTY: StageCellView = { kind: "empty" };
 
@@ -78,7 +78,7 @@ describe("stageCells", () => {
   });
 
   it("colours squares by state, leaves hidden ones blank and pads to the width", () => {
-    expect(fills(stageCells(squares("awarded", "answered", "hidden", "unanswered"), 6))).toEqual([EXCEL_COLOURS.allMet, EXCEL_COLOURS.met, null, EXCEL_COLOURS.notMet, null, null]);
+    expect(fills(stageCells(squares("approved", "answered", "hidden", "unanswered"), 6))).toEqual([EXCEL_COLOURS.allMet, EXCEL_COLOURS.met, null, EXCEL_COLOURS.notMet, null, null]);
   });
 
   it("an empty stage is all blank", () => {
@@ -158,7 +158,7 @@ describe("buildSkillHeatmapSheet", () => {
 
   it("writes a large unit (60 members × 15 sections × 9 stages) and reports its size", async () => {
     const stages = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-    const states: SquareState[] = ["awarded", "answered", "unanswered"];
+    const states: SquareState[] = ["approved", "answered", "unanswered"];
     const rowCells = (m: number) => stages.map((s) => (s <= 2 ? BAR_DONE : s >= 8 ? BAR_TODO : squares(...Array.from({ length: 10 }, (_, i) => states[(m + i + s) % 3]))));
     const big: HeatMapExportView = {
       firstColumnHeader: "Member",

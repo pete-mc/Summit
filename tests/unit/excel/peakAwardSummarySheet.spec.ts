@@ -17,7 +17,7 @@ function memberRow(id: string, first: string, last: string, core: [number, numbe
   const coreSkills = (["bushcraft", "bushwalking", "camping"] as const).map((skill, i) => ({
     skill,
     requiredStage: requirement.coreSkillStage,
-    highestAwardedStage: core[i],
+    highestApprovedStage: core[i],
     boxes: boxes(requirement.coreSkillStage, core[i]),
     met: core[i] >= requirement.coreSkillStage,
   }));
@@ -44,7 +44,7 @@ function memberRow(id: string, first: string, last: string, core: [number, numbe
   };
 }
 
-const HEADER = { title: "OAS Progress - Summary - Towards Peak Award", subtitle: "Sample Group · Sample Unit", metaLine: "Generated: 12/10/2026" };
+const HEADER = { title: "OAS Progress - Peak Award", subtitle: "Sample Group · Sample Unit", metaLine: "Generated: 12/10/2026" };
 
 function input(overrides: Partial<PeakAwardSummarySheetInput> = {}): PeakAwardSummarySheetInput {
   return {

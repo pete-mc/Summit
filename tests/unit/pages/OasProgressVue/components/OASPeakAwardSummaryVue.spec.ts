@@ -1,3 +1,6 @@
+// Gotcha: Jest can't parse .vue files, so stub the child.
+jest.mock("@/pages/OasProgressVue/components/OASTabJumpMenu.vue", () => ({ __esModule: true, default: { name: "OASTabJumpMenu", render: () => null } }), { virtual: true });
+
 import { awardTooltip, buildBoxGroupView, buildRowView, formatAwardDate, skillTitle } from "@/pages/OasProgressVue/components/OASPeakAwardSummaryVue";
 import type { PeakAwardBox, PeakAwardMemberRow } from "@/pages/OasProgress/services/buildPeakAwardSummaryRows";
 
@@ -26,6 +29,12 @@ describe("formatAwardDate", () => {
 
   it("formats a full ISO timestamp as dd/mm/yyyy", () => {
     expect(formatAwardDate("2021-06-15T00:00:00.000Z")).toBe("15/06/2021");
+  });
+
+  // Imported awards are day-first; the browser fallback read "5/6/2023" as 6 May.
+  it("reads an imported day-first date as day/month, not US month/day", () => {
+    expect(formatAwardDate("5/6/2023")).toBe("05/06/2023");
+    expect(formatAwardDate("24/6/2023")).toBe("24/06/2023");
   });
 
   it("returns an empty string for null", () => {
@@ -130,9 +139,9 @@ function makeMemberRow(overrides: Partial<PeakAwardMemberRow> = {}): PeakAwardMe
     lastName: "Scout",
     patrolName: null,
     coreSkills: [
-      { skill: "bushcraft", requiredStage: 5, highestAwardedStage: 0, boxes: Array.from({ length: 5 }, () => makeBox({ met: false, award: null })), met: false },
-      { skill: "bushwalking", requiredStage: 5, highestAwardedStage: 0, boxes: Array.from({ length: 5 }, () => makeBox({ met: false, award: null })), met: false },
-      { skill: "camping", requiredStage: 5, highestAwardedStage: 0, boxes: Array.from({ length: 5 }, () => makeBox({ met: false, award: null })), met: false },
+      { skill: "bushcraft", requiredStage: 5, highestApprovedStage: 0, boxes: Array.from({ length: 5 }, () => makeBox({ met: false, award: null })), met: false },
+      { skill: "bushwalking", requiredStage: 5, highestApprovedStage: 0, boxes: Array.from({ length: 5 }, () => makeBox({ met: false, award: null })), met: false },
+      { skill: "camping", requiredStage: 5, highestApprovedStage: 0, boxes: Array.from({ length: 5 }, () => makeBox({ met: false, award: null })), met: false },
     ],
     totalProgressions: 0,
     requiredProgressions: 12,
@@ -175,7 +184,7 @@ describe("buildRowView", () => {
 
   it("collapses a Core Skills cell to a bar once every one of its boxes is met", () => {
     const metBoxes = Array.from({ length: 5 }, (_, i) => makeBox({ met: true, award: makeAward({ stage: i + 1 }) }));
-    const row = makeMemberRow({ coreSkills: [{ skill: "bushcraft", requiredStage: 5, highestAwardedStage: 5, boxes: metBoxes, met: true }, ...makeMemberRow().coreSkills.slice(1)] });
+    const row = makeMemberRow({ coreSkills: [{ skill: "bushcraft", requiredStage: 5, highestApprovedStage: 5, boxes: metBoxes, met: true }, ...makeMemberRow().coreSkills.slice(1)] });
 
     const view = buildRowView(row, "full");
 

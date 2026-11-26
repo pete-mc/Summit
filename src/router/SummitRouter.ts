@@ -150,13 +150,6 @@ export default class SummitRouter {
             roles: [true, false],
           },
           {
-            title: "OAS Summary",
-            to: "/summit/reports/oas",
-            items: [],
-            locked: false,
-            roles: [true, false],
-          },
-          {
             title: "OAS Progress",
             to: "/summit/reports/oasprogress",
             items: [],
