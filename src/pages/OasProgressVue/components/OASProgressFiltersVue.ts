@@ -79,8 +79,10 @@ export default defineComponent({
     },
     onShowChange(selected: ShowOption[]) {
       const partial: Partial<OASProgressVueFilterState> = {};
-      SHOW_OPTIONS.forEach((o) => {
-        partial[o.value] = selected.includes(o.value);
+      this.showOptions.forEach((item) => {
+        if ("value" in item) {
+          partial[item.value] = selected.includes(item.value);
+        }
       });
       this.patch(partial);
     },

@@ -154,7 +154,7 @@ const HEATMAP_FILTER_KEYS = ["groupBy", "memberFilter", "nameFormat", "selectedP
 const NEXT_STEPS_FILTER_KEYS = ["nextStepsMemberId", "nextStepsSkillStream", "nextStepsStage", "nextStepsNameFormat"] as const;
 const STAGE_GRID_FILTER_KEYS = ["stageGridSkillStream", "stageGridStage", "stageGridNameFormat", "stageGridSortBy", "stageGridSelectedPatrols", "stageGridBreakByPatrol", "stageGridShowApproved", "stageGridLayout"] as const;
 
-const RESETNEXT_STEPS_FILTER_KEYS_BY_VIEW: Record<OASProgressVueFilterState["viewMode"], readonly (keyof OASProgressVueFilterState)[]> = {
+const RESET_FILTER_KEYS_BY_VIEW: Record<OASProgressVueFilterState["viewMode"], readonly (keyof OASProgressVueFilterState)[]> = {
   about: [],
   summary: SUMMARY_FILTER_KEYS,
   peakAward: PEAK_AWARD_FILTER_KEYS,
@@ -472,7 +472,7 @@ export default defineComponent({
       this.jumpOrigin = null;
     },
     onResetFilters() {
-      const keysToReset = RESETNEXT_STEPS_FILTER_KEYS_BY_VIEW[this.filters.viewMode] ?? [];
+      const keysToReset = RESET_FILTER_KEYS_BY_VIEW[this.filters.viewMode] ?? [];
 
       const resetValues: Partial<OASProgressVueFilterState> = {};
       keysToReset.forEach((key) => {

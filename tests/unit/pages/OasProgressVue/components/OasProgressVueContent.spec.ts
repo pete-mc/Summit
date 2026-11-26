@@ -114,7 +114,7 @@ describe("OasProgressVueContent — Display Options filter defaults", () => {
   });
 
   it("Apply defaults overwrites common filters on every tab once, keeping tab-specific ones", () => {
-    saveOASProgressVueFilters(makeStoredFilters({ nameFormat: "first", stageGridNameFormat: "first", groupBy: "member", visibleStages: [2] }));
+    saveOASProgressVueFilters(makeStoredFilters({ nameFormat: "first", stageGridNameFormat: "first", groupBy: "member", visibleStages: [2], summarySelectedPatrols: ["Eagles"], summaryColumnSort: { key: "camping", descending: true } }));
     saveFilterDefaults(leaderDefaults);
     markFilterDefaultsApplied(1000);
 
@@ -124,6 +124,8 @@ describe("OasProgressVueContent — Display Options filter defaults", () => {
     expect(filters.stageGridNameFormat).toBe("codename");
     expect(filters.groupBy).toBe("member");
     expect(filters.visibleStages).toEqual([2]);
+    expect(filters.summarySelectedPatrols).toBeNull();
+    expect(filters.summaryColumnSort).toBeNull();
     expect(loadOASProgressVueFilters()?.filterDefaultsAppliedAt).toBe(1000);
   });
 
